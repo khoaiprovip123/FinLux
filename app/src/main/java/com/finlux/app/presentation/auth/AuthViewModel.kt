@@ -15,12 +15,35 @@ import javax.inject.Inject
 data class AuthUiState(
     val displayName: String = "",
     val email: String = "",
+    val phone: String = "",
     val password: String = "",
     val confirmPassword: String = "",
+    val rememberMe: Boolean = true,
+    val agreeTerms: Boolean = true,
     val isLoading: Boolean = false,
     val error: String? = null,
     val completed: Boolean = false,
-)
+) {
+    val passwordStrengthScore: Int
+        get() {
+            if (password.isEmpty()) return 0
+            var score = 0
+            if (password.length >= 8) score++
+            if (password.any { it.isDigit() }) score++
+            if (password.any { it.isUpperCase() } || password.any { it.isLowerCase() }) score++
+            if (password.any { !it.isLetterOrDigit() }) score++
+            return score.coerceIn(1, 4)
+        }
+
+    val passwordStrengthText: String
+        get() = when (passwordStrengthScore) {
+            1 -> "Yếu"
+            2 -> "Trung bình"
+            3 -> "Mạnh"
+            4 -> "Rất mạnh"
+            else -> ""
+        }
+}
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -31,8 +54,11 @@ class AuthViewModel @Inject constructor(
 
     fun updateDisplayName(value: String) = mutableState.update { it.copy(displayName = value, error = null) }
     fun updateEmail(value: String) = mutableState.update { it.copy(email = value, error = null) }
+    fun updatePhone(value: String) = mutableState.update { it.copy(phone = value, error = null) }
     fun updatePassword(value: String) = mutableState.update { it.copy(password = value, error = null) }
     fun updateConfirmPassword(value: String) = mutableState.update { it.copy(confirmPassword = value, error = null) }
+    fun toggleRememberMe(value: Boolean) = mutableState.update { it.copy(rememberMe = value) }
+    fun toggleAgreeTerms(value: Boolean) = mutableState.update { it.copy(agreeTerms = value) }
 
     fun signIn() {
         val snapshot = state.value
@@ -53,6 +79,7 @@ class AuthViewModel @Inject constructor(
             snapshot.password.length < 8 || snapshot.password.none(Char::isLetter) || snapshot.password.none(Char::isDigit) ->
                 "Mật khẩu cần ít nhất 8 ký tự, gồm chữ và số"
             snapshot.password != snapshot.confirmPassword -> "Mật khẩu xác nhận không khớp"
+            !snapshot.agreeTerms -> "Vui lòng đồng ý với Điều khoản sử dụng & Chính sách bảo mật"
             else -> null
         }
         if (error != null) return mutableState.update { it.copy(error = error) }
@@ -81,3 +108,4 @@ class AuthViewModel @Inject constructor(
         val EMAIL_REGEX = Regex("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", RegexOption.IGNORE_CASE)
     }
 }
+

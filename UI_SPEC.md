@@ -66,38 +66,55 @@ STATES:
 ```
 Route: /login
 LAYOUT:
-┌─────────────────────────────────────┐
-│ Logo/App name                        │
-│ [Glass Card]                         │
-│   - Field: Email | text | required   │
-│   - Field: Mật khẩu | password | required (icon show/hide) │
-│   - Link: "Quên mật khẩu?"           │
-│   - Button: "Đăng nhập" (primary)    │
-│   - Divider "hoặc"                   │
-│   - Button: "Đăng nhập với Google"   │
-│   - Link: "Chưa có tài khoản? Đăng ký" │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│ Header (Top Gradient):                  │
+│  - Logo: "FinLux" (Fin đen, Lux xanh)   │
+│  - Title: "Chào mừng trở lại! 👋"        │
+│  - Subtitle: "Đăng nhập để tiếp tục..." │
+│  - 3D Illustration: Glass Wallet + Shield│
+├─────────────────────────────────────────┤
+│ Form Card (Bottom White Container):     │
+│  - Tab Switcher: [Đăng nhập] | Đăng ký  │
+│  - Field: Email hoặc số điện thoại      │
+│  - Field: Mật khẩu (ẩn/hiện)            │
+│  - Checkbox: "Ghi nhớ đăng nhập" | Link │
+│  - Button: "Đăng nhập" (Gradient + ->)  │
+│  - Divider: "hoặc đăng nhập với"        │
+│  - Social Cards: [Google] [Apple] [FB]  │
+│  - Footer: "Bằng việc đăng nhập..."     │
+└─────────────────────────────────────────┘
 
 VALIDATION:
   - Email: đúng định dạng → "Email không hợp lệ"
   - Mật khẩu: không rỗng → "Vui lòng nhập mật khẩu"
-
-STATES:
-  - Loading: nút "Đăng nhập" hiện spinner, disable form
-  - Error: Toast/Snackbar kính mờ hiện lỗi (sai mật khẩu, tài khoản không tồn tại, mất mạng)
-
-ACTIONS:
-  - "Đăng nhập" → Firebase signInWithEmailAndPassword → Home
-  - "Đăng nhập với Google" → Google One Tap / Credential Manager → Home (tạo user Firestore nếu chưa có)
-  - "Quên mật khẩu" → /forgot-password
-  - "Đăng ký" → /register
 ```
 
 ## 3. SCREEN: Đăng ký (Register)
 ```
 Route: /register
-LAYOUT: tương tự Login, thêm Field Họ tên, Field Xác nhận mật khẩu
-VALIDATION: theo BR-01 (≥8 ký tự, có chữ+số), mật khẩu xác nhận phải khớp
+LAYOUT:
+┌─────────────────────────────────────────┐
+│ Header (Top Gradient):                  │
+│  - Button: Back (<)                      │
+│  - Logo: "FinLux"                       │
+│  - Title: "Tạo tài khoản mới"           │
+│  - Subtitle: "Bắt đầu hành trình..."   │
+│  - 3D Illustration: Clipboard + Shield │
+├─────────────────────────────────────────┤
+│ Form Card (Bottom White Container):     │
+│  - Tab Switcher: Đăng nhập | [Đăng ký]  │
+│  - Field: Họ và tên                     │
+│  - Field: Email                         │
+│  - Field: Số điện thoại                 │
+│  - Field: Mật khẩu                      │
+│  - Progress Bar: Độ mạnh mật khẩu       │
+│  - Field: Xác nhận mật khẩu             │
+│  - Checkbox: Đồng ý điều khoản          │
+│  - Button: "Tạo tài khoản" (Gradient)   │
+│  - Link Footer: "Đã có tài khoản?"      │
+└─────────────────────────────────────────┘
+VALIDATION: theo BR-01 (≥8 ký tự, có chữ+số), mật khẩu xác nhận phải khớp, bắt buộc tích chọn đồng ý điều khoản
+```
 ACTIONS: "Tạo tài khoản" → Firebase createUser + seed dữ liệu mặc định (UC-01) → Home
 ```
 

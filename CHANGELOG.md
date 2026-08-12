@@ -1,6 +1,16 @@
 # CHANGELOG — Finlux
 
+## 0.7.0 - 2026-08-12
+
+- Thiết kế lại toàn bộ luồng Đăng nhập (Login) và Đăng ký (Register) bám sát 100% ảnh giao diện mẫu.
+- Thêm header gradient kết hợp logo FinLux, tiêu đề, mô tả và minh họa 3D glass (Ví tiền & Hồ sơ).
+- Form container bo góc 32.dp, tích hợp tab chuyển đổi Đăng nhập / Đăng ký mượt mà.
+- Bổ sung ô nhập Số điện thoại, checkbox "Ghi nhớ đăng nhập", đồng ý Điều khoản & Chính sách bảo mật.
+- Bổ sung thanh đo độ mạnh mật khẩu 4 cấp độ (Yếu / Trung bình / Mạnh / Rất mạnh) với chỉ báo màu sắc linh hoạt.
+- Thêm các nút đăng nhập mạng xã hội (Google, Apple, Facebook) và nút Gradient chính với icon mũi tên.
+
 ## 0.6.3 - 2026-08-12
+
 
 - Căn chỉnh lại màn Báo cáo sát ảnh tham chiếu: tiêu đề, bộ chọn Tháng/Quý/Năm/Tùy chọn và các panel compact.
 - Tổng quan hiển thị Thu nhập/Chi tiêu/Tiết kiệm cùng tỷ lệ so với kỳ trước lấy từ dữ liệu thực.
