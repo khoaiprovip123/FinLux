@@ -12,11 +12,18 @@
 
 ## 📸 Giao diện ứng dụng (Screenshots)
 
+### 🌟 Thiết kế Đăng nhập & Đăng ký (3D Liquid Glass Auth UI)
+<p align="center">
+  <img src="docs/screenshots/qa-auth-3d.png" width="680" alt="Giao diện Đăng nhập & Đăng ký 3D Liquid Glass FinLux"/>
+</p>
+
+### 📱 Màn hình chức năng chính (Core App Screens)
 | Đăng nhập & Xác thực | Trang chủ (Dashboard) | Quản lý Ngân sách | Báo cáo & Thống kê |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/qa-login.png" width="220" alt="Màn hình Đăng nhập"/> | <img src="docs/screenshots/qa-home.png" width="220" alt="Màn hình Chính"/> | <img src="docs/screenshots/qa-budget.png" width="220" alt="Màn hình Ngân sách"/> | <img src="docs/screenshots/qa-reports.png" width="220" alt="Màn hình Báo cáo"/> |
+| <img src="docs/screenshots/qa-login.png" width="210" alt="Màn hình Đăng nhập"/> | <img src="docs/screenshots/qa-home.png" width="210" alt="Màn hình Chính"/> | <img src="docs/screenshots/qa-budget.png" width="210" alt="Màn hình Ngân sách"/> | <img src="docs/screenshots/qa-reports.png" width="210" alt="Màn hình Báo cáo"/> |
 
 ---
+
 
 ## ✨ Tính năng cốt lõi (Key Features)
 
