@@ -1,0 +1,2 @@
+# Copy to local.properties and point sdk.dir at your local Android SDK.
+sdk.dir=C\:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk

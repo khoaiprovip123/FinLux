@@ -1,0 +1,20 @@
+# Android Studio / Gradle
+.gradle/
+.idea/
+build/
+**/build/
+local.properties
+*.iml
+
+# Signing and Firebase configuration must never be committed.
+*.jks
+*.keystore
+app/google-services.json
+service-account*.json
+
+# OS / generated output
+.DS_Store
+Thumbs.db
+captures/
+externalNativeBuild/
+.cxx/
