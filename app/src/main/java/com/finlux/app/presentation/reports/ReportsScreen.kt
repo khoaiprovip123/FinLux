@@ -2,32 +2,38 @@ package com.finlux.app.presentation.reports
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,8 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -49,17 +55,18 @@ import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.FinluxCyan
 import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.FinluxTextSecondary
-import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
-import com.finlux.app.core.designsystem.GradientHeroCard
+import com.finlux.app.core.designsystem.FinluxPanel
 import com.finlux.app.core.designsystem.IncomeGreen
+import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.core.navigation.Route
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.toShortVnd
-import com.finlux.app.presentation.home.toVnd
 import java.time.format.DateTimeFormatter
 import java.time.Instant
 import java.time.ZoneId
+import java.util.Locale
 
 private val ChartColors = listOf(FinluxBlue, FinluxPurple, FinluxCyan, IncomeGreen, Color(0xFFFFB347), ExpenseRed)
 
@@ -73,7 +80,12 @@ fun ReportsScreen(
     val selectedPeriod = viewModel.selectedPeriod.collectAsStateWithLifecycle().value
     var showRangePicker by remember { mutableStateOf(false) }
     Scaffold(
-        topBar = { GlassTopBar(title = { Text("Báo cáo", style = MaterialTheme.typography.titleLarge) }) },
+        topBar = {
+            GlassTopBar(
+                title = { Text("Báo cáo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                actions = { IconButton(onClick = { showRangePicker = true }) { Icon(Icons.Default.FilterAlt, "Lọc báo cáo") } },
+            )
+        },
         bottomBar = { MainBottomBar(Route.Reports.value, onNavigate, onAdd) },
         containerColor = Color.Transparent,
     ) { padding ->
@@ -81,74 +93,55 @@ fun ReportsScreen(
             Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(ReportPeriod.entries, key = { it.name }) { option ->
-                    FilterChip(
-                        selected = selectedPeriod == option,
-                        onClick = { viewModel.selectPeriod(option); if (option == ReportPeriod.CUSTOM) showRangePicker = true },
-                        label = { Text(option.label, maxLines = 1) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = .13f),
-                            selectedLabelColor = MaterialTheme.colorScheme.primary,
-                        ),
-                    )
-                }
+            ReportPeriodSelector(selectedPeriod) { option ->
+                viewModel.selectPeriod(option)
+                if (option == ReportPeriod.CUSTOM) showRangePicker = true
             }
             if (selectedPeriod == ReportPeriod.CUSTOM) {
                 Button(onClick = { showRangePicker = true }, modifier = Modifier.fillMaxWidth()) {
                     Text("${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}  →  ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
                 }
             }
-            GradientHeroCard(Modifier.fillMaxWidth()) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    ReportAmount("Tổng thu", state.summary.income.value, Color.White)
-                    ReportAmount("Tổng chi", state.summary.expense.value, Color.White)
-                    ReportAmount("Còn lại", state.summary.net, Color.White)
-                }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                ReportMetric("Giao dịch", state.transactionCount.toString(), Modifier.weight(1f))
-                ReportMetric("Chi TB", state.averageExpense.toShortVnd(), Modifier.weight(1f))
-                ReportMetric("So kỳ trước", (state.summary.net - state.previousNet).toShortVnd(), Modifier.weight(1f))
-            }
-            GlassCard(Modifier.fillMaxWidth()) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Chi tiêu theo danh mục", style = MaterialTheme.typography.titleMedium)
-                    if (state.expensesByCategory.isEmpty()) {
-                        EmptyChartText()
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            ExpenseDonut(state.expensesByCategory, Modifier.weight(1f).height(190.dp))
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                                state.expensesByCategory.take(6).forEachIndexed { index, item ->
-                                    LegendRow(item.category?.name ?: "Khác", item.amount, ChartColors[index % ChartColors.size])
-                                }
-                            }
-                        }
+            ReportPanel {
+                Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Tổng quan ${reportRangeLabel(state)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
+                    }
+                    Row(Modifier.fillMaxWidth().height(70.dp), verticalAlignment = Alignment.CenterVertically) {
+                        ReportAmount("Thu nhập", state.summary.income.value, state.previousIncome, IncomeGreen, Modifier.weight(1f))
+                        VerticalDivider(Modifier.height(54.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
+                        ReportAmount("Chi tiêu", state.summary.expense.value, state.previousExpense, ExpenseRed, Modifier.weight(1f))
+                        VerticalDivider(Modifier.height(54.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
+                        ReportAmount("Tiết kiệm", state.summary.net, state.previousNet, FinluxBlue, Modifier.weight(1f))
                     }
                 }
             }
-            GlassCard(Modifier.fillMaxWidth()) {
+            ReportPanel {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Dòng tiền Thu – Chi", style = MaterialTheme.typography.titleMedium)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Xu hướng thu – chi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("${selectedPeriod.label} ▾", Modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 5.dp), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
+                    }
                     if (state.cashFlow.none { it.income > 0 || it.expense > 0 }) EmptyChartText() else CashFlowChart(state.cashFlow)
                 }
             }
-            GlassCard(Modifier.fillMaxWidth()) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Hoạt động theo ví", style = MaterialTheme.typography.titleMedium)
-                    if (state.walletActivity.isEmpty()) EmptyChartText() else state.walletActivity.take(5).forEach { item ->
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(item.wallet?.name ?: "Ví", fontWeight = FontWeight.Bold)
-                                Text(item.total.toShortVnd(), color = FinluxBlue)
-                            }
-                            Text("Thu ${item.income.toShortVnd()}  ·  Chi ${item.expense.toShortVnd()}", style = MaterialTheme.typography.bodyMedium, color = FinluxTextSecondary)
-                        }
+            ReportPanel {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Phân bổ chi tiêu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Xem chi tiết", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     }
+                    if (state.expensesByCategory.isEmpty()) EmptyChartText() else ExpenseDistribution(state.expensesByCategory)
+                }
+            }
+            ReportPanel {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Báo cáo theo ví", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Tất cả ví ▾", Modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium)
+                    }
+                    WalletReport(state.walletActivity)
                 }
             }
             Button(
@@ -185,93 +178,191 @@ fun ReportsScreen(
 }
 
 @Composable
-private fun ReportMetric(label: String, value: String, modifier: Modifier = Modifier) {
-    GlassCard(modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = FinluxTextSecondary)
-            Text(value, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, maxLines = 1)
-        }
-    }
+private fun ReportPanel(content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit) {
+    FinluxPanel(
+        Modifier.fillMaxWidth(),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .96f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .72f),
+        cornerRadius = 16.dp,
+        content = content,
+    )
 }
 
 @Composable
-private fun ReportAmount(label: String, amount: Long, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, color = color.copy(alpha = .76f), style = MaterialTheme.typography.bodyMedium)
-        Text(amount.toShortVnd(), color = color, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun ExpenseDonut(items: List<CategoryExpense>, modifier: Modifier = Modifier) {
-    val total = items.sumOf(CategoryExpense::amount).coerceAtLeast(1)
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            val stroke = 25.dp.toPx()
-            val diameter = size.minDimension * .68f
-            val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
-            var start = -90f
-            items.forEachIndexed { index, item ->
-                val sweep = item.amount.toFloat() / total * 360f
-                drawArc(
-                    color = ChartColors[index % ChartColors.size],
-                    startAngle = start,
-                    sweepAngle = (sweep - 2f).coerceAtLeast(1f),
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = Size(diameter, diameter),
-                    style = Stroke(stroke, cap = StrokeCap.Round),
-                )
-                start += sweep
+private fun ReportPeriodSelector(selected: ReportPeriod, onSelected: (ReportPeriod) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f), RoundedCornerShape(22.dp)).padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        ReportPeriod.entries.forEach { option ->
+            Box(
+                Modifier.weight(1f).height(38.dp)
+                    .background(if (selected == option) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(18.dp))
+                    .clickable { onSelected(option) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(option.label, color = if (selected == option) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
             }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(total.toShortVnd(), fontWeight = FontWeight.Bold)
-            Text("Tổng chi", style = MaterialTheme.typography.bodyMedium, color = FinluxTextSecondary)
+    }
+}
+
+@Composable
+private fun ReportAmount(label: String, amount: Long, previous: Long, color: Color, modifier: Modifier = Modifier) {
+    val change = if (previous == 0L) 0 else (((amount - previous) * 100) / kotlin.math.abs(previous)).toInt()
+    Column(modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+        Text(amount.toShortVnd(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(
+            "${if (change >= 0) "▲" else "▼"} ${kotlin.math.abs(change)}%",
+            color = if (change >= 0) color else ExpenseRed,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+private fun reportRangeLabel(state: ReportsUiState): String = when (state.period) {
+    ReportPeriod.MONTH -> state.range.start.format(DateTimeFormatter.ofPattern("'tháng' M, yyyy", Locale.forLanguageTag("vi-VN")))
+    ReportPeriod.QUARTER -> "quý ${(state.range.start.monthValue - 1) / 3 + 1}, ${state.range.start.year}"
+    ReportPeriod.YEAR -> "năm ${state.range.start.year}"
+    ReportPeriod.CUSTOM -> "${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))}–${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
+}
+
+@Composable
+private fun ExpenseDistribution(items: List<CategoryExpense>) {
+    val total = items.sumOf { it.amount }.coerceAtLeast(1L)
+    val visible = items.take(6)
+    Row(Modifier.fillMaxWidth().height(164.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        visible.getOrNull(0)?.let { CategoryBlock(it, total, 0, Modifier.weight(1.05f).fillMaxSize()) }
+        Column(Modifier.weight(1.55f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                visible.getOrNull(1)?.let { CategoryBlock(it, total, 1, Modifier.weight(1f).fillMaxSize()) }
+                visible.getOrNull(2)?.let { CategoryBlock(it, total, 2, Modifier.weight(1f).fillMaxSize()) }
+            }
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                (3..5).forEach { index ->
+                    visible.getOrNull(index)?.let { CategoryBlock(it, total, index, Modifier.weight(1f).fillMaxSize()) }
+                        ?: Spacer(Modifier.weight(1f))
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun LegendRow(label: String, amount: Long, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(9.dp).background(color, CircleShape))
-        Text(label, Modifier.weight(1f).padding(start = 7.dp), style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-        Text(amount.toShortVnd(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+private fun CategoryBlock(item: CategoryExpense, total: Long, index: Int, modifier: Modifier) {
+    val accent = ChartColors[index % ChartColors.size]
+    Column(
+        modifier.background(accent, RoundedCornerShape(10.dp)).padding(if (index == 0) 11.dp else 8.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(item.category?.name ?: "Khác", color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, style = if (index == 0) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.labelMedium)
+        Column {
+            Text("${item.amount * 100 / total}%", color = Color.White, style = if (index == 0) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(item.amount.toShortVnd(), color = Color.White.copy(alpha = .88f), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        }
     }
 }
 
 @Composable
 private fun CashFlowChart(items: List<CashFlowPoint>) {
-    val visible = items.takeLast(12)
+    val visible = items.takeLast(20)
     val max = visible.maxOfOrNull { maxOf(it.income, it.expense) }?.coerceAtLeast(1) ?: 1
-    Column {
-        Canvas(Modifier.fillMaxWidth().height(170.dp)) {
-            val slot = size.width / visible.size.coerceAtLeast(1)
-            visible.forEachIndexed { index, item ->
-                val incomeHeight = item.income.toFloat() / max * size.height * .82f
-                val expenseHeight = item.expense.toFloat() / max * size.height * .82f
-                drawRoundRect(
-                    color = IncomeGreen,
-                    topLeft = Offset(index * slot + slot * .15f, size.height - incomeHeight),
-                    size = Size(slot * .28f, incomeHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()),
-                )
-                drawRoundRect(
-                    color = ExpenseRed,
-                    topLeft = Offset(index * slot + slot * .52f, size.height - expenseHeight),
-                    size = Size(slot * .28f, expenseHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()),
-                )
-            }
+    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .36f)
+    val focusLineColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .55f)
+    val focusIndex = visible.indices.maxByOrNull { visible[it].income + visible[it].expense } ?: 0
+    val focus = visible.getOrNull(focusIndex)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("— Thu nhập", color = FinluxBlue, style = MaterialTheme.typography.bodyMedium)
+            Text("— Chi tiêu", color = ExpenseRed, style = MaterialTheme.typography.bodyMedium)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("● Thu", color = IncomeGreen, style = MaterialTheme.typography.bodyMedium)
-            Text("● Chi", color = ExpenseRed, style = MaterialTheme.typography.bodyMedium)
+        BoxWithConstraints(Modifier.fillMaxWidth().height(205.dp)) {
+            Canvas(Modifier.fillMaxSize()) {
+                if (visible.isEmpty()) return@Canvas
+                val chartTop = 14.dp.toPx()
+                val chartBottom = size.height - 10.dp.toPx()
+                repeat(4) { line ->
+                    val y = chartTop + (chartBottom - chartTop) * line / 3f
+                    drawLine(gridColor, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                }
+                val step = if (visible.size <= 1) size.width else size.width / (visible.size - 1)
+                fun point(index: Int, amount: Long) = Offset(index * step, chartBottom - amount.toFloat() / max * (chartBottom - chartTop) * .88f)
+                fun linePath(selector: (CashFlowPoint) -> Long): Path = Path().apply {
+                    visible.forEachIndexed { index, item ->
+                        val point = point(index, selector(item))
+                        if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+                    }
+                }
+                drawPath(linePath { it.income }, FinluxBlue, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(linePath { it.expense }, ExpenseRed, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+                visible.forEachIndexed { index, item ->
+                    val income = point(index, item.income); val expense = point(index, item.expense)
+                    drawCircle(FinluxBlue, 3.dp.toPx(), income); drawCircle(ExpenseRed, 3.dp.toPx(), expense)
+                }
+                if (focus != null) {
+                    val x = focusIndex * step
+                    drawLine(focusLineColor, Offset(x, chartTop), Offset(x, chartBottom), 1.dp.toPx())
+                    drawCircle(Color.White, 5.dp.toPx(), point(focusIndex, focus.income)); drawCircle(FinluxBlue, 3.dp.toPx(), point(focusIndex, focus.income))
+                    drawCircle(Color.White, 5.dp.toPx(), point(focusIndex, focus.expense)); drawCircle(ExpenseRed, 3.dp.toPx(), point(focusIndex, focus.expense))
+                }
+            }
+            focus?.let { point ->
+                val ratio = if (visible.size <= 1) 0f else focusIndex.toFloat() / (visible.size - 1)
+                val popupWidth = 128.dp
+                FinluxPanel(
+                    modifier = Modifier.width(popupWidth).offset(x = (maxWidth * ratio - popupWidth / 2).coerceIn(0.dp, maxWidth - popupWidth), y = 8.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .98f),
+                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                    cornerRadius = 11.dp,
+                    padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 7.dp),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(point.date.format(DateTimeFormatter.ofPattern("dd/MM")), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                        Text("● Thu: ${point.income.toShortVnd()}", color = FinluxBlue, style = MaterialTheme.typography.labelSmall)
+                        Text("● Chi: ${point.expense.toShortVnd()}", color = ExpenseRed, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             visible.firstOrNull()?.let { Text(it.date.format(DateTimeFormatter.ofPattern("dd/MM")), style = MaterialTheme.typography.bodyMedium, color = FinluxTextSecondary) }
             visible.lastOrNull()?.let { Text(it.date.format(DateTimeFormatter.ofPattern("dd/MM")), style = MaterialTheme.typography.bodyMedium, color = FinluxTextSecondary) }
+        }
+    }
+}
+
+@Composable
+private fun WalletReport(items: List<WalletActivity>) {
+    if (items.isEmpty()) {
+        EmptyChartText()
+        return
+    }
+    val total = items.sumOf { it.total }.coerceAtLeast(1L)
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        items.take(5).forEach { item ->
+            val wallet = item.wallet
+            val accent = wallet?.let { colorFromHex(it.colorHex) } ?: FinluxBlue
+            val percent = (item.total * 100 / total).toInt()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(38.dp).background(accent.copy(alpha = .16f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                    wallet?.let { Icon(walletIcon(it.type), null, Modifier.size(21.dp), tint = accent) }
+                }
+                Column(Modifier.weight(1f).padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(wallet?.name ?: "Ví", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                    LinearProgressIndicator(
+                        progress = { percent / 100f },
+                        modifier = Modifier.fillMaxWidth().height(5.dp),
+                        color = accent,
+                        trackColor = accent.copy(alpha = .15f),
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(item.total.toShortVnd(), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                    Text("$percent%", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
     }
 }

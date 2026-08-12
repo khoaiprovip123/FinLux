@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.repository.AuthRepository
+import com.finlux.app.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
@@ -16,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -29,10 +31,12 @@ data class AvatarUpdateState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    walletRepository: WalletRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val mutableUser = MutableStateFlow<UserProfile?>(null)
     val user = mutableUser.asStateFlow()
+    val wallets = walletRepository.observeWallets().stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val mutableAvatarState = MutableStateFlow(AvatarUpdateState())
     val avatarState = mutableAvatarState.asStateFlow()

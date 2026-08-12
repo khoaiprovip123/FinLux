@@ -46,6 +46,7 @@ import com.finlux.app.presentation.auth.SplashScreen
 import com.finlux.app.presentation.budget.BudgetScreen
 import com.finlux.app.presentation.category.CategoriesScreen
 import com.finlux.app.presentation.home.HomeScreen
+import com.finlux.app.presentation.expense.ExpenseScreen
 import com.finlux.app.presentation.income.IncomeScreen
 import com.finlux.app.presentation.notifications.NotificationsScreen
 import com.finlux.app.presentation.reminders.RemindersScreen
@@ -71,7 +72,7 @@ fun FinluxNavHost(
     var initialTransactionType by remember { mutableStateOf<TransactionType?>(null) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
+    val swipeThreshold = with(LocalDensity.current) { 44.dp.toPx() }
     var swipePreview by remember { mutableFloatStateOf(0f) }
     val navigateMain: (String) -> Unit = { route ->
         navController.navigate(route) {
@@ -87,31 +88,40 @@ fun FinluxNavHost(
                 val gesture = awaitPointerEventScope {
                     // Observe at the root without consuming. Child LazyRows/charts stay interactive.
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    val startedAt = down.uptimeMillis
                     var horizontalTravel = 0f
                     var verticalTravel = 0f
+                    var endedAt = startedAt
                     var pressed = true
                     swipePreview = 0f
                     while (pressed) {
-                        val event = awaitPointerEvent(PointerEventPass.Final)
+                        // Initial pass observes movement before a chart, LazyRow or vertical list can consume it.
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        horizontalTravel += change.position.x - change.previousPosition.x
-                        verticalTravel += change.position.y - change.previousPosition.y
+                        horizontalTravel = change.position.x - down.position.x
+                        verticalTravel = change.position.y - down.position.y
+                        endedAt = change.uptimeMillis
                         val horizontalDistance = kotlin.math.abs(horizontalTravel)
                         val verticalDistance = kotlin.math.abs(verticalTravel)
                         swipePreview = if (horizontalDistance > verticalDistance * 1.15f) {
-                            (horizontalTravel * 0.14f).coerceIn(-size.width * 0.075f, size.width * 0.075f)
+                            (horizontalTravel * 0.62f).coerceIn(-size.width * 0.32f, size.width * 0.32f)
                         } else 0f
                         pressed = change.pressed
                     }
-                    horizontalTravel to verticalTravel
+                    SwipeGesture(horizontalTravel, verticalTravel, (endedAt - startedAt).coerceAtLeast(1L))
                 }
-                val horizontalTravel = gesture.first
-                val verticalTravel = gesture.second
-                val targetRoute = mainRouteAfterSwipe(currentRoute, horizontalTravel, verticalTravel, swipeThreshold)
+                val horizontalTravel = gesture.horizontalTravel
+                val targetRoute = mainRouteAfterSwipe(
+                    currentRoute = currentRoute,
+                    horizontalTravel = horizontalTravel,
+                    verticalTravel = gesture.verticalTravel,
+                    threshold = swipeThreshold,
+                    elapsedMillis = gesture.elapsedMillis,
+                )
                 val releaseAnimation = Animatable(swipePreview)
                 if (targetRoute != null) {
-                    val releaseTarget = if (horizontalTravel < 0f) -size.width * 0.10f else size.width * 0.10f
-                    releaseAnimation.animateTo(releaseTarget, tween(90)) { swipePreview = value }
+                    val releaseTarget = if (horizontalTravel < 0f) -size.width * 0.38f else size.width * 0.38f
+                    releaseAnimation.animateTo(releaseTarget, tween(105)) { swipePreview = value }
                     swipePreview = 0f
                     navigateMain(targetRoute)
                 } else {
@@ -132,10 +142,10 @@ fun FinluxNavHost(
             startDestination = Route.Splash.value,
             modifier = Modifier.graphicsLayer {
                 translationX = swipePreview
-                val progress = (kotlin.math.abs(swipePreview) / (size.width * 0.10f).coerceAtLeast(1f)).coerceIn(0f, 1f)
-                scaleX = 1f - progress * 0.008f
-                scaleY = 1f - progress * 0.008f
-                alpha = 1f - progress * 0.035f
+                val progress = (kotlin.math.abs(swipePreview) / (size.width * 0.32f).coerceAtLeast(1f)).coerceIn(0f, 1f)
+                scaleX = 1f - progress * 0.012f
+                scaleY = 1f - progress * 0.012f
+                alpha = 1f - progress * 0.055f
             },
             enterTransition = {
                 val from = MainSwipeRoutes.indexOf(initialState.destination.route)
@@ -220,6 +230,16 @@ fun FinluxNavHost(
                     },
                 )
             }
+            composable(Route.Expense.value) {
+                ExpenseScreen(
+                    onBack = navController::popBackStack,
+                    onNavigate = navigateMain,
+                    onAddExpense = {
+                        initialTransactionType = TransactionType.EXPENSE
+                        showAddTransaction = true
+                    },
+                )
+            }
             composable(Route.Notifications.value) { NotificationsScreen() }
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
         }
@@ -279,6 +299,12 @@ private fun BoxScope.SwipeEdgeGlow(offset: Float) {
     )
 }
 
+private data class SwipeGesture(
+    val horizontalTravel: Float,
+    val verticalTravel: Float,
+    val elapsedMillis: Long,
+)
+
 private val MainSwipeRoutes = listOf(
     Route.Home.value,
     Route.Wallets.value,
@@ -295,11 +321,14 @@ internal fun mainRouteAfterSwipe(
     horizontalTravel: Float,
     verticalTravel: Float,
     threshold: Float,
+    elapsedMillis: Long = Long.MAX_VALUE,
 ): String? {
     val currentIndex = MainSwipeRoutes.indexOf(currentRoute)
     val horizontalDistance = kotlin.math.abs(horizontalTravel)
     val verticalDistance = kotlin.math.abs(verticalTravel)
-    if (currentIndex < 0 || horizontalDistance < threshold || horizontalDistance < verticalDistance * 1.25f) return null
+    val crossedDistance = horizontalDistance >= threshold
+    val quickFlick = elapsedMillis <= 360L && horizontalDistance >= threshold * 0.48f
+    if (currentIndex < 0 || (!crossedDistance && !quickFlick) || horizontalDistance < verticalDistance * 1.20f) return null
     val targetIndex = (currentIndex + if (horizontalTravel < 0f) 1 else -1).coerceIn(MainSwipeRoutes.indices)
     return MainSwipeRoutes.getOrNull(targetIndex)?.takeIf { targetIndex != currentIndex }
 }

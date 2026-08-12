@@ -30,11 +30,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -73,6 +84,11 @@ import com.finlux.app.domain.model.ThemePreference
 import com.finlux.app.domain.model.UiPreferences
 import com.finlux.app.domain.model.VisualStyle
 import com.finlux.app.presentation.components.MainBottomBar
+import com.finlux.app.presentation.home.toVnd
+import com.finlux.app.core.designsystem.FinluxBlue
+import com.finlux.app.core.designsystem.FinluxCyan
+import com.finlux.app.core.designsystem.FinluxPurple
+import com.finlux.app.core.navigation.Route
 import java.io.File
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
@@ -91,6 +107,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val user = viewModel.user.collectAsStateWithLifecycle().value
+    val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
+    val totalAssets = wallets.sumOf { it.balance.value }
     val avatarState = viewModel.avatarState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
     var showAvatarSource by remember { mutableStateOf(false) }
@@ -135,7 +153,15 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        topBar = { GlassTopBar(title = { Text("Cài đặt") }) },
+        topBar = {
+            GlassTopBar(
+                title = { },
+                actions = {
+                    IconButton(onClick = { onNavigate(Route.Notifications.value) }) { Icon(Icons.Default.NotificationsNone, "Thông báo") }
+                    IconButton(onClick = { }) { Icon(Icons.Default.Palette, "Giao diện") }
+                },
+            )
+        },
         bottomBar = { MainBottomBar("settings", onNavigate, onAdd) },
         containerColor = Color.Transparent,
     ) { padding ->
@@ -144,42 +170,29 @@ fun SettingsScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            item { AboutFinluxCard() }
+            item {
+                ProfileHero(
+                    name = user?.displayName ?: "Người dùng",
+                    email = user?.email.orEmpty(),
+                    photoUrl = user?.photoUrl,
+                    loading = avatarState.isLoading,
+                    totalAssets = totalAssets,
+                    onAvatar = { showAvatarSource = true },
+                )
+            }
+            avatarState.message?.let { message -> item {
+                Text(message, color = if (avatarState.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                LaunchedEffect(message) { delay(2_500); viewModel.clearAvatarMessage() }
+            } }
+            item { ProfileFeatureTiles(wallets.size, onNavigate) }
             item {
                 GlassCard(Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Hồ sơ người dùng", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            FinluxUserAvatar(
-                                photoUrl = user?.photoUrl,
-                                displayName = user?.displayName ?: "Người dùng",
-                                size = 88.dp,
-                                loading = avatarState.isLoading,
-                                editable = true,
-                                onClick = { showAvatarSource = true },
-                            )
-                            Spacer(Modifier.width(16.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(user?.displayName ?: "Người dùng", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                                Text(user?.email.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    "Chạm vào ảnh để đặt hoặc đổi ảnh đại diện",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                        avatarState.message?.let { message ->
-                            Text(
-                                message,
-                                color = if (avatarState.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            LaunchedEffect(message) {
-                                delay(2_500)
-                                viewModel.clearAvatarMessage()
-                            }
-                        }
+                    Column {
+                        ProfileMenuRow(Icons.Default.AccountBalanceWallet, "Ví và tài khoản") { onNavigate(Route.Wallets.value) }
+                        ProfileMenuRow(Icons.Default.Savings, "Ngân sách cá nhân") { onNavigate(Route.Budget.value) }
+                        ProfileMenuRow(Icons.Default.Category, "Quản lý danh mục") { onNavigate(Route.Categories.value) }
+                        ProfileMenuRow(Icons.Default.Alarm, "Nhắc nhở thanh toán") { onNavigate(Route.Reminders.value) }
+                        ProfileMenuRow(Icons.Default.NotificationsNone, "Thông báo") { onNavigate(Route.Notifications.value) }
                     }
                 }
             }
@@ -240,11 +253,86 @@ fun SettingsScreen(
                     }
                 }
             }
-            item { SettingsLink("Quản lý Danh mục") { onNavigate("categories") } }
-            item { SettingsLink("Quản lý Ví") { onNavigate("wallets") } }
-            item { SettingsLink("Nhắc nhở định kỳ") { onNavigate("reminders") } }
+            item { AboutFinluxCard() }
             item { Button(onClick = { viewModel.signOut(onSignedOut) }, modifier = Modifier.fillMaxWidth()) { Text("Đăng xuất") } }
         }
+    }
+}
+
+@Composable
+private fun ProfileHero(
+    name: String,
+    email: String,
+    photoUrl: String?,
+    loading: Boolean,
+    totalAssets: Long,
+    onAvatar: () -> Unit,
+) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp), color = Color.Transparent) {
+        Column(
+            Modifier.background(Brush.linearGradient(listOf(Color(0xFF7047F8), Color(0xFF3E69FF), Color(0xFF27B9F2)))).padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FinluxUserAvatar(photoUrl, name, 82.dp, loading = loading, editable = true, onClick = onAvatar)
+                Column(Modifier.weight(1f).padding(start = 15.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(name, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(" Premium ", Modifier.padding(start = 8.dp).background(Color(0xFFFFB547).copy(alpha = .24f), RoundedCornerShape(8.dp)).padding(horizontal = 5.dp, vertical = 2.dp), color = Color(0xFFFFD37A), style = MaterialTheme.typography.labelSmall)
+                    }
+                    Text(email, color = Color.White.copy(alpha = .84f), modifier = Modifier.padding(top = 5.dp))
+                    Text("Chạm ảnh để thay đổi", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall)
+                }
+                Icon(Icons.Default.ChevronRight, null, tint = Color.White)
+            }
+            Surface(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = Color(0xD9071B3D),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = .18f)),
+            ) {
+                Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text("Tổng tài sản", color = Color.White.copy(alpha = .76f))
+                        Text(totalAssets.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text("Quản lý tập trung và an toàn", color = Color(0xFF8DBBFF), style = MaterialTheme.typography.bodySmall)
+                    }
+                    FinluxBrandMark(size = 44.dp, framed = false)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileFeatureTiles(walletCount: Int, onNavigate: (String) -> Unit) {
+    val items = listOf(
+        ProfileTile("Ví của tôi", "$walletCount ví", Icons.Default.AccountBalanceWallet, FinluxBlue, Route.Wallets.value),
+        ProfileTile("Ngân sách", "Theo dõi", Icons.Default.Savings, FinluxPurple, Route.Budget.value),
+        ProfileTile("Danh mục", "Tùy chỉnh", Icons.Default.Category, FinluxCyan, Route.Categories.value),
+        ProfileTile("Nhắc nhở", "Định kỳ", Icons.Default.Alarm, Color(0xFFFF8A42), Route.Reminders.value),
+    )
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        items.forEach { item ->
+            GlassCard(Modifier.weight(1f).height(98.dp), onClick = { onNavigate(item.route) }) {
+                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
+                    Icon(item.icon, null, tint = item.accent)
+                    Text(item.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                    Text(item.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+
+private data class ProfileTile(val title: String, val subtitle: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val accent: Color, val route: String)
+
+@Composable
+private fun ProfileMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(21.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(label, Modifier.weight(1f).padding(horizontal = 13.dp), fontWeight = FontWeight.Medium)
+        Icon(Icons.Default.ChevronRight, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

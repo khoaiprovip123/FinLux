@@ -232,15 +232,33 @@ LAYOUT:
 ## 10. SCREEN: Báo cáo (Reports)
 ```
 Route: /reports
+THEME: luôn kế thừa `ThemePreference` + `VisualStyle` từ root; không ép nền tối cục bộ.
+  LAYOUT:
+  ┌─────────────────────────────────────┐
+  │ Segmented: Tháng | Quý | Năm | Tùy chọn │
+  │ GlassCard tổng quan: Thu nhập / Chi tiêu / Tiết kiệm + % so với kỳ trước │
+  │ Line chart: hai đường Thu-Chi, điểm dữ liệu, đường focus và tooltip theo ngày │
+  │ Treemap bất đối xứng: phân bổ Chi theo danh mục, số tiền và tỷ trọng │
+  │ Báo cáo theo ví: icon, số tiền, tỷ trọng và thanh tiến độ │
+  │ Button: "Xuất báo cáo" (icon) → mở dialog chọn Excel/PDF (UC-17) │
+  └─────────────────────────────────────┘
+STATES: Empty (chưa có dữ liệu trong kỳ) → hiện minh họa + gợi ý thêm giao dịch
+```
+
+## 10A. SCREEN: Chi tiêu (Expense)
+```
+Route: /expense
 LAYOUT:
 ┌─────────────────────────────────────┐
-│ Segmented: Tuần | Tháng | Năm | Tùy chọn │
-│ GlassCard: Tổng Thu / Tổng Chi / Số dư ròng │
-│ Pie chart: cơ cấu Chi theo danh mục (tap slice → xem chi tiết) │
-│ Bar/Line chart: Thu-Chi theo thời gian │
-│ Button: "Xuất báo cáo" (icon) → mở dialog chọn Excel/PDF (UC-17) │
+│ GlassTopBar: "Chi tiêu" | + Thêm    │
+│ Bộ chọn tháng trước/sau             │
+│ GradientHeroCard: Tổng chi + so sánh tháng trước │
+│ Donut: chi tiêu theo danh mục + tỷ trọng │
+│ Bar chart: chi tiêu từng ngày trong tháng │
+│ Danh sách giao dịch chi gần đây     │
+│ GlassBottomNav giống Dashboard      │
 └─────────────────────────────────────┘
-STATES: Empty (chưa có dữ liệu trong kỳ) → hiện minh họa + gợi ý thêm giao dịch
+ACTIONS: đổi tháng; nhấn "+ Thêm" mở form ở trạng thái Chi; tap KPI "Chi tháng này" từ Home để mở.
 ```
 
 ## 11. SCREEN: Thông báo (Notifications)
@@ -254,11 +272,13 @@ LAYOUT: Danh sách thông báo (cảnh báo ngân sách, nhắc bill), nhóm the
 Route: /settings
 LAYOUT:
 ┌─────────────────────────────────────┐
-│ GlassCard Giới thiệu FinLux: logo chính thức | slogan | phiên bản | mô tả ngắn │
-│ GlassCard hồ sơ: Avatar (tap chọn Thư viện/Camera) | Tên | Email │
+│ Hero gradient hồ sơ: Avatar (tap chọn Thư viện/Camera) | Tên | Email | Tổng tài sản │
+│ 4 thẻ nhanh: Ví | Ngân sách | Danh mục | Nhắc nhở │
+│ Menu quản lý và thông báo │
 │ Mục: Phong cách (Tối giản hiện đại/Glassmorphism/Gradient năng động) — UC-21 │
 │ Mục: Giao diện (Sáng/Tối/Hệ thống) — UC-06  │
 │ Mục: Liquid Glass (cường độ, mật độ thẻ, hiệu ứng chạm) — UC-21 │
+│ GlassCard Giới thiệu FinLux ở cuối: logo | slogan | phiên bản | mô tả │
 │ Mục: Quản lý Danh mục → /categories  │
 │ Mục: Quản lý Ví → /wallets           │
 │ Mục: Nhắc nhở định kỳ → /reminders (UC-18) │

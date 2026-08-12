@@ -217,6 +217,18 @@ Main flow:
 Business rule: Các giao dịch transfer_in không được tính là thu nhập (BR-07).
 ```
 
+### UC-23: Xem tổng hợp chi tiêu theo tháng
+```
+Actor: User
+Main flow:
+  1. Từ Dashboard chọn KPI "Chi tháng này"
+  2. Chọn tháng cần xem
+  3. Hệ thống lọc transaction có type = expense theo transaction.date và hiển thị tổng chi,
+     so sánh tháng trước, tỷ trọng danh mục, chi theo ngày và danh sách giao dịch
+  4. User nhấn "+ Thêm" để mở form giao dịch ở trạng thái Chi tiêu
+Business rule: transfer_out không được tính là chi tiêu (BR-07).
+```
+
 ---
 
 ## 4. Ma trận Business Rule tổng hợp

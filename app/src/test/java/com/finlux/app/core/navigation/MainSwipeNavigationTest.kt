@@ -31,4 +31,10 @@ class MainSwipeNavigationTest {
         assertNull(mainRouteAfterSwipe(Route.Reports.value, -100f, 120f, 72f))
         assertEquals(Route.Settings.value, mainRouteAfterSwipe(Route.Reports.value, -100f, 30f, 72f))
     }
+
+    @Test
+    fun `quick flick from reports opens settings before full distance threshold`() {
+        assertEquals(Route.Settings.value, mainRouteAfterSwipe(Route.Reports.value, -38f, 8f, 72f, 240L))
+        assertNull(mainRouteAfterSwipe(Route.Reports.value, -38f, 8f, 72f, 600L))
+    }
 }

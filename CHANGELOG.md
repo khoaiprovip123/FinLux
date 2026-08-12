@@ -1,5 +1,42 @@
 # CHANGELOG — Finlux
 
+## 0.6.3 - 2026-08-12
+
+- Căn chỉnh lại màn Báo cáo sát ảnh tham chiếu: tiêu đề, bộ chọn Tháng/Quý/Năm/Tùy chọn và các panel compact.
+- Tổng quan hiển thị Thu nhập/Chi tiêu/Tiết kiệm cùng tỷ lệ so với kỳ trước lấy từ dữ liệu thực.
+- Biểu đồ thu–chi chuyển thành hai đường có điểm dữ liệu, đường focus và tooltip; phân bổ chi dùng treemap bất đối xứng.
+- Báo cáo theo ví bổ sung icon, số tiền, tỷ trọng và thanh tiến độ; toàn màn hình tiếp tục kế thừa theme chung của ứng dụng.
+
+## 0.6.2 - 2026-08-12
+
+- Gỡ theme navy bị ép riêng trong màn Báo cáo; mọi route giờ dùng chung theme từ `FinluxRoot`.
+- Panel, segmented control, chữ, viền và bottom navigation của Báo cáo tự thích ứng sáng/tối và phong cách đã chọn.
+- Giữ màu xanh/đỏ/tím như màu dữ liệu và màu nhấn, không dùng chúng để thay đổi chế độ nền của màn hình.
+
+## 0.6.1 - 2026-08-12
+
+- Dựng lại ba màn Chi tiêu, Báo cáo và Hồ sơ theo tỷ lệ, màu sắc và phân cấp của ảnh chuẩn.
+- Chi tiêu dùng hero coral riêng, card gọn, danh mục có cả số tiền/tỷ trọng và biểu đồ ngày có trục ngày.
+- Báo cáo dùng nền navy chuyên biệt, segmented control, panel viền xanh, line chart và treemap gần reference.
+- Hồ sơ chuyển hero người dùng và tổng tài sản lên đầu, bốn thẻ tính năng, menu quản lý; phần Giới thiệu chuyển xuống cuối.
+- Chuẩn hóa panel compact dùng chung trong `core/designsystem`; đổi icon Hồ sơ sang biểu tượng người dùng.
+
+## 0.6.0 - 2026-08-12
+
+- Bổ sung màn Chi tiêu theo tháng: hero tổng chi, so sánh tháng trước, donut danh mục,
+  biểu đồ chi từng ngày và danh sách giao dịch gần đây từ repository thật.
+- Thẻ "Chi tháng này" trên Dashboard mở trực tiếp màn Chi tiêu.
+- Thiết kế lại Báo cáo: kỳ Tháng/Quý/Năm/Tùy chọn, tổng quan Thu–Chi–Tiết kiệm,
+  biểu đồ hai đường xu hướng, phân bổ chi tiêu dạng ô tỷ trọng và hoạt động theo ví.
+- Thiết kế lại Hồ sơ: hero gradient, avatar có thể thay đổi, thẻ truy cập nhanh và danh sách quản lý;
+  giữ phần Giới thiệu FinLux ở trên cùng cùng toàn bộ tùy biến giao diện hiện có.
+
+## 0.5.5 - 2026-08-12
+
+- Sửa triệt để vuốt từ Báo cáo sang Cài đặt bằng cách quan sát tọa độ ở pha đầu của pointer event.
+- Màn hình bám 62% quãng đường ngón tay, tối đa 32% chiều rộng, thay vì chỉ phản hồi rất nhẹ.
+- Hạ ngưỡng đổi trang và bổ sung nhận diện flick nhanh để thao tác ngắn nhưng dứt khoát vẫn có hiệu lực.
+
 ## 0.5.4 - 2026-08-12
 
 - Thêm phản hồi vuốt bám theo ngón tay, thu phóng rất nhẹ và ánh sáng gradient ở cạnh màn hình.

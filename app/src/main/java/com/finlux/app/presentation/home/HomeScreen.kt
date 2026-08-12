@@ -135,6 +135,7 @@ fun HomeScreen(
                             change = "▼ Đang theo dõi",
                             accent = ExpenseRed,
                             modifier = Modifier.weight(1f),
+                            onClick = { onNavigate(Route.Expense.value) },
                         )
                         ReferenceMetric(
                             title = "Ngân sách còn lại",

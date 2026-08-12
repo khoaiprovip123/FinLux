@@ -21,7 +21,7 @@ import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 
-enum class ReportPeriod(val label: String) { WEEK("Tuần"), MONTH("Tháng"), YEAR("Năm"), CUSTOM("Tùy chọn") }
+enum class ReportPeriod(val label: String) { MONTH("Tháng"), QUARTER("Quý"), YEAR("Năm"), CUSTOM("Tùy chọn") }
 data class ReportRange(val start: LocalDate, val end: LocalDate)
 data class CategoryExpense(val category: Category?, val amount: Long)
 data class DailyExpense(val date: LocalDate, val amount: Long)
@@ -39,6 +39,8 @@ data class ReportsUiState(
     val transactionCount: Int = 0,
     val averageExpense: Long = 0,
     val largestExpense: FinanceTransaction? = null,
+    val previousIncome: Long = 0,
+    val previousExpense: Long = 0,
     val previousNet: Long = 0,
 )
 
@@ -71,8 +73,11 @@ class ReportsViewModel @Inject constructor(
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
         val range = when (period) {
-            ReportPeriod.WEEK -> ReportRange(today.minusDays(6), today)
             ReportPeriod.MONTH -> ReportRange(today.with(TemporalAdjusters.firstDayOfMonth()), today)
+            ReportPeriod.QUARTER -> {
+                val firstMonth = ((today.monthValue - 1) / 3) * 3 + 1
+                ReportRange(today.withMonth(firstMonth).withDayOfMonth(1), today)
+            }
             ReportPeriod.YEAR -> ReportRange(today.with(TemporalAdjusters.firstDayOfYear()), today)
             ReportPeriod.CUSTOM -> custom
         }
@@ -122,6 +127,8 @@ class ReportsViewModel @Inject constructor(
             transactionCount = incomeItems.size + expenseItems.size,
             averageExpense = if (expenseItems.isEmpty()) 0 else expense / expenseItems.size,
             largestExpense = expenseItems.maxByOrNull { it.amount.value },
+            previousIncome = previousIncome,
+            previousExpense = previousExpense,
             previousNet = previousIncome - previousExpense,
         )
     }

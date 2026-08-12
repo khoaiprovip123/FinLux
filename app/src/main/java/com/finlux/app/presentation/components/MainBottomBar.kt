@@ -14,11 +14,11 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -57,7 +57,7 @@ fun MainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, onAdd: ()
             Icons.Filled.BarChart,
             Icons.Outlined.BarChart,
         )
-        DestinationItem(Route.Settings, "Hồ sơ", selectedRoute, onNavigate, Icons.Filled.Settings, Icons.Outlined.Settings)
+        DestinationItem(Route.Settings, "Hồ sơ", selectedRoute, onNavigate, Icons.Filled.Person, Icons.Outlined.Person)
     }
 }
 
@@ -75,7 +75,7 @@ private fun RowScope.DestinationItem(
     val selectedColor = when (style) {
         VisualStyle.MODERN_DARK -> FinluxBlue
         VisualStyle.GLASSMORPHISM -> Color.White
-        VisualStyle.DYNAMIC_GRADIENT -> FinluxPurple
+        VisualStyle.DYNAMIC_GRADIENT -> FinluxBlue
     }
     val unselectedColor = when (style) {
         VisualStyle.MODERN_DARK -> Color(0xFF7890AA)

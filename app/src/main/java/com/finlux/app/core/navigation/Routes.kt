@@ -13,6 +13,7 @@ sealed class Route(val value: String) {
     data object Categories : Route("categories")
     data object Wallets : Route("wallets")
     data object Income : Route("income")
+    data object Expense : Route("expense")
     data object Notifications : Route("notifications")
     data object Reminders : Route("reminders")
 }
