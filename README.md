@@ -1,10 +1,20 @@
 # Finlux Android
 
-Finlux là ứng dụng quản lý thu chi cá nhân viết bằng Kotlin, Jetpack Compose và Firebase. Source được tổ chức theo Clean Architecture trong một Android module:
+Finlux là ứng dụng quản lý thu chi cá nhân phong cách Liquid Glass độc đáo, được phát triển bằng Kotlin, Jetpack Compose và Firebase.
+
+## Giao diện ứng dụng
+
+| Đăng nhập / Xác thực | Màn hình chính (Home) | Quản lý Ngân sách | Báo cáo & Thống kê |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/qa-login.png" width="220" alt="Màn hình Đăng nhập"/> | <img src="docs/screenshots/qa-home.png" width="220" alt="Màn hình Chính"/> | <img src="docs/screenshots/qa-budget.png" width="220" alt="Màn hình Ngân sách"/> | <img src="docs/screenshots/qa-reports.png" width="220" alt="Màn hình Báo cáo"/> |
+
+## Cấu trúc dự án
+
+Source được tổ chức theo chuẩn Clean Architecture trong Android module:
 
 ```text
 app/src/main/java/com/finlux/app/
-├── core/           # common result, design system, navigation
+├── core/           # common result, design system (Liquid Glass), navigation
 ├── domain/         # model, repository contract, use case
 ├── data/           # DataStore, Firebase adapter, demo adapter, DI
 └── presentation/   # screen, ViewModel và UiState theo từng tính năng
