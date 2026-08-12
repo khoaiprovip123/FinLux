@@ -11,6 +11,7 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.repository.ReceiptStorageRepository
 import com.finlux.app.domain.usecase.AddTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ data class AddTransactionUiState(
     val walletId: String? = null,
     val note: String = "",
     val date: Instant = Instant.now(),
+    val receiptUri: String? = null,
     val wallets: List<Wallet> = emptyList(),
     val categories: List<Category> = emptyList(),
     val isSaving: Boolean = false,
@@ -40,6 +42,7 @@ data class AddTransactionUiState(
 class AddTransactionViewModel @Inject constructor(
     walletRepository: WalletRepository,
     categoryRepository: CategoryRepository,
+    private val receiptStorageRepository: ReceiptStorageRepository,
     private val addTransaction: AddTransactionUseCase,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(AddTransactionUiState())
@@ -74,10 +77,11 @@ class AddTransactionViewModel @Inject constructor(
     fun setWallet(id: String) = mutableState.update { it.copy(walletId = id, error = null) }
     fun setNote(value: String) = mutableState.update { it.copy(note = value, error = null) }
     fun setDate(value: Instant) = mutableState.update { it.copy(date = value, error = null) }
+    fun setReceipt(uri: String?) = mutableState.update { it.copy(receiptUri = uri, error = null) }
 
     fun save() {
         val snapshot = state.value
-        val transaction = FinanceTransaction(
+        val baseTransaction = FinanceTransaction(
             type = snapshot.type,
             amount = Money(snapshot.amountInput.toLongOrNull() ?: 0L),
             categoryId = snapshot.categoryId,
@@ -87,14 +91,23 @@ class AddTransactionViewModel @Inject constructor(
         )
         viewModelScope.launch {
             mutableState.update { it.copy(isSaving = true, error = null) }
-            when (val result = addTransaction(transaction)) {
+            val receiptUrl = snapshot.receiptUri?.let { uri ->
+                when (val upload = receiptStorageRepository.uploadReceipt(uri)) {
+                    is AppResult.Success -> upload.value
+                    is AppResult.Error -> {
+                        mutableState.update { it.copy(isSaving = false, error = upload.message) }
+                        return@launch
+                    }
+                }
+            }
+            when (val result = addTransaction(baseTransaction.copy(receiptImageUrl = receiptUrl))) {
                 is AppResult.Success -> mutableState.update { it.copy(isSaving = false, saved = true) }
                 is AppResult.Error -> mutableState.update { it.copy(isSaving = false, error = result.message) }
             }
         }
     }
 
-    fun consumeSaved() = mutableState.update { it.copy(saved = false, amountInput = "", note = "", date = Instant.now()) }
+    fun consumeSaved() = mutableState.update { it.copy(saved = false, amountInput = "", note = "", receiptUri = null, date = Instant.now()) }
 
     private fun TransactionType.toCategoryType() =
         if (this == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE

@@ -20,6 +20,7 @@ Không có vai trò Admin/Manager trong V1 (app cá nhân, không multi-user).
 | UC-03 | Đăng nhập bằng Google | User |
 | UC-04 | Quên mật khẩu | User |
 | UC-05 | Đổi ảnh đại diện | User |
+| UC-05A | Đổi tên hiển thị | User |
 | UC-06 | Chuyển đổi chế độ Sáng/Tối | User |
 | UC-07 | Thêm giao dịch (Thu/Chi) | User |
 | UC-08 | Sửa giao dịch | User |
@@ -36,6 +37,8 @@ Không có vai trò Admin/Manager trong V1 (app cá nhân, không multi-user).
 | UC-19 | Đồng bộ dữ liệu đa thiết bị | System |
 | UC-20 | Đăng xuất | User |
 | UC-21 | Tùy biến giao diện Liquid Glass | User |
+| UC-24 | Quét/chọn ảnh hóa đơn khi thêm Chi | User |
+| UC-25 | Quản lý mục tiêu tài chính | User |
 
 ---
 
@@ -79,6 +82,21 @@ Alternative flow:
   A3. Upload lỗi (mất mạng) → giữ ảnh cũ, báo lỗi, cho retry
 Postcondition: Avatar mới được lưu và đồng bộ mọi thiết bị
 Business rule: BR-03: Ảnh giới hạn tối đa 5MB, nén còn ~500KB trước upload
+```
+
+### UC-05A: Đổi tên hiển thị
+```
+Actor: User
+Precondition: Đã đăng nhập
+Main flow:
+  1. Vào Settings/Profile → chạm tên hoặc mục "Thông tin cá nhân"
+  2. Nhập tên hiển thị mới và nhấn "Lưu tên"
+  3. Hệ thống cập nhật hồ sơ người dùng
+  4. Tên mới hiển thị ngay tại Dashboard, Hồ sơ và avatar chữ cái
+Alternative flow:
+  A1. Tên trống → báo "Tên người dùng không được để trống"
+  A2. Không thể đồng bộ → giữ tên hiện tại và hiển thị lỗi
+Postcondition: displayName mới được lưu vào hồ sơ người dùng
 ```
 
 ### UC-06: Chuyển đổi chế độ Sáng/Tối
@@ -227,6 +245,27 @@ Main flow:
      so sánh tháng trước, tỷ trọng danh mục, chi theo ngày và danh sách giao dịch
   4. User nhấn "+ Thêm" để mở form giao dịch ở trạng thái Chi tiêu
 Business rule: transfer_out không được tính là chi tiêu (BR-07).
+```
+
+### UC-24: Quét/chọn ảnh hóa đơn
+```
+Actor: User
+Main flow:
+  1. Nhấn FAB "+" → Quét hóa đơn
+  2. Chụp ảnh bằng camera hoặc chọn ảnh có sẵn
+  3. App mở form Thêm Chi với ảnh đã đính kèm để user kiểm tra, nhập số tiền, danh mục và ví
+  4. Khi Lưu, ảnh được tải lên receipts/{uid}/ và URL được ghi cùng giao dịch
+Business rule: Ảnh hóa đơn không tự tạo giao dịch; user luôn xác nhận dữ liệu trước khi lưu.
+```
+
+### UC-25: Quản lý mục tiêu tài chính
+```
+Actor: User
+Main flow:
+  1. Nhấn FAB "+" → Thêm mục tiêu hoặc mở Mục tiêu từ Hồ sơ
+  2. Nhập tên, số tiền cần đạt, hạn hoàn thành, danh mục, khoản tích lũy mỗi tháng và ảnh tùy chọn
+  3. Lưu mục tiêu; danh sách cập nhật realtime và đồng bộ đa thiết bị khi dùng Firebase
+Business rule: Mục tiêu không tự trừ/cộng số dư ví và không được tính là giao dịch Thu/Chi.
 ```
 
 ---

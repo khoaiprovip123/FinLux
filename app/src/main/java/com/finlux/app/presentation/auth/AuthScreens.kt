@@ -1,10 +1,5 @@
 package com.finlux.app.presentation.auth
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,11 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,7 +25,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -63,7 +57,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -136,6 +129,7 @@ fun AuthScreen(
     mode: AuthMode,
     onCompleted: () -> Unit,
     onNavigate: (AuthMode) -> Unit,
+    onSocialSignIn: (SocialAuthProvider) -> Unit = {},
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
@@ -158,6 +152,7 @@ fun AuthScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .imePadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
         ) {
             // Header Section
@@ -166,28 +161,29 @@ fun AuthScreen(
                 onBack = { onNavigate(AuthMode.LOGIN) }
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(if (mode == AuthMode.LOGIN) 2.dp else 8.dp))
 
-            // Form Card Section
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(
-                        elevation = 16.dp,
-                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                        elevation = if (mode == AuthMode.LOGIN) 16.dp else 0.dp,
+                        shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) else RoundedCornerShape(0.dp),
                         ambientColor = Color(0x203B82F6),
                         spotColor = Color(0x304F46E5)
                     ),
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                color = Color.White,
+                shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) else RoundedCornerShape(0.dp),
+                color = Color.White.copy(alpha = if (mode == AuthMode.LOGIN) 1f else .90f),
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 28.dp)
+                        .padding(
+                            horizontal = 26.dp,
+                            vertical = if (mode == AuthMode.LOGIN) 26.dp else 12.dp,
+                        )
                 ) {
-                    // Mode Tabs (Login vs Register)
-                    if (mode == AuthMode.LOGIN || mode == AuthMode.REGISTER) {
+                    if (mode == AuthMode.LOGIN) {
                         AuthModeTabs(
                             currentMode = mode,
                             onTabSelected = onNavigate
@@ -197,7 +193,7 @@ fun AuthScreen(
 
                     // Form Fields according to Mode
                     when (mode) {
-                        AuthMode.LOGIN -> LoginFormContent(state, viewModel, onNavigate)
+                        AuthMode.LOGIN -> LoginFormContent(state, viewModel, onNavigate, onSocialSignIn)
                         AuthMode.REGISTER -> RegisterFormContent(state, viewModel, onNavigate)
                         AuthMode.FORGOT -> ForgotFormContent(state, viewModel, onNavigate)
                     }
@@ -212,19 +208,15 @@ private fun AuthHeaderSection(
     mode: AuthMode,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val wallet3dRes = remember { context.resources.getIdentifier("auth_wallet_3d", "drawable", context.packageName) }
-    val clipboard3dRes = remember { context.resources.getIdentifier("auth_clipboard_3d", "drawable", context.packageName) }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 24.dp, end = 24.dp, top = 44.dp, bottom = 12.dp)
+            .padding(start = 28.dp, end = 22.dp, top = 46.dp, bottom = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 if (mode == AuthMode.REGISTER || mode == AuthMode.FORGOT) {
@@ -244,44 +236,39 @@ private fun AuthHeaderSection(
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(18.dp))
                 }
 
-                FinluxLogoHeader(fontSize = 28.sp, isDark = false)
-                Spacer(Modifier.height(8.dp))
+                FinluxLogoHeader(fontSize = 27.sp, isDark = false)
+                Spacer(Modifier.height(12.dp))
 
                 Text(
                     text = mode.heading,
-                    fontSize = 23.sp,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF0F172A),
-                    lineHeight = 30.sp
+                    lineHeight = 25.sp,
+                    maxLines = 1,
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
 
                 Text(
                     text = mode.description,
-                    fontSize = 13.5.sp,
+                    fontSize = 13.sp,
                     color = Color(0xFF64748B),
                     lineHeight = 19.sp
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(4.dp))
 
-            // 3D Illustration Graphic
-            val imageRes = if (mode == AuthMode.REGISTER) clipboard3dRes else wallet3dRes
-            if (imageRes != 0) {
-                Image(
-                    painter = painterResource(id = imageRes),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(125.dp)
-                        .padding(top = 4.dp)
-                )
-            } else {
-                FinluxBrandMark(size = 90.dp, framed = true)
-            }
+            Image(
+                painter = painterResource(
+                    if (mode == AuthMode.REGISTER) R.drawable.auth_clipboard_3d_v2 else R.drawable.auth_wallet_3d_v2
+                ),
+                contentDescription = null,
+                modifier = Modifier.size(if (mode == AuthMode.LOGIN) 146.dp else 142.dp),
+            )
         }
     }
 }
@@ -293,7 +280,7 @@ private fun AuthModeTabs(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         val loginSelected = currentMode == AuthMode.LOGIN
         val registerSelected = currentMode == AuthMode.REGISTER
@@ -301,6 +288,7 @@ private fun AuthModeTabs(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
+                .weight(1f)
                 .clickable { onTabSelected(AuthMode.LOGIN) }
                 .padding(bottom = 6.dp)
         ) {
@@ -313,18 +301,17 @@ private fun AuthModeTabs(
             Spacer(Modifier.height(6.dp))
             Box(
                 modifier = Modifier
-                    .width(48.dp)
+                    .fillMaxWidth()
                     .height(3.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(if (loginSelected) Color(0xFF4F46E5) else Color.Transparent)
             )
         }
 
-        Spacer(Modifier.width(36.dp))
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
+                .weight(1f)
                 .clickable { onTabSelected(AuthMode.REGISTER) }
                 .padding(bottom = 6.dp)
         ) {
@@ -337,7 +324,7 @@ private fun AuthModeTabs(
             Spacer(Modifier.height(6.dp))
             Box(
                 modifier = Modifier
-                    .width(48.dp)
+                    .fillMaxWidth()
                     .height(3.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(if (registerSelected) Color(0xFF4F46E5) else Color.Transparent)
@@ -351,6 +338,7 @@ private fun LoginFormContent(
     state: AuthUiState,
     viewModel: AuthViewModel,
     onNavigate: (AuthMode) -> Unit,
+    onSocialSignIn: (SocialAuthProvider) -> Unit,
 ) {
     Column {
         FinluxInput(
@@ -439,7 +427,7 @@ private fun LoginFormContent(
         Spacer(Modifier.height(18.dp))
 
         // Social Login Cards Row
-        SocialLoginRow(onSocialClick = viewModel::signIn)
+        SocialLoginRow(onSocialClick = onSocialSignIn)
 
         Spacer(Modifier.height(28.dp))
 
@@ -724,7 +712,7 @@ private fun FinluxInput(
         onValueChange = onValueChange,
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp),
+            .height(58.dp),
         placeholder = {
             Text(
                 text = placeholder,
@@ -755,7 +743,7 @@ private fun FinluxInput(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
         singleLine = true,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(15.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color(0xFF4F46E5),
             unfocusedBorderColor = Color(0xFFE2E8F0),
@@ -777,7 +765,7 @@ private fun GradientButton(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .height(56.dp)
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(14.dp),
@@ -785,7 +773,7 @@ private fun GradientButton(
                 spotColor = Color(0x403B82F6)
             ),
         enabled = !isLoading,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(15.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
         contentPadding = androidx.compose.foundation.layout.PaddingValues()
     ) {
@@ -806,22 +794,18 @@ private fun GradientButton(
                     strokeWidth = 2.5.dp
                 )
             } else {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text = text,
-                        fontSize = 15.5.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Spacer(Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 18.dp).size(20.dp)
                     )
                 }
             }
@@ -847,27 +831,27 @@ private fun SocialDivider(text: String) {
 }
 
 @Composable
-private fun SocialLoginRow(onSocialClick: () -> Unit) {
+private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         SocialCard(
             title = "Google",
-            iconContent = { GoogleIcon() },
-            onClick = onSocialClick,
+            iconRes = R.drawable.ic_google_g,
+            onClick = { onSocialClick(SocialAuthProvider.GOOGLE) },
             modifier = Modifier.weight(1f)
         )
         SocialCard(
             title = "Apple",
-            iconContent = { AppleIcon() },
-            onClick = onSocialClick,
+            iconRes = R.drawable.ic_apple,
+            onClick = { onSocialClick(SocialAuthProvider.APPLE) },
             modifier = Modifier.weight(1f)
         )
         SocialCard(
             title = "Facebook",
-            iconContent = { FacebookIcon() },
-            onClick = onSocialClick,
+            iconRes = R.drawable.ic_facebook,
+            onClick = { onSocialClick(SocialAuthProvider.FACEBOOK) },
             modifier = Modifier.weight(1f)
         )
     }
@@ -876,26 +860,30 @@ private fun SocialLoginRow(onSocialClick: () -> Unit) {
 @Composable
 private fun SocialCard(
     title: String,
-    iconContent: @Composable () -> Unit,
+    iconRes: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier
-            .height(48.dp)
+            .height(76.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(15.dp),
         color = Color.White,
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
         shadowElevation = 1.dp
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            iconContent()
-            Spacer(Modifier.width(8.dp))
+            Image(
+                painter = painterResource(iconRes),
+                contentDescription = "Đăng nhập bằng $title",
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(Modifier.height(7.dp))
             Text(
                 text = title,
                 fontSize = 13.sp,
@@ -904,21 +892,6 @@ private fun SocialCard(
             )
         }
     }
-}
-
-@Composable
-private fun GoogleIcon() {
-    Text("G", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFEA4335))
-}
-
-@Composable
-private fun AppleIcon() {
-    Text("", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF000000))
-}
-
-@Composable
-private fun FacebookIcon() {
-    Text("f", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1877F2))
 }
 
 @Composable
@@ -948,3 +921,5 @@ enum class AuthMode(val title: String, val action: String, val heading: String, 
     FORGOT("Quên mật khẩu", "Gửi email khôi phục", "Khôi phục mật khẩu", "Nhập email để nhận liên kết đặt lại mật khẩu"),
 }
 
+/** UI contract for the future Credential Manager / provider SDK integrations. */
+enum class SocialAuthProvider { GOOGLE, APPLE, FACEBOOK }

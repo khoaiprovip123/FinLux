@@ -11,7 +11,10 @@ import com.google.firebase.storage.FirebaseStorage
 import android.net.Uri
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthRepository(
@@ -19,13 +22,15 @@ class FirebaseAuthRepository(
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage,
 ) : AuthRepository {
-    override val currentUser: Flow<UserProfile?> = callbackFlow {
+    private val profileUpdates = MutableSharedFlow<UserProfile?>(extraBufferCapacity = 1)
+    private val authState: Flow<UserProfile?> = callbackFlow {
         val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             trySend(firebaseAuth.currentUser?.toDomain())
         }
         auth.addAuthStateListener(listener)
         awaitClose { auth.removeAuthStateListener(listener) }
     }
+    override val currentUser: Flow<UserProfile?> = merge(authState, profileUpdates).distinctUntilChanged()
 
     override suspend fun signIn(email: String, password: String): AppResult<UserProfile> = runCatching {
         val user = auth.signInWithEmailAndPassword(email.trim(), password).await().user
@@ -58,6 +63,20 @@ class FirebaseAuthRepository(
         onFailure = { AppResult.Error(it.localizedMessage ?: "Không thể gửi email", it) },
     )
 
+    override suspend fun updateDisplayName(displayName: String): AppResult<UserProfile> = runCatching {
+        val normalizedName = displayName.trim()
+        require(normalizedName.isNotBlank()) { "Tên người dùng không được để trống" }
+        val user = auth.currentUser ?: error("Chưa đăng nhập")
+        user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(normalizedName).build()).await()
+        firestore.collection("users").document(user.uid)
+            .set(mapOf("displayName" to normalizedName), com.google.firebase.firestore.SetOptions.merge())
+            .await()
+        user.toDomain().copy(displayName = normalizedName).also { profileUpdates.tryEmit(it) }
+    }.fold(
+        onSuccess = { AppResult.Success(it) },
+        onFailure = { AppResult.Error(it.localizedMessage ?: "Không thể cập nhật tên", it) },
+    )
+
     override suspend fun updateAvatar(jpegBytes: ByteArray): AppResult<UserProfile> = runCatching {
         val user = auth.currentUser ?: error("Chưa đăng nhập")
         val reference = storage.reference.child("avatars/${user.uid}.jpg")
@@ -65,7 +84,7 @@ class FirebaseAuthRepository(
         val downloadUrl = reference.downloadUrl.await()
         user.updateProfile(UserProfileChangeRequest.Builder().setPhotoUri(downloadUrl).build()).await()
         firestore.collection("users").document(user.uid).update("photoUrl", downloadUrl.toString()).await()
-        user.toDomain().copy(photoUrl = downloadUrl.withCacheVersion().toString())
+        user.toDomain().copy(photoUrl = downloadUrl.withCacheVersion().toString()).also { profileUpdates.tryEmit(it) }
     }.fold(
         onSuccess = { AppResult.Success(it) },
         onFailure = { AppResult.Error(it.localizedMessage ?: "Không thể cập nhật ảnh đại diện", it) },

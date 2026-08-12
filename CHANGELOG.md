@@ -1,5 +1,33 @@
 # CHANGELOG — Finlux
 
+## 0.8.0 - 2026-08-12
+
+- Mở rộng menu FAB `+` thành 5 tác vụ: Thêm thu, Thêm chi, Chuyển tiền, Quét hóa đơn và Thêm mục tiêu.
+- Bổ sung màn quét/chọn ảnh hóa đơn; ảnh được chuyển sang form Chi và tải Firebase Storage trước khi lưu giao dịch.
+- Bổ sung mục tiêu tài chính với form đầy đủ, danh sách realtime, demo repository, Firestore repository và unit test validation.
+- Toàn bộ menu/form mới dùng backdrop, MaterialTheme và component Liquid Glass chung nên đồng bộ Sáng/Tối cùng ba phong cách người dùng chọn.
+
+## 0.7.3 - 2026-08-12
+
+- Xóa tên demo hard-code `Anh Khoa`; Dashboard và Hồ sơ luôn đọc `displayName` của người dùng hiện tại.
+- Thêm dialog đổi tên từ tên trên hero hoặc mục `Thông tin cá nhân`, có validation, loading và thông báo kết quả.
+- Tên mới phát realtime đến Dashboard, Hồ sơ và avatar; chế độ demo lưu local theo email đã đăng nhập.
+- Firebase cập nhật đồng thời Firebase Auth profile và `users/{uid}.displayName`; bổ sung use case cùng unit test.
+
+## 0.7.2 - 2026-08-12
+
+- Sửa bottom navigation bị che hoặc dồn nhãn trên thiết bị Android dùng thanh điều hướng ba phím.
+- Bỏ chiều cao tổng 72dp cưỡng ép để `BottomAppBar` tự cộng navigation-bar inset theo từng thiết bị.
+- Bổ sung navigation inset cho toàn bộ luồng Đăng nhập/Đăng ký khi ứng dụng chạy edge-to-edge.
+
+## 0.7.1 - 2026-08-12
+
+- Tinh chỉnh Đăng nhập/Đăng ký sát ảnh tham chiếu hơn: tăng tỷ lệ minh họa 3D, form compact và tab trải đều.
+- Màn Đăng ký dùng form liền nền; nút gradient có nhãn giữa và mũi tên canh phải như thiết kế.
+- Thay ký tự giả bằng vector logo màu Google, Apple và Facebook; social cards chuyển sang icon trên, nhãn dưới.
+- Tách callback theo từng social provider để sẵn sàng kết nối OAuth, đồng thời loại bỏ việc social button gọi nhầm đăng nhập email.
+- Tạo lại hai minh họa 3D với nền trong suốt để hòa vào header thay vì lộ khung ảnh vuông trên thiết bị thật.
+
 ## 0.7.0 - 2026-08-12
 
 - Thiết kế lại toàn bộ luồng Đăng nhập (Login) và Đăng ký (Register) bám sát 100% ảnh giao diện mẫu.

@@ -5,6 +5,7 @@ import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.Reminder
 import kotlinx.coroutines.flow.Flow
@@ -58,6 +59,17 @@ interface ReminderRepository {
     fun observeReminders(): Flow<List<Reminder>>
     suspend fun upsertReminder(reminder: Reminder): AppResult<String>
     suspend fun deleteReminder(reminder: Reminder): AppResult<Unit>
+}
+
+interface GoalRepository {
+    fun observeGoals(): Flow<List<FinancialGoal>>
+    suspend fun upsertGoal(goal: FinancialGoal): AppResult<String>
+    suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit>
+}
+
+interface ReceiptStorageRepository {
+    /** Returns a durable URL when Firebase is active, or the local URI in demo mode. */
+    suspend fun uploadReceipt(localUri: String): AppResult<String>
 }
 
 interface ReminderScheduler {

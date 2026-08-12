@@ -47,6 +47,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -110,9 +111,18 @@ fun SettingsScreen(
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
     val totalAssets = wallets.sumOf { it.balance.value }
     val avatarState = viewModel.avatarState.collectAsStateWithLifecycle().value
+    val nameState = viewModel.nameState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
     var showAvatarSource by remember { mutableStateOf(false) }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var showNameEditor by remember { mutableStateOf(false) }
+    var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
+
+    fun openNameEditor() {
+        nameDraft = user?.displayName.orEmpty()
+        viewModel.clearNameMessage()
+        showNameEditor = true
+    }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let(viewModel::updateAvatar)
@@ -152,6 +162,41 @@ fun SettingsScreen(
         )
     }
 
+    if (showNameEditor) {
+        AlertDialog(
+            onDismissRequest = { if (!nameState.isLoading) showNameEditor = false },
+            icon = { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text("Đổi tên người dùng") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Tên mới sẽ hiển thị đồng bộ ở Trang chủ và Hồ sơ.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = nameDraft,
+                        onValueChange = { nameDraft = it; viewModel.clearNameMessage() },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Tên người dùng") },
+                        singleLine = true,
+                        isError = nameState.isError,
+                        supportingText = nameState.message?.let { message -> { Text(message) } },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.updateDisplayName(nameDraft) }, enabled = !nameState.isLoading) {
+                    if (nameState.isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Text("Lưu tên")
+                }
+            },
+            dismissButton = { TextButton(onClick = { showNameEditor = false }, enabled = !nameState.isLoading) { Text("Hủy") } },
+        )
+    }
+    LaunchedEffect(nameState.message, nameState.isError) {
+        if (nameState.message != null && !nameState.isError) {
+            delay(650)
+            showNameEditor = false
+        }
+    }
+
     Scaffold(
         topBar = {
             GlassTopBar(
@@ -178,16 +223,22 @@ fun SettingsScreen(
                     loading = avatarState.isLoading,
                     totalAssets = totalAssets,
                     onAvatar = { showAvatarSource = true },
+                    onEditName = ::openNameEditor,
                 )
             }
             avatarState.message?.let { message -> item {
                 Text(message, color = if (avatarState.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
                 LaunchedEffect(message) { delay(2_500); viewModel.clearAvatarMessage() }
             } }
+            nameState.message?.takeIf { !showNameEditor }?.let { message -> item {
+                Text(message, color = if (nameState.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                LaunchedEffect(message) { delay(2_500); viewModel.clearNameMessage() }
+            } }
             item { ProfileFeatureTiles(wallets.size, onNavigate) }
             item {
                 GlassCard(Modifier.fillMaxWidth()) {
                     Column {
+                        ProfileMenuRow(Icons.Default.Edit, "Thông tin cá nhân") { openNameEditor() }
                         ProfileMenuRow(Icons.Default.AccountBalanceWallet, "Ví và tài khoản") { onNavigate(Route.Wallets.value) }
                         ProfileMenuRow(Icons.Default.Savings, "Ngân sách cá nhân") { onNavigate(Route.Budget.value) }
                         ProfileMenuRow(Icons.Default.Category, "Quản lý danh mục") { onNavigate(Route.Categories.value) }
@@ -267,6 +318,7 @@ private fun ProfileHero(
     loading: Boolean,
     totalAssets: Long,
     onAvatar: () -> Unit,
+    onEditName: () -> Unit,
 ) {
     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(26.dp), color = Color.Transparent) {
         Column(
@@ -275,15 +327,15 @@ private fun ProfileHero(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FinluxUserAvatar(photoUrl, name, 82.dp, loading = loading, editable = true, onClick = onAvatar)
-                Column(Modifier.weight(1f).padding(start = 15.dp)) {
+                Column(Modifier.weight(1f).padding(start = 15.dp).clickable(onClick = onEditName)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(name, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text(" Premium ", Modifier.padding(start = 8.dp).background(Color(0xFFFFB547).copy(alpha = .24f), RoundedCornerShape(8.dp)).padding(horizontal = 5.dp, vertical = 2.dp), color = Color(0xFFFFD37A), style = MaterialTheme.typography.labelSmall)
                     }
                     Text(email, color = Color.White.copy(alpha = .84f), modifier = Modifier.padding(top = 5.dp))
-                    Text("Chạm ảnh để thay đổi", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall)
+                    Text("Chạm tên để thay đổi", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall)
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = Color.White)
+                IconButton(onClick = onEditName) { Icon(Icons.Default.Edit, "Đổi tên người dùng", tint = Color.White) }
             }
             Surface(
                 Modifier.fillMaxWidth(),
@@ -311,10 +363,11 @@ private fun ProfileFeatureTiles(walletCount: Int, onNavigate: (String) -> Unit) 
         ProfileTile("Ngân sách", "Theo dõi", Icons.Default.Savings, FinluxPurple, Route.Budget.value),
         ProfileTile("Danh mục", "Tùy chỉnh", Icons.Default.Category, FinluxCyan, Route.Categories.value),
         ProfileTile("Nhắc nhở", "Định kỳ", Icons.Default.Alarm, Color(0xFFFF8A42), Route.Reminders.value),
+        ProfileTile("Mục tiêu", "Tích lũy", Icons.Default.Savings, FinluxPurple, Route.Goals.value),
     )
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-        items.forEach { item ->
-            GlassCard(Modifier.weight(1f).height(98.dp), onClick = { onNavigate(item.route) }) {
+    LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        items(items) { item ->
+            GlassCard(Modifier.width(92.dp).height(98.dp), onClick = { onNavigate(item.route) }) {
                 Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
                     Icon(item.icon, null, tint = item.accent)
                     Text(item.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, maxLines = 1)

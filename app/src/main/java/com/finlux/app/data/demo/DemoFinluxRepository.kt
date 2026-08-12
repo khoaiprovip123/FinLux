@@ -9,6 +9,7 @@ import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
@@ -20,9 +21,11 @@ import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
+import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.repository.ReminderRepository
+import com.finlux.app.domain.repository.ReceiptStorageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -51,15 +54,19 @@ class DemoFinluxRepository @Inject constructor(
     CategoryRepository,
     BudgetRepository,
     ReminderRepository,
+    GoalRepository,
+    ReceiptStorageRepository,
     DashboardRepository {
 
     private val mutationMutex = Mutex()
+    private val profilePreferences = context.getSharedPreferences("finlux_demo_profile", Context.MODE_PRIVATE)
     private val userState = MutableStateFlow<UserProfile?>(null)
     private val walletState = MutableStateFlow(seedWallets())
     private val categoryState = MutableStateFlow(seedCategories())
     private val transactionState = MutableStateFlow(seedTransactions())
     private val budgetState = MutableStateFlow(seedBudgets())
     private val reminderState = MutableStateFlow(seedReminders())
+    private val goalState = MutableStateFlow<List<FinancialGoal>>(emptyList())
 
     override val currentUser: Flow<UserProfile?> = userState
 
@@ -75,12 +82,23 @@ class DemoFinluxRepository @Inject constructor(
     ): AppResult<UserProfile> {
         if (displayName.isBlank()) return AppResult.Error("Vui lòng nhập họ tên")
         val user = demoUser(email).copy(displayName = displayName)
+        saveDemoProfile(user)
         userState.value = user
         return AppResult.Success(user)
     }
 
     override suspend fun sendPasswordReset(email: String): AppResult<Unit> =
         if (email.contains('@')) AppResult.Success(Unit) else AppResult.Error("Email không hợp lệ")
+
+    override suspend fun updateDisplayName(displayName: String): AppResult<UserProfile> {
+        val normalizedName = displayName.trim()
+        if (normalizedName.isBlank()) return AppResult.Error("Tên người dùng không được để trống")
+        val current = userState.value ?: return AppResult.Error("Chưa đăng nhập")
+        return AppResult.Success(current.copy(displayName = normalizedName).also {
+            saveDemoProfile(it)
+            userState.value = it
+        })
+    }
 
     override suspend fun updateAvatar(jpegBytes: ByteArray): AppResult<UserProfile> = runCatching {
         val current = userState.value ?: error("Chưa đăng nhập")
@@ -107,6 +125,25 @@ class DemoFinluxRepository @Inject constructor(
         budgetState.map { budgets -> budgets.filter { it.month == month } }
 
     override fun observeReminders(): Flow<List<Reminder>> = reminderState
+
+    override fun observeGoals(): Flow<List<FinancialGoal>> = goalState
+
+    override suspend fun uploadReceipt(localUri: String): AppResult<String> =
+        if (localUri.isBlank()) AppResult.Error("Không tìm thấy ảnh hóa đơn") else AppResult.Success(localUri)
+
+    override suspend fun upsertGoal(goal: FinancialGoal): AppResult<String> = mutationMutex.withLock {
+        val id = goal.id.ifBlank { UUID.randomUUID().toString() }
+        val stored = goal.copy(id = id)
+        goalState.value = if (goalState.value.any { it.id == id }) {
+            goalState.value.map { if (it.id == id) stored else it }
+        } else goalState.value + stored
+        AppResult.Success(id)
+    }
+
+    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = mutationMutex.withLock {
+        goalState.value = goalState.value.filterNot { it.id == goal.id }
+        AppResult.Success(Unit)
+    }
 
     override suspend fun upsertWallet(wallet: Wallet): AppResult<String> = mutationMutex.withLock {
         val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
@@ -278,7 +315,22 @@ class DemoFinluxRepository @Inject constructor(
         TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> -transaction.amount.value
     }
 
-    private fun demoUser(email: String) = UserProfile("demo-user", "Anh Khoa", email)
+    private fun demoUser(email: String): UserProfile {
+        val normalizedEmail = email.trim()
+        val savedEmail = profilePreferences.getString("email", null)
+        val savedName = profilePreferences.getString("displayName", null)
+        val displayName = savedName
+            ?.takeIf { savedEmail.equals(normalizedEmail, ignoreCase = true) && it.isNotBlank() }
+            ?: normalizedEmail.substringBefore('@').ifBlank { "Người dùng" }
+        return UserProfile("demo-user", displayName, normalizedEmail)
+    }
+
+    private fun saveDemoProfile(user: UserProfile) {
+        profilePreferences.edit()
+            .putString("displayName", user.displayName)
+            .putString("email", user.email)
+            .apply()
+    }
 
     private companion object {
         fun seedWallets() = listOf(

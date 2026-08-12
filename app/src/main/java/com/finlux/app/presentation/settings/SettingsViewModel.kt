@@ -10,6 +10,7 @@ import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.usecase.UpdateDisplayNameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
@@ -28,9 +29,16 @@ data class AvatarUpdateState(
     val isError: Boolean = false,
 )
 
+data class NameUpdateState(
+    val isLoading: Boolean = false,
+    val message: String? = null,
+    val isError: Boolean = false,
+)
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val updateDisplayNameUseCase: UpdateDisplayNameUseCase,
     walletRepository: WalletRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -40,6 +48,8 @@ class SettingsViewModel @Inject constructor(
 
     private val mutableAvatarState = MutableStateFlow(AvatarUpdateState())
     val avatarState = mutableAvatarState.asStateFlow()
+    private val mutableNameState = MutableStateFlow(NameUpdateState())
+    val nameState = mutableNameState.asStateFlow()
 
     init {
         viewModelScope.launch { authRepository.currentUser.collect { mutableUser.value = it } }
@@ -65,6 +75,22 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun clearAvatarMessage() = mutableAvatarState.update { it.copy(message = null) }
+
+    fun updateDisplayName(displayName: String) {
+        if (mutableNameState.value.isLoading) return
+        viewModelScope.launch {
+            mutableNameState.value = NameUpdateState(isLoading = true)
+            when (val result = updateDisplayNameUseCase(displayName)) {
+                is AppResult.Success -> {
+                    mutableUser.value = result.value
+                    mutableNameState.value = NameUpdateState(message = "Đã cập nhật tên người dùng")
+                }
+                is AppResult.Error -> mutableNameState.value = NameUpdateState(message = result.message, isError = true)
+            }
+        }
+    }
+
+    fun clearNameMessage() = mutableNameState.update { it.copy(message = null) }
 
     fun signOut(onDone: () -> Unit) {
         viewModelScope.launch {

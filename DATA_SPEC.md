@@ -62,6 +62,16 @@ users/{uid}
   │    ├─ enabled: boolean
   │    └─ nextTriggerDate: timestamp
   │
+  ├─ goals/{goalId}                 -- mục tiêu tài chính (UC-25)
+  │    ├─ name: string
+  │    ├─ targetAmount: number
+  │    ├─ savedAmount: number
+  │    ├─ deadline: timestamp
+  │    ├─ category: string
+  │    ├─ monthlyContribution: number
+  │    ├─ imageUri: string          -- optional
+  │    └─ createdAt: timestamp
+  │
   └─ notifications/{notificationId}
        ├─ title: string
        ├─ body: string

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.CallMade
 import androidx.compose.material.icons.filled.CallReceived
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ fun QuickAddSheet(
     onExpense: () -> Unit,
     onTransfer: () -> Unit,
     onReceipt: () -> Unit,
+    onGoal: () -> Unit,
 ) {
     GlassBottomSheet(onDismiss = onDismiss) {
         Column(
@@ -57,6 +59,7 @@ fun QuickAddSheet(
                 QuickAction("Chuyển tiền", "Giữa các ví", Icons.Default.SwapHoriz, FinluxBlue, Modifier.weight(1f), onTransfer)
                 QuickAction("Scan hóa đơn", "Nhập khoản chi", Icons.Default.DocumentScanner, FinluxPurple, Modifier.weight(1f), onReceipt)
             }
+            QuickAction("Thêm mục tiêu", "Lập kế hoạch tích lũy", Icons.Default.TrackChanges, FinluxPurple, Modifier.fillMaxWidth(), onGoal)
         }
     }
 }

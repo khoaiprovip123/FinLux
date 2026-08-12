@@ -3,10 +3,12 @@ package com.finlux.app.domain.usecase
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
+import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
+import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.ReminderRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
@@ -79,4 +81,18 @@ class DeleteReminderUseCase @Inject constructor(
         if (result is AppResult.Success) scheduler.cancel(reminder.id)
         return result
     }
+}
+
+class SaveGoalUseCase @Inject constructor(private val repository: GoalRepository) {
+    suspend operator fun invoke(goal: FinancialGoal): AppResult<String> {
+        if (goal.name.isBlank()) return AppResult.Error("Vui lòng nhập tên mục tiêu")
+        if (goal.targetAmount.value <= 0L) return AppResult.Error("Số tiền mục tiêu phải lớn hơn 0")
+        if (goal.monthlyContribution.value < 0L) return AppResult.Error("Số tiền tích lũy không hợp lệ")
+        if (goal.category.isBlank()) return AppResult.Error("Vui lòng chọn danh mục")
+        return repository.upsertGoal(goal.copy(name = goal.name.trim()))
+    }
+}
+
+class DeleteGoalUseCase @Inject constructor(private val repository: GoalRepository) {
+    suspend operator fun invoke(goal: FinancialGoal): AppResult<Unit> = repository.deleteGoal(goal)
 }

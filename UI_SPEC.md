@@ -10,6 +10,8 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
 - **Chuyển động:** khi cuộn (scroll) nội dung phía sau, lớp kính phải blur theo thời gian thực (không phải ảnh tĩnh) — dùng `RenderEffect` gắn vào layer chứa nội dung cuộn phía sau top bar/bottom nav.
 - **Theme sáng/tối:** xem BR-04 (BA_SPEC) — light: kính sáng + viền trắng; dark: kính tối (đen mờ) + viền sáng nhẹ + glow màu accent nhạt.
 - **Fallback thiết bị < Android 12:** thay blur động bằng lớp overlay `Brush.verticalGradient` bán trong suốt tĩnh, giữ đúng bố cục — không blur real-time (giới hạn kỹ thuật `RenderEffect`).
+- **System bar insets:** mọi màn edge-to-edge phải chừa `statusBars`/`navigationBars` theo thiết bị. `GlassBottomNav`
+  không ép chiều cao tổng; vùng nội dung 80dp được cộng thêm navigation inset để không bị ba phím Android che.
 - **Component chuẩn cần build:** `GlassCard`, `GlassTopBar`, `GlassBottomNav`, `GlassBottomSheet`, `GlassDialog`, `GlassFAB` — dùng chung 1 base `LiquidGlassSurface` composable.
 
 > **Đã xác nhận theo visual reference 12/08/2026:** màu chủ đạo xanh `#3478F6`, phối tím
@@ -84,6 +86,13 @@ LAYOUT:
 │  - Footer: "Bằng việc đăng nhập..."     │
 └─────────────────────────────────────────┘
 
+VISUAL ALIGNMENT (12/08/2026):
+  - Header dùng nền trắng-xanh rất nhạt, logo chữ FinLux bên trái và minh họa ví 3D bên phải.
+  - Form đăng nhập là surface trắng bo riêng hai góc trên 32dp; tab trải đều toàn chiều rộng.
+  - Social Cards cao 76dp, icon thương hiệu ở trên và tên provider ở dưới, ba thẻ có cùng kích thước.
+  - Google/Apple/Facebook có contract callback riêng để kết nối provider SDK sau này; chưa tự chạy OAuth
+    khi chưa có Client ID, redirect URI và cấu hình Firebase/Meta/Apple hợp lệ.
+
 VALIDATION:
   - Email: đúng định dạng → "Email không hợp lệ"
   - Mật khẩu: không rỗng → "Vui lòng nhập mật khẩu"
@@ -101,8 +110,7 @@ LAYOUT:
 │  - Subtitle: "Bắt đầu hành trình..."   │
 │  - 3D Illustration: Clipboard + Shield │
 ├─────────────────────────────────────────┤
-│ Form Card (Bottom White Container):     │
-│  - Tab Switcher: Đăng nhập | [Đăng ký]  │
+│ Form Area (liền với nền sáng):          │
 │  - Field: Họ và tên                     │
 │  - Field: Email                         │
 │  - Field: Số điện thoại                 │
@@ -141,7 +149,7 @@ STATES:
   - Error: "Không tải được dữ liệu, thử lại" + nút Retry
 
 ACTIONS:
-  - FAB "+" → menu tạo nhanh: Thêm Thu, Thêm Chi, Chuyển tiền, nhập khoản Chi từ hóa đơn
+  - FAB "+" → menu tạo nhanh: Thêm Thu, Thêm Chi, Chuyển tiền, Quét hóa đơn, Thêm mục tiêu
   - Tap KPI "Thu tháng này" → /income; tap KPI "Ngân sách còn lại" → /budget
   - Tap giao dịch → /transaction/{id} (sửa)
   - Tap avatar → /profile
@@ -289,9 +297,10 @@ LAYOUT: Danh sách thông báo (cảnh báo ngân sách, nhắc bill), nhóm the
 Route: /settings
 LAYOUT:
 ┌─────────────────────────────────────┐
-│ Hero gradient hồ sơ: Avatar (tap chọn Thư viện/Camera) | Tên | Email | Tổng tài sản │
+│ Hero gradient hồ sơ: Avatar (tap chọn Thư viện/Camera) | Tên (tap để đổi) | Email | Tổng tài sản │
 │ 4 thẻ nhanh: Ví | Ngân sách | Danh mục | Nhắc nhở │
 │ Menu quản lý và thông báo │
+│ Mục: Thông tin cá nhân → dialog đổi tên hiển thị (UC-05A) │
 │ Mục: Phong cách (Tối giản hiện đại/Glassmorphism/Gradient năng động) — UC-21 │
 │ Mục: Giao diện (Sáng/Tối/Hệ thống) — UC-06  │
 │ Mục: Liquid Glass (cường độ, mật độ thẻ, hiệu ứng chạm) — UC-21 │
@@ -314,6 +323,20 @@ LAYOUT:
 - Đổi phong cách áp dụng tức thời, giữ lại sau khi mở lại ứng dụng và không thay đổi dữ liệu tài chính.
 
 ## 13. SCREEN: Nhắc nhở định kỳ (Reminders/Bill)
+```
+
+## 15. SCREEN: Quét hóa đơn
+```
+Route: lớp phủ toàn màn hình từ FAB
+LAYOUT: top bar đóng/flash, khung quét bo 28dp, nút thư viện, nút chụp lớn; màu kính đọc từ theme chung.
+ACTIONS: chụp/chọn ảnh → /transaction/add ở trạng thái Chi và hiển thị "Đã đính kèm hóa đơn".
+```
+
+## 16. SCREEN: Mục tiêu tài chính
+```
+Route: /goals
+LAYOUT: danh sách GlassCard mục tiêu và form full screen: tên, số tiền, hạn, danh mục, tích lũy/tháng, ảnh.
+STATES: Empty State có CTA; form có validation/loading/error. Toàn màn hình thích ứng Sáng/Tối và VisualStyle.
 ```
 Route: /reminders
 LAYOUT: Danh sách bill định kỳ (tên, số tiền, chu kỳ, ngày nhắc tiếp theo) + FAB thêm mới

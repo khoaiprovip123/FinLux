@@ -64,11 +64,13 @@ import java.time.format.DateTimeFormatter
 fun AddTransactionSheet(
     onDismiss: () -> Unit,
     initialType: TransactionType? = null,
+    initialReceiptUri: String? = null,
     viewModel: AddTransactionViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
     var showDatePicker by remember { mutableStateOf(false) }
     LaunchedEffect(initialType) { initialType?.let(viewModel::setType) }
+    LaunchedEffect(initialReceiptUri) { if (initialReceiptUri != null) viewModel.setReceipt(initialReceiptUri) }
     LaunchedEffect(state.saved) { if (state.saved) { viewModel.consumeSaved(); onDismiss() } }
     GlassBottomSheet(onDismiss = onDismiss) {
         Column(
@@ -128,6 +130,15 @@ fun AddTransactionSheet(
                 }
             }
             OutlinedTextField(state.note, viewModel::setNote, Modifier.fillMaxWidth(), label = { Text("Ghi chú / mô tả") }, minLines = 2, maxLines = 4)
+            GlassCard(Modifier.fillMaxWidth(), onClick = { }) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.ReceiptLong, null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text(if (state.receiptUri == null) "Không có ảnh hóa đơn" else "Đã đính kèm hóa đơn", fontWeight = FontWeight.Bold)
+                        Text(if (state.receiptUri == null) "Dùng Quét hóa đơn từ menu + để thêm ảnh" else "Ảnh sẽ được lưu cùng giao dịch", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(viewModel::save, Modifier.fillMaxWidth().height(54.dp), enabled = !state.isSaving) {
                 Text(if (state.isSaving) "Đang lưu…" else "Lưu giao dịch", fontWeight = FontWeight.Bold)

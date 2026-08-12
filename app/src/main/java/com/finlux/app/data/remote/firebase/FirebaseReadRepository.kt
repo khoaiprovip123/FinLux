@@ -5,6 +5,7 @@ import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.DashboardSummary
+import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
@@ -14,6 +15,7 @@ import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
+import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.repository.ReminderRepository
 import com.google.firebase.Timestamp
@@ -33,7 +35,7 @@ import java.util.UUID
 class FirebaseReadRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-) : WalletRepository, CategoryRepository, BudgetRepository, ReminderRepository, DashboardRepository {
+) : WalletRepository, CategoryRepository, BudgetRepository, ReminderRepository, GoalRepository, DashboardRepository {
 
     override fun observeWallets(): Flow<List<Wallet>> = callbackFlow {
         val uid = auth.currentUser?.uid
@@ -87,6 +89,20 @@ class FirebaseReadRepository(
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
                 else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toReminder() })
+            }
+        awaitClose { registration.remove() }
+    }
+
+    override fun observeGoals(): Flow<List<FinancialGoal>> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            close()
+            return@callbackFlow
+        }
+        val registration = firestore.collection("users").document(uid).collection("goals")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) close(error)
+                else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toGoal() })
             }
         awaitClose { registration.remove() }
     }
@@ -153,6 +169,20 @@ class FirebaseReadRepository(
     override suspend fun deleteReminder(reminder: Reminder): AppResult<Unit> = firebaseResult("Không thể xóa nhắc nhở") {
         val uid = requireUid()
         firestore.collection("users").document(uid).collection("reminders").document(reminder.id).delete().await()
+        Unit
+    }
+
+    override suspend fun upsertGoal(goal: FinancialGoal): AppResult<String> = firebaseResult("Không thể lưu mục tiêu") {
+        val uid = requireUid()
+        val id = goal.id.ifBlank { UUID.randomUUID().toString() }
+        firestore.collection("users").document(uid).collection("goals").document(id)
+            .set(goal.copy(id = id).toGoalMap()).await()
+        id
+    }
+
+    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = firebaseResult("Không thể xóa mục tiêu") {
+        val uid = requireUid()
+        firestore.collection("users").document(uid).collection("goals").document(goal.id).delete().await()
         Unit
     }
 
@@ -223,6 +253,17 @@ private fun Reminder.toReminderMap(): Map<String, Any?> = mapOf(
     "nextTriggerDate" to Timestamp(Date.from(nextTriggerDate)),
 )
 
+private fun FinancialGoal.toGoalMap(): Map<String, Any?> = mapOf(
+    "name" to name,
+    "targetAmount" to targetAmount.value,
+    "savedAmount" to savedAmount.value,
+    "deadline" to Timestamp(Date.from(deadline)),
+    "category" to category,
+    "monthlyContribution" to monthlyContribution.value,
+    "imageUri" to imageUri,
+    "createdAt" to Timestamp(Date.from(createdAt)),
+)
+
 private fun DocumentSnapshot.toWallet(): Wallet? = runCatching {
     Wallet(
         id = id,
@@ -270,5 +311,19 @@ private fun DocumentSnapshot.toReminder(): Reminder? = runCatching {
         startDate = requireNotNull(getTimestamp("startDate")).toDate().toInstant(),
         enabled = getBoolean("enabled") ?: true,
         nextTriggerDate = requireNotNull(getTimestamp("nextTriggerDate")).toDate().toInstant(),
+    )
+}.getOrNull()
+
+private fun DocumentSnapshot.toGoal(): FinancialGoal? = runCatching {
+    FinancialGoal(
+        id = id,
+        name = requireNotNull(getString("name")),
+        targetAmount = Money(getLong("targetAmount") ?: 0L),
+        savedAmount = Money(getLong("savedAmount") ?: 0L),
+        deadline = requireNotNull(getTimestamp("deadline")).toDate().toInstant(),
+        category = getString("category") ?: "Khác",
+        monthlyContribution = Money(getLong("monthlyContribution") ?: 0L),
+        imageUri = getString("imageUri"),
+        createdAt = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now(),
     )
 }.getOrNull()

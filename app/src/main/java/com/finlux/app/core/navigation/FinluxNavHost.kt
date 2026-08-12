@@ -48,6 +48,7 @@ import com.finlux.app.presentation.category.CategoriesScreen
 import com.finlux.app.presentation.home.HomeScreen
 import com.finlux.app.presentation.expense.ExpenseScreen
 import com.finlux.app.presentation.income.IncomeScreen
+import com.finlux.app.presentation.goal.GoalsScreen
 import com.finlux.app.presentation.notifications.NotificationsScreen
 import com.finlux.app.presentation.reminders.RemindersScreen
 import com.finlux.app.presentation.reports.ReportsScreen
@@ -57,6 +58,7 @@ import com.finlux.app.presentation.transaction.TransactionsScreen
 import com.finlux.app.presentation.wallet.WalletsScreen
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.presentation.components.QuickAddSheet
+import com.finlux.app.presentation.receipt.ReceiptCaptureScreen
 
 @Composable
 fun FinluxNavHost(
@@ -70,6 +72,8 @@ fun FinluxNavHost(
     var showQuickAdd by remember { mutableStateOf(false) }
     var walletTransferRequest by remember { mutableStateOf(0) }
     var initialTransactionType by remember { mutableStateOf<TransactionType?>(null) }
+    var pendingReceiptUri by remember { mutableStateOf<String?>(null) }
+    var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val swipeThreshold = with(LocalDensity.current) { 44.dp.toPx() }
@@ -242,14 +246,17 @@ fun FinluxNavHost(
             }
             composable(Route.Notifications.value) { NotificationsScreen() }
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
+            composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
         }
         SwipeEdgeGlow(swipePreview)
         if (showAddTransaction) {
             AddTransactionSheet(
                 initialType = initialTransactionType,
+                initialReceiptUri = pendingReceiptUri,
                 onDismiss = {
                     showAddTransaction = false
                     initialTransactionType = null
+                    pendingReceiptUri = null
                 },
             )
         }
@@ -273,6 +280,20 @@ fun FinluxNavHost(
                 },
                 onReceipt = {
                     showQuickAdd = false
+                    showReceiptCapture = true
+                },
+                onGoal = {
+                    showQuickAdd = false
+                    navController.navigate(Route.Goals.value)
+                },
+            )
+        }
+        if (showReceiptCapture) {
+            ReceiptCaptureScreen(
+                onDismiss = { showReceiptCapture = false },
+                onCaptured = { uri ->
+                    showReceiptCapture = false
+                    pendingReceiptUri = uri
                     initialTransactionType = TransactionType.EXPENSE
                     showAddTransaction = true
                 },

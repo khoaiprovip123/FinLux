@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,7 +42,9 @@ import com.finlux.app.domain.model.VisualStyle
 
 @Composable
 fun MainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, onAdd: () -> Unit) {
-    GlassBottomNav(Modifier.fillMaxWidth().height(72.dp)) {
+    // BottomAppBar owns navigation-bar insets. Do not force a total height here:
+    // on 3-button devices that would squeeze the 48dp system inset into the content area.
+    GlassBottomNav(Modifier.fillMaxWidth()) {
         DestinationItem(Route.Home, "Trang chủ", selectedRoute, onNavigate, Icons.Filled.Home, Icons.Outlined.Home)
         DestinationItem(Route.Wallets, "Ví", selectedRoute, onNavigate, Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet)
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {

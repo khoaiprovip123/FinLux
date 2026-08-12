@@ -82,6 +82,19 @@ data class Reminder(
     val nextTriggerDate: Instant,
 )
 
+/** A user-defined saving target. Goal balances are independent from wallet balances. */
+data class FinancialGoal(
+    val id: String = "",
+    val name: String,
+    val targetAmount: Money,
+    val savedAmount: Money = Money(0),
+    val deadline: Instant,
+    val category: String,
+    val monthlyContribution: Money,
+    val imageUri: String? = null,
+    val createdAt: Instant = Instant.now(),
+)
+
 /** Local-only visual preferences. Financial data remains unaffected. */
 data class UiPreferences(
     val visualStyle: VisualStyle = VisualStyle.DYNAMIC_GRADIENT,

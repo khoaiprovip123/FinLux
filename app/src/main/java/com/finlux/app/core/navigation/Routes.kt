@@ -16,4 +16,5 @@ sealed class Route(val value: String) {
     data object Expense : Route("expense")
     data object Notifications : Route("notifications")
     data object Reminders : Route("reminders")
+    data object Goals : Route("goals")
 }
