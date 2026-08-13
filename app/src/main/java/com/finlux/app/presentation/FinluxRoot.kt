@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 fun FinluxRoot(
     viewModel: RootViewModel = hiltViewModel(),
     destinationFlow: MutableStateFlow<String?>? = null,
+    payNotificationIdFlow: MutableStateFlow<String?>? = null,
 ) {
     val theme = viewModel.theme.collectAsStateWithLifecycle().value
     val uiPreferences = viewModel.uiPreferences.collectAsStateWithLifecycle().value
@@ -22,6 +23,7 @@ fun FinluxRoot(
             uiPreferences = uiPreferences,
             onUiPreferencesChanged = viewModel::setUiPreferences,
             destinationFlow = destinationFlow,
+            payNotificationIdFlow = payNotificationIdFlow,
         )
     }
 }

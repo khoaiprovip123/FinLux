@@ -32,10 +32,11 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val ReminderChannelId = "finlux_reminders"
+private const val ReminderChannelId = "finlux_reminders_v2"
 private const val ACTION_TRIGGER = "com.finlux.app.ACTION_TRIGGER_REMINDER"
 private const val ACTION_PAY = "com.finlux.app.ACTION_PAY_REMINDER"
 private const val ACTION_SNOOZE = "com.finlux.app.ACTION_SNOOZE_REMINDER"
+private const val ACTION_EDIT_PAYMENT = "com.finlux.app.ACTION_EDIT_PAYMENT"
 
 @Singleton
 class AlarmReminderScheduler @Inject constructor(
@@ -136,9 +137,17 @@ class ReminderReceiver : BroadcastReceiver() {
             }
 
             else -> {
-                notifications.createNotificationChannel(
-                    NotificationChannel(ReminderChannelId, "Nhắc nhở tài chính", NotificationManager.IMPORTANCE_HIGH),
-                )
+                val channel = NotificationChannel(
+                    ReminderChannelId,
+                    "Nhắc nhở tài chính",
+                    NotificationManager.IMPORTANCE_HIGH,
+                ).apply {
+                    description = "Thông báo nhắc nhở thanh toán tài chính Finlux"
+                    enableVibration(true)
+                    enableLights(true)
+                    lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                }
+                notifications.createNotificationChannel(channel)
                 val body = if (amount > 0) {
                     "Đến hạn thanh toán khoản ${NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(amount)}"
                 } else {
@@ -212,6 +221,19 @@ class ReminderReceiver : BroadcastReceiver() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
+                val editIntent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("destination", "notifications")
+                    putExtra("pay_notification_id", id)
+                    putExtra("reminder_id", id)
+                }
+                val editPending = PendingIntent.getActivity(
+                    context,
+                    (id + "_edit").hashCode(),
+                    editIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+
                 notifications.notify(
                     id.hashCode(),
                     NotificationCompat.Builder(context, ReminderChannelId)
@@ -220,9 +242,13 @@ class ReminderReceiver : BroadcastReceiver() {
                         .setContentText(body)
                         .setAutoCancel(true)
                         .setContentIntent(openApp)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .addAction(R.drawable.ic_finlux, "Đã thanh toán", payPending)
-                        .addAction(R.drawable.ic_finlux, "Nhắc lại sau 1h", snoozePending)
+                        .addAction(R.drawable.ic_finlux, "Sửa số tiền", editPending)
+                        .addAction(R.drawable.ic_finlux, "Nhắc lại 1h", snoozePending)
                         .build(),
                 )
 

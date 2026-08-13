@@ -54,6 +54,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxPurple
+import com.finlux.app.core.designsystem.NotificationPermissionHandler
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassDialogSurface
 import com.finlux.app.core.designsystem.GlassTopBar
@@ -69,6 +70,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun RemindersScreen(onBack: () -> Unit, viewModel: RemindersViewModel = hiltViewModel()) {
+    NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
     var editing by remember { mutableStateOf<Reminder?>(null) }

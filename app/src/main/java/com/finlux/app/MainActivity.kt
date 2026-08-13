@@ -13,12 +13,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val destinationFlow = MutableStateFlow<String?>(null)
+    private val payNotificationIdFlow = MutableStateFlow<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handleIntent(intent)
-        setContent { FinluxRoot(destinationFlow = destinationFlow) }
+        setContent {
+            FinluxRoot(
+                destinationFlow = destinationFlow,
+                payNotificationIdFlow = payNotificationIdFlow,
+            )
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -31,6 +37,10 @@ class MainActivity : ComponentActivity() {
         val dest = intent?.getStringExtra("destination")
         if (!dest.isNullOrBlank()) {
             destinationFlow.value = dest
+        }
+        val payId = intent?.getStringExtra("pay_notification_id")
+        if (!payId.isNullOrBlank()) {
+            payNotificationIdFlow.value = payId
         }
     }
 }

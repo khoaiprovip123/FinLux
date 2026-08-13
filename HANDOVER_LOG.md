@@ -1,9 +1,131 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.5.2 (versionCode 55)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Fix triệt để Bug trừ tiền 2 lần khi thanh toán thông báo
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.2 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+- **Phiên bản hiện tại:** v1.5.6 (versionCode 65)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Tự động xin quyền Runtime POST_NOTIFICATIONS & Dialog hướng dẫn bật Cài đặt
+- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.6 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+
+---
+
+## [DONE] Task v1.5.6: Auto Request Notification Permission & Settings Guide
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **Auto Runtime Permission Request (`POST_NOTIFICATIONS` - Android 13+):** Tự động kiểm tra quyền `Manifest.permission.POST_NOTIFICATIONS` và `NotificationManagerCompat.areNotificationsEnabled()`. Khi người dùng vào `HomeScreen.kt` hoặc `RemindersScreen.kt`, tự động kích hoạt popup xin quyền hệ thống.
+- **Friendly Settings Guide Dialog:** Nếu quyền bị từ chối hoặc bị tắt trong Cài đặt hệ thống (trên Xiaomi, OPPO, Vivo...), hiển thị Dialog Liquid Glass "Bật thông báo để không bỏ lỡ hạn thanh toán" kèm nút `[Bật trong Cài đặt]` mở trực tiếp `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`.
+- **Bump Version:** Nâng `versionName` lên `1.5.6` và `versionCode` `62`.
+- **Test & Rebuild:** Chạy unit test PASS 100% và rebuild nạp APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa / tạo mới
+| File | Thay đổi |
+|---|---|
+| `NotificationPermissionHandler.kt` | ✅ [NEW] Helper tự động xin quyền `POST_NOTIFICATIONS` & Dialog Liquid Glass hướng dẫn mở Cài đặt ứng dụng |
+| `HomeScreen.kt` | ✅ Tự động kích hoạt luồng kiểm tra / xin quyền khi vào Trang chủ |
+| `RemindersScreen.kt` | ✅ Tự động kiểm tra / xin quyền khi vào màn hình Nhắc nhở |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 62`, `versionName 1.5.6` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.6 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.5.5: Restore Heads-up Dropdown Banner Notification Channel & Priority
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **Notification Channel Upgrade (`AlarmReminderScheduler.kt`):** Cập nhật `ReminderChannelId` thành `"finlux_reminders_v2"` để ép Android OS tạo mới Kênh thông báo độ ưu tiên cao. Cấu hình `IMPORTANCE_HIGH`, `enableVibration(true)`, `enableLights(true)`, và `lockscreenVisibility = VISIBILITY_PUBLIC`.
+- **Heads-up Dropdown Banner (`NotificationCompat.Builder`):** Thêm `.setPriority(NotificationCompat.PRIORITY_MAX)`, `.setDefaults(NotificationCompat.DEFAULT_ALL)`, `.setCategory(NotificationCompat.CATEGORY_REMINDER)`, và `.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)` để đảm bảo thông báo luôn thả xuống dạng Banner trượt từ đỉnh màn hình khi báo thức nổ.
+- **Bump Version:** Nâng `versionName` lên `1.5.5` và `versionCode` `60`.
+- **Test & Rebuild:** Chạy unit test PASS 100% và rebuild nạp APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa / tạo mới
+| File | Thay đổi |
+|---|---|
+| `AlarmReminderScheduler.kt` | ✅ Khởi tạo Kênh thông báo mới `finlux_reminders_v2` độ ưu tiên cao (`IMPORTANCE_HIGH`), thêm `PRIORITY_MAX`, `DEFAULT_ALL`, rung & hiển thị Banner thả xuống |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 60`, `versionName 1.5.5` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.5 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.5.4: Update Actual Paid Amount on Notification Record
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **Update Notification Paid Record:** Khi thanh toán thành công với số tiền thực tế đã sửa `customAmount`, cập nhật cả trường `amount` và `body` của `AppNotification` thành số tiền mới trong Firestore & local database.
+- **Display Actual Amount on Card (`NotificationsScreen.kt`):** Thẻ thông báo đã thanh toán hiển thị rõ ràng con số thực trả (ví dụ `Đã thanh toán: 1.950.000 ₫` màu xanh lá).
+- **Repository Support (`NotificationRepository.kt`):** Thêm phương thức `markAsPaidWithAmount(id, amount, body)`.
+- **Bump Version:** Nâng `versionName` lên `1.5.4` và `versionCode` `58`.
+- **Test & Rebuild:** Chạy unit test PASS 100% và rebuild nạp APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa / tạo mới
+| File | Thay đổi |
+|---|---|
+| `NotificationRepository.kt` | ✅ Thêm phương thức `markAsPaidWithAmount(id, amount, newBody)` |
+| `FirebaseReadRepository.kt` | ✅ Cập nhật `amount` và `body` mới vào Firestore khi đánh dấu `isPaid = true` |
+| `DemoFinluxRepository.kt` | ✅ Cập nhật `amount` và `body` cho local state flow |
+| `NotificationsViewModel.kt` | ✅ Gọi `markAsPaidWithAmount` với số tiền thực trả `customAmount` sau khi tạo giao dịch thành công |
+| `NotificationsScreen.kt` | ✅ Thẻ thông báo hiển thị con số thực trả đã sửa (ví dụ: `Đã thanh toán: 1.950.000 ₫`) |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 58`, `versionName 1.5.4` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.4 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.5.3: Variable Amount Quick Payment Sheet
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **Quick Payment Sheet (`NotificationsScreen.kt`):** Khi bấm nút `[Thanh toán]`, mở ModalBottomSheet "Xác nhận & Điều chỉnh số tiền" thiết kế Liquid Glass. Cho phép nhập số tiền thực tế (với preview định dạng VND), chọn ví & danh mục trước khi bấm `[Xác nhận trừ tiền]`.
+- **System Push Action `[✏️ Sửa số tiền]` (`AlarmReminderScheduler.kt`):** Thêm Notification Action `[✏️ Sửa số tiền]` trên Push Notification hệ thống. Bấm vào sẽ mở app và tự động bật Quick Payment Sheet của thông báo đó.
+- **Deep Link Extras Handling (`MainActivity.kt` & `FinluxNavHost.kt`):** Bắt `pay_notification_id` và tự động kích hoạt Quick Payment Sheet tương ứng khi navigate vào `NotificationsScreen`.
+- **ViewModel Update (`NotificationsViewModel.kt`):** Thêm hàm `payNotificationWithCustomAmount` xử lý tạo giao dịch với số tiền mới đã điều chỉnh, cập nhật số dư ví, ngân sách và đánh dấu `isPaid = true`.
+- **Bump Version:** Nâng `versionName` lên `1.5.3` và `versionCode` `57`.
+- **Test & Rebuild:** Chạy unit test PASS 100% và rebuild nạp APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi, bao gồm `NotificationsViewModelTest` bổ sung test case điều chỉnh số tiền thực tế `payNotificationWithCustomAmount`).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa / tạo mới
+| File | Thay đổi |
+|---|---|
+| `AlarmReminderScheduler.kt` | ✅ Bổ sung Notification Action `[✏️ Sửa số tiền]` (`ACTION_EDIT_PAYMENT`) mở app & đính kèm extra |
+| `MainActivity.kt` | ✅ Nhận `pay_notification_id` Intent Extra đẩy vào `payNotificationIdFlow` |
+| `FinluxRoot.kt` & `FinluxNavHost.kt` | ✅ Truyền `payNotificationIdFlow` cho `NotificationsScreen` |
+| `NotificationsViewModel.kt` | ✅ Thêm `payNotificationWithCustomAmount`, quan sát danh sách ví & danh mục chi tiêu |
+| `NotificationsScreen.kt` | ✅ Thiết kế Quick Payment Sheet (ModalBottomSheet) với ô nhập số tiền thực tế, preview VND, chọn ví & danh mục |
+| `NotificationsViewModelTest.kt` | ✅ Bổ sung unit test `payNotificationWithCustomAmount_executesWithUpdatedAmount` PASS 100% |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 57`, `versionName 1.5.3` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.3 |
+
+### Trạng thái
+`[DONE]`
 
 ---
 

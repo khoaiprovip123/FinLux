@@ -5,6 +5,7 @@ import com.finlux.app.domain.model.AppNotification
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
+import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.usecase.AddTransactionUseCase
@@ -30,6 +31,7 @@ class NotificationsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val notificationRepository: NotificationRepository = mockk(relaxed = true)
     private val walletRepository: WalletRepository = mockk(relaxed = true)
+    private val categoryRepository: CategoryRepository = mockk(relaxed = true)
     private val addTransactionUseCase: AddTransactionUseCase = mockk(relaxed = true)
 
     private lateinit var viewModel: NotificationsViewModel
@@ -48,12 +50,14 @@ class NotificationsViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         coEvery { walletRepository.observeWallets() } returns flowOf(listOf(testWallet))
+        coEvery { categoryRepository.observeCategories() } returns flowOf(emptyList())
         coEvery { addTransactionUseCase.invoke(any()) } returns AppResult.Success("tx_001")
         coEvery { notificationRepository.observeNotifications() } returns flowOf(emptyList())
 
         viewModel = NotificationsViewModel(
             notificationRepository = notificationRepository,
             walletRepository = walletRepository,
+            categoryRepository = categoryRepository,
             addTransactionUseCase = addTransactionUseCase,
         )
     }
@@ -77,7 +81,30 @@ class NotificationsViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { addTransactionUseCase.invoke(any()) }
-        coVerify(exactly = 1) { notificationRepository.markAsPaid("noti_001") }
+        coVerify(exactly = 1) { notificationRepository.markAsPaidWithAmount("noti_001", Money(500_000L), any()) }
+    }
+
+    @Test
+    fun payNotificationWithCustomAmount_executesWithUpdatedAmount() = runTest {
+        val notification = AppNotification(
+            id = "noti_003",
+            title = "Tiền điện kèm nước",
+            amount = Money(500_000L),
+            reminderId = "rem_003",
+            isPaid = false,
+        )
+
+        // User adjusts estimated 500k to actual bill 750k
+        viewModel.payNotificationWithCustomAmount(
+            notification = notification,
+            customAmount = 750_000L,
+        )
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            addTransactionUseCase.invoke(match { it.amount.value == 750_000L })
+        }
+        coVerify(exactly = 1) { notificationRepository.markAsPaidWithAmount("noti_003", Money(750_000L), any()) }
     }
 
     @Test
@@ -87,14 +114,13 @@ class NotificationsViewModelTest {
             title = "Tiền nước tháng 8",
             amount = Money(200_000L),
             reminderId = "rem_002",
-            isPaid = true, // Already paid!
+            isPaid = true,
         )
 
         viewModel.payNotification(notification)
         advanceUntilIdle()
 
-        // MUST NOT execute transaction or mark as paid again!
         coVerify(exactly = 0) { addTransactionUseCase.invoke(any()) }
-        coVerify(exactly = 0) { notificationRepository.markAsPaid(any()) }
+        coVerify(exactly = 0) { notificationRepository.markAsPaidWithAmount(any(), any(), any()) }
     }
 }

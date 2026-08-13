@@ -71,6 +71,7 @@ fun FinluxNavHost(
     onUiPreferencesChanged: (UiPreferences) -> Unit,
     navController: NavHostController = rememberNavController(),
     destinationFlow: MutableStateFlow<String?>? = null,
+    payNotificationIdFlow: MutableStateFlow<String?>? = null,
 ) {
     var showAddTransaction by remember { mutableStateOf(false) }
     var showQuickAdd by remember { mutableStateOf(false) }
@@ -206,7 +207,12 @@ fun FinluxNavHost(
                     },
                 )
             }
-            composable(Route.Notifications.value) { NotificationsScreen(onBack = navController::popBackStack) }
+            composable(Route.Notifications.value) { 
+                NotificationsScreen(
+                    onBack = navController::popBackStack,
+                    payNotificationIdFlow = payNotificationIdFlow,
+                ) 
+            }
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
         }
