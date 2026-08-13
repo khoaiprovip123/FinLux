@@ -98,7 +98,7 @@ fun WalletsScreen(
         topBar = {
             GlassTopBar(
                 title = { Text("Ví của tôi", fontWeight = FontWeight.Bold) },
-                navigationIcon = { if (onBack != null && onNavigate == null) IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Quay lại") } },
+                navigationIcon = { IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) { Icon(Icons.Default.ArrowBack, "Quay lại") } },
                 actions = { IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm ví") } },
             )
         },
@@ -223,6 +223,7 @@ private fun WalletEditor(initial: Wallet?, busy: Boolean, onDismiss: () -> Unit,
                 OutlinedTextField(
                     balance, { balance = it.filter(Char::isDigit).take(15) }, Modifier.fillMaxWidth(),
                     label = { Text(if (initial == null) "Số dư ban đầu" else "Số dư hiện tại") },
+                    supportingText = { Text((balance.toLongOrNull() ?: 0L).toVnd()) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true,
                 )
                 Text("Màu thẻ", fontWeight = FontWeight.Bold)
@@ -254,7 +255,12 @@ private fun TransferEditor(wallets: List<Wallet>, busy: Boolean, onDismiss: () -
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(wallets) { wallet -> FilterChip(source == wallet.id, { source = wallet.id; if (destination == wallet.id) destination = wallets.firstOrNull { it.id != wallet.id }?.id.orEmpty() }, { Text(wallet.name) }) } }
                 Text("Ví nhận", fontWeight = FontWeight.Bold)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(wallets.filter { it.id != source }) { wallet -> FilterChip(destination == wallet.id, { destination = wallet.id }, { Text(wallet.name) }) } }
-                OutlinedTextField(amount, { amount = it.filter(Char::isDigit).take(15) }, Modifier.fillMaxWidth(), label = { Text("Số tiền") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                OutlinedTextField(
+                    amount, { amount = it.filter(Char::isDigit).take(15) }, Modifier.fillMaxWidth(),
+                    label = { Text("Số tiền") },
+                    supportingText = { Text((amount.toLongOrNull() ?: 0L).toVnd()) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true,
+                )
                 OutlinedTextField(note, { note = it.take(120) }, Modifier.fillMaxWidth(), label = { Text("Ghi chú") })
                 Button({ onTransfer(source, destination, amount.toLongOrNull() ?: 0, note.trim()) }, Modifier.fillMaxWidth(), enabled = amount.toLongOrNull()?.let { it > 0 } == true && source != destination && !busy) {
                     Text(if (busy) "Đang chuyển…" else "Xác nhận chuyển tiền")

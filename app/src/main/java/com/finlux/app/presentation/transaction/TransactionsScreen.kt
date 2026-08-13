@@ -51,8 +51,15 @@ import com.finlux.app.presentation.home.toVnd
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.finlux.app.core.navigation.Route
+
 @Composable
-fun TransactionsScreen(viewModel: TransactionsViewModel = hiltViewModel()) {
+fun TransactionsScreen(
+    onNavigate: ((String) -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
+    viewModel: TransactionsViewModel = hiltViewModel(),
+) {
     val transactions = viewModel.transactions.collectAsStateWithLifecycle().value
     val filter = viewModel.filter.collectAsStateWithLifecycle().value
     val total = transactions.sumOf { it.amount.value }
@@ -60,7 +67,16 @@ fun TransactionsScreen(viewModel: TransactionsViewModel = hiltViewModel()) {
     var pendingDelete by remember { mutableStateOf<FinanceTransaction?>(null) }
     LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
     Scaffold(
-        topBar = { GlassTopBar(title = { Text("Giao dịch", style = MaterialTheme.typography.titleLarge) }) },
+        topBar = {
+            GlassTopBar(
+                title = { Text("Giao dịch", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                    }
+                },
+            )
+        },
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->

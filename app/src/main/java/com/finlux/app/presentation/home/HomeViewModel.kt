@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.repository.AuthRepository
@@ -39,16 +40,26 @@ class HomeViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     budgetRepository: BudgetRepository,
 ) : ViewModel() {
+    private val currentMonth = YearMonth.now()
+
     private val summaryAndBudget = combine(
         dashboardRepository.observeCurrentMonthSummary(),
-        budgetRepository.observeBudgets(YearMonth.now()),
-    ) { summary, budgets ->
+        budgetRepository.observeBudgets(currentMonth),
+        transactionRepository.observeMonth(currentMonth),
+    ) { summary, budgets, monthTransactions ->
+        // BR-09: Calculate spentAmount dynamically from actual transactions,
+        // so "Ngân sách còn lại" is always accurate regardless of stored spentAmount field.
+        val spentByCategory = monthTransactions
+            .filter { it.type == TransactionType.EXPENSE && it.categoryId != null }
+            .groupBy { it.categoryId!! }
+            .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
         val limit = budgets.sumOf { it.limitAmount.value }
-        val spent = budgets.sumOf { it.spentAmount.value }
+        val spent = budgets.sumOf { spentByCategory[it.categoryId] ?: 0L }
         val remaining = limit - spent
         val percent = if (limit <= 0L) 0 else ((remaining.coerceAtLeast(0L) * 100L) / limit).toInt()
         Triple(summary, remaining, percent)
     }
+
     val state = combine(
         authRepository.currentUser,
         summaryAndBudget,

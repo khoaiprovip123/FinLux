@@ -22,8 +22,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 26
-        versionName = "0.8.0"
+        versionCode = 37
+        versionName = "1.4.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

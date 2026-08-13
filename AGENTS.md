@@ -19,6 +19,24 @@ giao diện Liquid Glass. Đọc `CONTEXT.md`, `BA_SPEC.md`, `UI_SPEC.md`, `DATA
 7. **Không commit khóa bí mật** (`google-services.json` thật, service account key) — dùng file mẫu
    `.example` và thêm vào `.gitignore`.
 
+## 📋 QUY TRÌNH QUẢN LÝ TÀI LIỆU CHUẨN (Document Management SOP)
+
+### HANDOVER_LOG.md — Bắt buộc ghi 2 bước
+**PRE-EXECUTION** (Trước khi gõ code):
+- Tạo mục task mới trong `HANDOVER_LOG.md`.
+- Ghi rõ: Mục tiêu, scope thay đổi, danh sách file dự kiến chỉnh sửa.
+- Gán trạng thái `[IN PROGRESS]`.
+
+**POST-EXECUTION** (Sau khi xong):
+- Cập nhật kết quả chạy test (số test pass/fail).
+- Liệt kê đầy đủ danh sách file đã thực sự chỉnh sửa.
+- Đổi trạng thái sang `[DONE]`.
+
+### CHANGELOG.md — Chỉ ghi sau khi build thành công
+- Chỉ được ghi nhận thông tin phiên bản release (`[vX.Y.Z]`, ngày tháng, `[Added]`, `[Changed]`, `[Fixed]`)
+  **SAU KHI** đã chạy `gradlew testDebugUnitTest` pass 100% **VÀ** build APK thành công.
+- Không ghi CHANGELOG trước khi test hoàn tất.
+
 ## Thứ tự triển khai đề xuất
 1. Design system (theme, LiquidGlassSurface, GlassCard, GlassTopBar, GlassBottomNav)
 2. Auth module (Login/Register/Google Sign-In) + Firestore seed data khi tạo user mới
@@ -42,3 +60,20 @@ giao diện Liquid Glass. Đọc `CONTEXT.md`, `BA_SPEC.md`, `UI_SPEC.md`, `DATA
 ## Cập nhật tài liệu
 Mỗi khi thay đổi phạm vi/nghiệp vụ trong lúc code, cập nhật lại `BA_SPEC.md`/`UI_SPEC.md` tương ứng
 và ghi log vào `CHANGELOG.md` — không để code và tài liệu lệch nhau.
+
+## 🚀 MANDATORY RELEASE & VERSIONING WORKFLOW
+Mỗi khi người dùng yêu cầu build release, đóng gói APK hoàn chỉnh, hoặc chuẩn bị commit tính năng mới:
+1. **AUTO VERSION BUMP:**
+   - Tự động kiểm tra `versionCode` và `versionName` trong `app/build.gradle.kts` (hoặc `libs.versions.toml`).
+   - Tự động tăng `versionCode` lên +1.
+   - Cập nhật `versionName` theo chuẩn Semantic Versioning (X.Y.Z) tương ứng với quy mô thay đổi (Patch/Minor/Major).
+
+2. **AUTO CHANGELOG & DOCS SYNC:**
+   - Tự động thêm mục phiên bản mới lên đầu file `CHANGELOG.md` theo chuẩn "Keep a Changelog".
+   - Tóm tắt ngắn gọn các thay đổi vừa thực hiện vào 3 mục: `[Added]`, `[Changed]`, `[Fixed]`.
+   - Cập nhật thông tin version tương ứng trong `HANDOVER_LOG.md`.
+
+3. **VERIFY & COMMIT:**
+   - Chạy `gradlew testDebugUnitTest` đảm bảo 100% PASS trước khi build.
+   - Commit thay đổi với message: `bump(release): vX.Y.Z - [Tóm tắt ngắn]`.
+

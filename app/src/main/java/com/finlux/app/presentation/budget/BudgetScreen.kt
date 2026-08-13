@@ -1,5 +1,6 @@
 package com.finlux.app.presentation.budget
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -63,7 +64,12 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun BudgetScreen(onNavigate: (String) -> Unit, onAdd: () -> Unit, viewModel: BudgetViewModel = hiltViewModel()) {
+fun BudgetScreen(
+    onNavigate: (String) -> Unit,
+    onAdd: () -> Unit,
+    onBack: (() -> Unit)? = null,
+    viewModel: BudgetViewModel = hiltViewModel()
+) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
     var editing by remember { mutableStateOf<BudgetItemUi?>(null) }
@@ -74,7 +80,12 @@ fun BudgetScreen(onNavigate: (String) -> Unit, onAdd: () -> Unit, viewModel: Bud
     Scaffold(
         topBar = {
             GlassTopBar(
-                title = { Text("Ngân sách") },
+                title = { Text("Ngân sách", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { onBack?.invoke() ?: onNavigate(Route.Home.value) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                    }
+                },
                 actions = { IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm ngân sách") } },
             )
         },
@@ -109,7 +120,7 @@ fun BudgetScreen(onNavigate: (String) -> Unit, onAdd: () -> Unit, viewModel: Bud
                         Text(limit.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Đã chi ${spent.toShortVnd()}", color = Color.White.copy(alpha = .84f))
-                            Text("Còn lại ${(limit - spent).toShortVnd()}", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Còn lại ${(limit - spent).toVnd()}", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -149,7 +160,15 @@ private fun BudgetEditor(categories: List<Category>, month: YearMonth, initial: 
                 Text("Áp dụng tháng ${month.monthValue}/${month.year}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Danh mục", fontWeight = FontWeight.Bold)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(categories) { category -> FilterChip(categoryId == category.id, { categoryId = category.id }, { Text(category.name) }) } }
-                OutlinedTextField(amount, { amount = it.filter(Char::isDigit).take(15) }, Modifier.fillMaxWidth(), label = { Text("Hạn mức tháng") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                OutlinedTextField(
+                    amount,
+                    { amount = it.filter(Char::isDigit).take(15) },
+                    Modifier.fillMaxWidth(),
+                    label = { Text("Hạn mức tháng") },
+                    supportingText = { Text((amount.toLongOrNull() ?: 0L).toVnd()) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
                 Button({ onSave(categoryId, amount.toLongOrNull() ?: 0) }, Modifier.fillMaxWidth(), enabled = categoryId.isNotBlank() && amount.toLongOrNull()?.let { it > 0 } == true && !busy) { Text(if (busy) "Đang lưu…" else "Lưu ngân sách") }
             }
         }

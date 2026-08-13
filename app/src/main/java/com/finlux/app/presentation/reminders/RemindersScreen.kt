@@ -149,7 +149,15 @@ private fun ReminderEditor(initial: Reminder?, categories: List<Category>, walle
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(if (initial == null) "Thêm nhắc nhở" else "Sửa nhắc nhở", style = MaterialTheme.typography.titleLarge)
                 OutlinedTextField(title, { title = it.take(48) }, Modifier.fillMaxWidth(), label = { Text("Tên hóa đơn / khoản chi") }, singleLine = true)
-                OutlinedTextField(amount, { amount = it.filter(Char::isDigit).take(15) }, Modifier.fillMaxWidth(), label = { Text("Số tiền dự kiến") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                OutlinedTextField(
+                    amount,
+                    { amount = it.filter(Char::isDigit).take(15) },
+                    Modifier.fillMaxWidth(),
+                    label = { Text("Số tiền dự kiến") },
+                    supportingText = { Text((amount.toLongOrNull() ?: 0L).toVnd()) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
                 Text("Danh mục", fontWeight = FontWeight.Bold)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(categories) { item -> FilterChip(categoryId == item.id, { categoryId = item.id }, { Text(item.name) }) } }
                 Text("Ví thanh toán", fontWeight = FontWeight.Bold)

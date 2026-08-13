@@ -1,9 +1,38 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.2.1
-- **Trạng thái Build:** ✅ Successful (Build & 28/28 Unit Tests pass 100%)
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp thành công qua ADB (In-place update 2s)
+- **Phiên bản hiện tại:** v1.4.3 (versionCode 37 — auto-bumped bởi build_and_install.ps1)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 7/7 BudgetViewModelTest PASS, toàn bộ suite PASS 100%
+- **Trạng thái Nạp Thiết Bị:** ✅ Nạp thành công qua ADB (Streamed Install - Success, App tự động mở)
+
+---
+
+## [DONE] Task v1.4.3: Fix Budget Dynamic SpentAmount & Category Fallback Mapping
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- Fix `spentAmount` trong Budget tính động 100% từ `transactionRepository.observeMonth()`
+- Thêm fallback: khớp category theo `category.name` (cho giao dịch phiên bản cũ không có `categoryId`)
+- Sửa hiển thị "Còn lại" trên Top Card Ngân sách sang định dạng VND đầy đủ (`toVnd()` thay vì `toShortVnd()`)
+- Thêm Unit Test cho kịch bản fallback category name
+
+### Kết quả Unit Test
+**BUILD SUCCESSFUL — 7/7 BudgetViewModelTest PASS, toàn bộ test suite PASS 100%**
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `AGENTS.md` | ✅ Bổ sung mục 📋 QUY TRÌNH QUẢN LÝ TÀI LIỆU CHUẨN (HANDOVER_LOG 2 bước + CHANGELOG SOP) |
+| `BudgetViewModel.kt` | ✅ Fix bug: đổi `?:` (short-circuit) sang `+` (cộng dồn) để gom cả modern tx (by ID) + legacy tx (by name) — tránh double-count với guard `catNameLower != budget.categoryId.lowercase()` |
+| `BudgetScreen.kt` | ✅ "Còn lại" dùng `toVnd()` thay `toShortVnd()` → hiển thị `Còn lại 1.225.000 ₫` |
+| `BudgetViewModelTest.kt` | ✅ Rewrite: inject `transactionRepository`, thêm 2 test fallback mới (Test 3: legacy by name, Test 4: mixed modern+legacy), tổng 7 test cases |
+| `app/build.gradle.kts` | ✅ versionCode 35→36, versionName 1.4.2→1.4.3 |
+
+### Trạng thái
+`[DONE]`
+
+---
 
 ---
 
@@ -26,7 +55,7 @@
 
 ### [x] Task 3: Bổ Sung Unit Test Dự Án (MockK + Turbine) (v1.2.0)
 - **FirebaseTransactionRepositoryTest.kt:** Kiểm thử Firestore Atomic Transactions (Thêm/Xóa giao dịch và cập nhật số dư ví thành công).
-- **AuthViewModelTest.kt:** Kiểm thử UI State transitions (`isLoading` -> `completed`/`error`) với `Turbine` và `MockK`.
+- **AuthViewModelTest.kt:** Kiểm thử UI State transitions (`isLoading` -> `completed`/`error`) với `Turbine` and `MockK`.
 - **Tổng số Unit Tests:** 28 tests pass 100% (0 lỗi).
 
 ### [x] Task Hotfix v1.2.1: Firestore Rules Resilience & UI Optimization (v1.2.1)
@@ -34,6 +63,19 @@
 - **Unblock UI & Timeout 15s:** Khối `finally { mutableState.update { it.copy(isLoading = false) } }` trong `AuthViewModel.kt` triệt tiêu lỗi vô hạn spinner. Bọc `withTimeoutOrNull(15000)` tự động hủy sau 15s.
 - **Client ID Động:** Tự động đọc `R.string.default_web_client_id` do plugin google-services tự sinh.
 - **TextOverflow.Ellipsis Protection:** Khắc phục lỗi vỡ layout với tên/email dài trên `HomeScreen.kt` và `SettingsScreen.kt`.
+
+### [x] Task Category Management: Modal Grid & Custom Category Create/Edit/Delete (v1.3.0)
+- **Modal Lưới Chọn Danh Mục:** Bổ sung `ModalBottomSheet` hiển thị lưới 3 cột tất cả danh mục thu/chi.
+- **Tạo Danh Mục Tùy Chỉnh:** Nút `+ Tạo mới` với Dialog chọn Tên, Icon, Màu sắc gọi `SaveCategoryUseCase`.
+- **Chỉnh Sửa / Xóa Bằng Long-Click:** Sự kiện `combinedClickable(onLongClick)` trên danh mục tùy chỉnh mở Dialog Quản lý (Sửa/Xóa) với `DeleteCategoryUseCase` và AlertDialog xác nhận. Danh mục mặc định hệ thống hiển thị Toast bảo vệ.
+
+### [x] Task UI/UX Polish: Currency Format Preview & TopBar Back Buttons (v1.3.1)
+- **Định dạng tiền tệ tự động:** Thêm `supportingText` preview dạng `x.xxx.xxx đ` (hiển thị `0 đ` khi rỗng/bằng 0) cho toàn bộ các màn hình/dialog nhập tiền (`AddTransactionSheet`, `BudgetEditor`, `WalletEditor`, `TransferEditor`, `ReminderEditor`, `GoalsScreen`).
+- **Nút Back trên TopBar:** Bổ sung nút quay lại `ArrowBack` trên TopBar của toàn bộ màn hình con (`BudgetScreen`, `WalletsScreen`, `ReportsScreen`, `TransactionsScreen`, `NotificationsScreen`...).
+
+### [x] Task Recurring Reminders Polish: Push Notification Quick Actions & BootReceiver (v1.4.0)
+- **Push Notification Quick Actions:** Bổ sung nút `[Đã thanh toán]` (gọi `AddTransactionUseCase` tạo giao dịch trừ số dư ví Firestore) và `[Nhắc lại sau 1h]` (lùi báo thức 60 phút) trực tiếp từ thông báo Android.
+- **BootReceiver (`RECEIVE_BOOT_COMPLETED`):** Lắng nghe sự kiện khởi động lại máy để tự động đặt lại toàn bộ lịch báo thức `AlarmManager`.
 
 ---
 

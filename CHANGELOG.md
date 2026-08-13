@@ -3,6 +3,71 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.4.3] - 2026-08-13
+
+### Fixed
+- **BudgetViewModel: spentAmount cộng dồn sai khi có cả giao dịch modern + legacy:** Sửa logic từ `?:` (short-circuit OR) sang `+` (cộng dồn) — nay gom tất cả giao dịch chi tiêu khớp theo `categoryId` (modern) **VÀ** khớp theo `category.name` (legacy fallback cho giao dịch phiên bản cũ), không bỏ sót bên nào. Guard tránh double-count khi `categoryId.lowercase() == name.lowercase()`.
+- **Màn hình Ngân sách: "Còn lại" hiển thị số rút gọn:** Đổi sang `toVnd()` (ví dụ `Còn lại 1.225.000 ₫`) thay vì `toShortVnd()` (làm tròn thô như `1,2tr ₫`).
+
+### Added
+- **Unit Tests — BudgetViewModelTest (7 test cases):** Thêm 2 test mới cho kịch bản fallback:
+  - `legacyTransactionWithCategoryNameFallbackCalculatesSpentAmountCorrectly`: giao dịch cũ lưu `categoryId = "An uong"` (tên danh mục) vẫn được tính đúng vào ngân sách qua name fallback.
+  - `mixedModernAndLegacyTransactionsAccumulateSpentAmountCorrectly`: cộng dồn đúng cả 2 loại tx trong cùng 1 budget.
+- **AGENTS.md — Document Management SOP:** Bổ sung quy tắc bắt buộc HANDOVER_LOG PRE/POST-EXECUTION và CHANGELOG chỉ được ghi sau khi test PASS + build thành công.
+
+---
+
+## [1.4.2] - 2026-08-13
+
+### Fixed
+- **"Ngân sách còn lại" không cập nhật sau giao dịch:** `HomeViewModel` nay tính `spentAmount` động từ `observeMonth(transactions)` grouped by `categoryId`, thay vì đọc trường `spentAmount` stored trong Firestore. Card cập nhật ngay lập tức khi bất kỳ giao dịch nào được thêm/sửa/xóa.
+- **Item giao dịch gần nhất thiếu ngày giờ:** `ReferenceTransactionRow` nay luôn hiển thị cả 2 dòng: dòng Ghi chú (nếu có) + dòng Thời gian ("Hôm nay, HH:mm" / "Hôm qua, HH:mm" / "dd/MM/yyyy, HH:mm").
+
+### Added
+- `TransactionRepository.observeMonth(month: YearMonth)` — Flow real-time tất cả transactions trong tháng, dùng cho HomeViewModel và có thể tái sử dụng.
+
+---
+
+## [1.4.1] - 2026-08-13
+
+
+### Fixed
+- **Budget spentAmount không cập nhật real-time (BR-06):** `addWithBalanceUpdate`, `editWithBalanceUpdate`, `deleteWithBalanceUpdate` trong `FirebaseTransactionRepository` nay cập nhật `budget.spentAmount` ngay trong cùng Firestore atomic transaction khi giao dịch là `EXPENSE`. Khắc phục lỗi bấm `[Đã thanh toán]` trên Push Notification không phản ánh lên thanh tiến độ ngân sách.
+
+### Added
+- **Unit Tests BudgetViewModel (5 tests):** `BudgetViewModelTest` kiểm tra các kịch bản: `SAFE (0%)`, `SAFE (40%)` sau pay action từ notification, `WARNING (84%)`, `EXCEEDED (100%)`, và nhiều pay action liên tiếp dẫn đến `EXCEEDED`. Tổng 33/33 tests PASS.
+
+---
+
+## [1.4.0] - 2026-08-13
+
+
+### Added
+- **Push Notification Quick Actions (UC-18):** Thêm 2 nút bấm thao tác nhanh ngay trên thông báo Android khi đến hạn nhắc nhở:
+  - `[Đã thanh toán]`: Tự động gọi `AddTransactionUseCase` tạo giao dịch chi tiêu mới và trừ số dư ví gán sẵn trong Firestore, sau đó đóng thông báo.
+  - `[Nhắc lại sau 1h]`: Đặt lại lịch `AlarmManager` lùi 60 phút.
+- **Khôi Phục Báo Thức Sau Reboot (BootReceiver):** Tạo `BootReceiver` lắng nghe `android.intent.action.BOOT_COMPLETED` để tự động đọc danh sách nhắc nhở từ Firestore/Local và khôi phục báo thức `AlarmManager` khi thiết bị khởi động lại.
+
+---
+
+## [1.3.1] - 2026-08-13
+
+### Added
+- **Định Dạng Tiền Tệ Tự Động (Currency Format Preview):** Tất cả các ô nhập số tiền (`AddTransactionSheet`, `BudgetEditor`, `WalletEditor`, `TransferEditor`, `ReminderEditor`, `GoalsScreen`) được bổ sung dòng Text Preview định dạng phân cách hàng nghìn (`x.xxx.xxx đ`). Nếu rỗng hoặc 0 sẽ hiển thị `0 đ`.
+- **Nút Quay Lại (Back Button) Trên TopBar:** Bổ sung nút Quay lại (`ArrowBack`) ở góc trái Header cho toàn bộ các màn hình phụ (`BudgetScreen`, `WalletsScreen`, `ReportsScreen`, `TransactionsScreen`, `NotificationsScreen`...) gọi `navController.popBackStack()`.
+
+---
+
+## [1.3.0] - 2026-08-13
+
+### Added
+- **Modal Lưới Chọn Danh Mục (UC-12):** Thêm ModalBottomSheet chứa lưới 3 cột hiển thị toàn bộ danh mục theo loại Thu nhập/Chi tiêu trong `AddTransactionSheet.kt`.
+- **Tạo Danh Mục Tùy Chỉnh (UC-12):** Nút `+ Tạo mới` cho phép nhập Tên, chọn Biểu tượng (Icon) và Màu sắc (Color Hex), gọi `SaveCategoryUseCase` để lưu vào Firestore/Database.
+- **Quản lý (Sửa/Xóa) Danh Mục Bằng Nhấn Giữ (Long-Click):** Sự kiện `combinedClickable(onLongClick)` trên từng Card danh mục tùy chỉnh cho phép mở menu Chỉnh sửa hoặc Xóa danh mục (kèm AlertDialog xác nhận và `DeleteCategoryUseCase`).
+- **Khóa Bảo Vệ Danh Mục Mặc Định:** Hiển thị Toast thông báo *"Danh mục mặc định không thể sửa/xóa"* khi người dùng nhấn giữ danh mục hệ thống.
+
+---
+
 ## [1.2.1] - 2026-08-13
 
 ### Fixed

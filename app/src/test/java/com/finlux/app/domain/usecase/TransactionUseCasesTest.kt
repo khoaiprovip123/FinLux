@@ -84,6 +84,9 @@ private class RecordingTransactionRepository : TransactionRepository {
 
     override fun observeRecent(limit: Int): Flow<List<FinanceTransaction>> = flowOf(emptyList())
 
+    override fun observeMonth(month: java.time.YearMonth): Flow<List<FinanceTransaction>> = flowOf(emptyList())
+
+
     override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String> {
         addCalls++
         return AppResult.Success("generated-id")
