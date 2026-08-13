@@ -1,7 +1,7 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.2.1
+- **Phiên bản hiện tại:** v1.3.0
 - **Trạng thái Build:** ✅ Successful (Build & 28/28 Unit Tests pass 100%)
 - **Trạng thái Nạp Thiết Bị:** ✅ Nạp thành công qua ADB (In-place update 2s)
 
@@ -34,6 +34,11 @@
 - **Unblock UI & Timeout 15s:** Khối `finally { mutableState.update { it.copy(isLoading = false) } }` trong `AuthViewModel.kt` triệt tiêu lỗi vô hạn spinner. Bọc `withTimeoutOrNull(15000)` tự động hủy sau 15s.
 - **Client ID Động:** Tự động đọc `R.string.default_web_client_id` do plugin google-services tự sinh.
 - **TextOverflow.Ellipsis Protection:** Khắc phục lỗi vỡ layout với tên/email dài trên `HomeScreen.kt` và `SettingsScreen.kt`.
+
+### [x] Task Category Management: Modal Grid & Custom Category Create/Edit/Delete (v1.3.0)
+- **Modal Lưới Chọn Danh Mục:** Bổ sung `ModalBottomSheet` hiển thị lưới 3 cột tất cả danh mục thu/chi.
+- **Tạo Danh Mục Tùy Chỉnh:** Nút `+ Tạo mới` với Dialog chọn Tên, Icon, Màu sắc gọi `SaveCategoryUseCase`.
+- **Chỉnh Sửa / Xóa Bằng Long-Click:** Sự kiện `combinedClickable(onLongClick)` trên danh mục tùy chỉnh mở Dialog Quản lý (Sửa/Xóa) với `DeleteCategoryUseCase` và AlertDialog xác nhận. Danh mục mặc định hệ thống hiển thị Toast bảo vệ.
 
 ---
 

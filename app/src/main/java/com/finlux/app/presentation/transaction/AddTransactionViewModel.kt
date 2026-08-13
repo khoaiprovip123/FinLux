@@ -13,6 +13,8 @@ import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.repository.ReceiptStorageRepository
 import com.finlux.app.domain.usecase.AddTransactionUseCase
+import com.finlux.app.domain.usecase.DeleteCategoryUseCase
+import com.finlux.app.domain.usecase.SaveCategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +46,8 @@ class AddTransactionViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     private val receiptStorageRepository: ReceiptStorageRepository,
     private val addTransaction: AddTransactionUseCase,
+    private val saveCategory: SaveCategoryUseCase,
+    private val deleteCategory: DeleteCategoryUseCase,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(AddTransactionUiState())
     val state: StateFlow<AddTransactionUiState> = mutableState.asStateFlow()
@@ -108,6 +112,65 @@ class AddTransactionViewModel @Inject constructor(
     }
 
     fun consumeSaved() = mutableState.update { it.copy(saved = false, amountInput = "", note = "", receiptUri = null, date = Instant.now()) }
+
+    fun createCategory(name: String, iconKey: String, colorHex: String, onCreated: (String) -> Unit) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            val desiredType = state.value.type.toCategoryType()
+            val newCategory = Category(
+                id = java.util.UUID.randomUUID().toString(),
+                name = name.trim(),
+                type = desiredType,
+                icon = iconKey,
+                colorHex = colorHex,
+                isDefault = false,
+                createdAt = Instant.now(),
+            )
+            when (val result = saveCategory(newCategory)) {
+                is AppResult.Success -> {
+                    mutableState.update { it.copy(categoryId = result.value, error = null) }
+                    onCreated(result.value)
+                }
+                is AppResult.Error -> {
+                    mutableState.update { it.copy(error = result.message) }
+                }
+            }
+        }
+    }
+
+    fun updateCategory(category: Category, onUpdated: () -> Unit) {
+        if (category.name.isBlank()) return
+        viewModelScope.launch {
+            when (val result = saveCategory(category)) {
+                is AppResult.Success -> {
+                    mutableState.update { it.copy(error = null) }
+                    onUpdated()
+                }
+                is AppResult.Error -> {
+                    mutableState.update { it.copy(error = result.message) }
+                }
+            }
+        }
+    }
+
+    fun deleteCategory(category: Category, onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            when (val result = deleteCategory.invoke(category)) {
+                is AppResult.Success -> {
+                    mutableState.update { current ->
+                        val nextCategoryId = if (current.categoryId == category.id) {
+                            current.categories.firstOrNull { it.id != category.id && it.type == category.type }?.id
+                        } else current.categoryId
+                        current.copy(categoryId = nextCategoryId, error = null)
+                    }
+                    onDeleted()
+                }
+                is AppResult.Error -> {
+                    mutableState.update { it.copy(error = result.message) }
+                }
+            }
+        }
+    }
 
     private fun TransactionType.toCategoryType() =
         if (this == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
