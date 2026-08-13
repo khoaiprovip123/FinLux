@@ -10,16 +10,29 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.finlux.app.MainActivity
 import com.finlux.app.R
+import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
+import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.repository.ReminderScheduler
+import com.finlux.app.domain.usecase.AddTransactionUseCase
+import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val ReminderChannelId = "finlux_reminders"
+private const val ACTION_TRIGGER = "com.finlux.app.ACTION_TRIGGER_REMINDER"
+private const val ACTION_PAY = "com.finlux.app.ACTION_PAY_REMINDER"
+private const val ACTION_SNOOZE = "com.finlux.app.ACTION_SNOOZE_REMINDER"
 
 @Singleton
 class AlarmReminderScheduler @Inject constructor(
@@ -34,54 +47,191 @@ class AlarmReminderScheduler @Inject constructor(
 
     override fun cancel(reminderId: String) {
         if (reminderId.isBlank()) return
-        val intent = Intent(context, ReminderReceiver::class.java).putExtra("id", reminderId)
-        val pending = PendingIntent.getBroadcast(context, reminderId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ACTION_TRIGGER
+            putExtra("id", reminderId)
+        }
+        val pending = PendingIntent.getBroadcast(
+            context,
+            reminderId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         context.getSystemService(AlarmManager::class.java).cancel(pending)
     }
 }
 
+@AndroidEntryPoint
 class ReminderReceiver : BroadcastReceiver() {
+    @Inject
+    lateinit var addTransactionUseCase: AddTransactionUseCase
+
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra("id") ?: return
         val title = intent.getStringExtra("title") ?: "Nhắc nhở Finlux"
         val amount = intent.getLongExtra("amount", 0L)
-        val recurrence = intent.getStringExtra("recurrence")
-            ?.let { runCatching { ReminderRecurrence.valueOf(it) }.getOrNull() }
-            ?: ReminderRecurrence.MONTHLY
+        val categoryId = intent.getStringExtra("categoryId").orEmpty()
+        val walletId = intent.getStringExtra("walletId").orEmpty()
+        val recurrenceName = intent.getStringExtra("recurrence")
+        val recurrence = recurrenceName?.let { runCatching { ReminderRecurrence.valueOf(it) }.getOrNull() } ?: ReminderRecurrence.MONTHLY
+
         val notifications = context.getSystemService(NotificationManager::class.java)
-        notifications.createNotificationChannel(
-            NotificationChannel(ReminderChannelId, "Nhắc nhở tài chính", NotificationManager.IMPORTANCE_HIGH),
-        )
-        val openApp = PendingIntent.getActivity(
-            context, id.hashCode(), Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val body = if (amount > 0) "Đến hạn xác nhận khoản ${java.text.NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("vi-VN")).format(amount)}" else "Đến hạn xác nhận giao dịch"
-        notifications.notify(
-            id.hashCode(),
-            NotificationCompat.Builder(context, ReminderChannelId)
-                .setSmallIcon(R.drawable.ic_finlux)
-                .setContentTitle(title)
-                .setContentText(body)
-                .setAutoCancel(true)
-                .setContentIntent(openApp)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .build(),
-        )
-        val next = nextTrigger(Instant.now(), recurrence)
-        val nextIntent = Intent(context, ReminderReceiver::class.java).apply {
-            putExtra("id", id); putExtra("title", title); putExtra("amount", amount); putExtra("recurrence", recurrence.name)
+
+        when (intent.action) {
+            ACTION_PAY -> {
+                notifications.cancel(id.hashCode())
+                val pendingResult = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        if (amount > 0 && walletId.isNotBlank()) {
+                            addTransactionUseCase(
+                                FinanceTransaction(
+                                    type = TransactionType.EXPENSE,
+                                    amount = Money(amount),
+                                    categoryId = categoryId.ifBlank { null },
+                                    walletId = walletId,
+                                    note = "Thanh toán nhắc nhở: $title",
+                                    date = Instant.now(),
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+            }
+
+            ACTION_SNOOZE -> {
+                notifications.cancel(id.hashCode())
+                val snoozeTime = System.currentTimeMillis() + 60 * 60 * 1000L // 1 giờ sau
+                val snoozeIntent = Intent(context, ReminderReceiver::class.java).apply {
+                    action = ACTION_TRIGGER
+                    putExtra("id", id)
+                    putExtra("title", title)
+                    putExtra("amount", amount)
+                    putExtra("categoryId", categoryId)
+                    putExtra("walletId", walletId)
+                    putExtra("recurrence", recurrence.name)
+                }
+                val pendingSnooze = PendingIntent.getBroadcast(
+                    context,
+                    id.hashCode(),
+                    snoozeIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                context.getSystemService(AlarmManager::class.java).setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    snoozeTime,
+                    pendingSnooze
+                )
+            }
+
+            else -> {
+                notifications.createNotificationChannel(
+                    NotificationChannel(ReminderChannelId, "Nhắc nhở tài chính", NotificationManager.IMPORTANCE_HIGH),
+                )
+                val openApp = PendingIntent.getActivity(
+                    context,
+                    id.hashCode(),
+                    Intent(context, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+
+                val payIntent = Intent(context, ReminderReceiver::class.java).apply {
+                    action = ACTION_PAY
+                    putExtra("id", id)
+                    putExtra("title", title)
+                    putExtra("amount", amount)
+                    putExtra("categoryId", categoryId)
+                    putExtra("walletId", walletId)
+                }
+                val payPending = PendingIntent.getBroadcast(
+                    context,
+                    (id + "_pay").hashCode(),
+                    payIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                val snoozeIntent = Intent(context, ReminderReceiver::class.java).apply {
+                    action = ACTION_SNOOZE
+                    putExtra("id", id)
+                    putExtra("title", title)
+                    putExtra("amount", amount)
+                    putExtra("categoryId", categoryId)
+                    putExtra("walletId", walletId)
+                    putExtra("recurrence", recurrence.name)
+                }
+                val snoozePending = PendingIntent.getBroadcast(
+                    context,
+                    (id + "_snooze").hashCode(),
+                    snoozeIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                val body = if (amount > 0) {
+                    "Đến hạn thanh toán khoản ${NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(amount)}"
+                } else {
+                    "Đến hạn xác nhận giao dịch"
+                }
+
+                notifications.notify(
+                    id.hashCode(),
+                    NotificationCompat.Builder(context, ReminderChannelId)
+                        .setSmallIcon(R.drawable.ic_finlux)
+                        .setContentTitle(title)
+                        .setContentText(body)
+                        .setAutoCancel(true)
+                        .setContentIntent(openApp)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .addAction(R.drawable.ic_finlux, "Đã thanh toán", payPending)
+                        .addAction(R.drawable.ic_finlux, "Nhắc lại sau 1h", snoozePending)
+                        .build(),
+                )
+
+                val next = nextTrigger(Instant.now(), recurrence)
+                val nextIntent = Intent(context, ReminderReceiver::class.java).apply {
+                    action = ACTION_TRIGGER
+                    putExtra("id", id)
+                    putExtra("title", title)
+                    putExtra("amount", amount)
+                    putExtra("categoryId", categoryId)
+                    putExtra("walletId", walletId)
+                    putExtra("recurrence", recurrence.name)
+                }
+                val nextPending = PendingIntent.getBroadcast(
+                    context,
+                    id.hashCode(),
+                    nextIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                context.getSystemService(AlarmManager::class.java).setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    next.toEpochMilli(),
+                    nextPending
+                )
+            }
         }
-        val nextPending = PendingIntent.getBroadcast(context, id.hashCode(), nextIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        context.getSystemService(AlarmManager::class.java).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toEpochMilli(), nextPending)
     }
 }
 
 private fun Reminder.pendingIntent(context: Context): PendingIntent {
     val intent = Intent(context, ReminderReceiver::class.java).apply {
-        putExtra("id", id); putExtra("title", title); putExtra("amount", amount.value); putExtra("recurrence", recurrence.name)
+        action = ACTION_TRIGGER
+        putExtra("id", id)
+        putExtra("title", title)
+        putExtra("amount", amount.value)
+        putExtra("categoryId", categoryId)
+        putExtra("walletId", walletId)
+        putExtra("recurrence", recurrence.name)
     }
-    return PendingIntent.getBroadcast(context, id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    return PendingIntent.getBroadcast(
+        context,
+        id.hashCode(),
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 }
 
 private fun nextTrigger(from: Instant, recurrence: ReminderRecurrence): Instant {
