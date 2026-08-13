@@ -15,6 +15,9 @@ import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
 import com.finlux.app.domain.model.TransactionType
+import com.finlux.app.domain.model.AppNotification
+import com.finlux.app.domain.repository.NotificationRepository
+import java.util.UUID
 import com.finlux.app.domain.repository.ReminderScheduler
 import com.finlux.app.domain.usecase.AddTransactionUseCase
 import dagger.hilt.android.AndroidEntryPoint
@@ -65,6 +68,9 @@ class AlarmReminderScheduler @Inject constructor(
 class ReminderReceiver : BroadcastReceiver() {
     @Inject
     lateinit var addTransactionUseCase: AddTransactionUseCase
+
+    @Inject
+    lateinit var notificationRepository: NotificationRepository
 
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra("id") ?: return
@@ -132,10 +138,45 @@ class ReminderReceiver : BroadcastReceiver() {
                 notifications.createNotificationChannel(
                     NotificationChannel(ReminderChannelId, "Nhắc nhở tài chính", NotificationManager.IMPORTANCE_HIGH),
                 )
+                val body = if (amount > 0) {
+                    "Đến hạn thanh toán khoản ${NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(amount)}"
+                } else {
+                    "Đến hạn xác nhận giao dịch"
+                }
+
+                val notiPendingResult = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        notificationRepository.saveNotification(
+                            AppNotification(
+                                id = UUID.randomUUID().toString(),
+                                title = title,
+                                body = body,
+                                amount = Money(amount),
+                                reminderId = id,
+                                categoryId = categoryId.ifBlank { null },
+                                walletId = walletId.ifBlank { null },
+                                timestamp = Instant.now(),
+                                isRead = false,
+                                isPaid = false,
+                            )
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    } finally {
+                        notiPendingResult.finish()
+                    }
+                }
+
+                val openAppIntent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("destination", "notifications")
+                    putExtra("reminder_id", id)
+                }
                 val openApp = PendingIntent.getActivity(
                     context,
                     id.hashCode(),
-                    Intent(context, MainActivity::class.java),
+                    openAppIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
 
@@ -169,12 +210,6 @@ class ReminderReceiver : BroadcastReceiver() {
                     snoozeIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-
-                val body = if (amount > 0) {
-                    "Đến hạn thanh toán khoản ${NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(amount)}"
-                } else {
-                    "Đến hạn xác nhận giao dịch"
-                }
 
                 notifications.notify(
                     id.hashCode(),

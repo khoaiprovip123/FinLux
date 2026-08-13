@@ -3,6 +3,27 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-08-13
+
+### Added
+- **Nút Xác nhận Thanh toán Trực tiếp trên Màn hình Thông báo (Quick Pay Action):** Trên `NotificationsScreen.kt`, với các thẻ thông báo nhắc nhở thanh toán (có `reminderId` hoặc `amount > 0`), hiển thị nút bấm `[💳 Xác nhận thanh toán]`.
+- **Ghi nhận Giao dịch & Trừ Số dư Tự động:** Khi người dùng bấm xác nhận:
+  1. Tự động gọi `AddTransactionUseCase` tạo một giao dịch chi tiêu mới (`FinanceTransaction`) tương ứng với thông tin khoản chi.
+  2. Tự động trừ số dư ví và cập nhật ngân sách realtime.
+  3. Cập nhật trạng thái thẻ thông báo sang nhãn màu xanh lá `[✓ Đã thanh toán]` và ẩn nút bấm.
+  4. Hiển thị Snackbar thông báo kết quả: `"Đã ghi nhận thanh toán [Tên khoản chi]!"`.
+
+---
+
+## [1.5.0] - 2026-08-13
+
+### Added
+- **Lưu lịch sử thông báo (Notification Persistence):** Khi báo thức nhắc nhở nổ (`ReminderReceiver.kt`), hệ thống tự động lưu bản ghi `AppNotification` vào Firestore subcollection `users/{uid}/notifications` (hoặc `DemoFinluxRepository`).
+- **Tự động điều hướng Deep Link khi bấm thông báo:** Cập nhật `PendingIntent` gửi kèm extra `destination = "notifications"`. `MainActivity` và `FinluxNavHost` bắt extra intent (`onCreate` & `onNewIntent`) và tự động chuyển ngay sang màn hình `NotificationsScreen`.
+- **Giao diện & ViewModel màn hình Thông báo:** Bổ sung `NotificationsViewModel.kt` và nâng cấp `NotificationsScreen.kt` theo giao diện Liquid Glass, hiển thị thời gian phát sinh, badge chưa đọc, nút đánh dấu đã đọc và tùy chọn xóa sạch lịch sử thông báo.
+
+---
+
 ## [1.4.8] - 2026-08-13
 
 ### Fixed

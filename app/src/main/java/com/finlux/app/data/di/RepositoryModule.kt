@@ -20,6 +20,7 @@ import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.repository.ReminderRepository
 import com.finlux.app.domain.repository.ReminderScheduler
 import com.finlux.app.domain.repository.ReceiptStorageRepository
+import com.finlux.app.domain.repository.NotificationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -135,4 +136,12 @@ object FinanceRepositoryModule {
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
     ): DashboardRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        demo: DemoFinluxRepository,
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): NotificationRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
 }

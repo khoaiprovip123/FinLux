@@ -1,9 +1,84 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.4.8 (versionCode 51)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Tháo bỏ pointerInput drag khung cha triệt để
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.4.8 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+- **Phiên bản hiện tại:** v1.5.1 (versionCode 54)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Bổ sung nút [Xác nhận thanh toán] trực tiếp trên thẻ thông báo
+- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.1 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+
+---
+
+## [DONE] Task v1.5.1: Quick Pay Action on NotificationsScreen
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **Quick Pay Action:** Bổ sung thuộc tính `isPaid: Boolean` cho `AppNotification`.
+- **Automatic Expense Recording:** Trên `NotificationsScreen.kt`, với thông báo nhắc nhở thanh toán (có `reminderId` hoặc `amount > 0`), hiển thị nút `[💳 Xác nhận thanh toán]`. Khi bấm:
+  1. Tự động gọi `AddTransactionUseCase` tạo giao dịch chi tiêu tương ứng.
+  2. Tự động trừ số dư ví và cập nhật ngân sách realtime.
+  3. Cập nhật trạng thái thông báo sang `[✓ Đã thanh toán]` và ẩn nút bấm.
+  4. Hiển thị Snackbar/Toast thông báo thành công.
+- **Bump Version:** Nâng `versionName` lên `1.5.1` và `versionCode` `54`.
+- **Test & Rebuild:** Chạy unit test PASS 100% và rebuild nạp APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `AppNotification.kt` | ✅ Bổ sung trường `categoryId`, `walletId`, `isPaid` |
+| `NotificationRepository.kt` | ✅ Thêm phương thức `markAsPaid(id)` |
+| `FirebaseReadRepository.kt` | ✅ Tích hợp ghi nhận trạng thái `isPaid` vào Firestore realtime |
+| `DemoFinluxRepository.kt` | ✅ Tích hợp `markAsPaid(id)` cho local state flow |
+| `NotificationsViewModel.kt` | ✅ Thêm `payNotification(item)` gọi `AddTransactionUseCase` tạo chi tiêu, trừ số dư ví, cập nhật ngân sách |
+| `NotificationsScreen.kt` | ✅ Nút `[💳 Xác nhận thanh toán]`, nhãn `[✓ Đã thanh toán]`, Snackbar thông báo kết quả |
+| `AlarmReminderScheduler.kt` | ✅ Đính kèm `categoryId` và `walletId` vào bản ghi thông báo khi báo thức nổ |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 54`, `versionName 1.5.1` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.1 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.5.0: Save Notification History & Auto Navigation Deep Link
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **Notification Persistence:** Tự động tạo và lưu bản ghi `AppNotification` vào Firestore `users/{uid}/notifications` (hoặc `DemoFinluxRepository`) khi báo thức nổ trong `ReminderReceiver.kt`.
+- **Deep Link Navigation:** Cập nhật `PendingIntent` trong `AlarmReminderScheduler.kt` kèm Intent Extra (`destination = "notifications"`). Xử lý Intent trong `MainActivity.kt` và `FinluxNavHost.kt` để tự động điều hướng sang `NotificationsScreen` khi người dùng bấm vào thông báo.
+- **Notifications UI & ViewModel:** Xây dựng `NotificationsViewModel.kt` và nâng cấp `NotificationsScreen.kt` hiển thị danh sách thông báo glassmorphism, đánh dấu đã đọc và xóa lịch sử.
+- **Bump Version:** Nâng `versionName` lên `1.5.0` và `versionCode` `52`.
+- **Test & Rebuild:** Chạy unit test PASS 100% và rebuild nạp APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa / tạo mới
+| File | Thay đổi |
+|---|---|
+| `AppNotification.kt` [NEW] | ✅ Định nghĩa Domain Model cho bản ghi thông báo |
+| `NotificationRepository.kt` [NEW] | ✅ Định nghĩa Interface lắng nghe, lưu, đánh dấu đã đọc, xóa lịch sử thông báo |
+| `NotificationsViewModel.kt` [NEW] | ✅ ViewModel quản lý StateFlow danh sách thông báo và các thao tác |
+| `NotificationsScreen.kt` | ✅ Nâng cấp giao diện danh sách thông báo Liquid Glass, nhãn thời gian, trạng thái đọc |
+| `FirebaseReadRepository.kt` | ✅ Tích hợp Firestore subcollection `users/{uid}/notifications` lưu & lắng nghe realtime |
+| `DemoFinluxRepository.kt` | ✅ Tích hợp lưu & lắng nghe lịch sử thông báo local state flow |
+| `RepositoryModule.kt` | ✅ Cung cấp `NotificationRepository` trong Hilt DI |
+| `AlarmReminderScheduler.kt` | ✅ Tự động lưu `AppNotification` khi báo thức nổ và set `destination = "notifications"` trong `PendingIntent` |
+| `MainActivity.kt` | ✅ Nhận `Intent` extra (`onCreate` & `onNewIntent`) đẩy vào `destinationFlow` |
+| `FinluxRoot.kt` | ✅ Truyền `destinationFlow` xuống `FinluxNavHost` |
+| `FinluxNavHost.kt` | ✅ Tự động `navController.navigate(Route.Notifications.value)` khi mở từ notification |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 52`, `versionName 1.5.0` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.0 |
+
+### Trạng thái
+`[DONE]`
 
 ---
 

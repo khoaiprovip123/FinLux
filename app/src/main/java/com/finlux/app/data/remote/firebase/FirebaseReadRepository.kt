@@ -17,11 +17,14 @@ import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
 import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.model.AppNotification
+import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.ReminderRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -35,7 +38,7 @@ import java.util.UUID
 class FirebaseReadRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-) : WalletRepository, CategoryRepository, BudgetRepository, ReminderRepository, GoalRepository, DashboardRepository {
+) : WalletRepository, CategoryRepository, BudgetRepository, ReminderRepository, GoalRepository, DashboardRepository, NotificationRepository {
 
     override fun observeWallets(): Flow<List<Wallet>> = callbackFlow {
         val uid = auth.currentUser?.uid
@@ -212,6 +215,52 @@ class FirebaseReadRepository(
         awaitClose { registration.remove() }
     }
 
+    override fun observeNotifications(): Flow<List<AppNotification>> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            close()
+            return@callbackFlow
+        }
+        val registration = firestore.collection("users").document(uid).collection("notifications")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) close(error)
+                else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toAppNotification() })
+            }
+        awaitClose { registration.remove() }
+    }
+
+    override suspend fun saveNotification(notification: AppNotification): AppResult<String> = firebaseResult("Không thể lưu thông báo") {
+        val uid = requireUid()
+        val id = notification.id.ifBlank { UUID.randomUUID().toString() }
+        firestore.collection("users").document(uid).collection("notifications").document(id)
+            .set(notification.copy(id = id).toNotificationMap()).await()
+        id
+    }
+
+    override suspend fun markAsRead(id: String): AppResult<Unit> = firebaseResult("Không thể cập nhật thông báo") {
+        val uid = requireUid()
+        firestore.collection("users").document(uid).collection("notifications").document(id)
+            .update("isRead", true).await()
+        Unit
+    }
+
+    override suspend fun markAsPaid(id: String): AppResult<Unit> = firebaseResult("Không thể cập nhật thông báo") {
+        val uid = requireUid()
+        firestore.collection("users").document(uid).collection("notifications").document(id)
+            .update(mapOf("isRead" to true, "isPaid" to true)).await()
+        Unit
+    }
+
+    override suspend fun clearAll(): AppResult<Unit> = firebaseResult("Không thể xóa thông báo") {
+        val uid = requireUid()
+        val snapshot = firestore.collection("users").document(uid).collection("notifications").get().await()
+        firestore.runBatch { batch ->
+            snapshot.documents.forEach { doc -> batch.delete(doc.reference) }
+        }.await()
+        Unit
+    }
+
     private fun requireUid(): String = auth.currentUser?.uid ?: error("Phiên đăng nhập đã hết hạn")
 }
 
@@ -325,5 +374,32 @@ private fun DocumentSnapshot.toGoal(): FinancialGoal? = runCatching {
         monthlyContribution = Money(getLong("monthlyContribution") ?: 0L),
         imageUri = getString("imageUri"),
         createdAt = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now(),
+    )
+}.getOrNull()
+
+private fun AppNotification.toNotificationMap(): Map<String, Any?> = mapOf(
+    "title" to title,
+    "body" to body,
+    "amount" to amount.value,
+    "reminderId" to reminderId,
+    "categoryId" to categoryId,
+    "walletId" to walletId,
+    "timestamp" to Timestamp(Date.from(timestamp)),
+    "isRead" to isRead,
+    "isPaid" to isPaid,
+)
+
+private fun DocumentSnapshot.toAppNotification(): AppNotification? = runCatching {
+    AppNotification(
+        id = id,
+        title = requireNotNull(getString("title")),
+        body = getString("body").orEmpty(),
+        amount = Money(getLong("amount") ?: 0L),
+        reminderId = getString("reminderId"),
+        categoryId = getString("categoryId"),
+        walletId = getString("walletId"),
+        timestamp = getTimestamp("timestamp")?.toDate()?.toInstant() ?: Instant.now(),
+        isRead = getBoolean("isRead") ?: false,
+        isPaid = getBoolean("isPaid") ?: false,
     )
 }.getOrNull()

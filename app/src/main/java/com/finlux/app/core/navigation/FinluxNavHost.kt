@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +61,7 @@ import com.finlux.app.presentation.wallet.WalletsScreen
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.presentation.components.QuickAddSheet
 import com.finlux.app.presentation.receipt.ReceiptCaptureScreen
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun FinluxNavHost(
@@ -67,6 +70,7 @@ fun FinluxNavHost(
     uiPreferences: UiPreferences,
     onUiPreferencesChanged: (UiPreferences) -> Unit,
     navController: NavHostController = rememberNavController(),
+    destinationFlow: MutableStateFlow<String?>? = null,
 ) {
     var showAddTransaction by remember { mutableStateOf(false) }
     var showQuickAdd by remember { mutableStateOf(false) }
@@ -76,6 +80,23 @@ fun FinluxNavHost(
     var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+
+    val destination = destinationFlow?.collectAsState()?.value
+    LaunchedEffect(destination) {
+        if (!destination.isNullOrBlank()) {
+            val targetRoute = when (destination) {
+                "notifications" -> Route.Notifications.value
+                else -> destination
+            }
+            if (currentRoute != targetRoute) {
+                navController.navigate(targetRoute) {
+                    launchSingleTop = true
+                }
+            }
+            destinationFlow.value = null
+        }
+    }
+
     val navigateMain: (String) -> Unit = { route ->
         navController.navigate(route) {
             launchSingleTop = true
