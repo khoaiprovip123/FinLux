@@ -9,7 +9,7 @@
 
 ## Danh Sách Nhiệm Vụ Đã Hoàn Thành (Completed Tasks)
 
-### [x] Task 1: Refactor UseCases & Hilt DI Module (v1.1.0)
+### [x] Task 1: Refactor Core Domain & Hilt DI Module (v1.1.0)
 - Tách 14 UseCases độc lập trong package `com.finlux.app.domain.usecase`:
   - `TransactionValidation.kt`, `AddTransactionUseCase.kt`, `EditTransactionUseCase.kt`, `DeleteTransactionUseCase.kt`
   - `SaveWalletUseCase.kt`, `DeleteWalletUseCase.kt`, `TransferMoneyUseCase.kt`
@@ -17,12 +17,17 @@
   - `SaveBudgetUseCase.kt`, `DeleteBudgetUseCase.kt`
   - `SaveReminderUseCase.kt`, `DeleteReminderUseCase.kt`
   - `SaveGoalUseCase.kt`, `DeleteGoalUseCase.kt`
-- Tạo `FirebaseModule.kt` và cập nhật `RepositoryModule.kt` để inject Firebase instances.
+- Tạo `FirebaseModule.kt` và cập nhật `RepositoryModule.kt` để inject Firebase instances với fallback an toàn.
 
 ### [x] Task 2: Google Sign-In & Credential Manager SDK (v1.2.0)
 - Tích hợp Android Credential Manager SDK (`GetCredentialRequest`, `GetGoogleIdOption`).
 - Trích xuất `GoogleIdTokenCredential` -> `idToken` -> `signInWithGoogle`.
 - Cập nhật UI `AuthScreens.kt`: hiển thị loading overlay, mờ nút Apple/Facebook (Sắp có) kèm Toast thông báo.
+
+### [x] Task 3: Bổ Sung Unit Test Dự Án (MockK + Turbine) (v1.2.0)
+- **FirebaseTransactionRepositoryTest.kt:** Kiểm thử Firestore Atomic Transactions (Thêm/Xóa giao dịch và cập nhật số dư ví thành công).
+- **AuthViewModelTest.kt:** Kiểm thử UI State transitions (`isLoading` -> `completed`/`error`) với `Turbine` và `MockK`.
+- **Tổng số Unit Tests:** 28 tests pass 100% (0 lỗi).
 
 ---
 
@@ -32,6 +37,9 @@
    - Web Client ID placeholder: `"382901238910-dummyclientid.apps.googleusercontent.com"`.
    - Cơ chế Fallback: Khi chạy ở môi trường Dev chưa có Web Client ID thật, Catch block tự động gọi `repository.signInWithGoogle("demo_google_id_token")` để ứng dụng không bị dừng đột ngột.
 
-2. **Cơ Chế Nạp Nhanh Trực Tiếp (In-Place Update):**
+2. **Unit Test Stack:**
+   - Framework: JUnit 5, MockK (`1.13.16`), Turbine (`1.2.1`), Kotlinx Coroutines Test (`1.10.2`).
+
+3. **Cơ Chế Nạp Nhanh Trực Tiếp (In-Place Update):**
    - Script: `build_and_install.ps1` / `build_and_install.bat`
    - Lệnh ADB: `adb install -r -t -d app-debug.apk` (không gỡ cài đặt cũ, loại bỏ dialog hỏi phép MIUI).
