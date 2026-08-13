@@ -54,6 +54,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -330,10 +331,10 @@ private fun ProfileHero(
                 FinluxUserAvatar(photoUrl, name, 82.dp, loading = loading, editable = true, onClick = onAvatar)
                 Column(Modifier.weight(1f).padding(start = 15.dp).clickable(onClick = onEditName)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(name, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(name, Modifier.weight(1f, fill = false), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(" Premium ", Modifier.padding(start = 8.dp).background(Color(0xFFFFB547).copy(alpha = .24f), RoundedCornerShape(8.dp)).padding(horizontal = 5.dp, vertical = 2.dp), color = Color(0xFFFFD37A), style = MaterialTheme.typography.labelSmall)
                     }
-                    Text(email, color = Color.White.copy(alpha = .84f), modifier = Modifier.padding(top = 5.dp))
+                    Text(email, color = Color.White.copy(alpha = .84f), modifier = Modifier.padding(top = 5.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("Chạm tên để thay đổi", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall)
                 }
                 IconButton(onClick = onEditName) { Icon(Icons.Default.Edit, "Đổi tên người dùng", tint = Color.White) }

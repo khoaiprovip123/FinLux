@@ -49,7 +49,13 @@ class FirebaseAuthRepository(
         val user = auth.createUserWithEmailAndPassword(email.trim(), password).await().user
             ?: error("Firebase không trả về người dùng")
         user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(displayName.trim()).build()).await()
-        seedNewUser(user.uid, displayName.trim(), email.trim())
+        try {
+            seedNewUser(user.uid, displayName.trim(), email.trim())
+        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
+        } catch (e: Exception) {
+            android.util.Log.w("Firestore", "Không thể seed dữ liệu Firestore: ${e.message}", e)
+        }
         user.toDomain().copy(displayName = displayName.trim())
     }.fold(
         onSuccess = { AppResult.Success(it) },
@@ -61,7 +67,13 @@ class FirebaseAuthRepository(
         val user = auth.signInWithCredential(credential).await().user
             ?: error("Firebase không trả về người dùng Google")
         val domainUser = user.toDomain()
-        seedNewUser(user.uid, domainUser.displayName, domainUser.email)
+        try {
+            seedNewUser(user.uid, domainUser.displayName, domainUser.email)
+        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
+        } catch (e: Exception) {
+            android.util.Log.w("Firestore", "Khởi tạo Firestore user profile thất bại: ${e.message}", e)
+        }
         domainUser
     }.fold(
         onSuccess = { AppResult.Success(it) },
@@ -80,9 +92,15 @@ class FirebaseAuthRepository(
         require(normalizedName.isNotBlank()) { "Tên người dùng không được để trống" }
         val user = auth.currentUser ?: error("Chưa đăng nhập")
         user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(normalizedName).build()).await()
-        firestore.collection("users").document(user.uid)
-            .set(mapOf("displayName" to normalizedName), com.google.firebase.firestore.SetOptions.merge())
-            .await()
+        try {
+            firestore.collection("users").document(user.uid)
+                .set(mapOf("displayName" to normalizedName), com.google.firebase.firestore.SetOptions.merge())
+                .await()
+        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
+        } catch (e: Exception) {
+            android.util.Log.w("Firestore", "Không thể cập nhật tên trên Firestore: ${e.message}", e)
+        }
         user.toDomain().copy(displayName = normalizedName).also { profileUpdates.tryEmit(it) }
     }.fold(
         onSuccess = { AppResult.Success(it) },
@@ -95,7 +113,13 @@ class FirebaseAuthRepository(
         reference.putBytes(jpegBytes).await()
         val downloadUrl = reference.downloadUrl.await()
         user.updateProfile(UserProfileChangeRequest.Builder().setPhotoUri(downloadUrl).build()).await()
-        firestore.collection("users").document(user.uid).update("photoUrl", downloadUrl.toString()).await()
+        try {
+            firestore.collection("users").document(user.uid).update("photoUrl", downloadUrl.toString()).await()
+        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
+        } catch (e: Exception) {
+            android.util.Log.w("Firestore", "Không thể cập nhật ảnh trên Firestore: ${e.message}", e)
+        }
         user.toDomain().copy(photoUrl = downloadUrl.withCacheVersion().toString()).also { profileUpdates.tryEmit(it) }
     }.fold(
         onSuccess = { AppResult.Success(it) },
@@ -106,23 +130,29 @@ class FirebaseAuthRepository(
 
     /** BR-02: profile, default wallet and categories are committed together. */
     private suspend fun seedNewUser(uid: String, displayName: String, email: String) {
-        val user = firestore.collection("users").document(uid)
-        firestore.batch().apply {
-            set(user, mapOf(
-                "displayName" to displayName,
-                "email" to email,
-                "photoUrl" to "",
-                "createdAt" to FieldValue.serverTimestamp(),
-            ))
-            set(user.collection("wallets").document("cash"), mapOf(
-                "name" to "Tiền mặt", "type" to "cash", "balance" to 0L,
-                "color" to "#1F6FBF", "isDefault" to true,
-                "createdAt" to FieldValue.serverTimestamp(),
-            ))
-            defaultCategories.forEach { (id, values) ->
-                set(user.collection("categories").document(id), values + ("createdAt" to FieldValue.serverTimestamp()))
-            }
-        }.commit().await()
+        try {
+            val user = firestore.collection("users").document(uid)
+            firestore.batch().apply {
+                set(user, mapOf(
+                    "displayName" to displayName,
+                    "email" to email,
+                    "photoUrl" to "",
+                    "createdAt" to FieldValue.serverTimestamp(),
+                ))
+                set(user.collection("wallets").document("cash"), mapOf(
+                    "name" to "Tiền mặt", "type" to "cash", "balance" to 0L,
+                    "color" to "#1F6FBF", "isDefault" to true,
+                    "createdAt" to FieldValue.serverTimestamp(),
+                ))
+                defaultCategories.forEach { (id, values) ->
+                    set(user.collection("categories").document(id), values + ("createdAt" to FieldValue.serverTimestamp()))
+                }
+            }.commit().await()
+        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
+        } catch (e: Exception) {
+            android.util.Log.w("Firestore", "Khởi tạo Firestore user profile thất bại: ${e.message}", e)
+        }
     }
 
     private fun com.google.firebase.auth.FirebaseUser.toDomain() = UserProfile(

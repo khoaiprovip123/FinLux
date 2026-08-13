@@ -97,44 +97,63 @@ class AuthViewModel @Inject constructor(
     fun signInWithGoogle(context: android.content.Context) {
         viewModelScope.launch {
             mutableState.update { it.copy(isLoading = true, error = null) }
+            val webClientId = try {
+                val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+                if (resId != 0) context.getString(resId) else "382901238910-dummyclientid.apps.googleusercontent.com"
+            } catch (e: Exception) {
+                "382901238910-dummyclientid.apps.googleusercontent.com"
+            }
+
+            android.util.Log.d("GoogleSignIn", "Attempting Google Sign-In with serverClientId: $webClientId")
+
             try {
-                val credentialManager = androidx.credentials.CredentialManager.create(context)
-                val rawWebClientId = "382901238910-dummyclientid.apps.googleusercontent.com"
-                val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
-                    .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(rawWebClientId)
-                    .setAutoSelectEnabled(false)
-                    .build()
+                val timedOut = kotlinx.coroutines.withTimeoutOrNull(15_000L) {
+                    val credentialManager = androidx.credentials.CredentialManager.create(context)
+                    val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId(webClientId)
+                        .setAutoSelectEnabled(false)
+                        .build()
 
-                val request = androidx.credentials.GetCredentialRequest.Builder()
-                    .addCredentialOption(googleIdOption)
-                    .build()
+                    val request = androidx.credentials.GetCredentialRequest.Builder()
+                        .addCredentialOption(googleIdOption)
+                        .build()
 
-                val result = credentialManager.getCredential(context = context, request = request)
-                val credential = result.credential
+                    val result = credentialManager.getCredential(context = context, request = request)
+                    val credential = result.credential
 
-                if (credential is androidx.credentials.CustomCredential &&
-                    credential.type == com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                ) {
-                    val googleIdTokenCredential = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(credential.data)
-                    val idToken = googleIdTokenCredential.idToken
-                    when (val authResult = repository.signInWithGoogle(idToken)) {
-                        is AppResult.Success -> mutableState.update { it.copy(isLoading = false, completed = true) }
-                        is AppResult.Error -> mutableState.update { it.copy(isLoading = false, error = authResult.message) }
+                    if (credential is androidx.credentials.CustomCredential &&
+                        credential.type == com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                    ) {
+                        val googleIdTokenCredential = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(credential.data)
+                        val idToken = googleIdTokenCredential.idToken
+                        android.util.Log.d("GoogleSignIn", "Successfully retrieved Google ID Token")
+                        when (val authResult = repository.signInWithGoogle(idToken)) {
+                            is AppResult.Success -> mutableState.update { it.copy(completed = true) }
+                            is AppResult.Error -> mutableState.update { it.copy(error = authResult.message) }
+                        }
+                    } else {
+                        android.util.Log.e("GoogleSignIn", "Unexpected credential type: ${credential.type}")
+                        mutableState.update { it.copy(error = "Không thể lấy thông tin xác thực từ Google") }
                     }
-                } else {
-                    mutableState.update { it.copy(isLoading = false, error = "Không thể lấy thông tin xác thực từ Google") }
+                    true
+                }
+
+                if (timedOut == null) {
+                    android.util.Log.e("GoogleSignIn", "Google Sign-In timed out after 15s")
+                    mutableState.update { it.copy(error = "Kết nối Firebase quá thời gian, vui lòng thử lại") }
                 }
             } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
-                mutableState.update { it.copy(isLoading = false, error = null) }
+                android.util.Log.d("GoogleSignIn", "User cancelled Google Sign-In picker")
+                mutableState.update { it.copy(error = null) }
             } catch (e: androidx.credentials.exceptions.NoCredentialException) {
-                mutableState.update { it.copy(isLoading = false, error = "Không tìm thấy tài khoản Google trên thiết bị") }
+                android.util.Log.e("GoogleSignIn", "NoCredentialException (${e.javaClass.simpleName}): ${e.message}", e)
+                mutableState.update { it.copy(error = "Cần cấu hình Web Client ID và SHA-1 trên Firebase Console để Đăng nhập Google") }
             } catch (e: Exception) {
-                // Môi trường Dev/Demo không có Web Client ID thật -> Fallback qua demo authentication
-                when (val authResult = repository.signInWithGoogle("demo_google_id_token")) {
-                    is AppResult.Success -> mutableState.update { it.copy(isLoading = false, completed = true) }
-                    is AppResult.Error -> mutableState.update { it.copy(isLoading = false, error = authResult.message) }
-                }
+                android.util.Log.e("GoogleSignIn", "Google Sign-In Exception (${e.javaClass.simpleName}): ${e.message}", e)
+                mutableState.update { it.copy(error = "Cần cấu hình Web Client ID và SHA-1 trên Firebase Console để Đăng nhập Google") }
+            } finally {
+                mutableState.update { it.copy(isLoading = false) }
             }
         }
     }
