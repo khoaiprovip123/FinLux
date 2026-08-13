@@ -211,7 +211,10 @@ fun FinluxNavHost(
                     onThemeSelected = onThemeSelected,
                     uiPreferences = uiPreferences,
                     onUiPreferencesChanged = onUiPreferencesChanged,
-                    onNavigate = { navController.navigate(it) },
+                    onNavigate = { route ->
+                        if (route in MainSwipeRoutes) navigateMain(route)
+                        else navController.navigate(route)
+                    },
                     onAdd = { showQuickAdd = true },
                     onSignedOut = { navController.replaceGraphStart(Route.Login.value) },
                 )

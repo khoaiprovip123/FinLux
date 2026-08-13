@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -135,18 +136,23 @@ fun AuthScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     LaunchedEffect(state.completed) { if (state.completed) onCompleted() }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val handleSocialClick: (SocialAuthProvider) -> Unit = { provider ->
+        when (provider) {
+            SocialAuthProvider.GOOGLE -> viewModel.signInWithGoogle(context)
+            SocialAuthProvider.APPLE -> {
+                android.widget.Toast.makeText(context, "Đăng nhập bằng Apple sắp ra mắt!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            SocialAuthProvider.FACEBOOK -> {
+                android.widget.Toast.makeText(context, "Đăng nhập bằng Facebook sắp ra mắt!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFEBF2FF),
-                        Color(0xFFF3F7FF),
-                        Color(0xFFF8FAFC),
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -173,7 +179,7 @@ fun AuthScreen(
                         spotColor = Color(0x304F46E5)
                     ),
                 shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) else RoundedCornerShape(0.dp),
-                color = Color.White.copy(alpha = if (mode == AuthMode.LOGIN) 1f else .90f),
+                color = MaterialTheme.colorScheme.surface,
             ) {
                 Column(
                     modifier = Modifier
@@ -193,11 +199,23 @@ fun AuthScreen(
 
                     // Form Fields according to Mode
                     when (mode) {
-                        AuthMode.LOGIN -> LoginFormContent(state, viewModel, onNavigate, onSocialSignIn)
+                        AuthMode.LOGIN -> LoginFormContent(state, viewModel, onNavigate, handleSocialClick)
                         AuthMode.REGISTER -> RegisterFormContent(state, viewModel, onNavigate)
                         AuthMode.FORGOT -> ForgotFormContent(state, viewModel, onNavigate)
                     }
                 }
+            }
+        }
+
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF4F46E5))
             }
         }
     }
@@ -224,15 +242,15 @@ private fun AuthHeaderSection(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.85f))
-                            .border(1.dp, Color(0xFFE2E8F0), CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                             .clickable(onClick = onBack),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Quay lại",
-                            tint = Color(0xFF1E293B),
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -246,7 +264,7 @@ private fun AuthHeaderSection(
                     text = mode.heading,
                     fontSize = 19.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onBackground,
                     lineHeight = 25.sp,
                     maxLines = 1,
                 )
@@ -255,7 +273,7 @@ private fun AuthHeaderSection(
                 Text(
                     text = mode.description,
                     fontSize = 13.sp,
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 19.sp
                 )
             }
@@ -296,7 +314,7 @@ private fun AuthModeTabs(
                 text = "Đăng nhập",
                 fontSize = 16.sp,
                 fontWeight = if (loginSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (loginSelected) Color(0xFF1E293B) else Color(0xFF94A3B8)
+                color = if (loginSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(6.dp))
             Box(
@@ -319,7 +337,7 @@ private fun AuthModeTabs(
                 text = "Đăng ký",
                 fontSize = 16.sp,
                 fontWeight = if (registerSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (registerSelected) Color(0xFF1E293B) else Color(0xFF94A3B8)
+                color = if (registerSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(6.dp))
             Box(
@@ -746,11 +764,11 @@ private fun FinluxInput(
         shape = RoundedCornerShape(15.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color(0xFF4F46E5),
-            unfocusedBorderColor = Color(0xFFE2E8F0),
-            focusedContainerColor = Color(0xFFF8FAFC),
-            unfocusedContainerColor = Color(0xFFF8FAFC),
-            focusedTextColor = Color(0xFF0F172A),
-            unfocusedTextColor = Color(0xFF0F172A),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
         )
     )
 }
@@ -819,14 +837,14 @@ private fun SocialDivider(text: String) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        HorizontalDivider(Modifier.weight(1f), color = Color(0xFFE2E8F0))
+        HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
         Text(
             text = text,
             fontSize = 12.sp,
-            color = Color(0xFF94A3B8),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
-        HorizontalDivider(Modifier.weight(1f), color = Color(0xFFE2E8F0))
+        HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -839,18 +857,21 @@ private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
         SocialCard(
             title = "Google",
             iconRes = R.drawable.ic_google_g,
+            enabled = true,
             onClick = { onSocialClick(SocialAuthProvider.GOOGLE) },
             modifier = Modifier.weight(1f)
         )
         SocialCard(
             title = "Apple",
             iconRes = R.drawable.ic_apple,
+            enabled = false,
             onClick = { onSocialClick(SocialAuthProvider.APPLE) },
             modifier = Modifier.weight(1f)
         )
         SocialCard(
             title = "Facebook",
             iconRes = R.drawable.ic_facebook,
+            enabled = false,
             onClick = { onSocialClick(SocialAuthProvider.FACEBOOK) },
             modifier = Modifier.weight(1f)
         )
@@ -861,6 +882,7 @@ private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
 private fun SocialCard(
     title: String,
     iconRes: Int,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -869,9 +891,9 @@ private fun SocialCard(
             .height(76.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(15.dp),
-        color = Color.White,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        shadowElevation = 1.dp
+        color = if (enabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        shadowElevation = if (enabled) 1.dp else 0.dp
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -881,14 +903,14 @@ private fun SocialCard(
             Image(
                 painter = painterResource(iconRes),
                 contentDescription = "Đăng nhập bằng $title",
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(24.dp).alpha(if (enabled) 1f else 0.45f),
             )
             Spacer(Modifier.height(7.dp))
             Text(
-                text = title,
-                fontSize = 13.sp,
+                text = if (enabled) title else "$title (Sắp có)",
+                fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1E293B)
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         }
     }
@@ -904,7 +926,7 @@ fun FinluxLogoHeader(
             text = "Fin",
             fontSize = fontSize,
             fontWeight = FontWeight.ExtraBold,
-            color = if (isDark) Color.White else Color(0xFF0F172A)
+            color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = "Lux",

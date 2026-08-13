@@ -57,62 +57,82 @@ abstract class LocalRepositoryModule {
 object FinanceRepositoryModule {
     @Provides
     @Singleton
-    fun provideAuthRepository(demo: DemoFinluxRepository): AuthRepository =
-        if (BuildConfig.FIREBASE_CONFIGURED) {
-            FirebaseAuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance(), FirebaseStorage.getInstance())
+    fun provideAuthRepository(
+        demo: DemoFinluxRepository,
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+        storage: FirebaseStorage?,
+    ): AuthRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null && storage != null) {
+            FirebaseAuthRepository(auth, firestore, storage)
         } else demo
 
     @Provides
     @Singleton
-    fun provideTransactionRepository(demo: DemoFinluxRepository): TransactionRepository =
-        if (BuildConfig.FIREBASE_CONFIGURED) {
-            FirebaseTransactionRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    fun provideTransactionRepository(
+        demo: DemoFinluxRepository,
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): TransactionRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseTransactionRepository(auth, firestore)
         } else demo
 
     @Provides
     @Singleton
     fun provideWalletRepository(
         demo: DemoFinluxRepository,
-    ): WalletRepository = if (BuildConfig.FIREBASE_CONFIGURED) firebaseReadRepository() else demo
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): WalletRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
 
     @Provides
     @Singleton
     fun provideCategoryRepository(
         demo: DemoFinluxRepository,
-    ): CategoryRepository = if (BuildConfig.FIREBASE_CONFIGURED) firebaseReadRepository() else demo
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): CategoryRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
 
     @Provides
     @Singleton
     fun provideBudgetRepository(
         demo: DemoFinluxRepository,
-    ): BudgetRepository = if (BuildConfig.FIREBASE_CONFIGURED) firebaseReadRepository() else demo
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): BudgetRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
 
     @Provides
     @Singleton
     fun provideReminderRepository(
         demo: DemoFinluxRepository,
-    ): ReminderRepository = if (BuildConfig.FIREBASE_CONFIGURED) firebaseReadRepository() else demo
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): ReminderRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
 
     @Provides
     @Singleton
     fun provideGoalRepository(
         demo: DemoFinluxRepository,
-    ): GoalRepository = if (BuildConfig.FIREBASE_CONFIGURED) firebaseReadRepository() else demo
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): GoalRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
 
     @Provides
     @Singleton
     fun provideReceiptStorageRepository(
         demo: DemoFinluxRepository,
-    ): ReceiptStorageRepository = if (BuildConfig.FIREBASE_CONFIGURED) {
-        FirebaseReceiptStorageRepository(FirebaseAuth.getInstance(), FirebaseStorage.getInstance())
+        auth: FirebaseAuth?,
+        storage: FirebaseStorage?,
+    ): ReceiptStorageRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && storage != null) {
+        FirebaseReceiptStorageRepository(auth, storage)
     } else demo
 
     @Provides
     @Singleton
     fun provideDashboardRepository(
         demo: DemoFinluxRepository,
-    ): DashboardRepository = if (BuildConfig.FIREBASE_CONFIGURED) firebaseReadRepository() else demo
-
-    private fun firebaseReadRepository() =
-        FirebaseReadRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): DashboardRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
 }

@@ -1,45 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedInAs(uid) {
-      return request.auth != null && request.auth.uid == uid;
-    }
-
-    match /users/{uid} {
-      allow create, read, update: if signedInAs(uid);
-      allow delete: if false;
-
-      match /wallets/{walletId} {
-        allow read, write: if signedInAs(uid);
-      }
-
-      match /categories/{categoryId} {
-        allow read, write: if signedInAs(uid);
-      }
-
-      match /transactions/{transactionId} {
-        allow read: if signedInAs(uid);
-        allow create, update: if signedInAs(uid)
-          && request.resource.data.amount is int
-          && request.resource.data.amount > 0
-          && request.resource.data.walletId is string
-          && request.resource.data.date is timestamp;
-        allow delete: if signedInAs(uid);
-      }
-
-      match /budgets/{budgetId} {
-        allow read, write: if signedInAs(uid);
-      }
-
-      match /reminders/{reminderId} {
-        allow read, write: if signedInAs(uid);
-      }
-
-      match /notifications/{notificationId} {
-        allow read, update: if signedInAs(uid);
-        // Notifications are created by trusted Cloud Functions only.
-        allow create, delete: if false;
-      }
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }

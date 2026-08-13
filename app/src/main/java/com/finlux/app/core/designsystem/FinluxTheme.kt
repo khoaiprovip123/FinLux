@@ -1,6 +1,7 @@
 package com.finlux.app.core.designsystem
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -46,6 +47,8 @@ private val DarkColors = darkColorScheme(
     surface = Color(0xFF141C2A),
     surfaceVariant = Color(0xFF202A3B),
     onSurface = Color(0xFFE7F1FA),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    outlineVariant = Color(0xFF2B3A52),
     error = Color(0xFFFFB2BB),
 )
 
@@ -68,12 +71,12 @@ private val GlassColors = darkColorScheme(
     onPrimary = Color.White,
     secondary = Color(0xFF52CCFF),
     tertiary = Color(0xFFA99BFF),
-    background = Color(0xFF18295B),
-    surface = Color(0xFF354D8A),
-    surfaceVariant = Color(0xFF4B5F9A),
+    background = Color(0xFF131D40),
+    surface = Color(0xFF243466),
+    surfaceVariant = Color(0xFF354885),
     onSurface = Color.White,
-    onSurfaceVariant = Color(0xFFD6DDF8),
-    outlineVariant = Color.White.copy(alpha = .22f),
+    onSurfaceVariant = Color(0xFFCBD5F6),
+    outlineVariant = Color.White.copy(alpha = .32f),
     error = Color(0xFFFFA6B0),
 )
 
@@ -143,17 +146,20 @@ fun FinluxTheme(
         }
     }
 
-    androidx.compose.runtime.CompositionLocalProvider(
-        LocalGlassTokens provides tokens,
-        LocalUiPreferences provides uiPreferences,
+    val colorScheme = when (style) {
+        VisualStyle.MODERN_DARK -> ModernDarkColors
+        VisualStyle.GLASSMORPHISM -> GlassColors
+        VisualStyle.DYNAMIC_GRADIENT -> if (dark) DarkColors else LightColors
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = FinluxTypography,
     ) {
-        MaterialTheme(
-            colorScheme = when (style) {
-                VisualStyle.MODERN_DARK -> ModernDarkColors
-                VisualStyle.GLASSMORPHISM -> GlassColors
-                VisualStyle.DYNAMIC_GRADIENT -> if (dark) DarkColors else LightColors
-            },
-            typography = FinluxTypography,
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalGlassTokens provides tokens,
+            LocalUiPreferences provides uiPreferences,
+            LocalContentColor provides MaterialTheme.colorScheme.onSurface,
             content = content,
         )
     }
