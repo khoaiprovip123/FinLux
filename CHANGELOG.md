@@ -3,6 +3,21 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.4.8] - 2026-08-13
+
+### Fixed
+- **Triệt tiêu hoàn toàn xung đột cử chỉ (Zero Gesture Collision):** Tháo bỏ toàn bộ khối `pointerInput` cử chỉ kéo trượt toàn màn hình và hiệu ứng `translationX` trong `FinluxNavHost.kt`. Việc chuyển đổi giữa các tab chính dùng 100% việc nhấn biểu tượng trên Bottom Navigation Bar, giúp các danh sách vuốt Card/Ví (`SwipeToDismissBox`) và danh sách ngang hoạt động độc lập, mượt mà tuyệt đối mà không bao giờ bị xô lệch khung màn hình cha.
+
+---
+
+## [1.4.7] - 2026-08-13
+
+### Fixed
+- **Xung đột cử chỉ vuốt (Gesture Collision Fix):** Cập nhật `FinluxNavHost.kt` chuyển lắng nghe touch sang `PointerEventPass.Main` và kiểm tra `change.isConsumed`. Khi người dùng vuốt item trong danh sách (như `SwipeToDismissBox` ở màn hình Ví), sự kiện vuốt ngang được con tiêu thụ hoàn toàn, hủy triệt để việc kéo lệch toàn bộ khung màn hình/chuyển tab cha.
+- **Tràn bố cục nút bấm khi vuốt (UI Clipping Fix):** Bổ sung `Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))` cho `SwipeToDismissBox` trong `WalletsScreen.kt`. Khung nút "Sửa/Xóa" nay được bo góc và nằm gọn hoàn toàn bên trong Card item, không bị tràn/đè viền lên Bottom Navigation Bar.
+
+---
+
 ## [1.4.6] - 2026-08-13
 
 ### Fixed

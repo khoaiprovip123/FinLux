@@ -1,9 +1,66 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.4.6 (versionCode 48)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Tích hợp `play-services-auth` & hỗ trợ nạp APK đa thiết bị ADB
-- **Trạng thái Nạp Thiết Bị:** ✅ Đã nạp thành công 100% cho cả 2 thiết bị (Máy thật + Máy giả lập)
+- **Phiên bản hiện tại:** v1.4.8 (versionCode 51)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Tháo bỏ pointerInput drag khung cha triệt để
+- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.4.8 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+
+---
+
+## [DONE] Task v1.4.8: Remove Full-Screen Frame Drag Gesture & Zero Gesture Collision
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- Tháo bỏ hoàn toàn khối `pointerInput` lắng nghe cử chỉ kéo ngang toàn màn hình và hiệu ứng `translationX` trong `FinluxNavHost.kt`.
+- Chuyển 100% việc điều hướng tab chính sang Bottom Navigation Bar, giải quyết triệt để 100% lỗi xô lệch khung màn hình cha khi vuốt Card/Ví (SwipeToDismissBox) hoặc danh sách ngang.
+- Bump `versionName` lên `1.4.8` và `versionCode` `50`.
+- Chạy 100% Unit Test pass (`gradlew testDebugUnitTest`).
+- Rebuild APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công cả 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `FinluxNavHost.kt` | ✅ Gỡ bỏ hoàn toàn `pointerInput` cử chỉ kéo ngang khung màn hình và `translationX` |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 50`, `versionName 1.4.8` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.4.8 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.4.7: Fix Gesture Collision & Item Swipe Clipping
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- Xử lý xung đột cử chỉ vuốt ngang: Đổi `PointerEventPass.Initial` sang `PointerEventPass.Main` trong `FinluxNavHost.kt` và kiểm tra `change.isConsumed` để khi người dùng vuốt Card/Item (SwipeToDismissBox), cử chỉ vuốt ngang được con tiêu thụ hoàn toàn và không bị kéo lê Pager/Container cha.
+- Fix tràn bố cục UI khi vuốt (UI Clipping Issue): Bổ sung `Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))` cho `SwipeToDismissBox` trong `WalletsScreen.kt` và đảm bảo padding chuẩn không bị đè lên Bottom Navigation Bar.
+- Bump `versionName` lên `1.4.7` và `versionCode` `49`.
+- Chạy 100% Unit Test pass (`gradlew testDebugUnitTest`).
+- Rebuild APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `FinluxNavHost.kt` | ✅ Đổi `PointerEventPass.Initial` ➔ `PointerEventPass.Main`, kiểm tra `change.isConsumed` để hủy root swipe khi con tiêu thụ sự kiện |
+| `WalletsScreen.kt` | ✅ Bổ sung `Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))` cho `SwipeToDismissBox` |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 49`, `versionName 1.4.7` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.4.7 |
+
+### Trạng thái
+`[DONE]`
 
 ---
 

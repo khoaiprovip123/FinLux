@@ -76,8 +76,6 @@ fun FinluxNavHost(
     var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val swipeThreshold = with(LocalDensity.current) { 44.dp.toPx() }
-    var swipePreview by remember { mutableFloatStateOf(0f) }
     val navigateMain: (String) -> Unit = { route ->
         navController.navigate(route) {
             launchSingleTop = true
@@ -85,72 +83,11 @@ fun FinluxNavHost(
             popUpTo(Route.Home.value) { saveState = true }
         }
     }
-    Box(
-        Modifier.fillMaxSize().pointerInput(currentRoute, showAddTransaction, showQuickAdd) {
-            if (currentRoute !in MainSwipeRoutes || showAddTransaction || showQuickAdd) return@pointerInput
-            while (true) {
-                val gesture = awaitPointerEventScope {
-                    // Observe at the root without consuming. Child LazyRows/charts stay interactive.
-                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    val startedAt = down.uptimeMillis
-                    var horizontalTravel = 0f
-                    var verticalTravel = 0f
-                    var endedAt = startedAt
-                    var pressed = true
-                    swipePreview = 0f
-                    while (pressed) {
-                        // Initial pass observes movement before a chart, LazyRow or vertical list can consume it.
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        horizontalTravel = change.position.x - down.position.x
-                        verticalTravel = change.position.y - down.position.y
-                        endedAt = change.uptimeMillis
-                        val horizontalDistance = kotlin.math.abs(horizontalTravel)
-                        val verticalDistance = kotlin.math.abs(verticalTravel)
-                        swipePreview = if (horizontalDistance > verticalDistance * 1.15f) {
-                            (horizontalTravel * 0.62f).coerceIn(-size.width * 0.32f, size.width * 0.32f)
-                        } else 0f
-                        pressed = change.pressed
-                    }
-                    SwipeGesture(horizontalTravel, verticalTravel, (endedAt - startedAt).coerceAtLeast(1L))
-                }
-                val horizontalTravel = gesture.horizontalTravel
-                val targetRoute = mainRouteAfterSwipe(
-                    currentRoute = currentRoute,
-                    horizontalTravel = horizontalTravel,
-                    verticalTravel = gesture.verticalTravel,
-                    threshold = swipeThreshold,
-                    elapsedMillis = gesture.elapsedMillis,
-                )
-                val releaseAnimation = Animatable(swipePreview)
-                if (targetRoute != null) {
-                    val releaseTarget = if (horizontalTravel < 0f) -size.width * 0.38f else size.width * 0.38f
-                    releaseAnimation.animateTo(releaseTarget, tween(105)) { swipePreview = value }
-                    swipePreview = 0f
-                    navigateMain(targetRoute)
-                } else {
-                    releaseAnimation.animateTo(
-                        targetValue = 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMediumLow,
-                        ),
-                    ) { swipePreview = value }
-                }
-            }
-        },
-    ) {
+    Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
         NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
-            modifier = Modifier.graphicsLayer {
-                translationX = swipePreview
-                val progress = (kotlin.math.abs(swipePreview) / (size.width * 0.32f).coerceAtLeast(1f)).coerceIn(0f, 1f)
-                scaleX = 1f - progress * 0.012f
-                scaleY = 1f - progress * 0.012f
-                alpha = 1f - progress * 0.055f
-            },
             enterTransition = {
                 val from = MainSwipeRoutes.indexOf(initialState.destination.route)
                 val to = MainSwipeRoutes.indexOf(targetState.destination.route)
@@ -252,7 +189,6 @@ fun FinluxNavHost(
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
         }
-        SwipeEdgeGlow(swipePreview)
         if (showAddTransaction) {
             AddTransactionSheet(
                 initialType = initialTransactionType,
