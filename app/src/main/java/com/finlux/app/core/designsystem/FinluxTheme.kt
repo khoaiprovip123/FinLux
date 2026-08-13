@@ -1,6 +1,7 @@
 package com.finlux.app.core.designsystem
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -143,17 +144,20 @@ fun FinluxTheme(
         }
     }
 
-    androidx.compose.runtime.CompositionLocalProvider(
-        LocalGlassTokens provides tokens,
-        LocalUiPreferences provides uiPreferences,
+    val colorScheme = when (style) {
+        VisualStyle.MODERN_DARK -> ModernDarkColors
+        VisualStyle.GLASSMORPHISM -> GlassColors
+        VisualStyle.DYNAMIC_GRADIENT -> if (dark) DarkColors else LightColors
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = FinluxTypography,
     ) {
-        MaterialTheme(
-            colorScheme = when (style) {
-                VisualStyle.MODERN_DARK -> ModernDarkColors
-                VisualStyle.GLASSMORPHISM -> GlassColors
-                VisualStyle.DYNAMIC_GRADIENT -> if (dark) DarkColors else LightColors
-            },
-            typography = FinluxTypography,
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalGlassTokens provides tokens,
+            LocalUiPreferences provides uiPreferences,
+            LocalContentColor provides MaterialTheme.colorScheme.onSurface,
             content = content,
         )
     }

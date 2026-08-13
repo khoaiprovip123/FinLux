@@ -154,7 +154,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Giao dịch gần nhất", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Giao dịch gần nhất", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             "Xem tất cả",
                             color = FinluxBlue,
@@ -188,7 +188,7 @@ private fun ReferenceHeader(name: String, photoUrl: String?, onNotifications: ()
         FinluxBrandMark(size = 46.dp, framed = false)
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
             Text("Xin chào 👋", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
         IconButton(onClick = onNotifications) {
             Box(contentAlignment = Alignment.TopEnd) {
@@ -210,7 +210,7 @@ private fun ExpenseAnalytics(transactions: List<FinanceTransaction>, categories:
     val colors = listOf(FinluxPurple, Color(0xFFFF7A45), FinluxCyan, FinluxBlue, WarningAmber, Color(0xFF9B5CFF))
     WaterGlassCard(Modifier.fillMaxWidth(), tint = FinluxPurple, cornerRadius = 20) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Chi tiêu theo danh mục", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Chi tiêu theo danh mục", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             if (groups.isEmpty()) {
                 Text("Chưa có dữ liệu chi tiêu", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
@@ -234,7 +234,7 @@ private fun ExpenseAnalytics(transactions: List<FinanceTransaction>, categories:
                             }
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(total.toShortVnd(), fontWeight = FontWeight.Bold)
+                            Text(total.toShortVnd(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             Text("Tổng chi", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -242,8 +242,8 @@ private fun ExpenseAnalytics(transactions: List<FinanceTransaction>, categories:
                         groups.take(6).forEachIndexed { index, item ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(8.dp).background(colors[index % colors.size], CircleShape))
-                                Text(item.first, Modifier.weight(1f).padding(horizontal = 7.dp), style = MaterialTheme.typography.bodySmall, maxLines = 1)
-                                Text("${item.second * 100 / total.coerceAtLeast(1L)}%", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                Text(item.first, Modifier.weight(1f).padding(horizontal = 7.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                                Text("${item.second * 100 / total.coerceAtLeast(1L)}%", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -367,7 +367,7 @@ private fun ReferenceTransactionRow(transaction: FinanceTransaction, category: C
             Icon(referenceTransactionIcon(transaction, category), null, Modifier.size(20.dp), tint = accent)
         }
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-            Text(category?.name ?: "Chuyển khoản", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+            Text(category?.name ?: "Chuyển khoản", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
             Text(
                 transaction.note.ifBlank { transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM, HH:mm")) },
                 style = MaterialTheme.typography.bodySmall,
