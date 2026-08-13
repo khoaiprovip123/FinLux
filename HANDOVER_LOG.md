@@ -1,9 +1,35 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.5.1 (versionCode 54)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Bổ sung nút [Xác nhận thanh toán] trực tiếp trên thẻ thông báo
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.1 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+- **Phiên bản hiện tại:** v1.5.2 (versionCode 55)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Tự động hóa CI/CD GitHub Actions Auto-Build & Release APK public khi push/merge branch `main`.
+
+---
+
+## [DONE] Task v1.5.2: Automated GitHub Release CI/CD Pipeline
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **GitHub Actions Workflow:** Tạo `.github/workflows/release.yml` lắng nghe sự kiện `push`/`merge` vào branch `main` hoặc đẩy tag `v*`.
+- **Environment & Secret Handling:** Thiết lập Java 17, Gradle action cache và tự động khôi phục `app/google-services.json` từ GitHub secret `GOOGLE_SERVICES_JSON` (hoặc fallback `google-services.json.example`).
+- **Automated Test & Release:** Chạy `testDebugUnitTest`, build `assembleDebug`, tự động tạo **GitHub Release** public và attach file APK trực tiếp.
+- **Bump Version:** Nâng `versionName` lên `1.5.2` và `versionCode` `55`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100%.
+- **Workflow File:** `.github/workflows/release.yml` đã kiểm tra cú pháp hợp lệ.
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `.github/workflows/release.yml` [NEW] | ✅ Workflow tự động test, build APK và publish Release lên GitHub |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 55`, `versionName 1.5.2` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.2 |
+
+### Trạng thái
+`[DONE]`
 
 ---
 

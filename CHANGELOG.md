@@ -3,6 +3,15 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.2] - 2026-08-13
+
+### Added
+- **Tự động đóng gói APK & phát hành GitHub Release khi Push/Merge Git:** Tạo `.github/workflows/release.yml` tự động lắng nghe sự kiện push/merge code trên branch `main` hoặc khi đẩy git tag (`v*`).
+- **Tự động khôi phục Google Services Config trong CI/CD:** Workflow tự động phát hiện và khôi phục `app/google-services.json` từ GitHub Secret `GOOGLE_SERVICES_JSON` hoặc dùng `google-services.json.example` nếu chưa cấu hình secret.
+- **Tự động tải APK lên GitHub Releases công khai:** Sử dụng `softprops/action-gh-release@v2` tự động xuất bản GitHub Release công khai kèm file `app-debug.apk` đã được build và verify 100% unit tests.
+
+---
+
 ## [1.5.1] - 2026-08-13
 
 ### Added
