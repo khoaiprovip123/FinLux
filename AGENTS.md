@@ -42,3 +42,20 @@ giao diện Liquid Glass. Đọc `CONTEXT.md`, `BA_SPEC.md`, `UI_SPEC.md`, `DATA
 ## Cập nhật tài liệu
 Mỗi khi thay đổi phạm vi/nghiệp vụ trong lúc code, cập nhật lại `BA_SPEC.md`/`UI_SPEC.md` tương ứng
 và ghi log vào `CHANGELOG.md` — không để code và tài liệu lệch nhau.
+
+## 🚀 MANDATORY RELEASE & VERSIONING WORKFLOW
+Mỗi khi người dùng yêu cầu build release, đóng gói APK hoàn chỉnh, hoặc chuẩn bị commit tính năng mới:
+1. **AUTO VERSION BUMP:**
+   - Tự động kiểm tra `versionCode` và `versionName` trong `app/build.gradle.kts` (hoặc `libs.versions.toml`).
+   - Tự động tăng `versionCode` lên +1.
+   - Cập nhật `versionName` theo chuẩn Semantic Versioning (X.Y.Z) tương ứng với quy mô thay đổi (Patch/Minor/Major).
+
+2. **AUTO CHANGELOG & DOCS SYNC:**
+   - Tự động thêm mục phiên bản mới lên đầu file `CHANGELOG.md` theo chuẩn "Keep a Changelog".
+   - Tóm tắt ngắn gọn các thay đổi vừa thực hiện vào 3 mục: `[Added]`, `[Changed]`, `[Fixed]`.
+   - Cập nhật thông tin version tương ứng trong `HANDOVER_LOG.md`.
+
+3. **VERIFY & COMMIT:**
+   - Chạy `gradlew testDebugUnitTest` đảm bảo 100% PASS trước khi build.
+   - Commit thay đổi với message: `bump(release): vX.Y.Z - [Tóm tắt ngắn]`.
+
