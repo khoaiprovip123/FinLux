@@ -68,12 +68,15 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
 
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+
 private val ChartColors = listOf(FinluxBlue, FinluxPurple, FinluxCyan, IncomeGreen, Color(0xFFFFB347), ExpenseRed)
 
 @Composable
 fun ReportsScreen(
     onNavigate: (String) -> Unit,
     onAdd: () -> Unit,
+    onBack: (() -> Unit)? = null,
     viewModel: ReportsViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
@@ -83,6 +86,11 @@ fun ReportsScreen(
         topBar = {
             GlassTopBar(
                 title = { Text("Báo cáo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { onBack?.invoke() ?: onNavigate(Route.Home.value) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                    }
+                },
                 actions = { IconButton(onClick = { showRangePicker = true }) { Icon(Icons.Default.FilterAlt, "Lọc báo cáo") } },
             )
         },

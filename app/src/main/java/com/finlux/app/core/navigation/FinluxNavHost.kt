@@ -198,12 +198,12 @@ fun FinluxNavHost(
                     onNotifications = { navController.navigate(Route.Notifications.value) },
                 )
             }
-            composable(Route.Transactions.value) { TransactionsScreen() }
+            composable(Route.Transactions.value) { TransactionsScreen(onNavigate = navigateMain, onBack = navController::popBackStack) }
             composable(Route.Reports.value) {
-                ReportsScreen(onNavigate = navigateMain, onAdd = { showQuickAdd = true })
+                ReportsScreen(onNavigate = navigateMain, onAdd = { showQuickAdd = true }, onBack = navController::popBackStack)
             }
             composable(Route.Budget.value) {
-                BudgetScreen(onNavigate = navigateMain, onAdd = { showQuickAdd = true })
+                BudgetScreen(onNavigate = navigateMain, onAdd = { showQuickAdd = true }, onBack = navController::popBackStack)
             }
             composable(Route.Settings.value) {
                 SettingsScreen(
@@ -224,6 +224,7 @@ fun FinluxNavHost(
                 WalletsScreen(
                     onNavigate = navigateMain,
                     onAdd = { showQuickAdd = true },
+                    onBack = navController::popBackStack,
                     transferRequestKey = walletTransferRequest,
                 )
             }
@@ -247,7 +248,7 @@ fun FinluxNavHost(
                     },
                 )
             }
-            composable(Route.Notifications.value) { NotificationsScreen() }
+            composable(Route.Notifications.value) { NotificationsScreen(onBack = navController::popBackStack) }
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
         }

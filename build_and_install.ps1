@@ -39,6 +39,20 @@ if (-not $devices) {
 
 $devices | ForEach-Object { Write-Host "   -> Thiet bi tim thay: $_" -ForegroundColor Green }
 
+# 1.5 Auto Version Bump trong app/build.gradle.kts
+$gradleFile = "app/build.gradle.kts"
+if (Test-Path $gradleFile) {
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    $content = [System.IO.File]::ReadAllText((Resolve-Path $gradleFile), $utf8NoBom)
+    if ($content -match "versionCode\s*=\s*(\d+)") {
+        $oldCode = [int]$matches[1]
+        $newCode = $oldCode + 1
+        $content = $content -replace "versionCode\s*=\s*\d+", "versionCode = $newCode"
+        [System.IO.File]::WriteAllText((Resolve-Path $gradleFile), $content, $utf8NoBom)
+        Write-Host "   -> Auto Version Bump: versionCode $oldCode -> $newCode" -ForegroundColor Cyan
+    }
+}
+
 # 2. Build APK bang Gradle Wrapper
 Write-Host "`n[2/3] Dang build APK Debug..." -ForegroundColor Yellow
 cmd /c "gradlew.bat assembleDebug"

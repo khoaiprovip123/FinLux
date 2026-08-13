@@ -112,7 +112,7 @@ fun AddTransactionSheet(
             }
             OutlinedTextField(
                 state.amountInput, viewModel::setAmount, Modifier.fillMaxWidth(), label = { Text("Số tiền") },
-                supportingText = { state.amountInput.toLongOrNull()?.let { Text(it.toVnd()) } },
+                supportingText = { Text((state.amountInput.toLongOrNull() ?: 0L).toVnd()) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true,
             )
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
