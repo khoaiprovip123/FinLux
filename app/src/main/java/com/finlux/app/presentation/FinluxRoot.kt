@@ -5,10 +5,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxTheme
 import com.finlux.app.core.navigation.FinluxNavHost
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Root is the only place where theme preference enters Composition (AGENTS.md rule 5). */
 @Composable
-fun FinluxRoot(viewModel: RootViewModel = hiltViewModel()) {
+fun FinluxRoot(
+    viewModel: RootViewModel = hiltViewModel(),
+    destinationFlow: MutableStateFlow<String?>? = null,
+) {
     val theme = viewModel.theme.collectAsStateWithLifecycle().value
     val uiPreferences = viewModel.uiPreferences.collectAsStateWithLifecycle().value
     FinluxTheme(preference = theme, uiPreferences = uiPreferences) {
@@ -17,6 +21,7 @@ fun FinluxRoot(viewModel: RootViewModel = hiltViewModel()) {
             onThemeSelected = viewModel::setTheme,
             uiPreferences = uiPreferences,
             onUiPreferencesChanged = viewModel::setUiPreferences,
+            destinationFlow = destinationFlow,
         )
     }
 }

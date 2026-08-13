@@ -3,6 +3,70 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-08-13
+
+### Added
+- **Nút Xác nhận Thanh toán Trực tiếp trên Màn hình Thông báo (Quick Pay Action):** Trên `NotificationsScreen.kt`, với các thẻ thông báo nhắc nhở thanh toán (có `reminderId` hoặc `amount > 0`), hiển thị nút bấm `[💳 Xác nhận thanh toán]`.
+- **Ghi nhận Giao dịch & Trừ Số dư Tự động:** Khi người dùng bấm xác nhận:
+  1. Tự động gọi `AddTransactionUseCase` tạo một giao dịch chi tiêu mới (`FinanceTransaction`) tương ứng với thông tin khoản chi.
+  2. Tự động trừ số dư ví và cập nhật ngân sách realtime.
+  3. Cập nhật trạng thái thẻ thông báo sang nhãn màu xanh lá `[✓ Đã thanh toán]` và ẩn nút bấm.
+  4. Hiển thị Snackbar thông báo kết quả: `"Đã ghi nhận thanh toán [Tên khoản chi]!"`.
+
+---
+
+## [1.5.0] - 2026-08-13
+
+### Added
+- **Lưu lịch sử thông báo (Notification Persistence):** Khi báo thức nhắc nhở nổ (`ReminderReceiver.kt`), hệ thống tự động lưu bản ghi `AppNotification` vào Firestore subcollection `users/{uid}/notifications` (hoặc `DemoFinluxRepository`).
+- **Tự động điều hướng Deep Link khi bấm thông báo:** Cập nhật `PendingIntent` gửi kèm extra `destination = "notifications"`. `MainActivity` và `FinluxNavHost` bắt extra intent (`onCreate` & `onNewIntent`) và tự động chuyển ngay sang màn hình `NotificationsScreen`.
+- **Giao diện & ViewModel màn hình Thông báo:** Bổ sung `NotificationsViewModel.kt` và nâng cấp `NotificationsScreen.kt` theo giao diện Liquid Glass, hiển thị thời gian phát sinh, badge chưa đọc, nút đánh dấu đã đọc và tùy chọn xóa sạch lịch sử thông báo.
+
+---
+
+## [1.4.8] - 2026-08-13
+
+### Fixed
+- **Triệt tiêu hoàn toàn xung đột cử chỉ (Zero Gesture Collision):** Tháo bỏ toàn bộ khối `pointerInput` cử chỉ kéo trượt toàn màn hình và hiệu ứng `translationX` trong `FinluxNavHost.kt`. Việc chuyển đổi giữa các tab chính dùng 100% việc nhấn biểu tượng trên Bottom Navigation Bar, giúp các danh sách vuốt Card/Ví (`SwipeToDismissBox`) và danh sách ngang hoạt động độc lập, mượt mà tuyệt đối mà không bao giờ bị xô lệch khung màn hình cha.
+
+---
+
+## [1.4.7] - 2026-08-13
+
+### Fixed
+- **Xung đột cử chỉ vuốt (Gesture Collision Fix):** Cập nhật `FinluxNavHost.kt` chuyển lắng nghe touch sang `PointerEventPass.Main` và kiểm tra `change.isConsumed`. Khi người dùng vuốt item trong danh sách (như `SwipeToDismissBox` ở màn hình Ví), sự kiện vuốt ngang được con tiêu thụ hoàn toàn, hủy triệt để việc kéo lệch toàn bộ khung màn hình/chuyển tab cha.
+- **Tràn bố cục nút bấm khi vuốt (UI Clipping Fix):** Bổ sung `Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))` cho `SwipeToDismissBox` trong `WalletsScreen.kt`. Khung nút "Sửa/Xóa" nay được bo góc và nằm gọn hoàn toàn bên trong Card item, không bị tràn/đè viền lên Bottom Navigation Bar.
+
+---
+
+## [1.4.6] - 2026-08-13
+
+### Fixed
+- **Google Auth CredentialProvider Compatibility:** Khai báo trực tiếp dependency `com.google.android.gms:play-services-auth:21.3.0` giúp `CredentialManager` của Android định vị thành công Play Auth Provider, khắc phục triệt để ngoại lệ `GetCredentialProviderConfigurationException` trên Android Emulator và thiết bị Android 13 trở xuống.
+
+### Added
+- **Hỗ trợ nạp APK đa thiết bị trong `build_and_install.ps1`:** Nâng cấp script tự động lọc danh sách tất cả các thiết bị ADB đang kết nối (Wireless / USB / Emulator) và cài đè APK song song thành công cho toàn bộ thiết bị.
+
+---
+
+## [1.4.5] - 2026-08-13
+
+### Changed
+- **Tên hiển thị ứng dụng (App Launcher Display Name):** Đổi nhãn hiển thị icon ứng dụng trên màn hình điện thoại từ `Finlux` thành **`Finance Luxury`** (`app/src/main/res/values/strings.xml`).
+
+---
+
+## [1.4.4] - 2026-08-13
+
+### Added
+- **Shared Project Debug Keystore (`app/debug.keystore`):** Đưa file keystore cố định vào repository tại đường dẫn `app/debug.keystore` để tất cả thành viên trong dự án dùng chung 1 chữ ký debug duy nhất.
+- **Cấu hình Gradle `signingConfigs.debug`:** Cập nhật `app/build.gradle.kts` đảm bảo kiểu build `debug` tự động ký bằng `app/debug.keystore`.
+
+### Changed
+- Đồng bộ hóa mã SHA-1 Google Auth trên Firebase Console cho tất cả môi trường phát triển của nhóm.
+
+---
+
 ## [1.4.3] - 2026-08-13
 
 ### Fixed

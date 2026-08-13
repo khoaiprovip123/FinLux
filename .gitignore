@@ -10,6 +10,7 @@ local.properties
 # Signing and Firebase configuration must never be committed.
 *.jks
 *.keystore
+!app/debug.keystore
 *.pepk
 *.env
 app/google-services.json

@@ -17,6 +17,8 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
+import com.finlux.app.domain.model.AppNotification
+import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
@@ -56,7 +58,8 @@ class DemoFinluxRepository @Inject constructor(
     ReminderRepository,
     GoalRepository,
     ReceiptStorageRepository,
-    DashboardRepository {
+    DashboardRepository,
+    NotificationRepository {
 
     private val mutationMutex = Mutex()
     private val profilePreferences = context.getSharedPreferences("finlux_demo_profile", Context.MODE_PRIVATE)
@@ -67,6 +70,7 @@ class DemoFinluxRepository @Inject constructor(
     private val budgetState = MutableStateFlow(seedBudgets())
     private val reminderState = MutableStateFlow(seedReminders())
     private val goalState = MutableStateFlow<List<FinancialGoal>>(emptyList())
+    private val notificationState = MutableStateFlow(seedNotifications())
 
     override val currentUser: Flow<UserProfile?> = userState
 
@@ -144,6 +148,35 @@ class DemoFinluxRepository @Inject constructor(
     override fun observeReminders(): Flow<List<Reminder>> = reminderState
 
     override fun observeGoals(): Flow<List<FinancialGoal>> = goalState
+
+    override fun observeNotifications(): Flow<List<AppNotification>> =
+        notificationState.map { items -> items.sortedByDescending { it.timestamp } }
+
+    override suspend fun saveNotification(notification: AppNotification): AppResult<String> = mutationMutex.withLock {
+        val id = notification.id.ifBlank { UUID.randomUUID().toString() }
+        val stored = notification.copy(id = id)
+        notificationState.value = listOf(stored) + notificationState.value.filterNot { it.id == id }
+        AppResult.Success(id)
+    }
+
+    override suspend fun markAsRead(id: String): AppResult<Unit> = mutationMutex.withLock {
+        notificationState.value = notificationState.value.map {
+            if (it.id == id) it.copy(isRead = true) else it
+        }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun markAsPaid(id: String): AppResult<Unit> = mutationMutex.withLock {
+        notificationState.value = notificationState.value.map {
+            if (it.id == id) it.copy(isRead = true, isPaid = true) else it
+        }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun clearAll(): AppResult<Unit> = mutationMutex.withLock {
+        notificationState.value = emptyList()
+        AppResult.Success(Unit)
+    }
 
     override suspend fun uploadReceipt(localUri: String): AppResult<String> =
         if (localUri.isBlank()) AppResult.Error("Không tìm thấy ảnh hóa đơn") else AppResult.Success(localUri)
@@ -416,6 +449,17 @@ class DemoFinluxRepository @Inject constructor(
                 startDate = Instant.now().plus(5, ChronoUnit.DAYS),
                 enabled = true,
                 nextTriggerDate = Instant.now().plus(5, ChronoUnit.DAYS),
+            ),
+        )
+
+        fun seedNotifications() = listOf(
+            AppNotification(
+                id = "welcome-noti",
+                title = "Chào mừng bạn đến với Finlux",
+                body = "Hệ thống quản lý tài chính cá nhân đã sẵn sàng đồng hành cùng bạn.",
+                amount = Money(0L),
+                timestamp = Instant.now().minus(1, ChronoUnit.HOURS),
+                isRead = false,
             ),
         )
     }
