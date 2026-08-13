@@ -1,11 +1,97 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.4.3 (versionCode 37 — auto-bumped bởi build_and_install.ps1)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 7/7 BudgetViewModelTest PASS, toàn bộ suite PASS 100%
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp thành công qua ADB (Streamed Install - Success, App tự động mở)
+- **Phiên bản hiện tại:** v1.4.6 (versionCode 48)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Tích hợp `play-services-auth` & hỗ trợ nạp APK đa thiết bị ADB
+- **Trạng thái Nạp Thiết Bị:** ✅ Đã nạp thành công 100% cho cả 2 thiết bị (Máy thật + Máy giả lập)
 
 ---
+
+## [DONE] Task v1.4.6: Google Auth CredentialProvider Compatibility & Multi-ADB Deployment
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- Thêm `com.google.android.gms:play-services-auth` vào `libs.versions.toml` và `app/build.gradle.kts` giải quyết ngoại lệ `GetCredentialProviderConfigurationException` trên máy giả lập.
+- Nâng cấp `build_and_install.ps1` hỗ trợ cài đè APK tự động cho tất cả thiết bị kết nối ADB cùng lúc.
+- Đồng bộ hóa phiên bản ứng dụng lên `v1.4.6` (versionCode 48).
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 8s, nạp thành công cả 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `gradle/libs.versions.toml` | ✅ Khai báo `playServicesAuth = "21.3.0"` |
+| `app/build.gradle.kts` | ✅ Khai báo `implementation(libs.play.services.auth)`, bump `versionCode 48`, `versionName 1.4.6` |
+| `build_and_install.ps1` | ✅ Vòng lặp nạp APK cho tất cả thiết bị ADB kết nối |
+| `HANDOVER_LOG.md` | ✅ Đồng bộ thông tin phiên bản v1.4.6 (versionCode 48) |
+| `CHANGELOG.md` | ✅ Cập nhật nhật ký thay đổi v1.4.6 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.4.5: Update App Launcher Display Name to "Finance Luxury"
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- Cập nhật resource `app_name` trong `app/src/main/res/values/strings.xml` thành `"Finance Luxury"`.
+- Xác nhận `AndroidManifest.xml` gán `android:label="@string/app_name"`.
+- Bump `versionName` lên `1.4.5` và `versionCode` `41`.
+- Chạy Unit Tests (`gradlew testDebugUnitTest`) pass 100%.
+- Rebuild APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 10s.
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `app/src/main/res/values/strings.xml` | ✅ Đổi `app_name` thành `Finance Luxury` |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 41`, `versionName 1.4.5` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.4.5 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.4.4: Shared Project Debug Keystore & Google Sign-In SHA-1 Standardization
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- Copy file `debug.keystore` chuẩn vào thư mục `app/debug.keystore` của project.
+- Cấu hình `signingConfigs` trong `app/build.gradle.kts` ép kiểu build `debug` dùng chung file `app/debug.keystore`.
+- Xuất mã SHA-1 của `app/debug.keystore` để cấu hình đồng bộ trên Firebase Console.
+- Auto version bump `versionCode 37` -> `38`, `versionName` `1.4.3` -> `1.4.4`.
+- Chạy 100% Unit Test pass (`gradlew testDebugUnitTest`).
+- Rebuild APK thành công qua `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 13s, nạp APK thành công qua ADB.
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `app/debug.keystore` | ✅ File keystore cố định dùng chung cho dự án |
+| `app/build.gradle.kts` | ✅ Thêm `signingConfigs.debug` trỏ tới `debug.keystore`, bump `versionCode 38`, `versionName 1.4.4` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.4.4 |
+
+### Trạng thái
+`[DONE]`
+
+---
+
+
 
 ## [DONE] Task v1.4.3: Fix Budget Dynamic SpentAmount & Category Fallback Mapping
 

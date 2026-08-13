@@ -21,14 +21,20 @@ if (-not (Test-Path $localProps)) {
 # 1. Kiem tra ADB va thiet bi Android đang kết nối
 Write-Host "`n[1/3] Kiem tra thiet bi ADB dang ket noi..." -ForegroundColor Yellow
 try {
-    $adbCheck = adb devices
+    $adbOutput = adb devices
 } catch {
     Write-Host "❌ KHONG TIM THAY LENH 'adb'. Vui long kiem tra Android SDK / Platform-Tools co trong PATH." -ForegroundColor Red
     exit 1
 }
 
-$devices = adb devices | Select-String -Pattern "\tdevice$"
-if (-not $devices) {
+$targetDevices = @()
+foreach ($line in $adbOutput) {
+    if ($line -match "^([^\s]+)\s+device$") {
+        $targetDevices += $matches[1]
+    }
+}
+
+if ($targetDevices.Count -eq 0) {
     Write-Host "❌ KHONG TIM THAY THIET BI ANDROID NAO DANG KET NOI ADB!" -ForegroundColor Red
     Write-Host "Vui long kiem tra:" -ForegroundColor Yellow
     Write-Host "  1. Cap USB da ket noi voi PC"
@@ -37,7 +43,7 @@ if (-not $devices) {
     exit 1
 }
 
-$devices | ForEach-Object { Write-Host "   -> Thiet bi tim thay: $_" -ForegroundColor Green }
+$targetDevices | ForEach-Object { Write-Host "   -> Thiet bi tim thay: $_" -ForegroundColor Green }
 
 # 1.5 Auto Version Bump trong app/build.gradle.kts
 $gradleFile = "app/build.gradle.kts"
@@ -67,15 +73,25 @@ if (-not (Test-Path $apkPath)) {
     exit 1
 }
 
-# 3. Cài đè (Replace/Update) APK trực tiếp mà không gỡ ứng dụng cũ để không bị MIUI hỏi lại popup Allow
-Write-Host "`n[3/3] Dang nap APK moi vao dien thoai (Replace in-place)..." -ForegroundColor Yellow
-adb install -r -t -d $apkPath
-if ($LASTEXITCODE -eq 0) {
+# 3. Cài đè (Replace/Update) APK trực tiếp lên từng thiết bị
+Write-Host "`n[3/3] Dang nap APK moi vao cac thiet bi Android..." -ForegroundColor Yellow
+$successCount = 0
+foreach ($devId in $targetDevices) {
+    Write-Host "   -> Dang nap va open app tren [$devId]..." -ForegroundColor Cyan
+    adb -s $devId install -r -t -d $apkPath
+    if ($LASTEXITCODE -eq 0) {
+        $successCount++
+        adb -s $devId shell am start -n com.finlux.app/.MainActivity | Out-Null
+        Write-Host "      ✅ Thanh cong: $devId" -ForegroundColor Green
+    } else {
+        Write-Host "      ❌ That bai: $devId" -ForegroundColor Red
+    }
+}
+
+if ($successCount -gt 0) {
     Write-Host "`n==========================================" -ForegroundColor Green
-    Write-Host "   ✅ NAP APK THANH CONG!" -ForegroundColor Green
+    Write-Host "   ✅ DA NAP APK KHOP THANH CONG CHO $successCount THIET BI!" -ForegroundColor Green
     Write-Host "==========================================" -ForegroundColor Green
-    Write-Host "Dang tu dong mo app FinLux tren dien thoai..." -ForegroundColor Yellow
-    adb shell am start -n com.finlux.app/.MainActivity
 } else {
-    Write-Host "`n❌ NAP APK THAT BAI! Vui long kiem tra ket noi USB." -ForegroundColor Red
+    Write-Host "`n❌ NAP APK THAT BAI TREN TAT CA THIET BI!" -ForegroundColor Red
 }
