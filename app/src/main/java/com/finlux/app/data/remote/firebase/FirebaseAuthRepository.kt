@@ -56,6 +56,18 @@ class FirebaseAuthRepository(
         onFailure = { AppResult.Error(it.localizedMessage ?: "Không thể tạo tài khoản", it) },
     )
 
+    override suspend fun signInWithGoogle(idToken: String): AppResult<UserProfile> = runCatching {
+        val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+        val user = auth.signInWithCredential(credential).await().user
+            ?: error("Firebase không trả về người dùng Google")
+        val domainUser = user.toDomain()
+        seedNewUser(user.uid, domainUser.displayName, domainUser.email)
+        domainUser
+    }.fold(
+        onSuccess = { AppResult.Success(it) },
+        onFailure = { AppResult.Error(it.localizedMessage ?: "Đăng nhập Google thất bại", it) },
+    )
+
     override suspend fun sendPasswordReset(email: String): AppResult<Unit> = runCatching {
         auth.sendPasswordResetEmail(email.trim()).await()
     }.fold(

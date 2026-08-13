@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -135,6 +136,19 @@ fun AuthScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     LaunchedEffect(state.completed) { if (state.completed) onCompleted() }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val handleSocialClick: (SocialAuthProvider) -> Unit = { provider ->
+        when (provider) {
+            SocialAuthProvider.GOOGLE -> viewModel.signInWithGoogle(context)
+            SocialAuthProvider.APPLE -> {
+                android.widget.Toast.makeText(context, "Đăng nhập bằng Apple sắp ra mắt!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            SocialAuthProvider.FACEBOOK -> {
+                android.widget.Toast.makeText(context, "Đăng nhập bằng Facebook sắp ra mắt!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -185,11 +199,23 @@ fun AuthScreen(
 
                     // Form Fields according to Mode
                     when (mode) {
-                        AuthMode.LOGIN -> LoginFormContent(state, viewModel, onNavigate, onSocialSignIn)
+                        AuthMode.LOGIN -> LoginFormContent(state, viewModel, onNavigate, handleSocialClick)
                         AuthMode.REGISTER -> RegisterFormContent(state, viewModel, onNavigate)
                         AuthMode.FORGOT -> ForgotFormContent(state, viewModel, onNavigate)
                     }
                 }
+            }
+        }
+
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF4F46E5))
             }
         }
     }
@@ -831,18 +857,21 @@ private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
         SocialCard(
             title = "Google",
             iconRes = R.drawable.ic_google_g,
+            enabled = true,
             onClick = { onSocialClick(SocialAuthProvider.GOOGLE) },
             modifier = Modifier.weight(1f)
         )
         SocialCard(
             title = "Apple",
             iconRes = R.drawable.ic_apple,
+            enabled = false,
             onClick = { onSocialClick(SocialAuthProvider.APPLE) },
             modifier = Modifier.weight(1f)
         )
         SocialCard(
             title = "Facebook",
             iconRes = R.drawable.ic_facebook,
+            enabled = false,
             onClick = { onSocialClick(SocialAuthProvider.FACEBOOK) },
             modifier = Modifier.weight(1f)
         )
@@ -853,6 +882,7 @@ private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
 private fun SocialCard(
     title: String,
     iconRes: Int,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -861,9 +891,9 @@ private fun SocialCard(
             .height(76.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(15.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 1.dp
+        color = if (enabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        shadowElevation = if (enabled) 1.dp else 0.dp
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -873,14 +903,14 @@ private fun SocialCard(
             Image(
                 painter = painterResource(iconRes),
                 contentDescription = "Đăng nhập bằng $title",
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(24.dp).alpha(if (enabled) 1f else 0.45f),
             )
             Spacer(Modifier.height(7.dp))
             Text(
-                text = title,
-                fontSize = 13.sp,
+                text = if (enabled) title else "$title (Sắp có)",
+                fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         }
     }

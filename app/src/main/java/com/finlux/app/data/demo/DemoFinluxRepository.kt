@@ -87,6 +87,13 @@ class DemoFinluxRepository @Inject constructor(
         return AppResult.Success(user)
     }
 
+    override suspend fun signInWithGoogle(idToken: String): AppResult<UserProfile> {
+        val user = demoUser("google_user@finlux.app").copy(displayName = "Người dùng Google")
+        saveDemoProfile(user)
+        userState.value = user
+        return AppResult.Success(user)
+    }
+
     override suspend fun sendPasswordReset(email: String): AppResult<Unit> =
         if (email.contains('@')) AppResult.Success(Unit) else AppResult.Error("Email không hợp lệ")
 

@@ -44,6 +44,7 @@ private class RecordingAuthRepository : AuthRepository {
 
     override suspend fun signIn(email: String, password: String) = unsupported<UserProfile>()
     override suspend fun register(displayName: String, email: String, password: String) = unsupported<UserProfile>()
+    override suspend fun signInWithGoogle(idToken: String) = unsupported<UserProfile>()
     override suspend fun sendPasswordReset(email: String) = unsupported<Unit>()
     override suspend fun updateAvatar(jpegBytes: ByteArray) = unsupported<UserProfile>()
     override suspend fun signOut() = Unit
