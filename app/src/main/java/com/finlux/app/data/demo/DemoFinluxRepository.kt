@@ -124,6 +124,16 @@ class DemoFinluxRepository @Inject constructor(
     override fun observeRecent(limit: Int): Flow<List<FinanceTransaction>> =
         transactionState.map { items -> items.sortedByDescending { it.date }.take(limit) }
 
+    override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> {
+        val zone = ZoneId.systemDefault()
+        val start = month.atDay(1).atStartOfDay(zone).toInstant()
+        val end = month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
+        return transactionState.map { items ->
+            items.filter { it.date >= start && it.date < end }
+        }
+    }
+
+
     override fun observeWallets(): Flow<List<Wallet>> = walletState
 
     override fun observeCategories(): Flow<List<Category>> = categoryState

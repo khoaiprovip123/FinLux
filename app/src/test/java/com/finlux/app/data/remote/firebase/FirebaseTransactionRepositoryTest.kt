@@ -56,16 +56,20 @@ class FirebaseTransactionRepositoryTest {
         val userDocRef: DocumentReference = mockk()
         val transactionsColl: CollectionReference = mockk()
         val walletsColl: CollectionReference = mockk()
+        val budgetsColl: CollectionReference = mockk()
         val transactionDocRef: DocumentReference = mockk()
         val walletDocRef: DocumentReference = mockk()
+        val budgetDocRef: DocumentReference = mockk(relaxed = true)
         val walletSnapshot: DocumentSnapshot = mockk()
 
         every { firestore.collection("users").document(uid) } returns userDocRef
         every { userDocRef.collection("transactions") } returns transactionsColl
         every { userDocRef.collection("wallets") } returns walletsColl
+        every { userDocRef.collection("budgets") } returns budgetsColl
         every { transactionsColl.document() } returns transactionDocRef
         every { transactionDocRef.id } returns "new_tx_id"
         every { walletsColl.document("wallet_1") } returns walletDocRef
+        every { budgetsColl.document(any()) } returns budgetDocRef
         every { walletSnapshot.getLong("balance") } returns 1_000_000L
 
         val transactionSlot = slot<Transaction.Function<Any?>>()
@@ -93,16 +97,20 @@ class FirebaseTransactionRepositoryTest {
         val userDocRef: DocumentReference = mockk()
         val transactionsColl: CollectionReference = mockk()
         val walletsColl: CollectionReference = mockk()
+        val budgetsColl: CollectionReference = mockk()
         val transactionDocRef: DocumentReference = mockk()
         val walletDocRef: DocumentReference = mockk()
+        val budgetDocRef: DocumentReference = mockk(relaxed = true)
         val txSnapshot: DocumentSnapshot = mockk()
         val walletSnapshot: DocumentSnapshot = mockk()
 
         every { firestore.collection("users").document(uid) } returns userDocRef
         every { userDocRef.collection("transactions") } returns transactionsColl
         every { userDocRef.collection("wallets") } returns walletsColl
+        every { userDocRef.collection("budgets") } returns budgetsColl
         every { transactionsColl.document("tx_123") } returns transactionDocRef
         every { walletsColl.document("wallet_1") } returns walletDocRef
+        every { budgetsColl.document(any()) } returns budgetDocRef
 
         val nowTimestamp = Timestamp.now()
         every { txSnapshot.id } returns "tx_123"

@@ -15,6 +15,10 @@ import java.time.YearMonth
 interface TransactionRepository {
     fun observeRecent(limit: Int = 20): Flow<List<FinanceTransaction>>
 
+    /** Observes all transactions for the given [month] in real-time. Used by HomeViewModel
+     *  to compute dynamic budget.spentAmount per category without relying on stored Firestore field. */
+    fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>>
+
     /** Creates the transaction and changes wallet.balance in one Firestore transaction (BR-14). */
     suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String>
 

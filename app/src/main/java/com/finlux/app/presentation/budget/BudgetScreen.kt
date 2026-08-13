@@ -120,7 +120,7 @@ fun BudgetScreen(
                         Text(limit.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Đã chi ${spent.toShortVnd()}", color = Color.White.copy(alpha = .84f))
-                            Text("Còn lại ${(limit - spent).toShortVnd()}", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Còn lại ${(limit - spent).toVnd()}", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

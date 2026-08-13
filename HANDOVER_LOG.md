@@ -1,9 +1,38 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.4.0
-- **Trạng thái Build:** ✅ Successful (Build & 28/28 Unit Tests pass 100%)
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp thành công qua ADB (In-place update 2s)
+- **Phiên bản hiện tại:** v1.4.3 (versionCode 37 — auto-bumped bởi build_and_install.ps1)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 7/7 BudgetViewModelTest PASS, toàn bộ suite PASS 100%
+- **Trạng thái Nạp Thiết Bị:** ✅ Nạp thành công qua ADB (Streamed Install - Success, App tự động mở)
+
+---
+
+## [DONE] Task v1.4.3: Fix Budget Dynamic SpentAmount & Category Fallback Mapping
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- Fix `spentAmount` trong Budget tính động 100% từ `transactionRepository.observeMonth()`
+- Thêm fallback: khớp category theo `category.name` (cho giao dịch phiên bản cũ không có `categoryId`)
+- Sửa hiển thị "Còn lại" trên Top Card Ngân sách sang định dạng VND đầy đủ (`toVnd()` thay vì `toShortVnd()`)
+- Thêm Unit Test cho kịch bản fallback category name
+
+### Kết quả Unit Test
+**BUILD SUCCESSFUL — 7/7 BudgetViewModelTest PASS, toàn bộ test suite PASS 100%**
+
+### Danh sách file đã thực sự chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `AGENTS.md` | ✅ Bổ sung mục 📋 QUY TRÌNH QUẢN LÝ TÀI LIỆU CHUẨN (HANDOVER_LOG 2 bước + CHANGELOG SOP) |
+| `BudgetViewModel.kt` | ✅ Fix bug: đổi `?:` (short-circuit) sang `+` (cộng dồn) để gom cả modern tx (by ID) + legacy tx (by name) — tránh double-count với guard `catNameLower != budget.categoryId.lowercase()` |
+| `BudgetScreen.kt` | ✅ "Còn lại" dùng `toVnd()` thay `toShortVnd()` → hiển thị `Còn lại 1.225.000 ₫` |
+| `BudgetViewModelTest.kt` | ✅ Rewrite: inject `transactionRepository`, thêm 2 test fallback mới (Test 3: legacy by name, Test 4: mixed modern+legacy), tổng 7 test cases |
+| `app/build.gradle.kts` | ✅ versionCode 35→36, versionName 1.4.2→1.4.3 |
+
+### Trạng thái
+`[DONE]`
+
+---
 
 ---
 

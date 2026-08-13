@@ -75,6 +75,7 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.VisualStyle
 import com.finlux.app.presentation.components.MainBottomBar
 import java.text.NumberFormat
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -357,8 +358,19 @@ private fun ReferenceMetric(
 private fun ReferenceTransactionRow(transaction: FinanceTransaction, category: Category?, showBalance: Boolean) {
     val income = transaction.type == TransactionType.INCOME
     val accent = category?.let { colorFromHex(it.colorHex) } ?: if (income) IncomeGreen else ExpenseRed
+    val zoneId = ZoneId.systemDefault()
+    val txLocalDate = transaction.date.atZone(zoneId).toLocalDate()
+    val today = LocalDate.now(zoneId)
+    val yesterday = today.minusDays(1)
+    val timeStr = transaction.date.atZone(zoneId).format(DateTimeFormatter.ofPattern("HH:mm"))
+    val dateLabel = when (txLocalDate) {
+        today     -> "Hôm nay, $timeStr"
+        yesterday -> "Hôm qua, $timeStr"
+        else      -> transaction.date.atZone(zoneId).format(DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm"))
+    }
+    val rowHeight = if (transaction.note.isNotBlank()) 68.dp else 58.dp
     Row(
-        Modifier.fillMaxWidth().height(58.dp),
+        Modifier.fillMaxWidth().height(rowHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -368,11 +380,26 @@ private fun ReferenceTransactionRow(transaction: FinanceTransaction, category: C
             Icon(referenceTransactionIcon(transaction, category), null, Modifier.size(20.dp), tint = accent)
         }
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-            Text(category?.name ?: "Chuyển khoản", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
             Text(
-                transaction.note.ifBlank { transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM, HH:mm")) },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                category?.name ?: "Chuyển khoản",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+            if (transaction.note.isNotBlank()) {
+                Text(
+                    transaction.note,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                dateLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                 maxLines = 1,
             )
         }

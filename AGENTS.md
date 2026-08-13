@@ -19,6 +19,24 @@ giao diện Liquid Glass. Đọc `CONTEXT.md`, `BA_SPEC.md`, `UI_SPEC.md`, `DATA
 7. **Không commit khóa bí mật** (`google-services.json` thật, service account key) — dùng file mẫu
    `.example` và thêm vào `.gitignore`.
 
+## 📋 QUY TRÌNH QUẢN LÝ TÀI LIỆU CHUẨN (Document Management SOP)
+
+### HANDOVER_LOG.md — Bắt buộc ghi 2 bước
+**PRE-EXECUTION** (Trước khi gõ code):
+- Tạo mục task mới trong `HANDOVER_LOG.md`.
+- Ghi rõ: Mục tiêu, scope thay đổi, danh sách file dự kiến chỉnh sửa.
+- Gán trạng thái `[IN PROGRESS]`.
+
+**POST-EXECUTION** (Sau khi xong):
+- Cập nhật kết quả chạy test (số test pass/fail).
+- Liệt kê đầy đủ danh sách file đã thực sự chỉnh sửa.
+- Đổi trạng thái sang `[DONE]`.
+
+### CHANGELOG.md — Chỉ ghi sau khi build thành công
+- Chỉ được ghi nhận thông tin phiên bản release (`[vX.Y.Z]`, ngày tháng, `[Added]`, `[Changed]`, `[Fixed]`)
+  **SAU KHI** đã chạy `gradlew testDebugUnitTest` pass 100% **VÀ** build APK thành công.
+- Không ghi CHANGELOG trước khi test hoàn tất.
+
 ## Thứ tự triển khai đề xuất
 1. Design system (theme, LiquidGlassSurface, GlassCard, GlassTopBar, GlassBottomNav)
 2. Auth module (Login/Register/Google Sign-In) + Firestore seed data khi tạo user mới

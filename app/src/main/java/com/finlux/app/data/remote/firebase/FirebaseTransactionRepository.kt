@@ -9,12 +9,15 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
+import java.time.YearMonth
+import java.time.ZoneId
 import java.util.UUID
 import java.util.Date
 
@@ -39,15 +42,40 @@ class FirebaseTransactionRepository(
         awaitClose { registration.remove() }
     }
 
+    override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+        val zone = ZoneId.systemDefault()
+        val start = month.atDay(1).atStartOfDay(zone).toInstant()
+        val end = month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
+        val registration = firestore.userTransactions(uid)
+            .whereGreaterThanOrEqualTo("date", Timestamp(Date.from(start)))
+            .whereLessThan("date", Timestamp(Date.from(end)))
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) close(error)
+                else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toFinanceTransaction() })
+            }
+        awaitClose { registration.remove() }
+    }
+
     override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String> =
         firebaseResult("Không thể thêm giao dịch") {
             val uid = requireUid()
             val transactionRef = firestore.userTransactions(uid).document()
             val walletRef = firestore.userWallets(uid).document(transaction.walletId)
+            val budgetRef = transaction.budgetRef(firestore, uid)
             firestore.runTransaction { atomic ->
                 val balance = atomic.get(walletRef).getLong("balance") ?: error("Không tìm thấy ví")
                 atomic.set(transactionRef, transaction.copy(id = transactionRef.id).toFirestoreMap())
                 atomic.update(walletRef, "balance", balance + transaction.balanceDelta())
+                // BR-06: atomically update budget.spentAmount for EXPENSE transactions
+                if (budgetRef != null && transaction.type == TransactionType.EXPENSE) {
+                    atomic.update(budgetRef, "spentAmount", FieldValue.increment(transaction.amount.value))
+                }
             }.await()
             transactionRef.id
         }
@@ -60,6 +88,8 @@ class FirebaseTransactionRepository(
         val transactionRef = firestore.userTransactions(uid).document(original.id)
         val oldWalletRef = firestore.userWallets(uid).document(original.walletId)
         val newWalletRef = firestore.userWallets(uid).document(updated.walletId)
+        val oldBudgetRef = original.budgetRef(firestore, uid)
+        val newBudgetRef = updated.budgetRef(firestore, uid)
         firestore.runTransaction { atomic ->
             val stored = atomic.get(transactionRef).toFinanceTransaction()
                 ?: error("Không tìm thấy giao dịch")
@@ -72,6 +102,13 @@ class FirebaseTransactionRepository(
                 atomic.update(newWalletRef, "balance", newBalance + updated.balanceDelta())
             }
             atomic.set(transactionRef, updated.copy(id = original.id, createdAt = stored.createdAt).toFirestoreMap())
+            // BR-06: reverse old budget spent, apply new budget spent
+            if (oldBudgetRef != null && original.type == TransactionType.EXPENSE) {
+                atomic.update(oldBudgetRef, "spentAmount", FieldValue.increment(-original.amount.value))
+            }
+            if (newBudgetRef != null && updated.type == TransactionType.EXPENSE) {
+                atomic.update(newBudgetRef, "spentAmount", FieldValue.increment(updated.amount.value))
+            }
         }.await()
         Unit
     }
@@ -81,6 +118,7 @@ class FirebaseTransactionRepository(
     ): AppResult<Unit> = firebaseResult("Không thể xóa giao dịch") {
         val uid = requireUid()
         val transactionRef = firestore.userTransactions(uid).document(transaction.id)
+        val budgetRef = transaction.budgetRef(firestore, uid)
         firestore.runTransaction { atomic ->
             val stored = atomic.get(transactionRef).toFinanceTransaction()
                 ?: error("Không tìm thấy giao dịch")
@@ -88,6 +126,10 @@ class FirebaseTransactionRepository(
             val balance = atomic.get(walletRef).getLong("balance") ?: error("Không tìm thấy ví")
             atomic.delete(transactionRef)
             atomic.update(walletRef, "balance", balance - stored.balanceDelta())
+            // BR-06: reverse spentAmount when deleting an EXPENSE transaction
+            if (budgetRef != null && stored.type == TransactionType.EXPENSE) {
+                atomic.update(budgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
+            }
         }.await()
         Unit
     }
@@ -138,6 +180,22 @@ class FirebaseTransactionRepository(
     }
 
     private fun requireUid(): String = auth.currentUser?.uid ?: error("Phiên đăng nhập đã hết hạn")
+}
+
+/**
+ * Returns a DocumentReference to the Budget document for this transaction's month+category,
+ * or null if the transaction is not an EXPENSE or has no categoryId.
+ * Budget IDs follow the convention: "{categoryId}_{YearMonth}" (e.g. "abc123_2025-08").
+ */
+internal fun FinanceTransaction.budgetRef(
+    firestore: FirebaseFirestore,
+    uid: String,
+): DocumentReference? {
+    if (type != TransactionType.EXPENSE) return null
+    val catId = categoryId ?: return null
+    val month = YearMonth.from(date.atZone(java.time.ZoneOffset.UTC))
+    val budgetId = "${catId}_${month}"
+    return firestore.collection("users").document(uid).collection("budgets").document(budgetId)
 }
 
 internal suspend inline fun <T> firebaseResult(message: String, block: () -> T): AppResult<T> =
