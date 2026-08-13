@@ -1,9 +1,43 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.5.1 (versionCode 54)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Bổ sung nút [Xác nhận thanh toán] trực tiếp trên thẻ thông báo
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.1 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+- **Phiên bản hiện tại:** v1.5.2 (versionCode 55)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Fix triệt để Bug trừ tiền 2 lần khi thanh toán thông báo
+- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.2 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+
+---
+
+## [DONE] Task v1.5.2: Fix Double Payment & Sync Notification Paid State
+
+**Ngày:** 2026-08-13
+
+### Mục tiêu
+- **Fix Push Action Sync:** Trong `ReminderReceiver.kt`, khi người dùng bấm `[Đã thanh toán]` trực tiếp trên thanh thông báo hệ thống (`ACTION_PAY`), sau khi tạo giao dịch chi tiêu, bổ sung gọi `notificationRepository.markAsPaidByReminderId(id)` để lập tức đổi bản ghi `AppNotification` tương ứng thành `isPaid = true` trong Firestore / Database.
+- **Race Condition & Double Click Prevention:** Trong `NotificationsViewModel.kt`, kiểm tra ngay đầu hàm `payNotification`: nếu `notification.isPaid == true` thì `return` ngay lập tức để chống bấm trùng / race condition.
+- **UI Guard:** Trên `NotificationsScreen.kt`, đảm bảo khi `isPaid == true`, ẩn hoàn toàn nút bấm và chỉ hiện nhãn `[✓ Đã thanh toán]`.
+- **Unit Test:** Viết unit test `NotificationsViewModelTest.kt` kiểm thử ngăn chặn thanh toán trùng lặp.
+- **Bump Version:** Nâng `versionName` lên `1.5.2` và `versionCode` `55`.
+- **Test & Rebuild:** Chạy unit test PASS 100% và rebuild nạp APK bằng `build_and_install.ps1`.
+
+### Kết quả Unit Test & Build
+- **Unit Test:** `gradlew testDebugUnitTest` PASS 100% (0 lỗi, bao gồm `NotificationsViewModelTest` kiểm thử chống trừ tiền trùng lặp).
+- **Build APK:** `assembleDebug` SUCCESSFUL trong 7s, nạp thành công 2 thiết bị ADB (`192.168.30.194:33349` và `emulator-5554`).
+
+### Danh sách file đã thực sự chỉnh sửa / tạo mới
+| File | Thay đổi |
+|---|---|
+| `AlarmReminderScheduler.kt` | ✅ Khi bấm `[Đã thanh toán]` trên Push Notification, gọi `markAsPaidByReminderId(id)` cập nhật DB |
+| `NotificationRepository.kt` | ✅ Bổ sung phương thức `markAsPaidByReminderId(reminderId)` |
+| `FirebaseReadRepository.kt` | ✅ Tích hợp batch update `isRead = true, isPaid = true` theo `reminderId` |
+| `DemoFinluxRepository.kt` | ✅ Tích hợp `markAsPaidByReminderId(reminderId)` |
+| `NotificationsViewModel.kt` | ✅ Chống bấm trùng 2 lần: `if (notification.isPaid) return` ngay đầu hàm |
+| `NotificationsViewModelTest.kt` | **[MỚI]** Unit test đảm bảo tính idempotent và ngăn chặn tạo giao dịch trùng lặp khi `isPaid == true` |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 55`, `versionName 1.5.2` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.2 |
+
+### Trạng thái
+`[DONE]`
 
 ---
 

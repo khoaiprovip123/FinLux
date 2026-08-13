@@ -252,6 +252,21 @@ class FirebaseReadRepository(
         Unit
     }
 
+    override suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit> = firebaseResult("Không thể cập nhật thông báo") {
+        val uid = requireUid()
+        val snapshot = firestore.collection("users").document(uid).collection("notifications")
+            .whereEqualTo("reminderId", reminderId)
+            .get().await()
+        if (snapshot.documents.isNotEmpty()) {
+            firestore.runBatch { batch ->
+                snapshot.documents.forEach { doc ->
+                    batch.update(doc.reference, mapOf("isRead" to true, "isPaid" to true))
+                }
+            }.await()
+        }
+        Unit
+    }
+
     override suspend fun clearAll(): AppResult<Unit> = firebaseResult("Không thể xóa thông báo") {
         val uid = requireUid()
         val snapshot = firestore.collection("users").document(uid).collection("notifications").get().await()

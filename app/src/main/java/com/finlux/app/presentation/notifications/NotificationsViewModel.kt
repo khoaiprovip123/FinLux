@@ -45,6 +45,7 @@ class NotificationsViewModel @Inject constructor(
     }
 
     fun payNotification(notification: AppNotification) {
+        if (notification.isPaid) return
         viewModelScope.launch {
             val wallets = walletRepository.observeWallets().firstOrNull().orEmpty()
             val targetWallet = wallets.firstOrNull { it.id == notification.walletId }

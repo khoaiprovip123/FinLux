@@ -173,6 +173,13 @@ class DemoFinluxRepository @Inject constructor(
         AppResult.Success(Unit)
     }
 
+    override suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit> = mutationMutex.withLock {
+        notificationState.value = notificationState.value.map {
+            if (it.reminderId == reminderId) it.copy(isRead = true, isPaid = true) else it
+        }
+        AppResult.Success(Unit)
+    }
+
     override suspend fun clearAll(): AppResult<Unit> = mutationMutex.withLock {
         notificationState.value = emptyList()
         AppResult.Success(Unit)

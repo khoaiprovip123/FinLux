@@ -101,6 +101,7 @@ class ReminderReceiver : BroadcastReceiver() {
                                 )
                             )
                         }
+                        notificationRepository.markAsPaidByReminderId(id)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {

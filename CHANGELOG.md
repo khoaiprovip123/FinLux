@@ -3,6 +3,16 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.2] - 2026-08-13
+
+### Fixed
+- **Fix triệt để Bug Trừ tiền 2 lần khi Thanh toán Thông báo (Double Payment Bug Fix):**
+  1. Khi người dùng nhấn nút `[Đã thanh toán]` trực tiếp trên thanh thông báo Push hệ thống (`ReminderReceiver.kt`), hệ thống tự động cập nhật bản ghi `AppNotification` tương ứng thành `isPaid = true` trong Firestore/Database.
+  2. Bổ sung kiểm tra an toàn `if (notification.isPaid) return` ngay đầu hàm `payNotification` trong `NotificationsViewModel.kt` để chống race condition và ngăn chặn hoàn toàn việc tạo 2 giao dịch chi tiêu trùng lặp.
+  3. Bổ sung Unit Test `NotificationsViewModelTest.kt` đảm bảo tính idempotent 100%.
+
+---
+
 ## [1.5.1] - 2026-08-13
 
 ### Added

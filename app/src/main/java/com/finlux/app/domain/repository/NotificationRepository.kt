@@ -9,5 +9,6 @@ interface NotificationRepository {
     suspend fun saveNotification(notification: AppNotification): AppResult<String>
     suspend fun markAsRead(id: String): AppResult<Unit>
     suspend fun markAsPaid(id: String): AppResult<Unit>
+    suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit>
     suspend fun clearAll(): AppResult<Unit>
 }
