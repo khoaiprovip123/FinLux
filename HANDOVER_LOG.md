@@ -5,6 +5,28 @@
 - **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Tự động xin quyền Runtime POST_NOTIFICATIONS & Dialog hướng dẫn bật Cài đặt
 - **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.6 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
 
+## [POSTPONED / BACKLOG] Task v1.6.0: Audit & Expand Multi-type Notification System
+
+**Ngày:** 2026-08-14  
+**Ghi chú:** Tạm hoãn để ưu tiên các tính năng dự án quan trọng hơn. Chi tiết kế hoạch đã lưu tại [BACKLOG.md](file:///d:/Sources/FinLux/BACKLOG.md).
+
+### Mục tiêu
+- **Rà soát Hiện trạng Module Thông báo:** Đánh giá `AppNotification`, `NotificationRepository`, `FirebaseReadRepository`, `DemoFinluxRepository`, `NotificationsViewModel`, `NotificationsScreen.kt`, `AlarmReminderScheduler.kt`.
+- **Chuẩn hóa Data Model & Classification (`NotificationType`):** Bổ sung enum `NotificationType` (`REMINDER`, `BUDGET_ALERT`, `GOAL_MILESTONE`, `TRANSACTION_SUMMARY`, `SYSTEM`), mở rộng `AppNotification` với các trường `type`, `targetRoute`, `targetId`, `actionUrl`, `iconName`, `badgeColorHex`.
+- **Xây dựng Engine Dispatcher & Triggers:** Tạo các dispatcher tự động phát thông báo cảnh báo Ngân sách (80%, 100%), cột mốc Mục tiêu tiết kiệm (50%, 100%) và Thông báo hệ thống.
+- **Nâng cấp UI & Deep Link Navigation:** Cập nhật `NotificationsScreen.kt` hiển thị icon, badge màu sắc theo loại thông báo, filter tab phân loại và xử lý bấm thông báo tự động điều hướng thông minh sang màn hình đích (`Budget`, `Goals`, `Reports`...).
+- **Danh sách file dự kiến chỉnh sửa / tạo mới:**
+  - `NotificationType.kt` [NEW]
+  - `AppNotification.kt`
+  - `NotificationRepository.kt`
+  - `FirebaseReadRepository.kt`
+  - `DemoFinluxRepository.kt`
+  - `NotificationsViewModel.kt`
+  - `NotificationsScreen.kt`
+  - `FinluxNavHost.kt`
+  - `HANDOVER_LOG.md`
+  - `CHANGELOG.md`
+
 ---
 
 ## [DONE] Task v1.5.6: Auto Request Notification Permission & Settings Guide
@@ -12,7 +34,6 @@
 **Ngày:** 2026-08-13
 
 ### Mục tiêu
-<<<<<<< HEAD
 - **Auto Runtime Permission Request (`POST_NOTIFICATIONS` - Android 13+):** Tự động kiểm tra quyền `Manifest.permission.POST_NOTIFICATIONS` và `NotificationManagerCompat.areNotificationsEnabled()`. Khi người dùng vào `HomeScreen.kt` hoặc `RemindersScreen.kt`, tự động kích hoạt popup xin quyền hệ thống.
 - **Friendly Settings Guide Dialog:** Nếu quyền bị từ chối hoặc bị tắt trong Cài đặt hệ thống (trên Xiaomi, OPPO, Vivo...), hiển thị Dialog Liquid Glass "Bật thông báo để không bỏ lỡ hạn thanh toán" kèm nút `[Bật trong Cài đặt]` mở trực tiếp `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`.
 - **Bump Version:** Nâng `versionName` lên `1.5.6` và `versionCode` `62`.
