@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.ExpenseRed
+import com.finlux.app.core.designsystem.NotificationPermissionHandler
 import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.FinluxCyan
 import com.finlux.app.core.designsystem.FinluxPurple
@@ -87,6 +88,7 @@ fun HomeScreen(
     onNotifications: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val totalBalance = state.wallets.sumOf { it.balance.value }
     val categories = state.categories.associateBy(Category::id)

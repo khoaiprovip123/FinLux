@@ -3,7 +3,55 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.6] - 2026-08-13
+
+### Added
+- **Tự động Xin quyền Runtime `POST_NOTIFICATIONS` (Android 13+):**
+  - Tích hợp `NotificationPermissionHandler` tự động kiểm tra quyền thông báo khi mở Trang chủ (`HomeScreen.kt`) hoặc Nhắc nhở (`RemindersScreen.kt`).
+  - Kích hoạt Popup xin quyền chính thức của hệ điều hành Android 13+ nếu ứng dụng chưa được cấp quyền.
+- **Dialog Hướng dẫn Mở Cài đặt Ứng dụng khi bị Chặn / Từ chối:**
+  - Nếu người dùng bấm Từ chối hoặc bị hệ điều hành (như Xiaomi MIUI, OPPO ColorOS, Vivo FuntouchOS...) tắt công tắc Thông báo/Thông báo nổi, hệ thống hiển thị Dialog Liquid Glass: *"Bật thông báo Finlux để không bỏ lỡ hạn thanh toán hóa đơn"*.
+  - Nút bấm `[Bật trong Cài đặt]` mở trực tiếp trang `Settings.ACTION_APPLICATION_DETAILS_SETTINGS` của FinLux để người dùng bật lại công tắc nhanh chóng.
+
+---
+
+## [1.5.5] - 2026-08-13
+
+### Fixed
+- **Khôi phục Thông báo Thả xuống dạng Banner (Heads-up Notification Banner Fix):**
+  1. Cập nhật Kênh thông báo sang `finlux_reminders_v2` với cấu hình độ ưu tiên tối cao `IMPORTANCE_HIGH`, bật âm thanh, rung (`enableVibration`) và hiển thị công khai trên màn hình khóa.
+  2. Bổ sung cấu hình `.setPriority(NotificationCompat.PRIORITY_MAX)`, `.setDefaults(NotificationCompat.DEFAULT_ALL)` và `.setCategory(NotificationCompat.CATEGORY_REMINDER)` giúp thông báo báo thức Finlux luôn tự động trượt thả xuống (Heads-up Dropdown Banner) từ đỉnh màn hình điện thoại khi nổ.
+
+---
+
+## [1.5.4] - 2026-08-13
+
+### Fixed
+- **Cập nhật Số tiền Thực trả trên Bản ghi Thông báo (`NotificationsViewModel.kt` & `NotificationsScreen.kt`):**
+  1. Khi người dùng điều chỉnh số tiền thực tế trong Quick Payment Sheet (ví dụ `1.950.000 đ`), hệ thống tự động cập nhật trường `amount` và `body` của bản ghi `AppNotification` trong Database thành con số mới thực trả.
+  2. Thẻ thông báo trên UI tự động hiển thị chính xác con số thực trả: `Đã thanh toán: 1.950.000 ₫` kèm nhãn màu xanh lá.
+
+---
+
+## [1.5.3] - 2026-08-13
+
+### Added
+- **Quick Payment Sheet Hỗ trợ Khoản chi Biến động (`NotificationsScreen.kt`):**
+  - Khi bấm nút `[Xác nhận thanh toán]` trên thẻ thông báo, giao diện hiển thị `ModalBottomSheet` Liquid Glass "Xác nhận & Điều chỉnh số tiền".
+  - Cho phép người dùng nhập/sửa số tiền thực tế (có preview định dạng VND phân cách hàng nghìn), chọn ví thanh toán và danh mục chi tiêu trước khi bấm `[Xác nhận trừ tiền]`.
+- **Thêm Action `[✏️ Sửa số tiền]` trên Push Notification Hệ thống (`AlarmReminderScheduler.kt`):**
+  - Bổ sung nút hành động `[Sửa số tiền]` trên thanh thông báo Push hệ thống.
+  - Khi bấm: Tự động mở app, điều hướng thẳng đến `NotificationsScreen` và bật sẵn Quick Payment Sheet của thông báo đó.
+
+---
+
 ## [1.5.2] - 2026-08-13
+
+### Fixed
+- **Fix triệt để Bug Trừ tiền 2 lần khi Thanh toán Thông báo (Double Payment Bug Fix):**
+  1. Khi người dùng nhấn nút `[Đã thanh toán]` trực tiếp trên thanh thông báo Push hệ thống (`ReminderReceiver.kt`), hệ thống tự động cập nhật bản ghi `AppNotification` tương ứng thành `isPaid = true` trong Firestore/Database.
+  2. Bổ sung kiểm tra an toàn `if (notification.isPaid) return` ngay đầu hàm `payNotification` trong `NotificationsViewModel.kt` để chống race condition và ngăn chặn hoàn toàn việc tạo 2 giao dịch chi tiêu trùng lặp.
+  3. Bổ sung Unit Test `NotificationsViewModelTest.kt` đảm bảo tính idempotent 100%.
 
 ### Added
 - **Tự động đóng gói APK & phát hành GitHub Release khi Push/Merge Git:** Tạo `.github/workflows/release.yml` tự động lắng nghe sự kiện push/merge code trên branch `main` hoặc khi đẩy git tag (`v*`).
