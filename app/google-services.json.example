@@ -1,8 +1,26 @@
 {
   "project_info": {
-    "project_number": "REPLACE_ME",
-    "project_id": "REPLACE_ME",
-    "storage_bucket": "REPLACE_ME.appspot.com"
+    "project_number": "1234567890",
+    "firebase_url": "https://finlux-placeholder.firebaseio.com",
+    "project_id": "finlux-placeholder",
+    "storage_bucket": "finlux-placeholder.appspot.com"
   },
-  "client": []
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1234567890:android:0000000000000000000000",
+        "android_client_info": {
+          "package_name": "com.finlux.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyPlaceholderApiKeyForCIBuildOnly"
+        }
+      ],
+      "services": {}
+    }
+  ],
+  "configuration_version": "1"
 }

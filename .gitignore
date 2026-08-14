@@ -11,6 +11,7 @@ local.properties
 *.jks
 *.keystore
 !app/debug.keystore
+!gradle/debug.keystore
 *.pepk
 *.env
 app/google-services.json

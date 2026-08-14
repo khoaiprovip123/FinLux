@@ -12,6 +12,7 @@
 **Ngày:** 2026-08-13
 
 ### Mục tiêu
+<<<<<<< HEAD
 - **Auto Runtime Permission Request (`POST_NOTIFICATIONS` - Android 13+):** Tự động kiểm tra quyền `Manifest.permission.POST_NOTIFICATIONS` và `NotificationManagerCompat.areNotificationsEnabled()`. Khi người dùng vào `HomeScreen.kt` hoặc `RemindersScreen.kt`, tự động kích hoạt popup xin quyền hệ thống.
 - **Friendly Settings Guide Dialog:** Nếu quyền bị từ chối hoặc bị tắt trong Cài đặt hệ thống (trên Xiaomi, OPPO, Vivo...), hiển thị Dialog Liquid Glass "Bật thông báo để không bỏ lỡ hạn thanh toán" kèm nút `[Bật trong Cài đặt]` mở trực tiếp `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`.
 - **Bump Version:** Nâng `versionName` lên `1.5.6` và `versionCode` `62`.
@@ -154,6 +155,7 @@
 | `DemoFinluxRepository.kt` | ✅ Tích hợp `markAsPaidByReminderId(reminderId)` |
 | `NotificationsViewModel.kt` | ✅ Chống bấm trùng 2 lần: `if (notification.isPaid) return` ngay đầu hàm |
 | `NotificationsViewModelTest.kt` | **[MỚI]** Unit test đảm bảo tính idempotent và ngăn chặn tạo giao dịch trùng lặp khi `isPaid == true` |
+| `.github/workflows/release.yml` | ✅ Workflow tự động test, build APK và publish Release lên GitHub |
 | `app/build.gradle.kts` | ✅ Bump `versionCode 55`, `versionName 1.5.2` |
 | `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
 | `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.2 |
