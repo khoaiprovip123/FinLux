@@ -3,6 +3,15 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.7] - 2026-08-14
+
+### Changed
+- **Chuẩn hóa Tên File APK Đính kèm GitHub Release (`release.yml`):**
+  - Tự động đổi tên file APK artifact đầu ra từ `app-debug.apk` mặc định thành `FinLux-<TAG_NAME>.apk` (ví dụ `FinLux-v1.5.7-build-5.apk` hoặc `FinLux-v1.5.7.apk`).
+  - Trích xuất tự động `versionName` từ `app/build.gradle.kts` khi build tự động trên nhánh `main` mà không cần đẩy tag thủ công.
+
+---
+
 ## [1.5.6] - 2026-08-13
 
 ### Added

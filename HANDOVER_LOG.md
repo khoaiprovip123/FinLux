@@ -1,9 +1,32 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.5.6 (versionCode 65)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 100% Unit Tests PASS, Tự động xin quyền Runtime POST_NOTIFICATIONS & Dialog hướng dẫn bật Cài đặt
-- **Trạng thái Nạp Thiết Bị:** ✅ Nạp APK v1.5.6 thành công cho cả 2 thiết bị (Máy thật + Máy giả lập)
+- **Phiên bản hiện tại:** v1.5.7 (versionCode 66)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Chuẩn hóa quy tắc đặt tên file APK Release trên GitHub Actions sang `FinLux-<TAG_NAME>.apk`.
+
+---
+
+## [DONE] Task v1.5.7: Custom Release APK Naming on GitHub Actions
+
+**Ngày:** 2026-08-14
+
+### Mục tiêu
+- **Artifact Naming:** Chỉnh sửa `.github/workflows/release.yml` tự động đổi tên file APK đầu ra từ `app-debug.apk` thành `FinLux-<TAG_NAME>.apk` (ví dụ `FinLux-v1.5.7-build-5.apk` hoặc `FinLux-v1.5.7.apk`) trước khi upload lên GitHub Release Assets.
+- **Dynamic Version Extraction:** Trích xuất `versionName` động từ `app/build.gradle.kts` cho tag name fallback khi không đẩy tag thủ công (thay thế giá trị hardcode cũ).
+- **Bump Version:** Nâng `versionName` lên `1.5.7` và `versionCode` `66`.
+
+### Kết quả & Danh sách file đã chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `.github/workflows/release.yml` | ✅ Đổi tên APK sang `FinLux-<TAG_NAME>.apk`, parse `versionName` động từ gradle |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 66`, `versionName 1.5.7` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log 2 bước PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.7 |
+
+### Trạng thái
+`[DONE]`
+
+---
 
 ## [POSTPONED / BACKLOG] Task v1.6.0: Audit & Expand Multi-type Notification System
 
