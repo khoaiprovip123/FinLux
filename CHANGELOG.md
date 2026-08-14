@@ -3,6 +3,16 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.8] - 2026-08-14
+
+### Added
+- **Tích hợp Trực tiếp Cấu hình Firebase `google-services.json`:**
+  - Nhúng trực tiếp cấu hình `app/google-services.json` vào repository để quy trình CI/CD GitHub Actions luôn tự động biên dịch đầy đủ tính năng Đăng nhập Google vào file APK Release mà không phụ thuộc cấu hình Secret thủ công.
+  - Cập nhật Web Client ID chính thức `927751753962-04paon2termkbeanbsv7m8t9a8m6tk5h.apps.googleusercontent.com` vào `AuthViewModel.kt`.
+  - Tự động nhận diện JDK 17 và Android SDK từ cache toolchain trong script nạp `build_and_install.ps1`.
+
+---
+
 ## [1.5.7] - 2026-08-14
 
 ### Changed

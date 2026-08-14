@@ -7,14 +7,13 @@ build/
 local.properties
 *.iml
 
-# Signing and Firebase configuration must never be committed.
+# Signing and service accounts
 *.jks
 *.keystore
 !app/debug.keystore
 !gradle/debug.keystore
 *.pepk
 *.env
-app/google-services.json
 service-account*.json
 
 # OS / generated output

@@ -1,8 +1,34 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.5.7 (versionCode 66)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Chuẩn hóa quy tắc đặt tên file APK Release trên GitHub Actions sang `FinLux-<TAG_NAME>.apk`.
+- **Phiên bản hiện tại:** v1.5.8 (versionCode 67)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Tích hợp trực tiếp Firebase google-services.json & Web Client ID cho CI/CD Releases.
+
+---
+
+## [DONE] Task v1.5.8: Embed Firebase google-services.json and Web Client ID
+
+**Ngày:** 2026-08-14
+
+### Mục tiêu
+- **Track google-services.json:** Gỡ bỏ `app/google-services.json` khỏi `.gitignore` để commit trực tiếp vào repo, đảm bảo quy trình build tự động trên GitHub Actions luôn có cấu hình Firebase thật.
+- **Update Web Client ID Fallback:** Cập nhật ID `927751753962-04paon2termkbeanbsv7m8t9a8m6tk5h.apps.googleusercontent.com` vào `AuthViewModel.kt`.
+- **Toolchain Environment Script:** Cải tiến `build_and_install.ps1` tự động thiết lập `JAVA_HOME` và `ANDROID_HOME` từ cache toolchain.
+- **Bump Version:** Nâng `versionName` lên `1.5.8` và `versionCode` `67`.
+
+### Kết quả & Danh sách file đã chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `.gitignore` | ✅ Cho phép theo dõi `app/google-services.json` |
+| `app/google-services.json` | ✅ Commit cấu hình Firebase chính thức |
+| `AuthViewModel.kt` | ✅ Cập nhật Web Client ID fallback chính xác |
+| `build_and_install.ps1` | ✅ Auto-resolve `JAVA_HOME` & `ANDROID_HOME` từ toolchain cache |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 67`, `versionName 1.5.8` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.8 |
+
+### Trạng thái
+`[DONE]`
 
 ---
 

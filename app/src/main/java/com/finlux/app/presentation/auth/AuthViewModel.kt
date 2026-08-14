@@ -99,9 +99,9 @@ class AuthViewModel @Inject constructor(
             mutableState.update { it.copy(isLoading = true, error = null) }
             val webClientId = try {
                 val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
-                if (resId != 0) context.getString(resId) else "382901238910-dummyclientid.apps.googleusercontent.com"
+                if (resId != 0) context.getString(resId) else "927751753962-04paon2termkbeanbsv7m8t9a8m6tk5h.apps.googleusercontent.com"
             } catch (e: Exception) {
-                "382901238910-dummyclientid.apps.googleusercontent.com"
+                "927751753962-04paon2termkbeanbsv7m8t9a8m6tk5h.apps.googleusercontent.com"
             }
 
             android.util.Log.d("GoogleSignIn", "Attempting Google Sign-In with serverClientId: $webClientId")

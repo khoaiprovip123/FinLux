@@ -5,16 +5,31 @@ Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "   FINLUX - BUILD & INSTALL APK TO DEVICE  " -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
-# 0. Thiết lập biến môi trường Android SDK
-$androidSdkPath = "C:\Users\$env:USERNAME\AppData\Local\Android\Sdk"
-if (Test-Path $androidSdkPath) {
-    $env:ANDROID_HOME = $androidSdkPath
-    $env:ANDROID_SDK_ROOT = $androidSdkPath
+# 0. Thiết lập biến môi trường Java & Android SDK
+$toolchainSdk = "C:\Users\$env:USERNAME\.cache\finlux-toolchain\android-sdk"
+$stdSdk = "C:\Users\$env:USERNAME\AppData\Local\Android\Sdk"
+if (Test-Path $toolchainSdk) {
+    $env:ANDROID_HOME = $toolchainSdk
+    $env:ANDROID_SDK_ROOT = $toolchainSdk
+} elseif (Test-Path $stdSdk) {
+    $env:ANDROID_HOME = $stdSdk
+    $env:ANDROID_SDK_ROOT = $stdSdk
+}
+
+$toolchainJdk = "C:\Users\$env:USERNAME\.cache\finlux-toolchain\jdk\jdk-17.0.20+8"
+if (Test-Path $toolchainJdk) {
+    $env:JAVA_HOME = $toolchainJdk
+    $env:PATH = "$toolchainJdk\bin;$env:PATH"
+}
+
+if ($env:ANDROID_HOME -and (Test-Path "$env:ANDROID_HOME\platform-tools")) {
+    $env:PATH = "$env:ANDROID_HOME\platform-tools;$env:PATH"
 }
 
 $localProps = "local.properties"
 if (-not (Test-Path $localProps)) {
-    "sdk.dir=C:/Users/$env:USERNAME/AppData/Local/Android/Sdk" | Out-File -FilePath $localProps -Encoding ascii
+    $sdkEscaped = $env:ANDROID_HOME -replace "\\", "/"
+    "sdk.dir=$sdkEscaped" | Out-File -FilePath $localProps -Encoding ascii
     Write-Host "[Info] Da khoi tao local.properties tro den Android SDK." -ForegroundColor Green
 }
 
