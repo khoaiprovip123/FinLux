@@ -1,8 +1,32 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.5.8 (versionCode 67)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Tích hợp trực tiếp Firebase google-services.json & Web Client ID cho CI/CD Releases.
+- **Phiên bản hiện tại:** v1.5.9 (versionCode 68)
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Chuẩn hóa định dạng Release Title & APK sang `Release vX.Y.Z` và `FinLux-vX.Y.Z.apk` (loại bỏ hậu tố `-build-*`).
+
+---
+
+## [DONE] Task v1.5.9: Simplify Release & APK Artifact Naming
+
+**Ngày:** 2026-08-14
+
+### Mục tiêu
+- **Clean Tag & Release Naming:** Loại bỏ hậu tố `-build-${GITHUB_RUN_NUMBER}` khỏi quy trình tạo GitHub Release trong `.github/workflows/release.yml`.
+- **Tên hiển thị chuẩn:**
+  - Release Title / Tag: `Release v1.5.9` / `v1.5.9`
+  - Tên file APK: `FinLux-v1.5.9.apk`
+- **Bump Version:** Nâng `versionName` lên `1.5.9` và `versionCode` `68`.
+
+### Kết quả & Danh sách file đã chỉnh sửa
+| File | Thay đổi |
+|---|---|
+| `.github/workflows/release.yml` | ✅ Đổi định dạng `TAG_NAME="v${VERSION_NAME}"` (bỏ `-build-*`) |
+| `app/build.gradle.kts` | ✅ Bump `versionCode 68`, `versionName 1.5.9` |
+| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
+| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.5.9 |
+
+### Trạng thái
+`[DONE]`
 
 ---
 

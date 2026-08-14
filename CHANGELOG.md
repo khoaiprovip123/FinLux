@@ -3,6 +3,16 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.5.9] - 2026-08-14
+
+### Changed
+- **Chuẩn hóa Tên Release & File APK Gọn gàng (`release.yml`):**
+  - Loại bỏ hậu tố `-build-*` khỏi Release Title và Tag Name.
+  - Tên Release chính thức: `Release v<versionName>` (ví dụ `Release v1.5.9`).
+  - Tên file APK Release đính kèm: `FinLux-v<versionName>.apk` (ví dụ `FinLux-v1.5.9.apk`).
+
+---
+
 ## [1.5.8] - 2026-08-14
 
 ### Added

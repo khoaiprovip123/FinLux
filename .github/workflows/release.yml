@@ -49,11 +49,11 @@ jobs:
       - name: Prepare Release APK & Metadata
         id: release_info
         run: |
-          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts || echo "1.5.7")
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts || echo "1.5.9")
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             TAG_NAME="${GITHUB_REF#refs/tags/}"
           else
-            TAG_NAME="v${VERSION_NAME}-build-${GITHUB_RUN_NUMBER}"
+            TAG_NAME="v${VERSION_NAME}"
           fi
           echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
 
