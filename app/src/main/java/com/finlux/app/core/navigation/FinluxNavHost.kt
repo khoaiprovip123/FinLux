@@ -41,6 +41,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.ThemePreference
 import com.finlux.app.domain.model.UiPreferences
 import com.finlux.app.presentation.auth.AuthMode
@@ -69,6 +70,8 @@ import kotlinx.coroutines.launch
 fun FinluxNavHost(
     selectedTheme: ThemePreference,
     onThemeSelected: (ThemePreference) -> Unit,
+    selectedUiStyle: AppUiStyle = AppUiStyle.CLASSIC_LIQUID,
+    onUiStyleSelected: (AppUiStyle) -> Unit = {},
     uiPreferences: UiPreferences,
     onUiPreferencesChanged: (UiPreferences) -> Unit,
     navController: NavHostController = rememberNavController(),
@@ -227,6 +230,8 @@ fun FinluxNavHost(
                 SettingsScreen(
                     selectedTheme = selectedTheme,
                     onThemeSelected = onThemeSelected,
+                    selectedUiStyle = selectedUiStyle,
+                    onUiStyleSelected = onUiStyleSelected,
                     uiPreferences = uiPreferences,
                     onUiPreferencesChanged = onUiPreferencesChanged,
                     onNavigate = { route ->

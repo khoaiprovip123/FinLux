@@ -7,12 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -75,10 +73,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.R
 import com.finlux.app.core.designsystem.FinluxBrandMark
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
-import com.finlux.app.core.designsystem.GlassCard
-import com.finlux.app.core.designsystem.LiquidGlassMode
-import com.finlux.app.core.designsystem.LiquidGlassSurface
 import kotlinx.coroutines.delay
 
 @Composable
@@ -94,9 +88,14 @@ fun SplashScreen(
         if (session == SessionState.AUTHENTICATED) onAuthenticated() else onGuest()
     }
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF311042))
+                )
+            ),
     ) {
-        FinluxStyleBackdrop(Modifier.fillMaxSize(), auth = true)
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -105,11 +104,11 @@ fun SplashScreen(
         ) {
             FinluxBrandMark(size = 140.dp, framed = false)
             Spacer(Modifier.height(16.dp))
-            FinluxLogoHeader(fontSize = 36.sp)
+            FinluxLogoHeader(fontSize = 36.sp, isDark = true)
             Spacer(Modifier.height(6.dp))
             Text(
                 "Quản lý tài chính thông minh",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color.White.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
@@ -119,9 +118,9 @@ fun SplashScreen(
                 .padding(bottom = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CircularProgressIndicator(Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.5.dp)
+            CircularProgressIndicator(Modifier.size(24.dp), color = Color(0xFF6366F1), strokeWidth = 2.5.dp)
             Spacer(Modifier.height(12.dp))
-            Text("Đang tải dữ liệu...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+            Text("Đang tải dữ liệu...", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
         }
     }
 }
@@ -141,15 +140,20 @@ fun AuthScreen(
     val handleSocialClick: (SocialAuthProvider) -> Unit = { provider ->
         when (provider) {
             SocialAuthProvider.GOOGLE -> viewModel.signInWithGoogle(context)
-            SocialAuthProvider.APPLE, SocialAuthProvider.FACEBOOK -> onSocialSignIn(provider)
+            SocialAuthProvider.APPLE -> {
+                android.widget.Toast.makeText(context, "Đăng nhập bằng Apple sắp ra mắt!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            SocialAuthProvider.FACEBOOK -> {
+                android.widget.Toast.makeText(context, "Đăng nhập bằng Facebook sắp ra mắt!", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        FinluxStyleBackdrop(Modifier.fillMaxSize(), auth = true)
-        val minCardHeight = maxHeight - 110.dp
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -165,14 +169,17 @@ fun AuthScreen(
 
             Spacer(Modifier.height(if (mode == AuthMode.LOGIN) 2.dp else 8.dp))
 
-            LiquidGlassSurface(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = minCardHeight),
-                mode = LiquidGlassMode.REGULAR,
+                    .shadow(
+                        elevation = if (mode == AuthMode.LOGIN) 16.dp else 0.dp,
+                        shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) else RoundedCornerShape(0.dp),
+                        ambientColor = Color(0x203B82F6),
+                        spotColor = Color(0x304F46E5)
+                    ),
                 shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) else RoundedCornerShape(0.dp),
-                elevation = if (mode == AuthMode.LOGIN) 16.dp else 0.dp,
-                padding = PaddingValues(0.dp),
+                color = MaterialTheme.colorScheme.surface,
             ) {
                 Column(
                     modifier = Modifier
@@ -196,8 +203,6 @@ fun AuthScreen(
                         AuthMode.REGISTER -> RegisterFormContent(state, viewModel, onNavigate)
                         AuthMode.FORGOT -> ForgotFormContent(state, viewModel, onNavigate)
                     }
-
-                    Spacer(Modifier.height(28.dp))
                 }
             }
         }
@@ -845,45 +850,67 @@ private fun SocialDivider(text: String) {
 
 @Composable
 private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        SocialProviderCard("Google", R.drawable.ic_google_g, SocialAuthProvider.GOOGLE, Modifier.weight(1f), onSocialClick)
-        SocialProviderCard("Apple", R.drawable.ic_apple, SocialAuthProvider.APPLE, Modifier.weight(1f), onSocialClick)
-        SocialProviderCard("Facebook", R.drawable.ic_facebook, SocialAuthProvider.FACEBOOK, Modifier.weight(1f), onSocialClick)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        SocialCard(
+            title = "Google",
+            iconRes = R.drawable.ic_google_g,
+            enabled = true,
+            onClick = { onSocialClick(SocialAuthProvider.GOOGLE) },
+            modifier = Modifier.weight(1f)
+        )
+        SocialCard(
+            title = "Apple",
+            iconRes = R.drawable.ic_apple,
+            enabled = false,
+            onClick = { onSocialClick(SocialAuthProvider.APPLE) },
+            modifier = Modifier.weight(1f)
+        )
+        SocialCard(
+            title = "Facebook",
+            iconRes = R.drawable.ic_facebook,
+            enabled = false,
+            onClick = { onSocialClick(SocialAuthProvider.FACEBOOK) },
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
 @Composable
-private fun SocialProviderCard(
-    label: String,
+private fun SocialCard(
+    title: String,
     iconRes: Int,
-    provider: SocialAuthProvider,
-    modifier: Modifier,
-    onSocialClick: (SocialAuthProvider) -> Unit,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    GlassCard(
-        modifier = modifier.height(76.dp),
-        mode = LiquidGlassMode.REGULAR,
-        shape = RoundedCornerShape(14.dp),
-        elevation = 3.dp,
-        padding = PaddingValues(0.dp),
-        onClick = { onSocialClick(provider) },
+    Surface(
+        modifier = modifier
+            .height(76.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(15.dp),
+        color = if (enabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        shadowElevation = if (enabled) 1.dp else 0.dp
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Image(
                 painter = painterResource(iconRes),
-                contentDescription = "Đăng nhập bằng $label",
-                modifier = Modifier.size(22.dp),
+                contentDescription = "Đăng nhập bằng $title",
+                modifier = Modifier.size(24.dp).alpha(if (enabled) 1f else 0.45f),
             )
             Spacer(Modifier.height(7.dp))
             Text(
-                text = label,
-                fontSize = 12.sp,
+                text = if (enabled) title else "$title (Sắp có)",
+                fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         }
     }

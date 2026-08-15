@@ -50,7 +50,6 @@ import com.finlux.app.core.designsystem.FinanceCategoryIcons
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassDialogSurface
 import com.finlux.app.core.designsystem.GlassTopBar
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.domain.model.Category
@@ -68,8 +67,6 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
     LaunchedEffect(actionState.message) {
         actionState.message?.let { snackbar.showSnackbar(it); viewModel.consumeMessage() }
     }
-    Box(Modifier.fillMaxSize()) {
-    FinluxStyleBackdrop(Modifier.fillMaxSize())
     Scaffold(
         topBar = {
             GlassTopBar(
@@ -124,7 +121,6 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
                 }
             }
         }
-    }
     }
     if (showEditor) {
         CategoryEditor(

@@ -6,7 +6,6 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -55,7 +54,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxPurple
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.NotificationPermissionHandler
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassDialogSurface
@@ -87,8 +85,6 @@ fun RemindersScreen(onBack: () -> Unit, viewModel: RemindersViewModel = hiltView
         showEditor = true
     }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.consumeMessage() } }
-    Box(Modifier.fillMaxSize()) {
-    FinluxStyleBackdrop(Modifier.fillMaxSize())
     Scaffold(
         topBar = {
             GlassTopBar(
@@ -137,7 +133,6 @@ fun RemindersScreen(onBack: () -> Unit, viewModel: RemindersViewModel = hiltView
                 }
             }
         }
-    }
     }
     if (showEditor) ReminderEditor(editing, state.categories, state.wallets, state.busy, { showEditor = false }) { viewModel.save(it) { showEditor = false } }
 }

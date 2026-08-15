@@ -1,6 +1,58 @@
 # BACKLOG - FINLUX APP
 
-Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp được ghi nhận để triển khai trong các phiên bản tương lai.
+Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi được ghi nhận để triển khai trong các phiên bản tương lai.
+
+---
+
+## 🚨 [BUG BACKLOG] - Wallet Transfer Balance Validation
+
+> **Tên Ticket:** `[BUG CRITICAL] Thiếu kiểm tra số dư khi chuyển tiền giữa các ví (Wallet Transfer Insufficient Funds Validation)`  
+> **Trạng thái:** ⏳ `[QUEUED / PENDING]`  
+> **Mức độ ưu tiên:** 🔴 Critical / High  
+> **Ngày ghi nhận:** 2026-08-15  
+> **File ảnh hưởng:** `TransferMoneyUseCase.kt`, `WalletsViewModel.kt`, `ModernWalletsScreen.kt`, `ClassicWalletsScreen.kt`, `QuickAddSheet.kt`
+
+---
+
+### 1. 🐞 Mô Tả Vấn Đề (Problem Description)
+- Hiện tại form **Chuyển tiền giữa các ví** (`TransferEditor` / `TransferSheet` / `QuickAddSheet`) **KHÔNG KIỂM TRA** số dư khả dụng của ví nguồn trước khi thực hiện chuyển tiền.
+- **Ví dụ thực tế:** Ví *"Tiền mặt"* có số dư = `0 đ` nhưng người dùng vẫn nhập và chuyển thành công `1.000.000.000 đ` sang ví *"Sacombank"*.
+- **Hậu quả nghiêm trọng:**
+  1. **Số dư ví nguồn bị âm vô lý:** Biến thành `-1.000.000.000 đ` (đối với ví tiền mặt/ngân hàng thông thường không có thấu chi).
+  2. **Vỡ hiển thị tỷ trọng tài sản:** Khi tổng số dư hoặc số dư ví bị âm, công thức tính % tỷ lệ tài sản bị lỗi chia, dẫn đến hiển thị các con số quái dị như `-32411%` và `32415%`.
+
+---
+
+### 2. 🛠️ Yêu Cầu Logic & Giải Pháp Kỹ Thuật (Solution Specs)
+
+#### A. Tầng UI / Form Chuyển Tiền (`TransferEditor` & `QuickAddSheet`)
+- Tự động lấy số dư khả dụng của ví nguồn được chọn (`val sourceBalance = wallets.find { it.id == source }?.balance?.value ?: 0L`).
+- Với các ví **không phải Thẻ tín dụng** (`sourceWallet.type != WalletType.CARD`):
+  - Khi người dùng nhập `amount > sourceBalance`:
+    * Hiển thị dòng cảnh báo màu đỏ (`MaterialTheme.colorScheme.error`):  
+      *⚠️ "Số dư ví nguồn không đủ (Số dư hiện tại: X đ)"*.
+    * **Disable** nút `[Xác nhận chuyển tiền]`.
+
+#### B. Tầng Domain / Nghiệp Vụ (`TransferMoneyUseCase.kt`)
+- Bổ sung validation kiểm tra ràng buộc số dư:
+  ```kotlin
+  if (sourceWallet.type != WalletType.CARD && amount > sourceWallet.balance.value) {
+      return AppResult.Error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
+  }
+  ```
+- Đảm bảo thực thi trong **Firestore Transaction** nguyên tử (Atomic), không để xảy ra race condition.
+
+#### C. Tầng Tính Toán & Hiển Thị Tỷ Trọng (% Ratio Calculation)
+- Chuẩn hóa hàm tính % tỷ trọng tài sản của từng ví:
+  - Nếu `total <= 0` hoặc `wallet.balance.value <= 0`: Gán % tỷ trọng an toàn về `0%` thay vì để xảy ra phép chia âm/vô cực.
+
+---
+
+### 💬 3. Prompt Kích Hoạt Nhanh Khi Triển Khai Fix (Activation Prompt)
+
+Khi sẵn sàng tiến hành sửa bug này, gửi prompt sau:
+
+> *"Em ơi, bắt đầu triển khai fix [BUG CRITICAL] Thiếu kiểm tra số dư khi chuyển tiền giữa các ví theo mô tả chi tiết tại BACKLOG.md nhé! Tiến hành kiểm tra và chặn ở cả Domain UseCase lẫn UI Form TransferEditor."*
 
 ---
 

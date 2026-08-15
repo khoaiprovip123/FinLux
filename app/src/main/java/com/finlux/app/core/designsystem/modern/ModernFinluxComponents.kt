@@ -1,10 +1,13 @@
-﻿package com.finlux.app.core.designsystem
+package com.finlux.app.core.designsystem.modern
+
+import com.finlux.app.core.designsystem.*
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,8 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -30,14 +31,29 @@ fun GradientHeroCard(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(22.dp)
-    Box(
-        modifier = modifier
-            .shadow(14.dp, shape, ambientColor = FinluxBlue.copy(alpha = .28f))
-            .clip(shape)
-            .background(FinluxBrandGradient)
-            .padding(20.dp),
-        content = content,
-    )
+    LiquidGlassSurface(
+        modifier = modifier,
+        mode = LiquidGlassMode.CLEAR,
+        tint = MaterialTheme.colorScheme.primary,
+        shape = shape,
+        elevation = 14.dp,
+        padding = PaddingValues(0.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            FinluxPurple.copy(alpha = .82f),
+                            FinluxBlue.copy(alpha = .78f),
+                            FinluxCyan.copy(alpha = .72f),
+                        ),
+                    ),
+                )
+                .padding(20.dp),
+            content = content,
+        )
+    }
 }
 
 @Composable
@@ -61,8 +77,8 @@ fun SectionHeader(
 fun MetricTile(
     title: String,
     value: String,
-    accent: Color,
     modifier: Modifier = Modifier,
+    accent: Color,
     supporting: String? = null,
 ) {
     GlassCard(modifier) {

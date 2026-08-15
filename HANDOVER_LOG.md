@@ -1,269 +1,282 @@
 # HANDOVER LOG - FINLUX APP
 
-## [DONE] Task: Fix Navigation Swipe Stutter, Prevent Home Reload & Safe Budget Transaction Handling (v1.6.7 - Code 86)
-
-**Ngày hoàn thành:** 2026-08-15
-
-### Mục tiêu
-- Khắc phục triệt để lỗi crash Firestore atomic update `NOT_FOUND` khi ghi nhận giao dịch vào danh mục không có sẵn ngân sách tháng.
-- Tinh chỉnh `FinluxNavHost.kt`: dọn dẹp các khai báo trùng lặp, tối ưu nhận diện cử chỉ vuốt ngang chuyển tab (Trang chủ ↔ Ví ↔ Báo cáo ↔ Hồ sơ) không giật khựng với cuộn dọc.
-- Ngăn chặn việc tải lại / render lại khi người dùng bấm vào tab Home đang mở hoặc chuyển qua lại giữa các tab (`saveState = true`, `restoreState = true`, `if (route != currentRoute)`).
-
-### Scope và file thực tế chỉnh sửa
-- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
-- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
-- `app/build.gradle.kts`
-- `CHANGELOG.md`
-- `HANDOVER_LOG.md`
-
-### Kết quả kiểm thử
-- `gradlew testDebugUnitTest`: 100% PASS (BUILD SUCCESSFUL).
-- Phiên bản: `v1.6.7` - versionCode `86`.
-
----
-
-## [DONE] Task: Audit & Complete App-Wide Callstack Liquid Glass Migration
-
-**Ngày bắt đầu:** 2026-08-14
-
-### Mục tiêu
-- Đối chiếu implementation hiện tại với upstream `callstack/liquid-glass` và quy chuẩn Android Native trong skill `callstack-liquid-glass`.
-- Chuẩn hóa toàn bộ UI/UX FinLux về một bộ primitive dùng chung: `CLEAR/REGULAR/NONE`, tint, color scheme, spring interaction, chromatic prism rim, ambient glow và fallback API thấp.
-- Loại bỏ các bề mặt kính/blur riêng lẻ trong feature; bảo đảm chữ/icon không bị blur, bottom navigation là floating capsule dock và toàn bộ màn hình thích ứng Light/Dark.
-- Giữ nguyên nghiệp vụ, repository và các thao tác Firestore Transaction; phạm vi thay đổi chỉ thuộc presentation/design system.
-
-### Scope và file dự kiến chỉnh sửa
-- `app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt`
-- `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`
-- `app/src/main/java/com/finlux/app/core/designsystem/WaterGlass.kt`
-- `app/src/main/java/com/finlux/app/core/designsystem/StyleBackdrop.kt`
-- `app/src/main/java/com/finlux/app/core/designsystem/ReferenceComponents.kt`
-- `app/src/main/java/com/finlux/app/presentation/**/**Screen.kt`
-- `app/src/main/java/com/finlux/app/presentation/components/MainBottomBar.kt`
-- `UI_SPEC.md`, `HANDOVER_LOG.md`; `CHANGELOG.md` chỉ cập nhật sau khi test và build thành công.
-
-### Trạng thái
-`[DONE]`
-
-### Kết quả triển khai
-- Port contract của `callstack/liquid-glass` sang Jetpack Compose native: `CLEAR/REGULAR/NONE`,
-  prism rim 1.2dp, tint/glow token, fallback API < 31, press spring 0.975 và haptic feedback.
-- Đồng bộ backdrop, top bar, floating dock, FAB, card/panel, alert dialog và bottom sheet qua
-  `core/designsystem`; lớp quang học luôn nằm sau chữ/icon.
-- Khôi phục ba phong cách người dùng chọn với token sáng/tối riêng; lựa chọn theme và phong cách
-  áp dụng thống nhất toàn ứng dụng.
-- Nối gesture thật vào `NavHost`: Trang chủ ↔ Ví ↔ Báo cáo ↔ Hồ sơ, kéo bám ngón tay,
-  edge resistance, directional glow và spring settle.
-- Hồ sơ hiển thị Giới thiệu FinLux ở đầu, sau đó là ảnh đại diện/tên; Auth có ba thẻ Google,
-  Apple, Facebook và callback sẵn để cấu hình provider.
-
-### File thực tế đã chỉnh sửa
-- Design system: `FinluxBrand.kt`, `FinluxComponents.kt`, `FinluxTheme.kt`, `LiquidGlass.kt`,
-  `NotificationPermissionHandler.kt`, `ReferenceComponents.kt`, `StyleBackdrop.kt`, `WaterGlass.kt`.
-- Navigation/components: `FinluxNavHost.kt`, `MainBottomBar.kt`.
-- Presentation: `AuthScreens.kt`, `CategoriesScreen.kt`, `ExpenseScreen.kt`, `IncomeScreen.kt`,
-  `NotificationsScreen.kt`, `RemindersScreen.kt`, `SettingsScreen.kt`, `AddTransactionSheet.kt`,
-  `TransactionsScreen.kt`, `WalletsScreen.kt`.
-- Version/docs: `app/build.gradle.kts`, `UI_SPEC.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`.
-
-### Kiểm thử, build và cài đặt
-- `gradlew testDebugUnitTest`: **36/36 PASS**, 0 failure, 0 error, 0 skipped.
-- `gradlew assembleDebug`: **BUILD SUCCESSFUL**.
-- `gradlew lintDebug`: **BUILD SUCCESSFUL**, 0 lint error (34 warning dependency/tooling hiện hữu).
-- APK: `app/build/outputs/apk/debug/app-debug.apk` (30,016,107 bytes), SHA-256
-  `5A951FDDBC2A2999D9155C62A7D02CF28172D1FCBE27BB9B4A226C850C849B51`.
-- ADB tại thời điểm bàn giao: không có thiết bị ở trạng thái `device`, vì vậy chưa thể cài lại
-  và chưa ghi nhận QA trực quan trên máy thật trong lượt này.
-
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.6.6 (versionCode 83)
-- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — Callstack Liquid Glass native Compose, 36/36 unit test pass. APK debug đã tạo; thiết bị ADB hiện chưa online nên chưa cài lại trong lượt này.
+- **Phiên bản hiện tại:** v1.7.7 (versionCode 92) - Release
+- **Trạng thái Build:** ✅ Đã hoàn tất và kiểm thử thành công 100% (39/39 unit tests pass).
 
 ---
 
-## [DONE] Task v1.6.6: Comprehensive App-Wide Callstack Liquid Glass Implementation
+## [DONE] Task v1.7.7: Fix SettingsScreen Theme Inconsistency & Contrast
 
-**Ngày:** 2026-08-14
-
-### Mục tiêu
-- Tái cấu trúc và nâng cấp toàn diện giao diện ứng dụng FinLux trên nền tảng Jetpack Compose, tuân thủ 100% quy chuẩn Callstack Liquid Glass (iOS 26 / VisionOS UIGlassEffect).
-- Chuẩn hóa các primitive Liquid Glass (`LiquidGlassMode`, `LiquidGlassSurface`, `LiquidGlassCard`, `LiquidGlassCapsule`, `LiquidGlassOrbButton`, `LiquidGlassTextField`).
-- Cập nhật toàn bộ các màn hình chức năng: `HomeScreen`, `TransactionsScreen`, `WalletsScreen`, `BudgetScreen`, `ReportsScreen`, `SettingsScreen`.
-- Chạy kiểm thử unit test 100% pass, build APK và nạp vào thiết bị Android.
-
-### Kết quả & Danh sách file đã chỉnh sửa
-| File | Thay đổi |
-|---|---|
-| `LiquidGlass.kt` | ✅ Bổ sung `LiquidGlassMode` (CLEAR, REGULAR, NONE), `LiquidGlassCapsule` cho tab/filter, viền lăng kính tán sắc `1.2.dp` và hiệu ứng tương tác đàn hồi spring physics |
-| `WaterGlass.kt` | ✅ Chuẩn hóa `WaterGlassCard` sang `LiquidGlassCard(mode = CLEAR)` với ambient colored glow |
-| `FinluxTheme.kt` | ✅ Tối ưu tokens phản quang và tương thích ánh sáng tự nhiên Light/Dark mode |
-| `MainBottomBar.kt` | ✅ Tinh giản active indicator thành viên nang nước phát sáng mềm mại |
-| `HomeScreen.kt` | ✅ Thẻ Hero Balance phát quang, quick metrics lăng kính, danh sách giao dịch phân nhóm rõ nét |
-| `TransactionsScreen.kt` | ✅ Bộ lọc `LiquidGlassCapsule`, thẻ tổng quan trong suốt, nền LiquidAuraBackdrop |
-| `WalletsScreen.kt` | ✅ Thẻ tổng tài sản kính lỏng, bảo toàn nền kính vuốt thao tác |
-| `BudgetScreen.kt` | ✅ Tiến độ ngân sách viên nang nước, thẻ kính cảnh báo chi tiêu |
-| `ReportsScreen.kt` | ✅ Biểu đồ dòng tiền và cơ cấu phân bổ trên nền kính pha lê trong suốt |
-| `SettingsScreen.kt` | ✅ Thẻ hồ sơ ProfileHero kính mờ, capsule tùy biến độ nổi kính |
-
----
-
-## [DONE] Task v1.6.5: Full Callstack Liquid Glass UI Overhaul
-
-**Ngày:** 2026-08-14
+**Ngày:** 2026-08-15
 
 ### Mục tiêu
-- **Floating Liquid Glass Dock (`LiquidGlass.kt` & `MainBottomBar.kt`):** Tái thiết kế Bottom Navigation thành viên nang kính nổi lơ lửng (`floating capsule dock`), bo góc 34.dp, cách đáy và 2 cạnh 14.dp, viền tán sắc quang học Chromatic Prism Rim, nền kính mờ xuyên thấu vệt sáng nền.
-- **Liquid Glass Hero Balance Card (`HomeScreen.kt`):** Chuyển đổi thẻ tài sản từ khối màu phẳng sang thẻ kính lỏng đa tầng với vệt sáng cong phản xạ (specular glossy sheen), viền vát 3D phát quang và nút ẩn/hiện số dư bằng kính mờ.
-- **Translucent Refractive Metric Cards (`HomeScreen.kt` & `WaterGlass.kt`):** Thêm viền tán sắc đa tầng, đổ bóng môi trường màu sắc (Ambient Colored Glow) cho các thẻ Thu/Chi/Ngân sách.
-- **Bump Version:** Nâng `versionName` lên `1.6.5` và `versionCode` `77`.
+1. **Đồng bộ Màu Nền & Design System cho SettingsScreen:**
+   - Loại bỏ các màu tím tối/dark mode hardcode trong `SettingsScreen.kt`.
+   - Sử dụng `FinluxStyleBackdrop` / `ModernStyleBackdrop` tự động thích ứng với UI Style (Classic vs Modern) và Theme (Light / Dark mode).
+2. **Khắc Phục Tương Phản TopBar & Menu Settings:**
+   - Tiêu đề "Hồ sơ & Cài đặt", icon Back, các nhãn menu: Dùng `MaterialTheme.colorScheme.onSurface` / `onBackground` hiển thị sắc nét trên cả nền Sáng và Tối.
+3. **Tối Ưu Thẻ Profile Hero & Tên User:**
+   - Cho phép co giãn hoặc hiển thị tên người dùng đầy đủ không bị cắt cụt (`maxLines = 2`).
+   - Thẻ Profile Hero và các shortcut (Ví, Ngân sách, Danh mục, Nhắc nhở) đồng bộ phong cách Liquid Glass với `HomeScreen` và `WalletsScreen`.
+4. **SOP Compliance:**
+   - Chạy `gradlew testDebugUnitTest` đảm bảo 100% PASS (39/39 tests).
+   - Tăng `versionCode` lên 92, bump `versionName v1.7.7`.
+   - Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md` sang `[DONE]`.
+   - Chạy `build_and_install.ps1` nạp APK lên điện thoại.
 
 ### Kết quả & Danh sách file đã chỉnh sửa
-| File | Thay đổi |
-|---|---|
-| `LiquidGlass.kt` | ✅ Triển khai `GlassBottomNav` dạng Floating Capsule Dock (bo góc 34dp, cách viền) + Refraction Rim & Specular Sheen; nâng cấp `GlassFab` Orb |
-| `WaterGlass.kt` | ✅ Tối ưu `WaterGlassCard` với viền quang phổ tán sắc và lớp specular highlight mép trên |
-| `MainBottomBar.kt` | ✅ Tinh giản Destination items thành custom tab fluid, tích hợp specular tab capsule |
-| `HomeScreen.kt` | ✅ Tái thiết kế `ReferenceBalanceHero` đa tầng kính, nút ẩn/hiện Frosted Pill và nâng cấp thẻ chỉ số |
-| `app/build.gradle.kts` | ✅ Bump `versionCode 77`, `versionName 1.6.5` |
-| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
-| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.6.5 |
-
-### Kết quả Kiểm thử & Nạp thiết bị
-- **Unit Tests & Build:** `./gradlew testDebugUnitTest assembleDebug` ➡️ **BUILD SUCCESSFUL**.
-- **ADB Install:** Đã nạp thành công vào thiết bị `7f4ca06a`.
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 16s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`: Bọc backdrop tự động theo UI Style, nâng cấp ProfileHero và ProfileFeatureTiles đồng bộ tương phản Liquid Glass.
+  - `app/build.gradle.kts`: Bump `versionCode = 92`, `versionName = "1.7.7"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.7.
 
 ### Trạng thái
 `[DONE]`
 
 ---
 
-## [DONE] Task v1.6.4: Fix Blurry Bottom Navigation Bar
+## [DONE] Task v1.7.6: Fix Swipe-to-Delete Translucent Ghosting Trash Icon
 
-**Ngày:** 2026-08-14
+**Ngày:** 2026-08-15
 
 ### Mục tiêu
-- **Khắc phục lỗi mờ đục toàn bộ thanh menu:** Gỡ bỏ `finluxBackgroundBlur` trên thẻ `BottomAppBar` trong `GlassBottomNav` (RenderEffect áp dụng trực tiếp lên container làm mờ cả icon, text và FAB con); thay thế bằng màu nền kính mờ `surface` sắc nét kèm viền phản quang vát cạnh và bóng đổ nổi.
-- **Bump Version:** Nâng `versionName` lên `1.6.4` và `versionCode` `74`.
+1. **Ẩn 100% Background & Icon Thùng Rác khi Thẻ Đứng Yên (Zero Ghosting):**
+   - Trong `SwipeToDismissBox.backgroundContent`: Kiểm tra `dismissDirection == SwipeToDismissBoxValue.EndToStart && canDelete`.
+   - Khi thẻ ở vị trí bình thường (`Settled`), `backgroundContent` hoàn toàn trong suốt / không render bất kỳ element nào, đảm bảo 100% không bị nhìn xuyên thấu qua lớp kính Liquid Glass.
+   - Khi bắt đầu vuốt: Tăng dần độ mờ `alpha` theo quãng đường vuốt (`dismissState.progress`) và phóng to nhẹ icon thùng rác (`graphicsLayer`).
+2. **Kiểm Tra & Tăng Độ Tương Phản Mặt Trước (Foreground Card):**
+   - Đảm bảo thẻ ví sử dụng `GlassCard` hiển thị sạch sẽ, cột bên phải chỉ có Số tiền và % tỷ lệ, không còn bất kỳ icon rác trần nào trong cây UI mặt trước.
+3. **SOP Compliance:**
+   - Áp dụng đồng bộ cho cả `ModernWalletsScreen.kt` và `ClassicWalletsScreen.kt`.
+   - `gradlew testDebugUnitTest` PASS 100% (39/39 tests).
+   - Bump version lên `v1.7.6`.
+   - Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md` sang `[DONE]`.
+   - Chạy `build_and_install.ps1` nạp APK lên điện thoại.
 
 ### Kết quả & Danh sách file đã chỉnh sửa
-| File | Thay đổi |
-|---|---|
-| `LiquidGlass.kt` | ✅ Loại bỏ `finluxBackgroundBlur` trực tiếp trên `BottomAppBar`, giữ màu kính frosted sắc nét |
-| `app/build.gradle.kts` | ✅ Bump `versionCode 74`, `versionName 1.6.4` |
-| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
-| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.6.4 |
-
-### Kết quả Kiểm thử & Nạp thiết bị
-- **Unit Tests & Build:** `./gradlew testDebugUnitTest assembleDebug` ➡️ **BUILD SUCCESSFUL**.
-- **ADB Install:** Đã nạp thành công vào thiết bị `7f4ca06a`.
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 11s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`: Cập nhật dynamic rendering cho `backgroundContent` với `graphicsLayer` và `alpha`.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`: Cập nhật dynamic rendering tương tự cho Classic UI.
+  - `app/build.gradle.kts`: Bump `versionCode = 82`, `versionName = "1.7.6"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.6.
 
 ### Trạng thái
 `[DONE]`
 
 ---
 
-## [DONE] Task v1.6.3: Liquid Glass Bottom Navigation & Floating Orb FAB Redesign
+## [DONE] Task v1.7.5: Restore Safe Swipe-to-Delete with Confirm Dialog
 
-**Ngày:** 2026-08-14
+**Ngày:** 2026-08-15
 
 ### Mục tiêu
-- **Liquid Glass Bottom Navigation Bar (`GlassBottomNav`):** Cấu hình bề mặt kính mờ trong suốt (`finluxBackgroundBlur`), viền phản quang gradient vát cạnh (`top refraction rim`), bóng ambient mềm mại và góc bo 28.dp.
-- **Tối ưu Tab Navigation Items:** Loại bỏ hoàn toàn viền squircle thô trên các tab không chọn (Ví, Báo cáo, Hồ sơ); bổ sung hiệu ứng chuyển đổi mượt mà với spring scale và gradient indicator cho tab đang chọn.
-- **Liquid Glass Orb FAB:** Tái thiết kế nút Thêm (+) trung tâm thành quả cầu kính khúc xạ đa tầng (Liquid Orb) với dải gradient 3 màu (Purple -> Blue -> Cyan), đường phản quang ánh sáng trắng (specular crescent highlight) và bóng đổ phát sáng (radiant glow).
-- **Bump Version:** Nâng `versionName` lên `1.6.3` và `versionCode` `72`.
+1. **Khôi phục Cử chỉ Vuốt Trái Xóa Ví (Swipe-to-Delete):**
+   - Bọc mỗi thẻ ví trong `SwipeToDismissBox` với hướng vuốt `EndToStart` (Phải sang Trái).
+   - Nền lộ ra khi vuốt: Màu đỏ `errorContainer` / đỏ mềm mại bo góc 20dp có icon `DeleteOutline`.
+   - Cơ chế an toàn (Safety Trigger): Khi vuốt qua ngưỡng, tự động hoàn trả (reset) thẻ về vị trí cũ và hiển thị Dialog xác nhận: *"Bạn có chắc chắn muốn xóa ví [Tên ví]? Tất cả giao dịch thuộc ví này sẽ bị ảnh hưởng"*. Chỉ xóa khi người dùng bấm [Xóa vĩnh viễn].
+2. **Khóa Cử Chỉ Vuốt Đối Với Ví Mặc Định & Ví Duy Nhất:**
+   - Nếu `wallet.isDefault == true` hoặc danh sách ví chỉ còn 1 ví duy nhất: `enableDismissFromEndToStart = false` (khóa cứng cử chỉ, không trượt thẻ).
+3. **Giữ Nguyên Bố Cục Thẻ Gọn Gàng:**
+   - Thẻ ví ở trạng thái bình thường giữ nguyên cột bên phải sạch đẹp: Số tiền in đậm to rõ và Tỷ lệ % ngay bên dưới.
+4. **SOP Compliance:**
+   - Áp dụng đồng bộ cho cả `ModernWalletsScreen.kt` và `ClassicWalletsScreen.kt`.
+   - Chạy `gradlew testDebugUnitTest` đảm bảo 100% PASS.
+   - Bump version lên `v1.7.5` trong `build.gradle.kts`.
+   - Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md` sang `[DONE]`.
+   - Chạy `build_and_install.ps1` nạp APK lên điện thoại.
 
 ### Kết quả & Danh sách file đã chỉnh sửa
-| File | Thay đổi |
-|---|---|
-| `LiquidGlass.kt` | ✅ Nâng cấp `GlassBottomNav` với viền khúc xạ đa sắc & `finluxBackgroundBlur`; tái cấu trúc `GlassFab` thành Liquid Glass Orb đa lớp với specular light |
-| `MainBottomBar.kt` | ✅ Tinh giản tab items (loại bỏ hộp thô trên tab inactive), thêm active liquid capsule và spring animation |
-| `app/build.gradle.kts` | ✅ Bump `versionCode 72`, `versionName 1.6.3` |
-| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
-| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.6.3 |
-
-### Kết quả Kiểm thử
-- **Unit Tests:** `./gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL** (100% PASS).
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 17s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`: Bọc thẻ ví bằng `SwipeToDismissBox`, thêm logic khóa vuốt cho ví mặc định/duy nhất và dialog xác nhận xóa khi gạt thẻ.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`: Áp dụng đồng bộ `SwipeToDismissBox` và dialog xác nhận.
+  - `app/build.gradle.kts`: Bump `versionCode = 80`, `versionName = "1.7.5"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.5.
 
 ### Trạng thái
 `[DONE]`
 
 ---
 
-## [DONE] Task v1.6.2: Auth Screen Polish - Remove Unused Social Logins & Fill Bottom Surface Gap
+## [DONE] Task v1.7.4: Refine Wallet Card Layout & Safety UX
 
-**Ngày:** 2026-08-14
+**Ngày:** 2026-08-15
 
 ### Mục tiêu
-- **Remove Apple & Facebook Logins:** Loại bỏ các nút placeholder không dùng (Apple, Facebook), chuyển đổi nút Google thành card đăng nhập chính toàn chiều ngang ("Tiếp tục với Google").
-- **Lấp đầy khoảng trống đáy màn hình:** Sử dụng `BoxWithConstraints` và `defaultMinSize` để thẻ `Surface` form đăng nhập tự động kéo dãn lấp đầy toàn bộ phần đáy màn hình, loại bỏ khoảng hở màu nền phía dưới điều khoản sử dụng.
-- **Bump Version:** Nâng `versionName` lên `1.6.2` và `versionCode` `71`.
+1. **Tinh chỉnh Thẻ Ví (Wallet Card Layout):**
+   - Loại bỏ hoàn toàn icon thùng rác/nút xóa trần trên thẻ ví, loại bỏ `SwipeToDismissBox` gây dính cụm và vỡ layout.
+   - Cột bên phải thẻ ví căn chỉnh sang trọng: Số tiền in đậm to rõ, Tỷ lệ % ngay bên dưới.
+   - Khi bấm vào thẻ ví: Mở `GlassBottomSheet` Chi tiết & Chỉnh sửa ví (sửa tên, số dư, loại ví, màu thẻ, checkbox đặt làm mặc định).
+2. **Chống Xóa Nhầm & Bảo Vệ Ví Mặc Định (Safety UX):**
+   - Nút [Xóa ví] màu đỏ cảnh báo chỉ hiển thị ở đáy BottomSheet chi tiết ví khi chỉnh sửa.
+   - Khi bấm Xóa ví: Hiện confirmation dialog "Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng".
+   - Bảo vệ ví mặc định: Nếu `isDefault == true` hoặc là ví duy nhất còn lại, Disable nút Xóa và hiển thị thông báo "Không thể xóa ví mặc định. Vui lòng đặt ví khác làm mặc định trước khi xóa!".
+3. **Tinh Chỉnh Padding Filter Chips:**
+   - Dãy FilterChip loại ví có `contentPadding = PaddingValues(horizontal = 16.dp)` vuốt tràn lề mượt mà không dính mép.
+4. **SOP Compliance:**
+   - Cập nhật cả `ModernWalletsScreen.kt` và `ClassicWalletsScreen.kt`.
+   - `gradlew testDebugUnitTest` PASS 100% (39/39 tests).
+   - Bump version lên `v1.7.4`.
+   - Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md` sang `[DONE]`.
+   - Chạy `build_and_install.ps1` nạp APK lên điện thoại.
 
 ### Kết quả & Danh sách file đã chỉnh sửa
-| File | Thay đổi |
-|---|---|
-| `AuthScreens.kt` | ✅ Loại bỏ nút Apple & Facebook; chuẩn hóa Google Sign-In button tràn viền; áp dụng `BoxWithConstraints` + `defaultMinSize` cho thẻ Surface |
-| `app/build.gradle.kts` | ✅ Bump `versionCode 71`, `versionName 1.6.2` |
-| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
-| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.6.2 |
-
-### Kết quả Kiểm thử
-- **Unit Tests:** `./gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL** (100% PASS).
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 18s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`: Tinh chỉnh card layout, bỏ nút xóa trần, thêm switch ví mặc định, cảnh báo bảo vệ ví mặc định và dialog xác nhận xóa an toàn.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`: Tinh chỉnh đồng bộ layout thẻ ví, filter chip padding và safe delete UX.
+  - `app/build.gradle.kts`: Bump `versionCode = 78`, `versionName = "1.7.4"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.4.
 
 ### Trạng thái
 `[DONE]`
 
 ---
 
-## [DONE] Task v1.6.1: Liquid Glass UI & Accessibility Polish
+## [DONE] Task v1.7.3: Redesign Add & Transfer Wallet UI & Fix Dialog Text Bleed
 
-**Ngày:** 2026-08-14
+**Ngày:** 2026-08-15
 
 ### Mục tiêu
-- **Container Batching (`GlassEffectContainer`):** Bổ sung composable gom nhóm `GlassEffectContainer` theo chuẩn Liquid Glass iOS 26, tối ưu hóa render pass và quản lý clipping/spacing cho các phần tử kính.
-- **Độ tương phản Khả dụng (WCAG AA Compliance):** Cải thiện dải màu `FinluxTextSecondary` và `onSurfaceVariant` trên theme sáng (từ `#768197` lên `#475569`), đảm bảo tỷ lệ tương phản tối thiểu 4.5:1 trên nền kính mờ.
-- **Tối ưu hóa Khúc xạ Vật liệu Kính:** Nâng cấp dải màu highlight và bóng khúc xạ trong `WaterGlassCard` & `LiquidGlassSurface` giúp chiều sâu không gian sắc nét hơn.
-- **Bump Version:** Nâng `versionName` lên `1.6.1` và `versionCode` `70`.
+- **Khắc phục triệt để lỗi giao diện "Thêm ví mới" & "Chuyển tiền":**
+  - Chuyển `WalletEditor` và `TransferEditor` sang `GlassBottomSheet` hiện đại với scrim nền đen mờ bao phủ toàn màn hình, triệt tiêu 100% hiện tượng chữ/danh sách ví phía sau bị lộ xuyên qua.
+  - Tăng độ phủ đặc `GlassDialogSurface` lên `0.98f` kết hợp viền tán sắc Chromatic Rim chống lóa và chống xuyên thấu.
+  - Bổ sung bộ chọn nhanh số dư dạng Chip thông minh (`+500K`, `+1M`, `+2M`, `+5M`, `+10M` và `+100K`, `+200K`...).
+  - Thiết kế bảng chọn màu ví trực quan với viền active và icon loại ví động (`CASH`, `BANK`, `EWALLET`, `CARD`, `INVESTMENT`).
+  - Hỗ trợ phím tắt chuyển tiền thông minh ngay từ `QuickAddSheet` kết nối trực tiếp vào `WalletsScreen`.
+- **SOP Compliance:**
+  - `gradlew testDebugUnitTest` PASS 100% (39/39 tests).
+  - Bump version lên `v1.7.3`.
+  - Cập nhật CHANGELOG.md và HANDOVER_LOG.md [DONE].
+  - Chạy `build_and_install.ps1` nạp APK lên thiết bị.
 
 ### Kết quả & Danh sách file đã chỉnh sửa
-| File | Thay đổi |
-|---|---|
-| `FinluxTheme.kt` | ✅ Tăng độ tương phản `FinluxTextSecondary` & `LightColors.onSurfaceVariant` lên `#475569` |
-| `LiquidGlass.kt` | ✅ Thêm `GlassEffectContainer` composable theo pattern iOS 26 Liquid Glass |
-| `WaterGlass.kt` | ✅ Chuẩn hóa dải phản quang và layer render cache |
-| `app/build.gradle.kts` | ✅ Bump `versionCode 70`, `versionName 1.6.1` |
-| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
-| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.6.1 |
-
-### Kết quả Kiểm thử
-- **Unit Tests:** `./gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL** (100% PASS).
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 11s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`: Cập nhật `GlassDialogSurface` đạt 98% độ đặc và viền rim.
+  - `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt`: Cập nhật `GlassDialogSurface` đạt 98% độ đặc và viền rim.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`: Nâng cấp `WalletEditor` và `TransferEditor` sang `GlassBottomSheet` hiện đại.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`: Nâng cấp `WalletEditor` và `TransferEditor` sang `GlassBottomSheet`.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletsScreen.kt`: Hỗ trợ `transferRequestKey` kích hoạt sheet chuyển tiền tức thì từ QuickAdd.
+  - `app/build.gradle.kts`: Bump `versionCode = 76`, `versionName = "1.7.3"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.3.
 
 ### Trạng thái
 `[DONE]`
 
 ---
 
-## [DONE] Task v1.6.0: Security Hardening & Authorization Fixes
+## [DONE] Task v1.7.2: Restore True Modern UI Screens from commit 6535f24
 
-**Ngày:** 2026-08-14
+**Ngày:** 2026-08-15
 
 ### Mục tiêu
-- **Firestore Security Rules Isolation:** Khắc phục triệt để lỗ hổng IDOR/Multi-tenant leak bằng cách cấu hình rule `request.auth != null && request.auth.uid == uid` cho toàn bộ tài liệu gốc và subcollection con (`wallets`, `categories`, `transactions`, `budgets`, `reminders`, `goals`, `notifications`). Đảm bảo user toàn quyền quản lý dữ liệu của chính mình và cấm tuyệt đối truy cập chéo sang user khác.
-- **Tắt ADB Backup:** Cập nhật `android:allowBackup="false"` trong `AndroidManifest.xml` nhằm chống trích xuất dữ liệu cache, session offline và DataStore qua kết nối ADB.
-- **Network Security Config:** Tạo file `network_security_config.xml` chặn toàn bộ cleartext HTTP traffic, ép buộc giao tiếp HTTPS/TLS an toàn.
-- **Bump Version:** Nâng `versionName` lên `1.6.0` và `versionCode` `69`.
+- **Ráp đúng 100% Modern UI từ commit `6535f24`:**
+  - `ModernHomeScreen.kt`: Hero balance card mới, Callstack Liquid Glass surfaces, quick metrics pill.
+  - `ModernBudgetScreen.kt`: Progress cards, multi-layer blur, gradient summary.
+  - `ModernReportsScreen.kt`: Modern analytics panels, spatial charts.
+  - `ModernWalletsScreen.kt`: Modern wallet cards, swipe actions.
+  - `ModernTransactionsScreen.kt`: Modern transaction rows, refined grouping.
+- **Sử dụng đúng Modern Design System:**
+  - Import và liên kết với `com.finlux.app.core.designsystem.modern.*`.
+  - Chuẩn hóa toàn bộ text tiếng Việt sang UTF-8 sạch.
+- **SOP Compliance:**
+  - `gradlew testDebugUnitTest` PASS 100% (39/39 tests).
+  - Bump version lên `v1.7.2`.
+  - Cập nhật CHANGELOG.md và HANDOVER_LOG.md [DONE].
+  - Chạy `build_and_install.ps1` nạp APK lên thiết bị.
 
 ### Kết quả & Danh sách file đã chỉnh sửa
-| File | Thay đổi |
-|---|---|
-| `firestore.rules` | ✅ Áp dụng rule `request.auth.uid == uid` cho user root doc & all subcollections |
-| `app/src/main/AndroidManifest.xml` | ✅ Đặt `allowBackup="false"` & khai báo `networkSecurityConfig` |
-| `app/src/main/res/xml/network_security_config.xml` | ✅ Chặn cleartext HTTP traffic toàn diện |
-| `app/build.gradle.kts` | ✅ Bump `versionCode 69`, `versionName 1.6.0` |
-| `HANDOVER_LOG.md` | ✅ Cập nhật log PRE/POST-EXECUTION |
-| `CHANGELOG.md` | ✅ Thêm mục phiên bản release v1.6.0 |
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 16s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`: Trích xuất và ráp đúng bố cục Hero Balance Card phát quang và Callstack Liquid Glass từ `6535f24`.
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt`: Ráp đúng Modern Budget progress cards từ `6535f24`.
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`: Ráp đúng Modern Reports charts và capsule selectors từ `6535f24`.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`: Ráp đúng Modern Wallets cards từ `6535f24`.
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`: Ráp đúng Modern Transactions list từ `6535f24`.
+  - `app/build.gradle.kts`: Bump `versionCode = 71`, `versionName = "1.7.2"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.2.
 
-### Kết quả Kiểm thử
-- **Unit Tests:** `./gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL** (100% PASS).
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.7.1: Fix Dual-UI Isolation, Overexposure & Settings Switcher
+
+**Ngày:** 2026-08-15
+
+### Mục tiêu
+- **Tách biệt 100% Design System:**
+  - Khôi phục nguyên bản Design System từ commit `280b722` vào `core/designsystem/` (`LiquidGlass.kt`, `StyleBackdrop.kt`, `WaterGlass.kt`, `FinluxComponents.kt`, `FinluxBrand.kt`).
+  - Đặt các component Modern từ commit `6535f24` vào `core/designsystem/modern/` (`ModernLiquidGlass.kt`, `ModernStyleBackdrop.kt`, `ModernWaterGlass.kt`...).
+  - Đảm bảo Classic UI không bị dính bất kỳ hiệu ứng glow/cháy sáng/thay đổi kích thước nào từ Modern UI.
+- **Khôi phục hoàn toàn BottomBar:**
+  - `ClassicMainBottomBar`: Đúng 100% giao diện thanh dock tiêu chuẩn từ `280b722`.
+  - `ModernMainBottomBar`: Đúng phong cách Floating Dock pill từ `6535f24`.
+- **Nâng cấp Settings UI Switcher:**
+  - Thêm Card Cài đặt "Phong cách giao diện" có Subtitle hiển thị style hiện tại.
+  - Mở BottomSheet chọn Radio trực quan với 2 phong cách kèm giải thích chi tiết.
+- **SOP Compliance:**
+  - Chạy `gradlew testDebugUnitTest` đạt 100% PASS (39/39 tests).
+  - Bump version lên `v1.7.1` (versionCode 70).
+  - Cập nhật CHANGELOG.md và HANDOVER_LOG.md [DONE].
+  - Chạy `build_and_install.ps1` nạp APK lên thiết bị.
+
+### Kết quả & Danh sách file đã chỉnh sửa
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 22s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`, `StyleBackdrop.kt`, `WaterGlass.kt`, `FinluxComponents.kt`, `FinluxBrand.kt`, `NotificationPermissionHandler.kt`: Khôi phục 100% nguyên bản từ `280b722`.
+  - `app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt`: Làm sạch tokens cho cả 2 chế độ Classic và Modern, sử dụng FinluxTypography gốc.
+  - `app/src/main/java/com/finlux/app/core/designsystem/modern/...`: Đóng gói độc lập toàn bộ component modern.
+  - `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`: Khôi phục 100% docked glass bar.
+  - `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`: Tinh chỉnh floating capsule pill bar với chuỗi UTF-8 chuẩn.
+  - `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`, `presentation/.../classic/...`, `presentation/.../modern/...`: Chuẩn hóa 100% chuỗi tiếng Việt UTF-8 và kết nối component.
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`: Bổ sung Card Cài đặt "Phong cách giao diện" + `GlassBottomSheet` + Radio UI Selector.
+  - `app/build.gradle.kts`: Bump `versionCode = 70`, `versionName = "1.7.1"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.1.
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task v1.7.0: Dual-UI Style Architecture & Theme Switcher
+
+**Ngày:** 2026-08-15
+
+### Mục tiêu
+- **Kiến trúc Đa Phong Cách Giao Diện:** Hỗ trợ 2 phong cách UI song song:
+  1. `CLASSIC_LIQUID`: Phong cách Liquid Glass truyền thống của FinLux (v1.5.9).
+  2. `MODERN_LUXURY`: Phong cách Modern Callstack / iOS 26 Liquid Glass từ bản v1.6.6.
+- **Persistence & Switcher:** Lưu lựa chọn trong `DataStorePreferences`, thêm mục chọn `[🎨 Phong cách giao diện]` trong màn hình Cài đặt (`SettingsScreen.kt`) cho phép chuyển đổi tức thì.
+- **Đồng nhất 100% Logic/ViewModel:** Cả 2 giao diện dùng chung Domain/Repository/ViewModel.
+- **Tuân thủ SOP:** Chạy test pass 100%, bump version lên `v1.7.0` (versionCode 69) và build APK.
+
+### Kết quả & Danh sách file đã chỉnh sửa
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 6s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`: Bổ sung `enum class AppUiStyle { CLASSIC_LIQUID, MODERN_LUXURY }`.
+  - `app/src/main/java/com/finlux/app/domain/repository/ThemePreferenceRepository.kt`: Bổ sung `uiStyle: Flow<AppUiStyle>` và `suspend fun setUiStyle(uiStyle: AppUiStyle)`.
+  - `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt`: Lưu trữ và đọc `app_ui_style` từ DataStore.
+  - `app/src/main/java/com/finlux/app/presentation/RootViewModel.kt`: Quản lý StateFlow `uiStyle` và hàm `setUiStyle()`.
+  - `app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt`: Định nghĩa `LocalAppUiStyle` và cung cấp bộ token màu/gradient cho cả 2 phong cách.
+  - `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`, `StyleBackdrop.kt`, `WaterGlass.kt`: Tối ưu hóa render glass đa lớp.
+  - `app/src/main/java/com/finlux/app/presentation/home/CurrencyFormatters.kt`: Chuẩn hóa các hàm định dạng tiền tệ `toVnd()` và `toShortVnd()`.
+  - `app/src/main/java/com/finlux/app/presentation/home/`: `HomeScreen.kt` (dispatcher), `classic/ClassicHomeScreen.kt`, `modern/ModernHomeScreen.kt`.
+  - `app/src/main/java/com/finlux/app/presentation/budget/`: `BudgetScreen.kt` (dispatcher), `classic/ClassicBudgetScreen.kt`, `modern/ModernBudgetScreen.kt`.
+  - `app/src/main/java/com/finlux/app/presentation/reports/`: `ReportsScreen.kt` (dispatcher), `classic/ClassicReportsScreen.kt`, `modern/ModernReportsScreen.kt`.
+  - `app/src/main/java/com/finlux/app/presentation/wallet/`: `WalletsScreen.kt` (dispatcher), `classic/ClassicWalletsScreen.kt`, `modern/ModernWalletsScreen.kt`.
+  - `app/src/main/java/com/finlux/app/presentation/transaction/`: `TransactionsScreen.kt` (dispatcher), `classic/ClassicTransactionsScreen.kt`, `modern/ModernTransactionsScreen.kt`.
+  - `app/src/main/java/com/finlux/app/presentation/components/`: `MainBottomBar.kt` (dispatcher), `classic/ClassicMainBottomBar.kt`, `modern/ModernMainBottomBar.kt`.
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`: Thêm mục chọn phong cách giao diện `[🎨 Phong cách giao diện]`.
+  - `app/src/main/java/com/finlux/app/presentation/FinluxRoot.kt` & `com/finlux/app/core/navigation/FinluxNavHost.kt`: Kết nối `uiStyle` xuyên suốt Compose Navigation.
+  - `app/src/test/java/com/finlux/app/presentation/RootViewModelTest.kt`: Unit tests cho tính năng chuyển đổi UI style.
+  - `app/build.gradle.kts`: Bump `versionCode = 69`, `versionName = "1.7.0"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.0.
 
 ### Trạng thái
 `[DONE]`

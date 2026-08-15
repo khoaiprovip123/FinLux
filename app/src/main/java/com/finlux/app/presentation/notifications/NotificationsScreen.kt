@@ -38,6 +38,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -45,6 +46,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,9 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.GlassCard
-import com.finlux.app.core.designsystem.GlassBottomSheet
 import com.finlux.app.core.designsystem.GlassTopBar
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.domain.model.AppNotification
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.Wallet
@@ -107,8 +107,6 @@ fun NotificationsScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-    FinluxStyleBackdrop(Modifier.fillMaxSize())
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -171,7 +169,6 @@ fun NotificationsScreen(
                 }
             }
         }
-    }
     }
 
     selectedNotificationForPay?.let { notification ->
@@ -335,6 +332,8 @@ private fun QuickPaymentSheet(
     onDismiss: () -> Unit,
     onConfirmPay: (customAmount: Long, walletId: String?, categoryId: String?) -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     var amountInput by remember(notification) {
         mutableStateOf(if (notification.amount.value > 0) notification.amount.value.toString() else "")
     }
@@ -348,7 +347,13 @@ private fun QuickPaymentSheet(
     val parsedAmount = amountInput.toLongOrNull() ?: 0L
     val formattedPreview = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(parsedAmount)
 
-    GlassBottomSheet(onDismiss = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = null,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
