@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -183,10 +184,10 @@ fun LiquidGlassSurface(
             .border(rimBorder, shape),
     ) {
         // Optical layers remain behind content: text and icons are never blurred or tinted.
-        Box(modifier = Modifier.fillMaxSize().background(surfaceFill))
+        Box(modifier = Modifier.matchParentSize().background(surfaceFill))
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .matchParentSize()
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
@@ -537,8 +538,18 @@ fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun GlassDialogSurface(content: @Composable BoxScope.() -> Unit) {
-    LiquidGlassSurface(mode = LiquidGlassMode.REGULAR, elevation = 18.dp, content = content)
+fun GlassDialogSurface(
+    modifier: Modifier = Modifier,
+    shape: androidx.compose.ui.graphics.Shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp),
+    content: @Composable BoxScope.() -> Unit,
+) {
+    LiquidGlassSurface(
+        modifier = modifier.fillMaxWidth().wrapContentHeight(),
+        mode = LiquidGlassMode.REGULAR,
+        shape = shape,
+        elevation = 18.dp,
+        content = content,
+    )
 }
 
 /** Dialog host that guarantees the same glass material and contrast across the app. */
