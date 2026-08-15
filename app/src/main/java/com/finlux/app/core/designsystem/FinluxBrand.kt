@@ -1,13 +1,12 @@
 package com.finlux.app.core.designsystem
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,12 +46,12 @@ fun FinluxBrandMark(
         VisualStyle.GLASSMORPHISM -> Color.White.copy(alpha = .16f)
         VisualStyle.DYNAMIC_GRADIENT -> Color.White.copy(alpha = .94f)
     }
-    Surface(
+    LiquidGlassSurface(
         modifier = modifier.size(size),
         shape = RoundedCornerShape(size * .28f),
-        color = frameColor,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .22f)),
-        shadowElevation = 10.dp,
+        tint = frameColor,
+        elevation = 10.dp,
+        padding = PaddingValues(0.dp),
     ) {
         Box(contentAlignment = Alignment.Center) { image() }
     }

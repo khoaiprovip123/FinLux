@@ -49,6 +49,7 @@ import com.finlux.app.core.designsystem.FinluxCyan
 import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
+import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.FinluxPanel
 import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
@@ -72,6 +73,8 @@ fun ExpenseScreen(
     viewModel: ExpenseViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
+    Box(Modifier.fillMaxSize()) {
+    FinluxStyleBackdrop(Modifier.fillMaxSize())
     Scaffold(
         topBar = {
             GlassTopBar(
@@ -120,6 +123,7 @@ fun ExpenseScreen(
             }
             item { Spacer(Modifier.height(4.dp)) }
         }
+    }
     }
 }
 

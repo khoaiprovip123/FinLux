@@ -82,82 +82,89 @@ fun ReportsScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val selectedPeriod = viewModel.selectedPeriod.collectAsStateWithLifecycle().value
     var showRangePicker by remember { mutableStateOf(false) }
-    Scaffold(
-        topBar = {
-            GlassTopBar(
-                title = { Text("Báo cáo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { onBack?.invoke() ?: onNavigate(Route.Home.value) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-                actions = { IconButton(onClick = { showRangePicker = true }) { Icon(Icons.Default.FilterAlt, "Lọc báo cáo") } },
-            )
-        },
-        bottomBar = { MainBottomBar(Route.Reports.value, onNavigate, onAdd) },
-        containerColor = Color.Transparent,
-    ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            ReportPeriodSelector(selectedPeriod) { option ->
-                viewModel.selectPeriod(option)
-                if (option == ReportPeriod.CUSTOM) showRangePicker = true
-            }
-            if (selectedPeriod == ReportPeriod.CUSTOM) {
-                Button(onClick = { showRangePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}  →  ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
+    Box(Modifier.fillMaxSize()) {
+        com.finlux.app.core.designsystem.FinluxStyleBackdrop(Modifier.fillMaxSize())
+        Scaffold(
+            topBar = {
+                GlassTopBar(
+                    title = { Text("Báo cáo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { onBack?.invoke() ?: onNavigate(Route.Home.value) }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                        }
+                    },
+                    actions = { IconButton(onClick = { showRangePicker = true }) { Icon(Icons.Default.FilterAlt, "Lọc báo cáo") } },
+                )
+            },
+            bottomBar = { MainBottomBar(Route.Reports.value, onNavigate, onAdd) },
+            containerColor = Color.Transparent,
+        ) { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                ReportPeriodSelector(selectedPeriod) { option ->
+                    viewModel.selectPeriod(option)
+                    if (option == ReportPeriod.CUSTOM) showRangePicker = true
                 }
-            }
-            ReportPanel {
-                Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Tổng quan ${reportRangeLabel(state)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
-                    }
-                    Row(Modifier.fillMaxWidth().height(70.dp), verticalAlignment = Alignment.CenterVertically) {
-                        ReportAmount("Thu nhập", state.summary.income.value, state.previousIncome, IncomeGreen, Modifier.weight(1f))
-                        VerticalDivider(Modifier.height(54.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-                        ReportAmount("Chi tiêu", state.summary.expense.value, state.previousExpense, ExpenseRed, Modifier.weight(1f))
-                        VerticalDivider(Modifier.height(54.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-                        ReportAmount("Tiết kiệm", state.summary.net, state.previousNet, FinluxBlue, Modifier.weight(1f))
+                if (selectedPeriod == ReportPeriod.CUSTOM) {
+                    Button(onClick = { showRangePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}  →  ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
                     }
                 }
-            }
-            ReportPanel {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Xu hướng thu – chi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("${selectedPeriod.label} ▾", Modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 5.dp), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
+                ReportPanel {
+                    Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Tổng quan ${reportRangeLabel(state)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
+                        }
+                        Row(Modifier.fillMaxWidth().height(70.dp), verticalAlignment = Alignment.CenterVertically) {
+                            ReportAmount("Thu nhập", state.summary.income.value, state.previousIncome, IncomeGreen, Modifier.weight(1f))
+                            VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .40f), modifier = Modifier.height(44.dp))
+                            ReportAmount("Chi tiêu", state.summary.expense.value, state.previousExpense, ExpenseRed, Modifier.weight(1f))
+                            VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .40f), modifier = Modifier.height(44.dp))
+                            ReportAmount("Dòng tiền", state.summary.net, state.previousIncome - state.previousExpense, if (state.summary.net >= 0) IncomeGreen else ExpenseRed, Modifier.weight(1f))
+                        }
                     }
-                    if (state.cashFlow.none { it.income > 0 || it.expense > 0 }) EmptyChartText() else CashFlowChart(state.cashFlow)
                 }
-            }
-            ReportPanel {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Phân bổ chi tiêu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Xem chi tiết", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                ReportPanel {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Xu hướng thu – chi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            com.finlux.app.core.designsystem.LiquidGlassCapsule(selected = true, accentColor = MaterialTheme.colorScheme.primary) {
+                                Text(selectedPeriod.label, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                        if (state.cashFlow.none { it.income > 0 || it.expense > 0 }) EmptyChartText() else CashFlowChart(state.cashFlow)
                     }
-                    if (state.expensesByCategory.isEmpty()) EmptyChartText() else ExpenseDistribution(state.expensesByCategory)
                 }
-            }
-            ReportPanel {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Báo cáo theo ví", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Tất cả ví ▾", Modifier.background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium)
+                ReportPanel {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Phân bổ chi tiêu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Xem chi tiết", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                        }
+                        if (state.expensesByCategory.isEmpty()) EmptyChartText() else ExpenseDistribution(state.expensesByCategory)
                     }
-                    WalletReport(state.walletActivity)
                 }
+                ReportPanel {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Báo cáo theo ví", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            com.finlux.app.core.designsystem.LiquidGlassCapsule(selected = false) {
+                                Text("Tất cả ví", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                        WalletReport(state.walletActivity)
+                    }
+                }
+                Button(
+                    onClick = { /* UC-17 exporter remains isolated for the export sprint. */ },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                ) { Text("Xuất báo cáo", fontWeight = FontWeight.Bold) }
+                Spacer(Modifier.height(18.dp))
             }
-            Button(
-                onClick = { /* UC-17 exporter remains isolated for the export sprint. */ },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-            ) { Text("Xuất báo cáo", fontWeight = FontWeight.Bold) }
-            Spacer(Modifier.height(18.dp))
         }
     }
     if (showRangePicker) {
@@ -187,11 +194,10 @@ fun ReportsScreen(
 
 @Composable
 private fun ReportPanel(content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit) {
-    FinluxPanel(
-        Modifier.fillMaxWidth(),
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .96f),
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .72f),
-        cornerRadius = 16.dp,
+    com.finlux.app.core.designsystem.GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        mode = com.finlux.app.core.designsystem.LiquidGlassMode.CLEAR,
+        padding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         content = content,
     )
 }
@@ -199,17 +205,17 @@ private fun ReportPanel(content: @Composable androidx.compose.foundation.layout.
 @Composable
 private fun ReportPeriodSelector(selected: ReportPeriod, onSelected: (ReportPeriod) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f), RoundedCornerShape(22.dp)).padding(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ReportPeriod.entries.forEach { option ->
-            Box(
-                Modifier.weight(1f).height(38.dp)
-                    .background(if (selected == option) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(18.dp))
-                    .clickable { onSelected(option) },
-                contentAlignment = Alignment.Center,
+            com.finlux.app.core.designsystem.LiquidGlassCapsule(
+                selected = selected == option,
+                onClick = { onSelected(option) },
+                modifier = Modifier.weight(1f),
+                accentColor = MaterialTheme.colorScheme.primary,
             ) {
-                Text(option.label, color = if (selected == option) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+                Text(option.label, style = MaterialTheme.typography.labelMedium, fontWeight = if (selected == option) FontWeight.Bold else FontWeight.Medium)
             }
         }
     }

@@ -3,6 +3,94 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.6.6] - 2026-08-14
+
+### Added
+- **Callstack Liquid Glass System Primitive Suite (`LiquidGlass.kt`):** Bổ sung `LiquidGlassMode` (`CLEAR`, `REGULAR`, `NONE`), viền tán sắc quang học Chromatic Prism Rim (`1.2.dp`), phản hồi xúc giác đàn hồi Spring Physics (`scale = 0.975f`), và thành phần viên nang nước `LiquidGlassCapsule` cho toàn bộ bộ lọc và nhãn trạng thái.
+- **Tái thiết kế toàn bộ màn hình theo chuẩn Liquid Glass:** Nâng cấp Auth, Dashboard, Ví, Thu nhập, Chi tiêu, Giao dịch, Danh mục, Ngân sách, Báo cáo, Thông báo, Nhắc nhở, Mục tiêu, Quét hóa đơn và Hồ sơ sang backdrop/token kính dùng chung.
+- **Vuốt điều hướng bám ngón tay:** Hỗ trợ Trang chủ ↔ Ví ↔ Báo cáo ↔ Hồ sơ với edge resistance, glow định hướng và spring settle.
+
+### Changed
+- **Theme token theo lựa chọn người dùng:** Ba phong cách Tối giản hiện đại, Glassmorphism và Gradient năng động có palette/backdrop riêng nhưng luôn tuân theo Sáng/Tối/Hệ thống trên mọi màn hình.
+- **Chrome dùng chung:** Top bar, floating dock, FAB, alert dialog và bottom sheet chuyển sang `LiquidGlassSurface`; phần aura/refraction được tách khỏi lớp chữ/icon để bảo đảm độ đọc.
+- **Hồ sơ & Cài đặt:** Đưa Giới thiệu FinLux lên đầu, giữ khu vực ảnh đại diện/tên người dùng ngay sau đó và khôi phục bộ chọn phong cách giao diện.
+- **Đăng nhập mạng xã hội:** Chuẩn hóa ba thẻ Google, Apple và Facebook cùng kích thước; Google giữ luồng Credential Manager hiện tại, Apple/Facebook để callback sẵn cho cấu hình provider sau này.
+
+### Fixed
+- **Vuốt Báo cáo sang Hồ sơ:** Gắn gesture thực tế vào `NavHost` thay cho helper chưa được sử dụng; thao tác vuốt vẫn hoạt động song song với icon điều hướng đáy.
+- **Đồng bộ phiên bản:** Đồng bộ `versionName` thành `1.6.6` với `versionCode 83` và tài liệu bàn giao.
+- **Thiết bị dùng ba phím điều hướng:** Floating dock tiếp tục dùng `navigationBarsPadding()` và scaffold bottom inset để không bị system navigation che.
+
+---
+
+## [1.6.5] - 2026-08-14
+
+### Added
+- **Translucent Water-Bubble Glass Surfaces (`LiquidGlass.kt` & `WaterGlass.kt`):** Nâng cấp độ trong suốt mờ ảo kiểu bóng nước lỏng (alpha `0.40f..0.75f`), viền khúc xạ đa sắc phản chiếu ánh sáng tự nhiên và bo góc tròn trịa `24.dp`.
+- **Floating Water-Bubble Dock (`LiquidGlass.kt` & `MainBottomBar.kt`):** Tái thiết kế Bottom Navigation thành viên nang bóng nước lơ lửng bo góc `36.dp`, hiệu ứng đổ bóng chất lỏng dịu mắt và viền phản quang quang học.
+- **Thẻ Kính Tài Sản Lăng Kính Hero & Chỉ Số (`HomeScreen.kt`):** Thêm nút kính mờ ẩn/hiện số dư và cấu trúc giọt nước lỏng hài hòa.
+
+### Changed
+- **Thống nhất toàn bộ ứng dụng sang Callstack Liquid Glass (`StyleBackdrop.kt`, `FinluxTheme.kt`, `HomeScreen.kt`):** Dọn dẹp triệt để các phong cách đồ họa cũ (Modern Dark phân mảnh, Dynamic Gradient phẳng), thống nhất toàn bộ nền sang `LiquidAuraBackdrop` với các khối cầu ánh sáng chuyển động mềm mại lọt qua bề mặt kính trong suốt.
+- **Tối giản SettingsScreen (`SettingsScreen.kt`):** Loại bỏ bộ chọn giao diện cũ, tập trung trực tiếp vào các tùy chỉnh độ nổi và mật độ của vật liệu Liquid Glass.
+
+### Fixed
+- **Lỗi chữ Xóa / icon Thùng rác hiện đè lên số dư ví (`WalletsScreen.kt`):** Chỉ hiển thị lớp `backgroundContent` của `SwipeToDismissBox` khi người dùng đang thực hiện cử chỉ vuốt (`dismissDirection != Settled`), ngăn chặn hoàn toàn việc các nút thao tác nền bị lộ xuyên qua thẻ kính mờ khi đang ở trạng thái tĩnh.
+- **Loại bỏ hiệu ứng lóa sáng che khuất chữ (`LiquidGlassSurface` & `WaterGlassCard`):** Gỡ bỏ hoàn toàn các lớp vẽ Canvas chèn hạt sáng che mờ subtitle; tối ưu độ tương phản văn bản 100% sắc nét.
+- **Tối ưu Tab Navigation & FAB:** Viên nang active mềm mại `38.dp x 26.dp` và FAB (+) quả cầu thủy tinh bóng nước phát sáng.
+
+---
+
+## [1.6.4] - 2026-08-14
+
+### Fixed
+- **Lỗi Mờ Nhòe Thanh Menu (`LiquidGlass.kt`):** Loại bỏ `finluxBackgroundBlur` trên container `BottomAppBar` (RenderEffect áp dụng trực tiếp lên container làm mờ cả icon, text và FAB con); thay thế bằng màu nền kính mờ `surface` sắc nét kèm viền phản quang vát cạnh và bóng đổ nổi.
+
+---
+
+## [1.6.3] - 2026-08-14
+
+### Added
+- **Liquid Glass Orb FAB (`LiquidGlass.kt`):** Tái thiết kế nút Thêm (+) trung tâm thành quả cầu kính khúc xạ đa tầng (Liquid Orb) với dải gradient 3 màu (Purple -> Blue -> Cyan), đường phản quang ánh sáng trắng (specular crescent highlight) và bóng đổ phát sáng (radiant glow).
+
+### Changed
+- **Liquid Glass Bottom Navigation Bar (`GlassBottomNav`):** Cấu hình bề mặt kính mờ trong suốt (`finluxBackgroundBlur`), viền phản quang gradient vát cạnh (`top refraction rim`), bóng ambient mềm mại và góc bo 28.dp.
+- **Tối ưu Tab Navigation Items (`MainBottomBar.kt`):** Loại bỏ hoàn toàn viền squircle thô trên các tab không chọn (Ví, Báo cáo, Hồ sơ); bổ sung hiệu ứng chuyển đổi mượt mà với spring scale và gradient indicator cho tab đang chọn.
+
+---
+
+## [1.6.2] - 2026-08-14
+
+### Changed
+- **Chuẩn Hóa Đăng Nhập Google Toàn Chiều Ngang (`AuthScreens.kt`):** Loại bỏ nút Apple và Facebook placeholder; nâng cấp nút đăng nhập Google thành nút độc lập chính với bề rộng tràn màn hình ("Tiếp tục với Google").
+- **Lấp Đầy Khoảng Trống Đáy Form Đăng Nhập (`AuthScreens.kt`):** Tích hợp `BoxWithConstraints` và `defaultMinSize` cho thẻ `Surface` form Auth, kéo dãn liền mạch toàn bộ phần đáy màn hình và loại bỏ khoảng hở màu nền phía dưới điều khoản sử dụng.
+
+---
+
+## [1.6.1] - 2026-08-14
+
+### Added
+- **Container Batching (`GlassEffectContainer`):** Bổ sung composable gom cụm `GlassEffectContainer` theo chuẩn Liquid Glass iOS 26, tối ưu hóa quá trình quản lý render pass và phân vùng viền kính cho nhiều phần tử con liền kề.
+
+### Changed
+- **Nâng Cấp Độ Tương Phản Trợ Năng (WCAG AA Compliance):** Tinh chỉnh màu `FinluxTextSecondary` và `onSurfaceVariant` từ `#768197` sang `#475569`, đảm bảo độ tương phản chữ phụ đạt chuẩn trên nền kính mờ sáng.
+- **Tối ưu Hóa Hiệu Ứng Phản Quang Kính Nước:** Chuẩn hóa dải phản xạ ánh sáng và viền khúc xạ đa lớp trong `LiquidGlassSurface` và `WaterGlassCard`.
+
+---
+
+## [1.6.0] - 2026-08-14
+
+### Added
+- **Network Security Configuration (`network_security_config.xml`):** Khởi tạo cấu hình bảo mật mạng cấm toàn bộ cleartext HTTP traffic, ép buộc kết nối an toàn qua TLS.
+
+### Changed
+- **Tắt Backup Ứng Dụng (`AndroidManifest.xml`):** Đặt `android:allowBackup="false"` nhằm ngăn chặn rò rỉ dữ liệu tài chính, session và cache qua ADB backup.
+
+### Fixed
+- **Siết Chặt Phân Quyền Firestore (`firestore.rules`):** Áp dụng nguyên tắc Least Privilege `request.auth != null && request.auth.uid == uid` cho toàn bộ document và subcollection dưới `users/{uid}`. Đảm bảo user có toàn quyền thêm/sửa/xóa dữ liệu cá nhân của mình nhưng bị cấm hoàn toàn truy cập dữ liệu người khác.
+
+---
+
 ## [1.5.9] - 2026-08-14
 
 ### Changed

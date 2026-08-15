@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -34,7 +36,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SwipeToDismissBox
@@ -58,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinanceAccentHexes
 import com.finlux.app.core.designsystem.GlassCard
+import com.finlux.app.core.designsystem.GlassAlertDialog
 import com.finlux.app.core.designsystem.GlassDialogSurface
 import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.GradientHeroCard
@@ -95,41 +97,64 @@ fun WalletsScreen(
     val filteredWallets = wallets.filter { filter == null || it.type == filter }
     val totalBalance = wallets.sumOf { it.balance.value }
     LaunchedEffect(action.message) { action.message?.let { snackbar.showSnackbar(it); viewModel.consumeMessage() } }
-    Scaffold(
-        topBar = {
-            GlassTopBar(
-                title = { Text("Ví của tôi", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) { Icon(Icons.Default.ArrowBack, "Quay lại") } },
-                actions = { IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm ví") } },
-            )
-        },
-        bottomBar = { if (onNavigate != null && onAdd != null) MainBottomBar(Route.Wallets.value, onNavigate, onAdd) },
-        snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = Color.Transparent,
-    ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 4.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                GradientHeroCard(Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text("Tổng số dư", color = Color.White.copy(alpha = .8f))
-                        Text(totalBalance.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                        Text("${wallets.size} ví · quản lý tập trung và an toàn", color = Color.White.copy(alpha = .82f))
+    Box(Modifier.fillMaxSize()) {
+        com.finlux.app.core.designsystem.FinluxStyleBackdrop(Modifier.fillMaxSize())
+        Scaffold(
+            topBar = {
+                GlassTopBar(
+                    title = { Text("Ví của tôi", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
+                    navigationIcon = { IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) { Icon(Icons.Default.ArrowBack, "Quay lại") } },
+                    actions = { IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm ví") } },
+                )
+            },
+            bottomBar = { if (onNavigate != null && onAdd != null) MainBottomBar(Route.Wallets.value, onNavigate, onAdd) },
+            snackbarHost = { SnackbarHost(snackbar) },
+            containerColor = Color.Transparent,
+        ) { padding ->
+            LazyColumn(
+                Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item {
+                    GlassCard(
+                        Modifier.fillMaxWidth(),
+                        mode = com.finlux.app.core.designsystem.LiquidGlassMode.CLEAR,
+                        tint = MaterialTheme.colorScheme.primary,
+                        padding = PaddingValues(18.dp),
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Tổng số dư", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(totalBalance.toVnd(), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                            Text("${wallets.size} ví · quản lý tập trung và an toàn", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
-            }
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { FilterChip(filter == null, { filter = null }, { Text("Tất cả") }) }
-                    items(WalletType.entries) { type -> FilterChip(filter == type, { filter = type }, { Text(type.label) }) }
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        item {
+                            com.finlux.app.core.designsystem.LiquidGlassCapsule(
+                                selected = filter == null,
+                                onClick = { filter = null },
+                                accentColor = MaterialTheme.colorScheme.primary,
+                            ) {
+                                Text("Tất cả", style = MaterialTheme.typography.labelMedium, fontWeight = if (filter == null) FontWeight.Bold else FontWeight.Medium)
+                            }
+                        }
+                        items(WalletType.entries) { type ->
+                            com.finlux.app.core.designsystem.LiquidGlassCapsule(
+                                selected = filter == type,
+                                onClick = { filter = type },
+                                accentColor = MaterialTheme.colorScheme.primary,
+                            ) {
+                                Text(type.label, style = MaterialTheme.typography.labelMedium, fontWeight = if (filter == type) FontWeight.Bold else FontWeight.Medium)
+                            }
+                        }
+                    }
                 }
-            }
-            if (filteredWallets.isEmpty()) {
-                item { GlassCard(Modifier.fillMaxWidth()) { Text("Chưa có ví thuộc nhóm này", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
-            }
+                if (filteredWallets.isEmpty()) {
+                    item { GlassCard(Modifier.fillMaxWidth()) { Text("Chưa có ví thuộc nhóm này", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                }
             items(filteredWallets, key = { it.id }) { wallet ->
                 val accent = colorFromHex(wallet.colorHex)
                 val dismissState = rememberSwipeToDismissBoxState(
@@ -146,14 +171,32 @@ fun WalletsScreen(
                     state = dismissState,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)),
                     backgroundContent = {
-                        val editSide = dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
-                        Row(
-                            Modifier.fillMaxSize().background(if (editSide) accent.copy(alpha = .18f) else MaterialTheme.colorScheme.error.copy(alpha = .16f), RoundedCornerShape(20.dp)).padding(horizontal = 22.dp),
-                            horizontalArrangement = if (editSide) Arrangement.Start else Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(if (editSide) Icons.Default.Edit else Icons.Default.DeleteOutline, null, tint = if (editSide) accent else MaterialTheme.colorScheme.error)
-                            Text(if (editSide) "Sửa" else "Xóa", Modifier.padding(start = 7.dp), fontWeight = FontWeight.Bold)
+                        val direction = dismissState.dismissDirection
+                        if (direction != SwipeToDismissBoxValue.Settled) {
+                            val editSide = direction == SwipeToDismissBoxValue.StartToEnd
+                            Row(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        if (editSide) accent.copy(alpha = .22f) else MaterialTheme.colorScheme.error.copy(alpha = .20f),
+                                        RoundedCornerShape(20.dp),
+                                    )
+                                    .padding(horizontal = 22.dp),
+                                horizontalArrangement = if (editSide) Arrangement.Start else Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    if (editSide) Icons.Default.Edit else Icons.Default.DeleteOutline,
+                                    contentDescription = null,
+                                    tint = if (editSide) accent else MaterialTheme.colorScheme.error,
+                                )
+                                Text(
+                                    if (editSide) "Sửa" else "Xóa",
+                                    modifier = Modifier.padding(start = 7.dp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (editSide) accent else MaterialTheme.colorScheme.error,
+                                )
+                            }
                         }
                     },
                     content = {
@@ -174,6 +217,7 @@ fun WalletsScreen(
                                     val percent = if (totalBalance <= 0L) 0 else (wallet.balance.value.coerceAtLeast(0L) * 100 / totalBalance).toInt()
                                     Text("$percent%", color = accent, style = MaterialTheme.typography.labelMedium)
                                 }
+                                Spacer(Modifier.width(6.dp))
                                 IconButton(onClick = { showTransfer = true }) { Icon(Icons.Default.SwapHoriz, "Chuyển tiền", tint = accent) }
                             }
                         }
@@ -192,12 +236,13 @@ fun WalletsScreen(
             }
         }
     }
+    }
     if (showEditor) WalletEditor(editing, action.busy, { showEditor = false }) { viewModel.save(it) { showEditor = false } }
     if (showTransfer) TransferEditor(wallets, action.busy, { showTransfer = false }) { source, destination, amount, note ->
         viewModel.transfer(source, destination, amount, note) { showTransfer = false }
     }
     pendingDelete?.let { wallet ->
-        AlertDialog(
+        GlassAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text("Xóa ${wallet.name}?") },
             text = { Text("Chỉ có thể xóa ví không còn số dư và không có giao dịch liên quan.") },

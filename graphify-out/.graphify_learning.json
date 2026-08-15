@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-08-14T09:45:47.510497+00:00",
+  "nodes": {
+    "app_src_main_java_com_finlux_app_domain_repository_themepreferencerepository_themepreferencerepository": {
+      "code_fingerprint": "12cba769904d01ee0f44a211a1a052131dc15882508ceca689c9f62f41fc61d0",
+      "label": "ThemePreferenceRepository",
+      "last": "2026-08-12T09:43:56.745841+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-12T09:43:56.745841+00:00",
+          "outcome": "useful",
+          "q": "Mở rộng nút + với Thêm thu, Thêm chi, Chuyển tiền, Quét hóa đơn, Thêm mục tiêu và thích ứng theme tối"
+        }
+      ],
+      "score": 0.954813321,
+      "source_file": "app/src/main/java/com/finlux/app/domain/repository/ThemePreferenceRepository.kt",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

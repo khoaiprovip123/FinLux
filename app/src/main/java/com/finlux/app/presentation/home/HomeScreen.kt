@@ -2,6 +2,7 @@ package com.finlux.app.presentation.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -265,31 +266,53 @@ private fun ReferenceBalanceHero(
     showBalance: Boolean,
     onToggleBalance: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(18.dp)
-    val gradient = when (style) {
-        VisualStyle.MODERN_DARK -> listOf(Color(0xFF071B32), Color(0xFF0A4380), Color(0xFF087FE6))
-        VisualStyle.GLASSMORPHISM -> listOf(Color(0xFF4D58C8), Color(0xFF7755D8), Color(0xFF47AEEA))
-        VisualStyle.DYNAMIC_GRADIENT -> listOf(Color(0xFF714CF6), Color(0xFF416EF8), Color(0xFF33B7F8))
-    }
+    val shape = RoundedCornerShape(24.dp)
+    val gradient = listOf(Color(0xFF5B38FD), Color(0xFF387BFA), Color(0xFF06B6D4))
+    val rimBrush = Brush.linearGradient(
+        listOf(
+            Color.White.copy(alpha = .95f),
+            FinluxCyan.copy(alpha = .60f),
+            FinluxPurple.copy(alpha = .45f),
+            Color.White.copy(alpha = .30f),
+        ),
+    )
     Box(
-        Modifier.fillMaxWidth().height(142.dp)
-            .shadow(16.dp, shape, ambientColor = FinluxBlue.copy(alpha = .30f), spotColor = FinluxPurple.copy(alpha = .18f))
+        Modifier.fillMaxWidth().height(152.dp)
+            .shadow(20.dp, shape, ambientColor = Color(0xFF3B82F6).copy(alpha = .42f), spotColor = Color(0xFF6366F1).copy(alpha = .48f))
             .clip(shape)
-            .background(Brush.linearGradient(gradient)),
+            .background(Brush.linearGradient(gradient))
+            .border(1.4.dp, rimBrush, shape),
     ) {
         HeroWaterDetails()
         Column(
-            Modifier.fillMaxSize().padding(17.dp),
+            Modifier.fillMaxSize().padding(18.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Tổng tài sản", color = Color.White.copy(alpha = .82f), style = MaterialTheme.typography.bodyMedium)
-                IconButton(onClick = onToggleBalance, modifier = Modifier.size(32.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Tổng tài sản",
+                    color = Color.White.copy(alpha = .88f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = .22f))
+                        .border(1.dp, Color.White.copy(alpha = .55f), CircleShape)
+                        .clickable(onClick = onToggleBalance),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Icon(
                         if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         "Ẩn/hiện số dư",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(17.dp),
                     )
                 }
             }
@@ -297,13 +320,14 @@ private fun ReferenceBalanceHero(
                 if (showBalance) amount.toVnd() else "•••••••• ₫",
                 color = Color.White,
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 maxLines = 1,
             )
             Text(
                 if (showBalance) "${if (net >= 0) "▲" else "▼"} ${net.toSignedVnd()} trong tháng" else "Dòng tiền trong tháng",
-                color = Color.White.copy(alpha = .88f),
+                color = Color.White.copy(alpha = .92f),
                 style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
             )
         }
     }
@@ -312,23 +336,8 @@ private fun ReferenceBalanceHero(
 @Composable
 private fun HeroWaterDetails() {
     Canvas(Modifier.fillMaxSize()) {
-        drawCircle(Color.White.copy(alpha = .09f), radius = size.height * .48f, center = Offset(size.width * .90f, size.height * .42f))
-        drawCircle(Color.White.copy(alpha = .07f), radius = size.height * .27f, center = Offset(size.width * .79f, size.height * .80f))
-        drawArc(
-            color = Color.White.copy(alpha = .28f),
-            startAngle = 205f,
-            sweepAngle = 90f,
-            useCenter = false,
-            topLeft = Offset(size.width * .70f, -size.height * .08f),
-            size = Size(size.height * .92f, size.height * .92f),
-            style = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round),
-        )
-        drawLine(
-            brush = Brush.horizontalGradient(listOf(Color.White.copy(alpha = .56f), Color.Transparent)),
-            start = Offset(size.width * .05f, 1.2.dp.toPx()),
-            end = Offset(size.width * .58f, 1.2.dp.toPx()),
-            strokeWidth = 1.2.dp.toPx(),
-        )
+        drawCircle(Color.White.copy(alpha = .10f), radius = size.height * .45f, center = Offset(size.width * .92f, size.height * .30f))
+        drawCircle(Color.White.copy(alpha = .06f), radius = size.height * .25f, center = Offset(size.width * .80f, size.height * .80f))
     }
 }
 
@@ -342,16 +351,16 @@ private fun ReferenceMetric(
     onClick: (() -> Unit)? = null,
 ) {
     WaterGlassCard(
-        modifier = modifier.height(88.dp),
+        modifier = modifier.height(94.dp),
         tint = accent,
         onClick = onClick,
-        padding = PaddingValues(horizontal = 10.dp, vertical = 11.dp),
-        cornerRadius = 14,
+        padding = PaddingValues(horizontal = 12.dp, vertical = 11.dp),
+        cornerRadius = 20,
     ) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
-            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, fontWeight = FontWeight.Medium)
             Text(value, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text(change, color = accent, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Text(change, color = accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, fontWeight = FontWeight.SemiBold)
         }
     }
 }

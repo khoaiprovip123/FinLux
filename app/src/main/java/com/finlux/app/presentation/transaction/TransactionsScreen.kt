@@ -1,6 +1,8 @@
 package com.finlux.app.presentation.transaction
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,11 +22,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.ExpenseRed
 import com.finlux.app.core.designsystem.FinluxTextSecondary
 import com.finlux.app.core.designsystem.GlassCard
+import com.finlux.app.core.designsystem.GlassAlertDialog
 import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.GradientHeroCard
 import com.finlux.app.core.designsystem.IncomeGreen
@@ -66,70 +67,81 @@ fun TransactionsScreen(
     val snackbar = remember { SnackbarHostState() }
     var pendingDelete by remember { mutableStateOf<FinanceTransaction?>(null) }
     LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
-    Scaffold(
-        topBar = {
-            GlassTopBar(
-                title = { Text("Giao dịch", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
-                    }
-                },
-            )
-        },
-        containerColor = Color.Transparent,
-        snackbarHost = { SnackbarHost(snackbar) },
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TransactionFilter.entries.forEach { option ->
-                    FilterChip(
-                        selected = filter == option,
-                        onClick = { viewModel.filter.value = option },
-                        label = { Text(option.label) },
-                        modifier = Modifier.weight(1f),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = .13f),
-                            selectedLabelColor = MaterialTheme.colorScheme.primary,
-                        ),
-                    )
-                }
-            }
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(11.dp),
-            ) {
-                item {
-                    GradientHeroCard(Modifier.fillMaxWidth()) {
-                        Column {
-                            Text("${filter.heading} trong kỳ", color = Color.White.copy(alpha = .8f))
-                            Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium)
-                            Text("${transactions.size} giao dịch", color = Color.White.copy(alpha = .78f))
+
+    Box(Modifier.fillMaxSize()) {
+        com.finlux.app.core.designsystem.FinluxStyleBackdrop(Modifier.fillMaxSize())
+        Scaffold(
+            topBar = {
+                GlassTopBar(
+                    title = { Text("Giao dịch", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                        }
+                    },
+                )
+            },
+            containerColor = Color.Transparent,
+            snackbarHost = { SnackbarHost(snackbar) },
+        ) { padding ->
+            Column(Modifier.fillMaxSize().padding(padding)) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TransactionFilter.entries.forEach { option ->
+                        com.finlux.app.core.designsystem.LiquidGlassCapsule(
+                            selected = filter == option,
+                            onClick = { viewModel.filter.value = option },
+                            modifier = Modifier.weight(1f),
+                            accentColor = MaterialTheme.colorScheme.primary,
+                        ) {
+                            Text(
+                                option.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (filter == option) FontWeight.Bold else FontWeight.Medium,
+                            )
                         }
                     }
                 }
-                items(transactions, key = { it.id }) { transaction ->
-                    val isIncome = transaction.type == TransactionType.INCOME
-                    val rowAccent = if (isIncome) IncomeGreen else ExpenseRed
-                    GlassCard(Modifier.fillMaxWidth()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(shape = RoundedCornerShape(12.dp), color = rowAccent.copy(alpha = .12f)) {
-                                Icon(Icons.Default.Payments, null, Modifier.padding(9.dp).size(20.dp), tint = rowAccent)
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(11.dp),
+                ) {
+                    item {
+                        GlassCard(
+                            Modifier.fillMaxWidth(),
+                            mode = com.finlux.app.core.designsystem.LiquidGlassMode.CLEAR,
+                            tint = MaterialTheme.colorScheme.primary,
+                            padding = PaddingValues(18.dp),
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("${filter.heading} trong kỳ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(total.toVnd(), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                Text("${transactions.size} giao dịch", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                             }
-                            Column(Modifier.weight(1f).padding(horizontal = 11.dp)) {
-                                Text(transaction.note.ifBlank { if (isIncome) "Thu nhập" else "Chi tiêu" }, fontWeight = FontWeight.Bold)
-                                Text(
-                                    DateTimeFormatter.ofPattern("dd/MM/yyyy").format(transaction.date.atZone(ZoneId.systemDefault())),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = FinluxTextSecondary,
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text((if (isIncome) "+" else "-") + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold)
-                                IconButton(onClick = { pendingDelete = transaction }) { Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        }
+                    }
+                    items(transactions, key = { it.id }) { transaction ->
+                        val isIncome = transaction.type == TransactionType.INCOME
+                        val rowAccent = if (isIncome) IncomeGreen else ExpenseRed
+                        GlassCard(Modifier.fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.background(rowAccent.copy(alpha = .14f), RoundedCornerShape(14.dp))) {
+                                    Icon(Icons.Default.Payments, null, Modifier.padding(10.dp).size(22.dp), tint = rowAccent)
+                                }
+                                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                                    Text(transaction.note.ifBlank { if (isIncome) "Thu nhập" else "Chi tiêu" }, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        DateTimeFormatter.ofPattern("dd/MM/yyyy").format(transaction.date.atZone(ZoneId.systemDefault())),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = FinluxTextSecondary,
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text((if (isIncome) "+" else "-") + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                    IconButton(onClick = { pendingDelete = transaction }) { Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                }
                             }
                         }
                     }
@@ -138,7 +150,7 @@ fun TransactionsScreen(
         }
     }
     pendingDelete?.let { transaction ->
-        AlertDialog(
+        GlassAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text("Xóa giao dịch?") },
             text = { Text("Số dư ví sẽ được hoàn lại tự động. Thao tác này không thể hoàn tác.") },

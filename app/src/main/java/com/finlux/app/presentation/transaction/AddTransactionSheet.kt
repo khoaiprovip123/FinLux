@@ -354,7 +354,7 @@ fun AddTransactionSheet(
 
     if (categoryToDelete != null) {
         val target = categoryToDelete!!
-        androidx.compose.material3.AlertDialog(
+        com.finlux.app.core.designsystem.GlassAlertDialog(
             onDismissRequest = { categoryToDelete = null },
             title = { Text("Xác nhận xóa danh mục") },
             text = { Text("Bạn có chắc muốn xóa danh mục \"${target.name}\" không?") },

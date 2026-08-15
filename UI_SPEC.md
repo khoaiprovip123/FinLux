@@ -23,7 +23,7 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
 - Card nội dung dùng bo góc 18-22dp, shadow mềm và border mảnh; không dùng blur dày làm giảm độ đọc.
 - Giao dịch hiển thị icon nền màu theo loại, tên/ghi chú ở giữa và số tiền canh phải.
 - Báo cáo donut và bar chart chỉ render từ dữ liệu repository thật, không dùng số minh họa hard-code.
-- Bottom navigation giữ đúng 5 action của V1: Trang chủ, Báo cáo, Thêm, Ngân sách, Cài đặt.
+- Bottom navigation giữ đúng 5 action của V1: Trang chủ, Ví, Thêm, Báo cáo, Hồ sơ.
 
 ### Interaction & customization refresh (12/08/2026)
 - Mọi `GlassCard` tương tác dùng phản hồi co nhẹ khi nhấn; có thể tắt trong Cài đặt.
@@ -31,6 +31,21 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
 - Mật độ thẻ có 2 mức Thoáng/Gọn; padding được điều khiển tập trung từ design system.
 - Ví, danh mục và thẻ ngân sách có chiều cao/padding thống nhất trong cùng một danh sách.
 - Icon danh mục dùng bộ icon tài chính/đời sống mở rộng và màu nhận diện do người dùng chọn.
+
+### Callstack Liquid Glass system migration (14/08/2026)
+- `@callstack/liquid-glass` là thư viện React Native/iOS; FinLux dùng bản chuyển ngữ native Jetpack
+  Compose, giữ cùng contract thị giác/thao tác thay vì nhúng UIKit hoặc React Native vào ứng dụng.
+- `LiquidGlassSurface` có ba mode `CLEAR`, `REGULAR`, `NONE`; toàn bộ card, panel, top bar,
+  navigation dock, FAB, dialog và bottom sheet phải đi qua primitive dùng chung trong
+  `core/designsystem`.
+- Lớp aura/refraction luôn nằm sau nội dung. Không áp dụng blur lên container chứa chữ hoặc icon;
+  thiết bị dưới Android 12 tự tăng độ đặc surface để giữ tương phản.
+- Rim kính 1.2dp dùng dải White → Cyan → accent → White; thẻ tương tác co về 0.975 bằng spring
+  và có phản hồi rung. Touch target của capsule tối thiểu 44dp.
+- Ba phong cách `Tối giản hiện đại`, `Glassmorphism`, `Gradient năng động` dùng cùng cấu trúc kính
+  nhưng có bộ color/backdrop token riêng; lựa chọn Sáng/Tối/Hệ thống luôn áp dụng đồng nhất toàn app.
+- Bốn màn hình chính hỗ trợ vuốt bám ngón tay theo thứ tự Trang chủ ↔ Ví ↔ Báo cáo ↔ Hồ sơ;
+  mép đầu/cuối có resistance, thả tay trả lò xo và vẫn giữ điều hướng bằng icon đáy.
 
 ### Home Liquid Glass refresh (12/08/2026)
 - Dashboard dùng nền aura xanh/tím/cyan được blur phần cứng và trôi nhẹ phía dưới nội dung.

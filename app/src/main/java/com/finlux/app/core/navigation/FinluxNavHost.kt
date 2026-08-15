@@ -12,6 +12,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -41,7 +44,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.finlux.app.domain.model.ThemePreference
 import com.finlux.app.domain.model.UiPreferences
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.presentation.auth.AuthMode
 import com.finlux.app.presentation.auth.AuthScreen
 import com.finlux.app.presentation.auth.SplashScreen
@@ -62,6 +64,7 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.presentation.components.QuickAddSheet
 import com.finlux.app.presentation.receipt.ReceiptCaptureScreen
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 @Composable
 fun FinluxNavHost(
@@ -81,6 +84,10 @@ fun FinluxNavHost(
     var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val swipeTranslation = remember { Animatable(0f) }
+    var swipeDrag by remember { mutableFloatStateOf(0f) }
+    val swipeAnimationScope = rememberCoroutineScope()
+    val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
 
     val destination = destinationFlow?.collectAsState()?.value
     LaunchedEffect(destination) {
@@ -106,7 +113,72 @@ fun FinluxNavHost(
         }
     }
     Box(Modifier.fillMaxSize()) {
-        FinluxStyleBackdrop(Modifier.fillMaxSize())
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    translationX = swipeDrag + swipeTranslation.value
+                    val width = size.width.coerceAtLeast(1f)
+                    alpha = 1f - (kotlin.math.abs(swipeDrag + swipeTranslation.value) / width * .08f).coerceIn(0f, .08f)
+                }
+                .pointerInput(currentRoute, swipeThresholdPx) {
+                    if (currentRoute !in MainSwipeRoutes) return@pointerInput
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val startedAt = System.currentTimeMillis()
+                        var horizontalTravel = 0f
+                        var verticalTravel = 0f
+                        var trackingHorizontal = false
+                        var pressed = true
+
+                        while (pressed) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                            val delta = change.positionChange()
+                            horizontalTravel += delta.x
+                            verticalTravel += delta.y
+                            if (!trackingHorizontal && kotlin.math.abs(horizontalTravel) > 12f) {
+                                trackingHorizontal = kotlin.math.abs(horizontalTravel) > kotlin.math.abs(verticalTravel) * 1.15f
+                            }
+                            if (trackingHorizontal) {
+                                change.consume()
+                                val currentIndex = MainSwipeRoutes.indexOf(currentRoute)
+                                val hitsBoundary = (currentIndex == 0 && horizontalTravel > 0f) ||
+                                    (currentIndex == MainSwipeRoutes.lastIndex && horizontalTravel < 0f)
+                                swipeDrag = horizontalTravel * if (hitsBoundary) .16f else .34f
+                            }
+                            pressed = change.pressed
+                        }
+
+                        val target = mainRouteAfterSwipe(
+                            currentRoute = currentRoute,
+                            horizontalTravel = horizontalTravel,
+                            verticalTravel = verticalTravel,
+                            threshold = swipeThresholdPx,
+                            elapsedMillis = System.currentTimeMillis() - startedAt,
+                        )
+                        val releasedAt = swipeDrag
+                        swipeDrag = 0f
+                        swipeAnimationScope.launch {
+                            swipeTranslation.snapTo(releasedAt)
+                            if (target != null) {
+                                if (uiPreferences.animationsEnabled) {
+                                    swipeTranslation.animateTo(
+                                        targetValue = if (horizontalTravel < 0f) -46f else 46f,
+                                        animationSpec = spring(dampingRatio = .82f, stiffness = 520f),
+                                    )
+                                }
+                                navigateMain(target)
+                            }
+                            if (uiPreferences.animationsEnabled) {
+                                swipeTranslation.animateTo(0f, spring(dampingRatio = .78f, stiffness = 620f))
+                            } else {
+                                swipeTranslation.snapTo(0f)
+                            }
+                        }
+                    }
+                },
+        ) {
         NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
@@ -215,6 +287,8 @@ fun FinluxNavHost(
             }
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
+        }
+        SwipeEdgeGlow(swipeDrag + swipeTranslation.value)
         }
         if (showAddTransaction) {
             AddTransactionSheet(

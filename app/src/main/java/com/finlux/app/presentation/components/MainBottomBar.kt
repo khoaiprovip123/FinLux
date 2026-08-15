@@ -1,10 +1,19 @@
 package com.finlux.app.presentation.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,19 +28,25 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.FinluxBlue
+import com.finlux.app.core.designsystem.FinluxCyan
 import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.FinluxTextSecondary
 import com.finlux.app.core.designsystem.GlassBottomNav
@@ -42,13 +57,21 @@ import com.finlux.app.domain.model.VisualStyle
 
 @Composable
 fun MainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, onAdd: () -> Unit) {
-    // BottomAppBar owns navigation-bar insets. Do not force a total height here:
-    // on 3-button devices that would squeeze the 48dp system inset into the content area.
     GlassBottomNav(Modifier.fillMaxWidth()) {
         DestinationItem(Route.Home, "Trang chủ", selectedRoute, onNavigate, Icons.Filled.Home, Icons.Outlined.Home)
         DestinationItem(Route.Wallets, "Ví", selectedRoute, onNavigate, Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet)
-        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            GlassFab(onClick = onAdd) { Icon(Icons.Default.Add, contentDescription = "Thêm giao dịch") }
+        Box(
+            modifier = Modifier.weight(1.1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            GlassFab(onClick = onAdd) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Thêm giao dịch",
+                    modifier = Modifier.size(28.dp),
+                    tint = Color.White,
+                )
+            }
         }
         DestinationItem(
             Route.Reports,
@@ -71,80 +94,92 @@ private fun RowScope.DestinationItem(
     selectedIcon: ImageVector,
     unselectedIcon: ImageVector,
 ) {
-    val style = LocalUiPreferences.current.visualStyle
+    val preferences = LocalUiPreferences.current
+    val style = preferences.visualStyle
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
     val selected = selectedRoute == route.value
+    val interactionSource = remember { MutableInteractionSource() }
+
     val selectedColor = when (style) {
-        VisualStyle.MODERN_DARK -> FinluxBlue
-        VisualStyle.GLASSMORPHISM -> Color.White
-        VisualStyle.DYNAMIC_GRADIENT -> FinluxBlue
+        VisualStyle.MODERN_DARK -> if (dark) Color(0xFF38BDF8) else Color(0xFF176BDF)
+        VisualStyle.GLASSMORPHISM -> if (dark) Color(0xFFC4B5FD) else FinluxPurple
+        VisualStyle.DYNAMIC_GRADIENT -> if (dark) FinluxCyan else FinluxBlue
     }
-    val unselectedColor = when (style) {
-        VisualStyle.MODERN_DARK -> Color(0xFF7890AA)
-        VisualStyle.GLASSMORPHISM -> Color.White.copy(alpha = .58f)
-        VisualStyle.DYNAMIC_GRADIENT -> FinluxTextSecondary
-    }
-    NavigationBarItem(
-        selected = selected,
-        onClick = { onNavigate(route.value) },
-        icon = {
-            ThemedNavigationIcon(
-                icon = if (selected) selectedIcon else unselectedIcon,
-                selected = selected,
-                style = style,
-                tint = if (selected) selectedColor else unselectedColor,
-                contentDescription = label,
-            )
-        },
-        label = { Text(label, maxLines = 1) },
-        colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = selectedColor,
-            selectedTextColor = selectedColor,
-            unselectedIconColor = unselectedColor,
-            unselectedTextColor = unselectedColor,
-            indicatorColor = Color.Transparent,
-        ),
+    val unselectedColor = if (dark) Color(0xFF8E9EB5) else Color(0xFF64748B)
+
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.05f else 1f,
+        animationSpec = spring(stiffness = 600f, dampingRatio = 0.65f),
+        label = "nav-tab-scale",
     )
+
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = { onNavigate(route.value) },
+            )
+            .padding(vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        ThemedNavigationIcon(
+            icon = if (selected) selectedIcon else unselectedIcon,
+            selected = selected,
+            selectedColor = selectedColor,
+            unselectedColor = unselectedColor,
+            contentDescription = label,
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = if (selected) selectedColor else unselectedColor,
+            maxLines = 1,
+        )
+    }
 }
 
 @Composable
 private fun ThemedNavigationIcon(
     icon: ImageVector,
     selected: Boolean,
-    style: VisualStyle,
-    tint: Color,
+    selectedColor: Color,
+    unselectedColor: Color,
     contentDescription: String,
 ) {
-    val shape = when (style) {
-        VisualStyle.MODERN_DARK -> RoundedCornerShape(10.dp)
-        VisualStyle.GLASSMORPHISM -> CircleShape
-        VisualStyle.DYNAMIC_GRADIENT -> RoundedCornerShape(11.dp)
-    }
-    val fill = when (style) {
-        VisualStyle.MODERN_DARK -> Brush.linearGradient(
-            listOf(FinluxBlue.copy(alpha = if (selected) .22f else .04f), Color(0xFF08182B)),
-        )
-        VisualStyle.GLASSMORPHISM -> Brush.linearGradient(
-            listOf(Color.White.copy(alpha = if (selected) .28f else .06f), Color(0xFF8B5CFF).copy(alpha = if (selected) .30f else .04f)),
-        )
-        VisualStyle.DYNAMIC_GRADIENT -> if (selected) {
-            Brush.linearGradient(listOf(Color(0xFF7C3CFF), Color(0xFF356DFF), Color(0xFF37C7F4)))
-        } else {
-            Brush.linearGradient(listOf(FinluxPurple.copy(alpha = .07f), Color.Transparent))
-        }
-    }
-    val borderColor = when (style) {
-        VisualStyle.MODERN_DARK -> FinluxBlue.copy(alpha = if (selected) .58f else .12f)
-        VisualStyle.GLASSMORPHISM -> Color.White.copy(alpha = if (selected) .62f else .12f)
-        VisualStyle.DYNAMIC_GRADIENT -> FinluxPurple.copy(alpha = if (selected) .35f else .10f)
-    }
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
     Box(
-        modifier = Modifier.size(34.dp)
-            .then(if (selected && style == VisualStyle.GLASSMORPHISM) Modifier.shadow(8.dp, shape, ambientColor = Color.White) else Modifier)
-            .clip(shape)
-            .background(fill)
-            .border(1.dp, borderColor, shape),
+        modifier = Modifier
+            .size(width = 38.dp, height = 26.dp)
+            .then(
+                if (selected) {
+                    Modifier
+                        .clip(RoundedCornerShape(13.dp))
+                        .background(
+                            if (dark) selectedColor.copy(alpha = 0.18f) else selectedColor.copy(alpha = 0.12f),
+                        )
+                        .border(
+                            1.dp,
+                            if (dark) selectedColor.copy(alpha = 0.35f) else selectedColor.copy(alpha = 0.20f),
+                            RoundedCornerShape(13.dp),
+                        )
+                } else Modifier,
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp), tint = if (selected && style == VisualStyle.DYNAMIC_GRADIENT) Color.White else tint)
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (selected) selectedColor else unselectedColor,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
