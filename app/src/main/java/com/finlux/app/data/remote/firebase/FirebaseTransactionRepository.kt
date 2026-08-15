@@ -69,7 +69,20 @@ class FirebaseTransactionRepository(
             val walletRef = firestore.userWallets(uid).document(transaction.walletId)
             val budgetRef = transaction.budgetRef(firestore, uid)
             firestore.runTransaction { atomic ->
-                val balance = atomic.get(walletRef).getLong("balance") ?: error("Không tìm thấy ví")
+                val walletDoc = atomic.get(walletRef)
+                val balance = if (walletDoc.exists()) {
+                    walletDoc.getLong("balance") ?: 0L
+                } else {
+                    atomic.set(walletRef, mapOf(
+                        "name" to "Tiền mặt",
+                        "type" to "cash",
+                        "balance" to 0L,
+                        "color" to "#1F6FBF",
+                        "isDefault" to (transaction.walletId == "cash"),
+                        "createdAt" to FieldValue.serverTimestamp(),
+                    ))
+                    0L
+                }
                 val budgetDoc = if (budgetRef != null && transaction.type == TransactionType.EXPENSE) {
                     atomic.get(budgetRef)
                 } else null
@@ -170,6 +183,12 @@ class FirebaseTransactionRepository(
         val now = Instant.now()
         firestore.runTransaction { atomic ->
             val sourceBalance = atomic.get(sourceRef).getLong("balance") ?: error("Không tìm thấy ví nguồn")
+            val sourceDoc = atomic.get(sourceRef)
+            val sourceType = sourceDoc.getString("type")
+            val isCard = sourceType.equals("CARD", ignoreCase = true)
+            if (!isCard && sourceBalance < amount) {
+                error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
+            }
             val destinationBalance = atomic.get(destinationRef).getLong("balance") ?: error("Không tìm thấy ví đích")
             val outgoing = FinanceTransaction(
                 id = outRef.id,

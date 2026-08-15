@@ -18,29 +18,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -57,15 +60,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.finlux.app.core.designsystem.ExpenseRed
+import com.finlux.app.core.designsystem.FinluxBlue
+import com.finlux.app.core.designsystem.FinluxCyan
+import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
+import com.finlux.app.core.designsystem.IncomeGreen
+import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.domain.model.AppNotification
 import com.finlux.app.domain.model.Category
+import com.finlux.app.domain.model.NotificationType
 import com.finlux.app.domain.model.Wallet
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -78,18 +89,19 @@ import java.util.Locale
 @Composable
 fun NotificationsScreen(
     onBack: (() -> Unit)? = null,
+    onNavigate: ((String) -> Unit)? = null,
     payNotificationIdFlow: MutableStateFlow<String?>? = null,
     viewModel: NotificationsViewModel = hiltViewModel(),
 ) {
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val wallets by viewModel.wallets.collectAsStateWithLifecycle()
     val categories by viewModel.expenseCategories.collectAsStateWithLifecycle()
+    val currentFilter by viewModel.selectedFilter.collectAsStateWithLifecycle()
     val accent = MaterialTheme.colorScheme.primary
     val snackbarHostState = remember { SnackbarHostState() }
 
     var selectedNotificationForPay by remember { mutableStateOf<AppNotification?>(null) }
 
-    // Auto trigger payment sheet when deep-linked with pay_notification_id
     val deepLinkPayId = payNotificationIdFlow?.collectAsStateWithLifecycle()?.value
     LaunchedEffect(deepLinkPayId, notifications) {
         if (!deepLinkPayId.isNullOrBlank() && notifications.isNotEmpty()) {
@@ -102,113 +114,183 @@ fun NotificationsScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.userMessage.collectLatest { message ->
-            snackbarHostState.showSnackbar(message)
+        viewModel.userMessage.collectLatest { msg ->
+            snackbarHostState.showSnackbar(msg)
+        }
+    }
+
+    val filteredList = remember(notifications, currentFilter) {
+        when (currentFilter) {
+            NotificationFilter.ALL -> notifications
+            NotificationFilter.REMINDER -> notifications.filter { it.type == NotificationType.REMINDER }
+            NotificationFilter.BUDGET -> notifications.filter { it.type == NotificationType.BUDGET_ALERT }
+            NotificationFilter.GOAL -> notifications.filter { it.type == NotificationType.GOAL_MILESTONE }
+            NotificationFilter.SUMMARY -> notifications.filter { it.type == NotificationType.TRANSACTION_SUMMARY }
+            NotificationFilter.SYSTEM -> notifications.filter { it.type == NotificationType.SYSTEM }
         }
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             GlassTopBar(
-                title = { Text("Thông báo", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Thông báo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
                         }
                     }
                 },
                 actions = {
                     if (notifications.isNotEmpty()) {
-                        IconButton(onClick = viewModel::clearAll) {
-                            Icon(Icons.Default.DeleteSweep, "Xóa tất cả", tint = MaterialTheme.colorScheme.error)
+                        IconButton(onClick = { viewModel.clearAll() }) {
+                            Icon(
+                                Icons.Default.DeleteSweep,
+                                contentDescription = "Xóa tất cả",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
-                }
+                },
             )
         },
-        containerColor = Color.Transparent
-    ) { padding ->
-        if (notifications.isEmpty()) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            // Filter Tabs
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(
-                        Icons.Default.NotificationsNone,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    )
-                    Text(
-                        "Không có thông báo mới",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                items(NotificationFilter.entries.toTypedArray()) { filter ->
+                    val isSelected = filter == currentFilter
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.selectFilter(filter) },
+                        label = {
+                            Text(
+                                filter.label,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        },
                     )
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(notifications, key = { it.id }) { item ->
-                    NotificationItemCard(
-                        item = item,
-                        accent = accent,
-                        onMarkAsRead = { viewModel.markAsRead(item.id) },
-                        onOpenPaySheet = { selectedNotificationForPay = item },
-                    )
+
+            if (filteredList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(accent.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Default.NotificationsNone,
+                                contentDescription = null,
+                                tint = accent,
+                                modifier = Modifier.size(36.dp),
+                            )
+                        }
+                        Text(
+                            text = "Chưa có thông báo nào",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "Các lời nhắc hóa đơn, biến động tài chính & cảnh báo sẽ xuất hiện ở đây.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(
+                        items = filteredList,
+                        key = { it.id },
+                    ) { noti ->
+                        NotificationItemCard(
+                            notification = noti,
+                            onCardClick = {
+                                viewModel.markAsRead(noti.id)
+                                if (noti.type == NotificationType.REMINDER && !noti.isPaid && noti.amount.value > 0L) {
+                                    selectedNotificationForPay = noti
+                                } else if (!noti.targetRoute.isNullOrBlank()) {
+                                    onNavigate?.invoke(noti.targetRoute)
+                                }
+                            },
+                            onPayClick = {
+                                selectedNotificationForPay = noti
+                            },
+                        )
+                    }
                 }
             }
         }
     }
 
-    selectedNotificationForPay?.let { notification ->
-        QuickPaymentSheet(
-            notification = notification,
+    selectedNotificationForPay?.let { noti ->
+        QuickPayBottomSheet(
+            notification = noti,
             wallets = wallets,
             categories = categories,
-            accent = accent,
             onDismiss = { selectedNotificationForPay = null },
-            onConfirmPay = { customAmount, walletId, categoryId ->
+            onConfirmPay = { chosenWalletId, chosenCategoryId, finalAmount ->
                 viewModel.payNotificationWithCustomAmount(
-                    notification = notification,
-                    customAmount = customAmount,
-                    walletId = walletId,
-                    categoryId = categoryId,
+                    notification = noti,
+                    customAmount = finalAmount,
+                    walletId = chosenWalletId,
+                    categoryId = chosenCategoryId,
                 )
                 selectedNotificationForPay = null
-            }
+            },
         )
     }
 }
 
 @Composable
 private fun NotificationItemCard(
-    item: AppNotification,
-    accent: Color,
-    onMarkAsRead: () -> Unit,
-    onOpenPaySheet: () -> Unit,
+    notification: AppNotification,
+    onCardClick: () -> Unit,
+    onPayClick: () -> Unit,
 ) {
-    val formatter = DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy", Locale.forLanguageTag("vi-VN"))
-    val formattedTime = item.timestamp.atZone(ZoneId.systemDefault()).format(formatter)
-    val isPaymentReminder = !item.reminderId.isNullOrBlank() || item.amount.value > 0L
-    val successColor = Color(0xFF168A62)
+    val (badgeIcon, badgeColor, typeLabel) = when (notification.type) {
+        NotificationType.REMINDER -> Triple(Icons.Default.ReceiptLong, FinluxPurple, "Nhắc hóa đơn")
+        NotificationType.BUDGET_ALERT -> Triple(Icons.Default.Warning, ExpenseRed, "Cảnh báo ngân sách")
+        NotificationType.GOAL_MILESTONE -> Triple(Icons.Default.EmojiEvents, WarningAmber, "Cột mốc mục tiêu")
+        NotificationType.TRANSACTION_SUMMARY -> Triple(Icons.Default.Insights, FinluxCyan, "Báo cáo")
+        NotificationType.SYSTEM -> Triple(Icons.Default.Campaign, FinluxBlue, "Hệ thống")
+    }
 
     GlassCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { if (!item.isRead) onMarkAsRead() }
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onCardClick,
     ) {
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(modifier = Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top,
@@ -216,104 +298,101 @@ private fun NotificationItemCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
-                        .background(
-                            if (item.isPaid) successColor.copy(alpha = 0.18f)
-                            else if (item.isRead) MaterialTheme.colorScheme.surfaceVariant
-                            else accent.copy(alpha = 0.18f),
-                            CircleShape
-                        ),
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(badgeColor.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        if (item.isPaid) Icons.Default.Check else Icons.Default.Notifications,
+                        badgeIcon,
                         contentDescription = null,
-                        tint = if (item.isPaid) successColor else if (item.isRead) MaterialTheme.colorScheme.onSurfaceVariant else accent,
+                        tint = badgeColor,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = item.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = if (item.isRead) FontWeight.Medium else FontWeight.Bold,
+                            text = typeLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = badgeColor,
+                            fontWeight = FontWeight.Bold,
                         )
-                        if (!item.isRead) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(accent)
-                            )
-                        }
-                    }
-                    if (item.body.isNotBlank()) {
-                        Text(
-                            text = item.body,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Text(
-                        text = formattedTime,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    )
-                }
-            }
 
-            if (isPaymentReminder) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (item.isPaid) {
-                        val formattedAmount = if (item.amount.value > 0L) {
-                            NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(item.amount.value)
-                        } else ""
-                        Box(
-                            modifier = Modifier
-                                .background(successColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        val timeStr = DateTimeFormatter.ofPattern("dd/MM HH:mm")
+                            .withZone(ZoneId.systemDefault())
+                            .format(notification.timestamp)
+                        Text(
+                            text = timeStr,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        )
+                    }
+
+                    Text(
+                        text = notification.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = if (notification.isRead) FontWeight.Normal else FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+
+                    Text(
+                        text = notification.body,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    if (notification.type == NotificationType.REMINDER && notification.amount.value > 0L) {
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = successColor,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = if (formattedAmount.isNotBlank()) "Đã thanh toán: $formattedAmount" else "Đã thanh toán",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = successColor,
-                                )
-                            }
-                        }
-                    } else {
-                        Button(
-                            onClick = onOpenPaySheet,
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = accent,
-                                contentColor = Color.White,
-                            ),
-                        ) {
-                            Icon(
-                                Icons.Default.CreditCard,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                            val formatted = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN"))
+                                .format(notification.amount.value)
+
+                            Text(
+                                text = "Số tiền: $formatted",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (notification.isPaid) IncomeGreen else MaterialTheme.colorScheme.primary,
                             )
-                            Spacer(Modifier.width(6.dp))
-                            Text("Xác nhận thanh toán", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+
+                            if (notification.isPaid) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = IncomeGreen,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Text(
+                                        "Đã thanh toán",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = IncomeGreen,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
+                            } else {
+                                Button(
+                                    onClick = onPayClick,
+                                    shape = RoundedCornerShape(10.dp),
+                                ) {
+                                    Text("Thanh toán ngay", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
                         }
                     }
                 }
@@ -324,51 +403,66 @@ private fun NotificationItemCard(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun QuickPaymentSheet(
+private fun QuickPayBottomSheet(
     notification: AppNotification,
     wallets: List<Wallet>,
     categories: List<Category>,
-    accent: Color,
     onDismiss: () -> Unit,
-    onConfirmPay: (customAmount: Long, walletId: String?, categoryId: String?) -> Unit,
+    onConfirmPay: (walletId: String, categoryId: String?, amount: Long) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    var amountInput by remember(notification) {
-        mutableStateOf(if (notification.amount.value > 0) notification.amount.value.toString() else "")
-    }
-    var selectedWalletId by remember(notification, wallets) {
-        mutableStateOf(notification.walletId ?: wallets.firstOrNull { it.isDefault }?.id ?: wallets.firstOrNull()?.id)
-    }
-    var selectedCategoryId by remember(notification, categories) {
-        mutableStateOf(notification.categoryId ?: categories.firstOrNull()?.id)
+    var selectedWalletId by remember {
+        mutableStateOf(
+            wallets.firstOrNull { it.id == notification.walletId }?.id
+                ?: wallets.firstOrNull { it.isDefault }?.id
+                ?: wallets.firstOrNull()?.id.orEmpty()
+        )
     }
 
-    val parsedAmount = amountInput.toLongOrNull() ?: 0L
-    val formattedPreview = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(parsedAmount)
+    var selectedCategoryId by remember {
+        mutableStateOf(
+            categories.firstOrNull { it.id == notification.categoryId }?.id
+                ?: categories.firstOrNull()?.id
+        )
+    }
+
+    var amountText by remember { mutableStateOf(notification.amount.value.toString()) }
+    val parsedAmount = amountText.toLongOrNull() ?: 0L
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = null,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Header
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Default.CreditCard,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
                 Column {
                     Text(
-                        text = "Xác nhận & Điều chỉnh số tiền",
+                        text = "Xác nhận thanh toán",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
@@ -378,47 +472,44 @@ private fun QuickPaymentSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(24.dp),
-                )
             }
 
-            // Amount Input Field
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Số tiền thực tế (VND)", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = "Số tiền thực tế",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
                 OutlinedTextField(
-                    value = amountInput,
+                    value = amountText,
                     onValueChange = { input ->
-                        if (input.all { it.isDigit() } && input.length <= 12) {
-                            amountInput = input
-                        }
+                        amountText = input.filter { it.isDigit() }.take(15)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp),
+                    supportingText = {
+                        val formatted = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(parsedAmount)
+                        Text(
+                            text = formatted,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    },
                     placeholder = { Text("Nhập số tiền...") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = accent,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    ),
-                    singleLine = true,
-                )
-                Text(
-                    text = "Xem trước: $formattedPreview",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = accent,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 4.dp),
                 )
             }
 
-            // Wallet Selector
             if (wallets.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Ví thanh toán", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "Ví nguồn thanh toán",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -429,69 +520,67 @@ private fun QuickPaymentSheet(
                                 selected = isSelected,
                                 onClick = { selectedWalletId = wallet.id },
                                 label = { Text(wallet.name) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = accent,
-                                    selectedLabelColor = Color.White,
-                                ),
-                                shape = RoundedCornerShape(12.dp),
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                } else null,
                             )
                         }
                     }
                 }
             }
 
-            // Category Selector
             if (categories.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Danh mục chi tiêu", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "Danh mục chi tiêu",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        categories.take(6).forEach { category ->
-                            val isSelected = category.id == selectedCategoryId
+                        categories.take(6).forEach { cat ->
+                            val isSelected = cat.id == selectedCategoryId
                             FilterChip(
                                 selected = isSelected,
-                                onClick = { selectedCategoryId = category.id },
-                                label = { Text(category.name) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = accent,
-                                    selectedLabelColor = Color.White,
-                                ),
-                                shape = RoundedCornerShape(12.dp),
+                                onClick = { selectedCategoryId = cat.id },
+                                label = { Text(cat.name) },
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                } else null,
                             )
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
 
-            // Action Buttons
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
                 ) {
                     Text("Hủy")
                 }
+
                 Button(
-                    onClick = { onConfirmPay(parsedAmount, selectedWalletId, selectedCategoryId) },
-                    enabled = parsedAmount > 0L,
-                    modifier = Modifier.weight(1.5f),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = accent,
-                        contentColor = Color.White,
-                    ),
+                    onClick = {
+                        if (selectedWalletId.isNotBlank() && parsedAmount > 0) {
+                            onConfirmPay(selectedWalletId, selectedCategoryId, parsedAmount)
+                        }
+                    },
+                    modifier = Modifier.weight(2f),
+                    enabled = selectedWalletId.isNotBlank() && parsedAmount > 0,
+                    shape = RoundedCornerShape(12.dp),
                 ) {
-                    Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Xác nhận trừ tiền", fontWeight = FontWeight.Bold)
+                    Text("Ghi nhận thanh toán", fontWeight = FontWeight.Bold)
                 }
             }
         }

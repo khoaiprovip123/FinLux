@@ -128,26 +128,65 @@ class FirebaseAuthRepository(
 
     override suspend fun signOut() = auth.signOut()
 
-    /** BR-02: profile, default wallet and categories are committed together. */
+    /** BR-02: profile, default wallet and categories are committed together ONLY for new users. */
     private suspend fun seedNewUser(uid: String, displayName: String, email: String) {
         try {
             val user = firestore.collection("users").document(uid)
-            firestore.batch().apply {
-                set(user, mapOf(
-                    "displayName" to displayName,
-                    "email" to email,
-                    "photoUrl" to "",
-                    "createdAt" to FieldValue.serverTimestamp(),
-                ))
-                set(user.collection("wallets").document("cash"), mapOf(
-                    "name" to "Tiền mặt", "type" to "cash", "balance" to 0L,
-                    "color" to "#1F6FBF", "isDefault" to true,
-                    "createdAt" to FieldValue.serverTimestamp(),
-                ))
+            val userDoc = user.get().await()
+            val walletsSnapshot = user.collection("wallets").limit(1).get().await()
+            val categoriesSnapshot = user.collection("categories").limit(1).get().await()
+
+            val batch = firestore.batch()
+
+            // 1. Update/Merge profile safely without overwriting user data
+            if (!userDoc.exists()) {
+                batch.set(
+                    user,
+                    mapOf(
+                        "displayName" to displayName,
+                        "email" to email,
+                        "photoUrl" to "",
+                        "createdAt" to FieldValue.serverTimestamp(),
+                    ),
+                    com.google.firebase.firestore.SetOptions.merge()
+                )
+            } else {
+                batch.set(
+                    user,
+                    mapOf(
+                        "displayName" to displayName,
+                        "email" to email,
+                    ),
+                    com.google.firebase.firestore.SetOptions.merge()
+                )
+            }
+
+            // 2. Wallets: ONLY seed if user has 0 wallets in Firestore (PREVENT OVERWRITING USER BALANCE)
+            if (walletsSnapshot.isEmpty) {
+                batch.set(
+                    user.collection("wallets").document("cash"),
+                    mapOf(
+                        "name" to "Tiền mặt",
+                        "type" to "cash",
+                        "balance" to 0L,
+                        "color" to "#1F6FBF",
+                        "isDefault" to true,
+                        "createdAt" to FieldValue.serverTimestamp(),
+                    )
+                )
+            }
+
+            // 3. Categories: ONLY seed if user has 0 categories in Firestore
+            if (categoriesSnapshot.isEmpty) {
                 defaultCategories.forEach { (id, values) ->
-                    set(user.collection("categories").document(id), values + ("createdAt" to FieldValue.serverTimestamp()))
+                    batch.set(
+                        user.collection("categories").document(id),
+                        values + ("createdAt" to FieldValue.serverTimestamp())
+                    )
                 }
-            }.commit().await()
+            }
+
+            batch.commit().await()
         } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
             android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
         } catch (e: Exception) {

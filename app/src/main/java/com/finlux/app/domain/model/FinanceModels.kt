@@ -102,6 +102,7 @@ data class UiPreferences(
     val glassIntensity: GlassIntensity = GlassIntensity.BALANCED,
     val cardDensity: CardDensity = CardDensity.COMFORTABLE,
     val animationsEnabled: Boolean = true,
+    val biometricEnabled: Boolean = false,
 )
 
 data class DashboardSummary(

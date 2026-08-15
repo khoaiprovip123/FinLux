@@ -22,8 +22,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 93
-        versionName = "1.7.7"
+        versionCode = 94
+        versionName = "1.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.biometric)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)

@@ -519,18 +519,19 @@ fun GlassFab(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
+    val containerBg = if (dark) Color(0xFF0F172A) else Color(0xFFFFFFFF)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Transparent,
+        containerColor = containerBg,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = null,
+        scrimColor = Color.Black.copy(alpha = 0.65f),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         content = {
-            LiquidGlassSurface(
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
-                mode = LiquidGlassMode.REGULAR,
-                shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                elevation = 18.dp,
-                padding = PaddingValues(top = 10.dp),
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
             ) {
                 content()
             }

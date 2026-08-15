@@ -274,6 +274,7 @@ fun FinluxNavHost(
             composable(Route.Notifications.value) {
                 NotificationsScreen(
                     onBack = navController::popBackStack,
+                    onNavigate = navController::navigate,
                     payNotificationIdFlow = payNotificationIdFlow,
                 )
             }

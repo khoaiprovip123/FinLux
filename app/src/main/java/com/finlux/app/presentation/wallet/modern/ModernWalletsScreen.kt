@@ -206,7 +206,7 @@ fun ModernWalletsScreen(
                     )
                     val accent = colorFromHex(wallet.colorHex)
                     val total = wallets.sumOf { it.balance.value }
-                    val ratio = if (total > 0) ((wallet.balance.value * 100) / total).toInt() else 0
+                    val ratio = if (total > 0 && wallet.balance.value > 0) ((wallet.balance.value * 100) / total).toInt() else 0
                     Box(Modifier.padding(horizontal = 16.dp)) {
                         SwipeToDismissBox(
                             state = dismissState,
@@ -624,6 +624,11 @@ private fun TransferEditor(
     var amount by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
 
+    val sourceWallet = wallets.find { it.id == source }
+    val sourceBalance = sourceWallet?.balance?.value ?: 0L
+    val isSourceCard = sourceWallet?.type == com.finlux.app.domain.model.WalletType.CARD
+    val parsedAmount = amount.toLongOrNull() ?: 0L
+    val isInsufficientFunds = !isSourceCard && sourceWallet != null && parsedAmount > sourceBalance
     GlassBottomSheet(onDismiss = onDismiss) {
         Column(
             Modifier
@@ -716,7 +721,7 @@ private fun TransferEditor(
             Button(
                 onClick = { onTransfer(source, destination, amount.toLongOrNull() ?: 0, note.trim()) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                enabled = (amount.toLongOrNull() ?: 0L) > 0L && source.isNotBlank() && destination.isNotBlank() && source != destination && !busy,
+                enabled = parsedAmount > 0L && source.isNotBlank() && destination.isNotBlank() && source != destination && !isInsufficientFunds && !busy,
                 shape = RoundedCornerShape(16.dp),
             ) {
                 Text(

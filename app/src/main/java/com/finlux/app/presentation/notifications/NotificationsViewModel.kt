@@ -15,6 +15,7 @@ import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.usecase.AddTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,6 +29,16 @@ import java.time.Instant
 import java.util.Locale
 import javax.inject.Inject
 
+
+enum class NotificationFilter(val label: String) {
+    ALL("Tất cả"),
+    REMINDER("Hóa đơn"),
+    BUDGET("Ngân sách"),
+    GOAL("Mục tiêu"),
+    SUMMARY("Báo cáo"),
+    SYSTEM("Hệ thống")
+}
+
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
@@ -35,6 +46,9 @@ class NotificationsViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val addTransactionUseCase: AddTransactionUseCase,
 ) : ViewModel() {
+
+    val selectedFilter = MutableStateFlow(NotificationFilter.ALL)
+
 
     val notifications: StateFlow<List<AppNotification>> = notificationRepository
         .observeNotifications()
@@ -131,4 +145,9 @@ class NotificationsViewModel @Inject constructor(
             notificationRepository.clearAll()
         }
     }
+
+    fun selectFilter(filter: NotificationFilter) {
+        selectedFilter.value = filter
+    }
+
 }

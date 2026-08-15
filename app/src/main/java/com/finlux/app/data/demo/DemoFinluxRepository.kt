@@ -224,8 +224,15 @@ class DemoFinluxRepository @Inject constructor(
         val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
         val stored = wallet.copy(id = id)
         walletState.value = if (walletState.value.any { it.id == id }) {
-            walletState.value.map { if (it.id == id) stored else it }
-        } else walletState.value + stored
+            walletState.value.map {
+                if (it.id == id) stored
+                else if (wallet.isDefault) it.copy(isDefault = false)
+                else it
+            }
+        } else {
+            val existing = if (wallet.isDefault) walletState.value.map { it.copy(isDefault = false) } else walletState.value
+            existing + stored
+        }
         AppResult.Success(id)
     }
 
@@ -342,6 +349,11 @@ class DemoFinluxRepository @Inject constructor(
         if (sourceWalletId == destinationWalletId) return@withLock AppResult.Error("Hai ví phải khác nhau")
         if (amount <= 0L) return@withLock AppResult.Error("Số tiền phải lớn hơn 0")
         val snapshot = walletState.value
+        val source = snapshot.find { it.id == sourceWalletId } ?: return@withLock AppResult.Error("Không tìm thấy ví nguồn")
+        if (snapshot.none { it.id == destinationWalletId }) return@withLock AppResult.Error("Không tìm thấy ví đích")
+        if (source.type != WalletType.CARD && source.balance.value < amount) {
+            return@withLock AppResult.Error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
+        }
         if (!changeWalletBalance(sourceWalletId, -amount) || !changeWalletBalance(destinationWalletId, amount)) {
             walletState.value = snapshot
             return@withLock AppResult.Error("Không tìm thấy ví")
@@ -479,12 +491,57 @@ class DemoFinluxRepository @Inject constructor(
 
         fun seedNotifications() = listOf(
             AppNotification(
-                id = "welcome-noti",
-                title = "Chào mừng bạn đến với Finlux",
-                body = "Hệ thống quản lý tài chính cá nhân đã sẵn sàng đồng hành cùng bạn.",
-                amount = Money(0L),
-                timestamp = Instant.now().minus(1, ChronoUnit.HOURS),
+                id = "budget-alert-noti",
+                title = "Cảnh báo ngân sách Ăn uống",
+                body = "Hạng mục Ăn uống đã tiêu 1.850.000 đ / 3.000.000 đ (61.7% hạn mức). Hãy chú ý chi tiêu nhé!",
+                type = com.finlux.app.domain.model.NotificationType.BUDGET_ALERT,
+                amount = Money(1_850_000L),
+                targetRoute = "budget",
+                timestamp = Instant.now().minus(2, ChronoUnit.HOURS),
                 isRead = false,
+            ),
+            AppNotification(
+                id = "goal-milestone-noti",
+                title = "Chúc mừng! Cột mốc tiết kiệm",
+                body = "Mục tiêu 'Quỹ khẩn cấp' đã tích lũy đạt mốc 50% tiến độ (15.000.000 đ). Tuyệt vời!",
+                type = com.finlux.app.domain.model.NotificationType.GOAL_MILESTONE,
+                amount = Money(15_000_000L),
+                targetRoute = "goals",
+                timestamp = Instant.now().minus(1, ChronoUnit.DAYS),
+                isRead = false,
+            ),
+            AppNotification(
+                id = "reminder-bill-noti",
+                title = "Hóa đơn tiền nhà",
+                body = "Hóa đơn tiền thuê nhà tháng này sắp tới hạn (5.000.000 đ).",
+                type = com.finlux.app.domain.model.NotificationType.REMINDER,
+                amount = Money(5_000_000L),
+                reminderId = "rent-reminder",
+                categoryId = "bills",
+                walletId = "bank",
+                targetRoute = "reminders",
+                timestamp = Instant.now().minus(3, ChronoUnit.DAYS),
+                isRead = true,
+                isPaid = false,
+            ),
+            AppNotification(
+                id = "tx-summary-noti",
+                title = "Báo cáo tài chính tuần qua",
+                body = "Tuần qua bạn đã chi tiêu 3.410.000 đ, tiết kiệm được 2.500.000 đ. Bấm để xem chi tiết biểu đồ.",
+                type = com.finlux.app.domain.model.NotificationType.TRANSACTION_SUMMARY,
+                amount = Money(0L),
+                targetRoute = "reports",
+                timestamp = Instant.now().minus(5, ChronoUnit.DAYS),
+                isRead = true,
+            ),
+            AppNotification(
+                id = "welcome-noti",
+                title = "Chào mừng bạn đến với FinLux",
+                body = "Hệ thống quản lý tài chính cá nhân đã sẵn sàng đồng hành cùng bạn.",
+                type = com.finlux.app.domain.model.NotificationType.SYSTEM,
+                amount = Money(0L),
+                timestamp = Instant.now().minus(10, ChronoUnit.DAYS),
+                isRead = true,
             ),
         )
     }

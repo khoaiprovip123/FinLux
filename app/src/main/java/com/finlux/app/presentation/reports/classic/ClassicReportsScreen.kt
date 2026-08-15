@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.reports.classic
 
+import com.finlux.app.presentation.reports.ExportReportDialog
+
 import com.finlux.app.presentation.reports.*
 
 import androidx.compose.foundation.Canvas
@@ -84,6 +86,7 @@ fun ClassicReportsScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val selectedPeriod = viewModel.selectedPeriod.collectAsStateWithLifecycle().value
     var showRangePicker by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             GlassTopBar(
@@ -155,12 +158,15 @@ fun ClassicReportsScreen(
                 }
             }
             Button(
-                onClick = { /* UC-17 exporter remains isolated for the export sprint. */ },
+                onClick = { showExportDialog = true },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp),
             ) { Text("Xuất báo cáo", fontWeight = FontWeight.Bold) }
             Spacer(Modifier.height(18.dp))
         }
+    }
+    if (showExportDialog) {
+        ExportReportDialog(state = state, onDismiss = { showExportDialog = false })
     }
     if (showRangePicker) {
         val rangeState = rememberDateRangePickerState(

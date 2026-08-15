@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0] - 2026-08-15
+### Added
+- **Xuất Báo Cáo Tài Chính Excel (.csv) & PDF (UC-17)**: Hỗ trợ xuất dữ liệu thu chi chuẩn UTF-8 BOM cho Excel và tạo file PDF đa trang chuyên nghiệp kèm biểu đồ KPI, thống kê danh mục và bảng giao dịch chi tiết qua `ReportExporter` và `ExportReportDialog`.
+- **Trung Tâm Thông Báo Đa Năng (Task v1.6.0)**: Bổ sung 5 phân loại thông báo (`REMINDER`, `BUDGET_ALERT`, `GOAL_MILESTONE`, `TRANSACTION_SUMMARY`, `SYSTEM`), thanh Filter Chips và điều hướng Deep Link trực tiếp sang các màn hình chức năng.
+- **Bảo Mật Sinh Trắc Học (Biometric Lock)**: Tích hợp `androidx.biometric:biometric` hỗ trợ khóa mở app bằng Vân tay / Face ID / Mã PIN thiết bị, thiết lập bật/tắt trong `SettingsScreen`.
+
+### Fixed
+- **Lưu & Đồng Bộ Ví Tiền Mặt (Cash Wallet Database Persistence)**: Tự động khởi tạo và lưu trữ vĩnh viễn ví mặc định "Tiền mặt" vào Firestore Database ngay khi tài khoản mới hoặc tài khoản hiện có chưa có ví; bổ sung bộ phân giải đa định dạng `parseWalletType` chống mất dữ liệu ví tiền mặt; cập nhật logic nguyên tử (atomic batch) duy trì trạng thái ví mặc định.
+- **Chuyển Tiền Giữa Các Ví (Transfer Money Validation)**: Bổ sung validation kiểm tra số dư ví nguồn (chặn số dư âm đối với ví không phải thẻ tín dụng) trên cả tầng Domain (`TransferMoneyUseCase`), Data Repositories và UI Form (`TransferEditor`).
+- **Sửa Lỗi Tính % Tỷ Trọng Ví**: Khắc phục lỗi hiển thị tỷ trọng phần trăm âm/bất thường khi ví có số dư nợ hoặc tổng tài sản nhỏ hơn 0.
+
+---
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 

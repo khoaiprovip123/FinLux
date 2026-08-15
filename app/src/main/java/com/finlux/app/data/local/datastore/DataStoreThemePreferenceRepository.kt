@@ -25,6 +25,7 @@ private val UiStyleKey = stringPreferencesKey("app_ui_style")
 private val GlassIntensityKey = stringPreferencesKey("glass_intensity")
 private val CardDensityKey = stringPreferencesKey("card_density")
 private val AnimationsKey = booleanPreferencesKey("animations_enabled")
+private val BiometricKey = booleanPreferencesKey("biometric_enabled")
 private val VisualStyleKey = stringPreferencesKey("visual_style")
 
 @Singleton
@@ -63,6 +64,7 @@ class DataStoreThemePreferenceRepository @Inject constructor(
                 ?.let { value -> CardDensity.entries.firstOrNull { it.name == value } }
                 ?: CardDensity.COMFORTABLE,
             animationsEnabled = stored[AnimationsKey] ?: true,
+            biometricEnabled = stored[BiometricKey] ?: false,
         )
     }
 
@@ -72,6 +74,7 @@ class DataStoreThemePreferenceRepository @Inject constructor(
             it[GlassIntensityKey] = preferences.glassIntensity.name
             it[CardDensityKey] = preferences.cardDensity.name
             it[AnimationsKey] = preferences.animationsEnabled
+            it[BiometricKey] = preferences.biometricEnabled
         }
     }
 }

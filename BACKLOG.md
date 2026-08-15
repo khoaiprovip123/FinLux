@@ -7,7 +7,7 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 ## 🚨 [BUG BACKLOG] - Wallet Transfer Balance Validation
 
 > **Tên Ticket:** `[BUG CRITICAL] Thiếu kiểm tra số dư khi chuyển tiền giữa các ví (Wallet Transfer Insufficient Funds Validation)`  
-> **Trạng thái:** ⏳ `[QUEUED / PENDING]`  
+> **Trạng thái:** ⏳ `[DONE] - Đã hoàn thiện trong v1.8.0`  
 > **Mức độ ưu tiên:** 🔴 Critical / High  
 > **Ngày ghi nhận:** 2026-08-15  
 > **File ảnh hưởng:** `TransferMoneyUseCase.kt`, `WalletsViewModel.kt`, `ModernWalletsScreen.kt`, `ClassicWalletsScreen.kt`, `QuickAddSheet.kt`
@@ -58,7 +58,7 @@ Khi sẵn sàng tiến hành sửa bug này, gửi prompt sau:
 
 ## [BACKLOG] v1.6.0 - Multi-type Notification System (Hệ thống Thông báo Đa năng)
 
-> **Trạng thái:** ⏸️ BACKLOG / POSTPONED (Tạm hoãn để ưu tiên các task gấp khác)  
+> **Trạng thái:** ⏸️ DONE - Đã hoàn thiện trong v1.8.0 (Tạm hoãn để ưu tiên các task gấp khác)  
 > **Ngày ghi nhận:** 2026-08-14  
 > **File thiết kế liên quan:** `AppNotification.kt`, `NotificationRepository.kt`, `NotificationsScreen.kt`, `NotificationsViewModel.kt`
 

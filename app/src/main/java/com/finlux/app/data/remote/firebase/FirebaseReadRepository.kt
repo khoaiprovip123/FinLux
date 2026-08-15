@@ -47,8 +47,12 @@ class FirebaseReadRepository(
             return@callbackFlow
         }
         val registration = firestore.userWallets(uid).addSnapshotListener { snapshot, error ->
-            if (error != null) close(error)
-            else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toWallet() })
+            if (error != null) {
+                close(error)
+            } else {
+                val wallets = snapshot?.documents.orEmpty().mapNotNull { it.toWallet() }
+                trySend(wallets)
+            }
         }
         awaitClose { registration.remove() }
     }
@@ -113,7 +117,20 @@ class FirebaseReadRepository(
     override suspend fun upsertWallet(wallet: Wallet): AppResult<String> = firebaseResult("Không thể lưu ví") {
         val uid = requireUid()
         val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
-        firestore.userWallets(uid).document(id).set(wallet.copy(id = id).toWalletMap()).await()
+        val targetDoc = firestore.userWallets(uid).document(id)
+        if (wallet.isDefault) {
+            val allWalletsSnapshot = firestore.userWallets(uid).get().await()
+            firestore.runBatch { batch ->
+                allWalletsSnapshot.documents.forEach { doc ->
+                    if (doc.id != id) {
+                        batch.update(doc.reference, "isDefault", false)
+                    }
+                }
+                batch.set(targetDoc, wallet.copy(id = id, isDefault = true).toWalletMap())
+            }.await()
+        } else {
+            targetDoc.set(wallet.copy(id = id).toWalletMap()).await()
+        }
         id
     }
 
@@ -345,16 +362,39 @@ private fun FinancialGoal.toGoalMap(): Map<String, Any?> = mapOf(
 )
 
 private fun DocumentSnapshot.toWallet(): Wallet? = runCatching {
+    val name = getString("name") ?: getString("walletName") ?: "Tiền mặt"
+    val rawType = getString("type") ?: getString("walletType") ?: "cash"
+    val type = parseWalletType(rawType)
+    val balanceVal = getLong("balance") ?: getDouble("balance")?.toLong() ?: 0L
+    val color = getString("color") ?: getString("colorHex") ?: "#1F6FBF"
+    val isDef = getBoolean("isDefault") ?: (id == "cash")
+    val created = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now()
     Wallet(
         id = id,
-        name = requireNotNull(getString("name")),
-        type = WalletType.valueOf(requireNotNull(getString("type")).uppercase()),
-        balance = Money(getLong("balance") ?: 0L),
-        colorHex = getString("color") ?: "#1F6FBF",
-        isDefault = getBoolean("isDefault") ?: false,
-        createdAt = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now(),
+        name = name,
+        type = type,
+        balance = Money(balanceVal),
+        colorHex = color,
+        isDefault = isDef,
+        createdAt = created,
     )
 }.getOrNull()
+
+private fun parseWalletType(raw: String?): WalletType {
+    if (raw.isNullOrBlank()) return WalletType.CASH
+    return when (raw.trim().uppercase()) {
+        "CASH", "TIEN_MAT", "TIỀN MẶT", "TIENMAT", "VI_TIEN_MAT", "VÍ TIỀN MẶT", "GENERAL" -> WalletType.CASH
+        "BANK", "NGAN_HANG", "NGÂN HÀNG", "NGANHANG", "ACCOUNT" -> WalletType.BANK
+        "EWALLET", "E_WALLET", "VI_DIEN_TU", "VÍ ĐIỆN TỬ", "MOMO", "ZALOPAY" -> WalletType.EWALLET
+        "CARD", "CREDIT", "CREDIT_CARD", "DEBIT", "THE_TIN_DUNG", "THẺ TÍN DỤNG" -> WalletType.CARD
+        "INVESTMENT", "DAU_TU", "ĐẦU TƯ", "SAVINGS", "TIET_KIEM", "TIẾT KIỆM" -> WalletType.INVESTMENT
+        else -> try {
+            WalletType.valueOf(raw.trim().uppercase())
+        } catch (_: Exception) {
+            WalletType.CASH
+        }
+    }
+}
 
 private fun DocumentSnapshot.toCategory(): Category? = runCatching {
     Category(
@@ -411,10 +451,14 @@ private fun DocumentSnapshot.toGoal(): FinancialGoal? = runCatching {
 private fun AppNotification.toNotificationMap(): Map<String, Any?> = mapOf(
     "title" to title,
     "body" to body,
+    "type" to type.name.lowercase(),
     "amount" to amount.value,
     "reminderId" to reminderId,
     "categoryId" to categoryId,
     "walletId" to walletId,
+    "targetRoute" to targetRoute,
+    "targetId" to targetId,
+    "actionUrl" to actionUrl,
     "timestamp" to Timestamp(Date.from(timestamp)),
     "isRead" to isRead,
     "isPaid" to isPaid,
@@ -425,10 +469,16 @@ private fun DocumentSnapshot.toAppNotification(): AppNotification? = runCatching
         id = id,
         title = requireNotNull(getString("title")),
         body = getString("body").orEmpty(),
+        type = getString("type")?.let { raw ->
+            com.finlux.app.domain.model.NotificationType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+        } ?: com.finlux.app.domain.model.NotificationType.REMINDER,
         amount = Money(getLong("amount") ?: 0L),
         reminderId = getString("reminderId"),
         categoryId = getString("categoryId"),
         walletId = getString("walletId"),
+        targetRoute = getString("targetRoute"),
+        targetId = getString("targetId"),
+        actionUrl = getString("actionUrl"),
         timestamp = getTimestamp("timestamp")?.toDate()?.toInstant() ?: Instant.now(),
         isRead = getBoolean("isRead") ?: false,
         isPaid = getBoolean("isPaid") ?: false,

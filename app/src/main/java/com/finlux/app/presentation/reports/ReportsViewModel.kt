@@ -42,6 +42,9 @@ data class ReportsUiState(
     val previousIncome: Long = 0,
     val previousExpense: Long = 0,
     val previousNet: Long = 0,
+    val filteredTransactions: List<FinanceTransaction> = emptyList(),
+    val categories: List<Category> = emptyList(),
+    val wallets: List<Wallet> = emptyList(),
 )
 
 @HiltViewModel
@@ -130,6 +133,9 @@ class ReportsViewModel @Inject constructor(
             previousIncome = previousIncome,
             previousExpense = previousExpense,
             previousNet = previousIncome - previousExpense,
+            filteredTransactions = filtered,
+            categories = categories,
+            wallets = wallets,
         )
     }
 }

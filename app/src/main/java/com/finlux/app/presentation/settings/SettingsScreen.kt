@@ -1,5 +1,8 @@
 package com.finlux.app.presentation.settings
 
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.SolidColor
+
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -415,6 +418,26 @@ fun SettingsScreen(
                                 }
                                 Switch(checked = uiPreferences.animationsEnabled, onCheckedChange = { onUiPreferencesChanged(uiPreferences.copy(animationsEnabled = it)) })
                             }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Khóa ứng dụng bằng Sinh trắc học", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                    Text("Yêu cầu vân tay / khuôn mặt khi mở ứng dụng", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = uiPreferences.biometricEnabled,
+                                    onCheckedChange = { isEnabled ->
+                                        if (isEnabled) {
+                                            if (com.finlux.app.core.security.BiometricHelper.canAuthenticate(context)) {
+                                                onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = true))
+                                            } else {
+                                                android.widget.Toast.makeText(context, "Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                        } else {
+                                            onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = false))
+                                        }
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -435,15 +458,33 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
+                        // Header
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                         ) {
-                            Text("🎨", fontSize = 24.sp)
-                            Column {
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        Brush.linearGradient(
+                                            listOf(
+                                                Color(0xFF3478F6),
+                                                Color(0xFF7758F6),
+                                                Color(0xFF47C8FF),
+                                            )
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("🎨", fontSize = 22.sp)
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     "Phong cách giao diện",
                                     style = MaterialTheme.typography.titleLarge,
@@ -451,34 +492,23 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
-                                    "Tùy biến diện mạo FinLux theo sở thích của bạn",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    "Tùy biến động lực học & hiệu ứng kính",
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
 
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-                        // Option 1: Liquid Glass Classic
-                        UiStyleOptionItem(
-                            title = "Liquid Glass (Cổ điển)",
-                            badge = "v1.5.9 Ổn định",
-                            description = "Giao diện thanh lịch, tương phản cao, ổn định.",
-                            icon = "💧",
-                            isSelected = selectedUiStyle == AppUiStyle.CLASSIC_LIQUID,
-                            onClick = {
-                                onUiStyleSelected(AppUiStyle.CLASSIC_LIQUID)
-                                showUiStyleSheet = false
-                            },
-                        )
-
-                        // Option 2: Modern Luxury
-                        UiStyleOptionItem(
-                            title = "Modern Luxury (Hiện đại)",
-                            badge = "Callstack iOS 26",
-                            description = "Giao diện kính lỏng Callstack, bo tròn, phong cách mới.",
+                        // Option 1: Modern Luxury (Công nghệ hiện đại)
+                        UiStyleCard(
+                            title = "Modern Luxury",
+                            badge = "NextGen 2026",
+                            badgeColors = listOf(Color(0xFF3478F6), Color(0xFF7758F6)),
+                            description = "Kính lỏng đa tầng, bo tròn sang trọng, chuyển động sống động và công nghệ hiện đại.",
                             icon = "✨",
+                            tags = listOf("💎 Kính lỏng 3D", "⚡ 120 FPS", "🌌 Hiệu ứng Aurora"),
                             isSelected = selectedUiStyle == AppUiStyle.MODERN_LUXURY,
                             onClick = {
                                 onUiStyleSelected(AppUiStyle.MODERN_LUXURY)
@@ -486,7 +516,22 @@ fun SettingsScreen(
                             },
                         )
 
-                        Spacer(Modifier.height(16.dp))
+                        // Option 2: Liquid Glass Classic (Cổ điển tinh gọn)
+                        UiStyleCard(
+                            title = "Liquid Glass",
+                            badge = "Classic v1.5",
+                            badgeColors = listOf(Color(0xFF0284C7), Color(0xFF0D9488)),
+                            description = "Thiết kế thanh lịch, độ tương phản cao, tối ưu trực quan và tập trung hiệu năng.",
+                            icon = "💧",
+                            tags = listOf("🎯 Trực quan", "📊 Tương phản cao", "⚡ Siêu nhẹ"),
+                            isSelected = selectedUiStyle == AppUiStyle.CLASSIC_LIQUID,
+                            onClick = {
+                                onUiStyleSelected(AppUiStyle.CLASSIC_LIQUID)
+                                showUiStyleSheet = false
+                            },
+                        )
+
+                        Spacer(Modifier.height(20.dp))
                     }
                 }
             }
@@ -800,82 +845,145 @@ private fun VisualStylePreview(option: VisualStyle, selected: Boolean, onClick: 
 }
 
 @Composable
-private fun UiStyleOptionItem(
+private fun UiStyleCard(
     title: String,
     badge: String,
+    badgeColors: List<Color>,
     description: String,
     icon: String,
+    tags: List<String>,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-    val bgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.4f
+    val activeBorderBrush = Brush.horizontalGradient(
+        listOf(
+            Color(0xFF3478F6),
+            Color(0xFF7758F6),
+            Color(0xFF47C8FF),
+        )
+    )
+    val inactiveBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        color = bgColor,
-        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) {
+            if (isDark) Color(0xFF1E293B).copy(alpha = 0.85f) else Color(0xFFF0F6FF)
+        } else {
+            if (isDark) Color(0xFF131D2E).copy(alpha = 0.65f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        },
+        border = if (isSelected) BorderStroke(1.8.dp, activeBorderBrush) else inactiveBorder,
+        shadowElevation = if (isSelected) 4.dp else 0.dp,
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                        CircleShape,
-                    ),
-                contentAlignment = Alignment.Center,
+            // Row 1: Icon, Title, Badge & Radio
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(icon, fontSize = 22.sp)
-            }
-
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) {
+                                Brush.linearGradient(badgeColors).copyColorAlpha(0.20f)
+                            } else {
+                                Brush.linearGradient(listOf(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f), MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)))
+                            }
+                        ),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        badge,
-                        modifier = Modifier
-                            .background(
-                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                else MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(6.dp),
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Text(icon, fontSize = 20.sp)
                 }
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Brush.horizontalGradient(badgeColors))
+                                .padding(horizontal = 7.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = badge,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    }
+                }
+
+                RadioButton(
+                    selected = isSelected,
+                    onClick = onClick,
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = Color(0xFF3478F6),
+                        unselectedColor = MaterialTheme.colorScheme.outlineVariant,
+                    ),
                 )
             }
 
-            RadioButton(
-                selected = isSelected,
-                onClick = onClick,
-                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+            // Row 2: Description
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 18.sp,
             )
+
+            // Row 3: Feature Tech Tags
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                tags.forEach { tag ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (isSelected) Color(0xFF3478F6).copy(alpha = 0.12f)
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = tag,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) Color(0xFF3478F6) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
         }
     }
 }
+
+private fun Brush.copyColorAlpha(alpha: Float): Brush = this
 
 private val ThemePreference.label: String get() = when (this) {
     ThemePreference.LIGHT -> "Sáng"

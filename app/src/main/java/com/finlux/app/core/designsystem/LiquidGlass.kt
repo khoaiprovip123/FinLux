@@ -194,9 +194,13 @@ fun GlassFab(onClick: () -> Unit, content: @Composable () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.4f
+    val containerBg = if (isDark) Color(0xFF0F172A) else Color(0xFFFFFFFF)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .94f),
+        containerColor = containerBg,
+        scrimColor = Color.Black.copy(alpha = 0.65f),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         content = { content() },
     )
 }

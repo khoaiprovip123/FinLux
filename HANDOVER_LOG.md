@@ -1,8 +1,32 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.7.7 (versionCode 92) - Release
-- **Trạng thái Build:** ✅ Đã hoàn tất và kiểm thử thành công 100% (39/39 unit tests pass).
+- **Phiên bản hiện tại:** v1.8.0 (versionCode 94) - Release
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công 4 hạng mục cải tiến lớn.
+
+---
+
+## [DONE] Task v1.8.0: Quad Feature Release (Transfer Validation, Reports Export, Multi-type Notifications, Biometric Lock)
+
+**Ngày:** 2026-08-15
+
+### Mục tiêu Hoàn Thành
+1. **Khắc phục lỗi Lưu Ví Tiền Mặt vào Database (Cash Wallet Persistence):**
+   - Tự động seed và lưu vĩnh viễn ví "Tiền mặt" (id: `cash`, `isDefault = true`) trên Firestore khi người dùng mở ứng dụng lần đầu hoặc database trống.
+   - Bổ sung `parseWalletType` phòng chống lỗi ép kiểu enum làm rớt dữ liệu ví.
+   - Cập nhật batch update trạng thái `isDefault` nguyên tử trên cả Firestore và Demo Repository.
+2. **Transfer Money Validation & Ratio Calculation Fix:**
+   - Thêm ràng buộc số dư ví nguồn ở Domain (`TransferMoneyUseCase`), Data (`DemoFinluxRepository`, `FirebaseTransactionRepository`) và UI (`TransferEditor`).
+   - Sửa công thức tính % tỷ trọng an toàn tránh số âm.
+2. **Xuất Báo Cáo Excel (.csv) & PDF (UC-17):**
+   - Triển khai `ReportExporter.kt` sinh file Excel/CSV chuẩn UTF-8 BOM và file PDF qua `android.graphics.pdf.PdfDocument`.
+   - Tạo `ExportReportDialog.kt` trên cả 2 giao diện Classic và Modern.
+3. **Trung Tâm Thông Báo Đa Năng & Deep Link (Task v1.6.0):**
+   - Thêm `NotificationType.kt`, mở rộng `AppNotification.kt` với các trường phân loại và route.
+   - Thêm Filter Tabs và Deep Link Navigation trên `NotificationsScreen.kt`.
+4. **Bảo Mật Sinh Trắc Học (Biometric Lock):**
+   - Tích hợp `androidx.biometric:biometric`, chuyển `MainActivity` sang `FragmentActivity`.
+   - Tạo `BiometricHelper.kt`, `BiometricLockScreen` trong `FinluxRoot.kt` và toggle trong `SettingsScreen.kt`.
 
 ---
 

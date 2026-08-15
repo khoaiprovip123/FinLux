@@ -4,7 +4,10 @@ import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
+import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.TransactionRepository
+import com.finlux.app.domain.repository.WalletRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -15,6 +18,13 @@ import java.time.Instant
 
 class TransactionUseCasesTest {
     private val repository = RecordingTransactionRepository()
+    private val walletRepository = FakeWalletRepository(
+        listOf(
+            Wallet("cash", "Tiền mặt", WalletType.CASH, Money(500_000), "#1F6FBF", true, Instant.now()),
+            Wallet("bank", "Ngân hàng", WalletType.BANK, Money(2_000_000), "#3478F6", false, Instant.now()),
+            Wallet("card", "Thẻ tín dụng", WalletType.CARD, Money(0), "#7758F6", false, Instant.now()),
+        )
+    )
 
     @Test
     fun `add rejects zero amount before touching repository`() = runTest {
@@ -51,15 +61,32 @@ class TransactionUseCasesTest {
 
     @Test
     fun `transfer rejects identical wallets before touching repository`() = runTest {
-        val result = TransferMoneyUseCase(repository)("cash", "cash", 100_000, "")
+        val result = TransferMoneyUseCase(repository, walletRepository)("cash", "cash", 100_000, "")
 
         assertInstanceOf(AppResult.Error::class.java, result)
         assertEquals(0, repository.transferCalls)
     }
 
     @Test
+    fun `transfer rejects insufficient funds for cash wallet`() = runTest {
+        val result = TransferMoneyUseCase(repository, walletRepository)("cash", "bank", 600_000, "Vượt quá")
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals("Số dư ví nguồn không đủ để thực hiện chuyển tiền", (result as AppResult.Error).message)
+        assertEquals(0, repository.transferCalls)
+    }
+
+    @Test
+    fun `transfer allows credit card even with zero balance`() = runTest {
+        val result = TransferMoneyUseCase(repository, walletRepository)("card", "bank", 1_000_000, "Rút thẻ")
+
+        assertEquals(AppResult.Success(Unit), result)
+        assertEquals(1, repository.transferCalls)
+    }
+
+    @Test
     fun `transfer delegates valid pair to atomic repository method`() = runTest {
-        val result = TransferMoneyUseCase(repository)("cash", "bank", 100_000, "Tiết kiệm")
+        val result = TransferMoneyUseCase(repository, walletRepository)("cash", "bank", 100_000, "Tiết kiệm")
 
         assertEquals(AppResult.Success(Unit), result)
         assertEquals(1, repository.transferCalls)
@@ -85,7 +112,6 @@ private class RecordingTransactionRepository : TransactionRepository {
     override fun observeRecent(limit: Int): Flow<List<FinanceTransaction>> = flowOf(emptyList())
 
     override fun observeMonth(month: java.time.YearMonth): Flow<List<FinanceTransaction>> = flowOf(emptyList())
-
 
     override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String> {
         addCalls++
@@ -117,4 +143,12 @@ private class RecordingTransactionRepository : TransactionRepository {
         transferCalls++
         return AppResult.Success(Unit)
     }
+}
+
+private class FakeWalletRepository(
+    private val wallets: List<Wallet>
+) : WalletRepository {
+    override fun observeWallets(): Flow<List<Wallet>> = flowOf(wallets)
+    override suspend fun upsertWallet(wallet: Wallet): AppResult<String> = AppResult.Success(wallet.id)
+    override suspend fun deleteWallet(wallet: Wallet): AppResult<Unit> = AppResult.Success(Unit)
 }

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="avatar_capture" path="avatar-capture/" />
+    <cache-path name="exports" path="exports/" />
+    <cache-path name="cache_root" path="." />
 </paths>

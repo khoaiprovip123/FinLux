@@ -85,6 +85,7 @@ fun ModernReportsScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val selectedPeriod = viewModel.selectedPeriod.collectAsStateWithLifecycle().value
     var showRangePicker by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
         com.finlux.app.core.designsystem.modern.FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
@@ -162,13 +163,16 @@ fun ModernReportsScreen(
                     }
                 }
                 Button(
-                    onClick = { /* UC-17 exporter remains isolated for the export sprint. */ },
+                    onClick = { showExportDialog = true },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                 ) { Text("Xuất báo cáo", fontWeight = FontWeight.Bold) }
                 Spacer(Modifier.height(18.dp))
             }
         }
+    }
+    if (showExportDialog) {
+        ExportReportDialog(state = state, onDismiss = { showExportDialog = false })
     }
     if (showRangePicker) {
         val rangeState = rememberDateRangePickerState(
