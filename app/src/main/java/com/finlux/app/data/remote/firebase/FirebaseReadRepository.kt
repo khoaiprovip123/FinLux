@@ -113,10 +113,7 @@ class FirebaseReadRepository(
     override suspend fun upsertWallet(wallet: Wallet): AppResult<String> = firebaseResult("Không thể lưu ví") {
         val uid = requireUid()
         val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
-        val reference = firestore.userWallets(uid).document(id)
-        firestore.runTransaction { atomic ->
-            atomic.set(reference, wallet.copy(id = id).toWalletMap())
-        }.await()
+        firestore.userWallets(uid).document(id).set(wallet.copy(id = id).toWalletMap()).await()
         id
     }
 
@@ -126,7 +123,7 @@ class FirebaseReadRepository(
         val usedAsSource = firestore.userTransactions(uid).whereEqualTo("walletId", wallet.id).limit(1).get().await()
         val usedAsRelated = firestore.userTransactions(uid).whereEqualTo("relatedWalletId", wallet.id).limit(1).get().await()
         require(usedAsSource.isEmpty && usedAsRelated.isEmpty) { "Ví đã có giao dịch, không thể xóa" }
-        firestore.runTransaction { it.delete(firestore.userWallets(uid).document(wallet.id)) }.await()
+        firestore.userWallets(uid).document(wallet.id).delete().await()
         Unit
     }
 
