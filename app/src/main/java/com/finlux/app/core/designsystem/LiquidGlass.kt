@@ -3,6 +3,7 @@ package com.finlux.app.core.designsystem
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -202,7 +203,23 @@ fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
 
 @Composable
 fun GlassDialogSurface(content: @Composable BoxScope.() -> Unit) {
-    Surface(color = Color.Transparent, shape = GlassShape) {
-        LiquidGlassSurface(content = content)
-    }
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.4f
+    val bgFill = if (isDark) Color(0xFF141F32).copy(alpha = 0.98f) else Color(0xFFF9FAFD).copy(alpha = 0.98f)
+    val borderBrush = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = if (isDark) 0.35f else 0.90f),
+            FinluxBlue.copy(alpha = if (isDark) 0.20f else 0.30f),
+            Color.White.copy(alpha = if (isDark) 0.10f else 0.40f),
+        ),
+    )
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        modifier = Modifier
+            .shadow(elevation = 24.dp, shape = shape, ambientColor = FinluxBlue.copy(alpha = 0.25f), spotColor = FinluxPurple.copy(alpha = 0.25f))
+            .clip(shape)
+            .background(bgFill)
+            .border(1.2.dp, borderBrush, shape)
+            .padding(20.dp),
+        content = content,
+    )
 }

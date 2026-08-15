@@ -26,7 +26,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -45,10 +47,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -72,6 +77,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -79,8 +85,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.BuildConfig
 import com.finlux.app.core.designsystem.FinluxBrandMark
 import com.finlux.app.core.designsystem.FinluxUserAvatar
+import com.finlux.app.core.designsystem.GlassBottomSheet
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
+import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.CardDensity
 import com.finlux.app.domain.model.GlassIntensity
 import com.finlux.app.domain.model.ThemePreference
@@ -102,6 +110,8 @@ import kotlinx.coroutines.withContext
 fun SettingsScreen(
     selectedTheme: ThemePreference,
     onThemeSelected: (ThemePreference) -> Unit,
+    selectedUiStyle: AppUiStyle = AppUiStyle.CLASSIC_LIQUID,
+    onUiStyleSelected: (AppUiStyle) -> Unit = {},
     uiPreferences: UiPreferences,
     onUiPreferencesChanged: (UiPreferences) -> Unit,
     onNavigate: (String) -> Unit,
@@ -118,6 +128,7 @@ fun SettingsScreen(
     var showAvatarSource by remember { mutableStateOf(false) }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var showNameEditor by remember { mutableStateOf(false) }
+    var showUiStyleSheet by remember { mutableStateOf(false) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
 
     fun openNameEditor() {
@@ -202,10 +213,11 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             GlassTopBar(
-                title = { },
-                actions = {
-                    IconButton(onClick = { onNavigate(Route.Notifications.value) }) { Icon(Icons.Default.NotificationsNone, "Thông báo") }
-                    IconButton(onClick = { }) { Icon(Icons.Default.Palette, "Giao diện") }
+                title = { Text("Hồ sơ & Cài đặt", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
+                navigationIcon = {
+                    IconButton(onClick = { onNavigate(Route.Home.value) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                    }
                 },
             )
         },
@@ -296,7 +308,7 @@ fun SettingsScreen(
             }
             item {
                 GlassCard(Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("Chế độ màu", style = MaterialTheme.typography.titleMedium)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ThemePreference.entries.forEach { option ->
@@ -306,8 +318,113 @@ fun SettingsScreen(
                     }
                 }
             }
+            item {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showUiStyleSheet = true },
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("🎨", fontSize = 20.sp)
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    "Phong cách giao diện",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    selectedUiStyle.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                        }
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = "Chọn phong cách giao diện",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        )
+                    }
+                }
+            }
             item { AboutFinluxCard() }
             item { Button(onClick = { viewModel.signOut(onSignedOut) }, modifier = Modifier.fillMaxWidth()) { Text("Đăng xuất") } }
+        }
+
+        if (showUiStyleSheet) {
+            GlassBottomSheet(onDismiss = { showUiStyleSheet = false }) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text("🎨", fontSize = 24.sp)
+                        Column {
+                            Text(
+                                "Phong cách giao diện",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                "Tùy biến diện mạo FinLux theo sở thích của bạn",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // Option 1: Liquid Glass Classic
+                    UiStyleOptionItem(
+                        title = "Liquid Glass (Cổ điển)",
+                        badge = "v1.5.9 Ổn định",
+                        description = "Giao diện thanh lịch, tương phản cao, ổn định.",
+                        icon = "💧",
+                        isSelected = selectedUiStyle == AppUiStyle.CLASSIC_LIQUID,
+                        onClick = {
+                            onUiStyleSelected(AppUiStyle.CLASSIC_LIQUID)
+                            showUiStyleSheet = false
+                        },
+                    )
+
+                    // Option 2: Modern Luxury
+                    UiStyleOptionItem(
+                        title = "Modern Luxury (Hiện đại)",
+                        badge = "Callstack iOS 26",
+                        description = "Giao diện kính lỏng Callstack, bo tròn, phong cách mới.",
+                        icon = "✨",
+                        isSelected = selectedUiStyle == AppUiStyle.MODERN_LUXURY,
+                        onClick = {
+                            onUiStyleSelected(AppUiStyle.MODERN_LUXURY)
+                            showUiStyleSheet = false
+                        },
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
         }
     }
 }
@@ -476,6 +593,84 @@ private fun VisualStylePreview(option: VisualStyle, selected: Boolean, onClick: 
 }
 
 @Composable
+private fun UiStyleOptionItem(
+    title: String,
+    badge: String,
+    description: String,
+    icon: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val bgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        color = bgColor,
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        CircleShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(icon, fontSize = 22.sp)
+            }
+
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        badge,
+                        modifier = Modifier
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                else MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(6.dp),
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            RadioButton(
+                selected = isSelected,
+                onClick = onClick,
+                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+            )
+        }
+    }
+}
+
+@Composable
 private fun SettingsLink(label: String, onClick: () -> Unit) {
     GlassCard(Modifier.fillMaxWidth().clickable(onClick = onClick)) { Text(label, style = MaterialTheme.typography.titleMedium) }
 }
@@ -484,6 +679,10 @@ private val ThemePreference.label: String get() = when (this) {
     ThemePreference.LIGHT -> "Sáng"
     ThemePreference.DARK -> "Tối"
     ThemePreference.SYSTEM -> "Hệ thống"
+}
+private val AppUiStyle.label: String get() = when (this) {
+    AppUiStyle.CLASSIC_LIQUID -> "Liquid Glass (Cổ điển)"
+    AppUiStyle.MODERN_LUXURY -> "Modern Luxury (Hiện đại)"
 }
 private val GlassIntensity.label: String get() = when (this) {
     GlassIntensity.SOFT -> "Nhẹ"

@@ -2,6 +2,7 @@ package com.finlux.app.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.ThemePreference
 import com.finlux.app.domain.model.UiPreferences
 import com.finlux.app.domain.repository.ThemePreferenceRepository
@@ -23,6 +24,12 @@ class RootViewModel @Inject constructor(
         initialValue = ThemePreference.SYSTEM,
     )
 
+    val uiStyle = themeRepository.uiStyle.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = AppUiStyle.CLASSIC_LIQUID,
+    )
+
     val uiPreferences = uiPreferencesRepository.preferences.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -31,6 +38,10 @@ class RootViewModel @Inject constructor(
 
     fun setTheme(preference: ThemePreference) {
         viewModelScope.launch { themeRepository.setPreference(preference) }
+    }
+
+    fun setUiStyle(style: AppUiStyle) {
+        viewModelScope.launch { themeRepository.setUiStyle(style) }
     }
 
     fun setUiPreferences(preferences: UiPreferences) {

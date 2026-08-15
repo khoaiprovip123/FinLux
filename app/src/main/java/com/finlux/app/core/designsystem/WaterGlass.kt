@@ -1,4 +1,4 @@
-package com.finlux.app.core.designsystem
+﻿package com.finlux.app.core.designsystem
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat

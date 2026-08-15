@@ -3,6 +3,98 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.7.6] - 2026-08-15
+
+### Fixed
+- **Khắc Phục Triệt Để Lỗi Lộ Icon Thùng Rác Xuyên Thấu Thẻ Ví (Zero Ghosting Swipe-to-Delete):**
+  - **Triệt tiêu hoàn toàn background khi chưa vuốt:** `backgroundContent` của `SwipeToDismissBox` được cấu hình render động, chỉ vẽ nền đỏ và icon thùng rác khi người dùng thực sự bắt đầu thao tác vuốt (`dismissDirection == EndToStart`).
+  - **Hiệu ứng mờ dần mượt mà (Dynamic Alpha & Scale):** Khi vuốt thẻ, nền đỏ và icon thùng rác xuất hiện với độ mờ tăng dần theo quãng đường vuốt kết hợp phóng to nhẹ (`graphicsLayer`), mang lại cảm giác phản hồi xúc giác chân thực.
+  - Khi thẻ ở vị trí bình thường (`Settled`), background hoàn toàn rỗng/trong suốt, đảm bảo 100% không bao giờ bị nhìn xuyên thấu qua lớp kính Liquid Glass làm che khuất số tiền và tỷ lệ %.
+  - Đồng bộ trên cả `ModernWalletsScreen` và `ClassicWalletsScreen`.
+
+---
+
+## [1.7.5] - 2026-08-15
+
+### Added & Improved
+- **Khôi Phục & Nâng Cấp Vuốt Trái Xóa Ví An Toàn (Safe Swipe-to-Delete with Confirmation):**
+  - Khôi phục cử chỉ vuốt thẻ ví từ Phải sang Trái (`SwipeToDismissBox`) với nền màu đỏ mềm mại bo cong 20dp chứa icon thùng rác `DeleteOutline`.
+  - **Cơ chế hoàn trả & xác nhận an toàn:** Khi vuốt qua ngưỡng, thẻ ví tự động trượt êm ái về vị trí cũ và hiển thị Dialog xác nhận: *"Bạn có chắc chắn muốn xóa ví [Tên ví]? Tất cả giao dịch thuộc ví này sẽ bị ảnh hưởng"*. Chỉ xóa khi người dùng chọn [Xóa vĩnh viễn].
+  - **Khóa cử chỉ bảo vệ Ví mặc định & Ví duy nhất:** Tự động vô hiệu hóa hoàn toàn cử chỉ vuốt (`enableDismissFromEndToStart = false`) đối với ví đang là mặc định hoặc ví duy nhất còn lại.
+  - Thẻ ví ở trạng thái bình thường giữ nguyên bố cục sạch đẹp, không có icon rác trần gây dính cục.
+  - Đồng bộ 100% trên cả `ModernWalletsScreen` và `ClassicWalletsScreen`.
+
+---
+
+## [1.7.4] - 2026-08-15
+
+### Fixed & Improved
+- **Tinh Chỉnh Bố Cục Thẻ Ví & UX Xóa Ví An Toàn (Refined Wallet Card Layout & Safety UX):**
+  - **Bỏ hẳn nút xóa trần trên thẻ ví:** Loại bỏ `SwipeToDismissBox` và icon thùng rác dính sát số tiền, tái cấu trúc cột bên phải thẻ ví thành hiển thị Số tiền in đậm to rõ và Tỷ lệ % ngay bên dưới một cách cân đối, sang trọng.
+  - **Chi tiết & Chỉnh sửa ví:** Khi bấm vào thẻ ví, mở `GlassBottomSheet` trực quan cho phép chỉnh sửa tên ví, số dư, loại ví, màu thẻ và nút gạt Switch "Đặt làm ví mặc định".
+  - **Chống xóa nhầm & Bảo vệ ví mặc định:**
+    * Nút [Xóa ví này] chỉ xuất hiện ở đáy BottomSheet chi tiết ví khi chỉnh sửa kèm Dialog xác nhận: "Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng".
+    * Tự động nhận diện và khóa/ẩn nút Xóa đối với **Ví mặc định** hoặc **Ví duy nhất còn lại**, kèm cảnh báo: "Không thể xóa ví mặc định. Vui lòng đặt ví khác làm mặc định trước khi xóa!".
+  - **Tinh chỉnh thanh cuộn Filter Chips:** Dãy chip lọc loại ví hỗ trợ `contentPadding = PaddingValues(horizontal = 16.dp)`, vuốt tràn lề mượt mà không dính mép màn hình.
+  - Đồng bộ chuẩn 100% trên cả 2 phong cách giao diện `ModernWalletsScreen` và `ClassicWalletsScreen`.
+
+---
+
+## [1.7.3] - 2026-08-15
+
+### Fixed & Redesigned
+- **Tái Thiết Kế Toàn Diện UI "Thêm ví mới" & "Chuyển tiền" (Add & Transfer Wallet UI):**
+  - Chuyển đổi dialog nổi thông thường sang `GlassBottomSheet` hiện đại, trượt lên mượt mà với scrim nền làm mờ sâu, triệt tiêu 100% hiện tượng chữ/danh sách ví phía sau bị lộ xuyên qua.
+  - Tăng độ phủ đặc `GlassDialogSurface` lên `0.98f` kết hợp viền tán sắc Chromatic Rim chống lóa và chống xuyên thấu nền.
+  - Bổ sung bộ chọn nhanh số dư dạng Chip thông minh (`+500K`, `+1M`, `+2M`, `+5M`, `+10M` và `+100K`, `+200K`...).
+  - Thiết kế bảng chọn màu ví trực quan với viền active và icon loại ví động (`CASH`, `BANK`, `EWALLET`, `CARD`, `INVESTMENT`).
+  - Hỗ trợ phím tắt chuyển tiền thông minh ngay từ `QuickAddSheet` kết nối trực tiếp vào `WalletsScreen`.
+  - Quét sạch và chuẩn hóa toàn bộ font chữ tiếng Việt UTF-8 không lỗi bảng mã.
+
+---
+
+## [1.7.2] - 2026-08-15
+
+### Added
+- **Ráp Trọn Vẹn Giao Diện Modern Luxury từ commit `6535f24`:**
+  - `ModernHomeScreen`: Bố cục Hero Balance Card phát quang đa lớp mới, các thẻ metric bo tròn 20dp, phân tích chi tiêu dạng spatial charts, và thanh điều hướng Floating Capsule Dock.
+  - `ModernBudgetScreen`: Progress cards đa lớp Callstack Liquid Glass với hiệu ứng đổ bóng phát quang.
+  - `ModernReportsScreen`: Analytics panels hiện đại với bộ chọn kỳ báo cáo dạng Capsule Pills.
+  - `ModernWalletsScreen`: Thẻ ví kính lỏng `LiquidGlassMode.CLEAR`, hỗ trợ thao tác vuốt xóa / chỉnh sửa trực quan.
+  - `ModernTransactionsScreen`: Nhóm giao dịch bo tròn với filter capsule hiện đại.
+  - Chuẩn hóa 100% tiếng Việt UTF-8 sạch và kết nối chính xác vào `com.finlux.app.core.designsystem.modern.*`.
+
+---
+
+## [1.7.1] - 2026-08-15
+
+### Fixed
+- **Cách ly hoàn toàn Design System (100% Dual-UI Isolation):**
+  - Khôi phục nguyên bản 100% các file Design System Cổ điển từ commit ổn định `280b722` (`LiquidGlass.kt`, `StyleBackdrop.kt`, `WaterGlass.kt`, `FinluxComponents.kt`, `FinluxBrand.kt`).
+  - Đóng gói toàn bộ component Modern Callstack vào thư mục riêng `core/designsystem/modern/` (`ModernLiquidGlass.kt`, `ModernStyleBackdrop.kt`, `ModernWaterGlass.kt`, `ModernFinluxComponents.kt`), loại bỏ hoàn toàn hiện tượng lóa sáng, chồng chéo gradient, và bể vỡ layout.
+  - Khôi phục 100% thanh điều hướng cổ điển chuẩn xác `ClassicMainBottomBar` (docked glass bar tiêu chuẩn từ `280b722`).
+- **Nâng cấp Giao diện Chọn Phong Cách trong Cài đặt (`SettingsScreen.kt`):**
+  - Thiết kế mục Card Cài đặt "Phong cách giao diện" có hiển thị tên phong cách hiện tại.
+  - Khi bấm vào mở `GlassBottomSheet` với 2 tùy chọn Radio trực quan:
+    * 🔘 **Liquid Glass (Cổ điển)**: "Giao diện thanh lịch, tương phản cao, ổn định".
+    * 🔘 **Modern Luxury (Hiện đại)**: "Giao diện kính lỏng Callstack, bo tròn, phong cách mới".
+  - Sửa lỗi encoding toàn bộ các chuỗi tiếng Việt trên các màn hình `modern/`.
+
+---
+
+## [1.7.0] - 2026-08-15
+
+### Added
+- **Kiến trúc Đa Phong Cách Giao Diện (Dual-UI Style Architecture):**
+  - Giữ trọn vẹn phong cách **Liquid Glass Classic** (v1.5.9) ổn định và tích hợp phong cách mới **Modern Luxury** (Callstack Liquid Glass chuẩn iOS 26).
+  - Bổ sung `enum class AppUiStyle { CLASSIC_LIQUID, MODERN_LUXURY }` trong tầng Domain Model và lưu trữ trong `DataStoreThemePreferenceRepository`.
+  - Cung cấp `LocalAppUiStyle` CompositionLocal xuyên suốt toàn bộ cây Composable thông qua `FinluxTheme`.
+  - Tách bạch cấu trúc màn hình và components theo cơ chế Dispatcher: `classic/` (ClassicHomeScreen, ClassicBudgetScreen, ClassicReportsScreen, ClassicWalletsScreen, ClassicTransactionsScreen, ClassicMainBottomBar) và `modern/` (ModernHomeScreen, ModernBudgetScreen, ModernReportsScreen, ModernWalletsScreen, ModernTransactionsScreen, ModernMainBottomBar).
+  - Tích hợp mục chọn **[🎨 Phong cách giao diện]** trong màn hình Cài đặt (`SettingsScreen.kt`) cho phép người dùng chuyển đổi mượt mà và lưu lại tùy chọn ngay tức thì.
+  - Bổ sung bộ kiểm thử đơn vị `RootViewModelTest` đạt 100% test coverage cho luồng chuyển đổi UI Style.
+
+---
+
 ## [1.5.9] - 2026-08-14
 
 ### Changed
