@@ -3,6 +3,20 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.7.7] - 2026-08-15
+
+### Fixed & Improved
+- **Đồng Bộ Nền & Tương Phản Cho Màn Hình Hồ Sơ & Cài Đặt (SettingsScreen Theme & Contrast Overhaul):**
+  - **Loại bỏ hardcode nền tối:** Bọc toàn bộ `SettingsScreen` với `FinluxStyleBackdrop` / `ModernStyleBackdrop` tự động thích ứng chuẩn xác với UI Style (Classic / Modern) và Theme (Light / Dark mode).
+  - **Tối ưu độ tương phản TopBar & Menu:** Tiêu đề "Hồ sơ & Cài đặt", icon Back và toàn bộ nhãn menu chuyển sang dùng `MaterialTheme.colorScheme.onSurface`, sắc nét và rõ ràng 100% trên nền sáng.
+  - **Tái thiết kế Thẻ Profile Hero & Chống Cụt Tên Người Dùng:**
+    * Khung hiển thị tên hỗ trợ co giãn linh hoạt và xuống dòng tối đa 2 dòng (`maxLines = 2`), không bao giờ bị cắt ngắn hoặc cụt chữ.
+    * Thẻ Hero Profile sử dụng dải gradient xanh tươi sáng với hiệu ứng viền kính khúc xạ sang trọng.
+    * Khung hiển thị "Tổng tài sản" chuyển sang lớp kính mờ Liquid Glass trong suốt (`Color.White.copy(alpha = 0.16f)`), loại bỏ hoàn toàn hộp nền tím tối lệch tông và icon logo chìm thừa.
+  - **Tối ưu các nút phím tắt danh mục (ProfileFeatureTiles):** Bổ sung viền tròn icon `accent.copy(alpha = 0.16f)` và màu chữ tương phản cao đồng nhất với `HomeScreen` và `WalletsScreen`.
+
+---
+
 ## [1.7.6] - 2026-08-15
 
 ### Fixed

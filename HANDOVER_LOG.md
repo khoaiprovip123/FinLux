@@ -1,8 +1,39 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.7.6 (versionCode 82) - Release
+- **Phiên bản hiện tại:** v1.7.7 (versionCode 92) - Release
 - **Trạng thái Build:** ✅ Đã hoàn tất và kiểm thử thành công 100% (39/39 unit tests pass).
+
+---
+
+## [DONE] Task v1.7.7: Fix SettingsScreen Theme Inconsistency & Contrast
+
+**Ngày:** 2026-08-15
+
+### Mục tiêu
+1. **Đồng bộ Màu Nền & Design System cho SettingsScreen:**
+   - Loại bỏ các màu tím tối/dark mode hardcode trong `SettingsScreen.kt`.
+   - Sử dụng `FinluxStyleBackdrop` / `ModernStyleBackdrop` tự động thích ứng với UI Style (Classic vs Modern) và Theme (Light / Dark mode).
+2. **Khắc Phục Tương Phản TopBar & Menu Settings:**
+   - Tiêu đề "Hồ sơ & Cài đặt", icon Back, các nhãn menu: Dùng `MaterialTheme.colorScheme.onSurface` / `onBackground` hiển thị sắc nét trên cả nền Sáng và Tối.
+3. **Tối Ưu Thẻ Profile Hero & Tên User:**
+   - Cho phép co giãn hoặc hiển thị tên người dùng đầy đủ không bị cắt cụt (`maxLines = 2`).
+   - Thẻ Profile Hero và các shortcut (Ví, Ngân sách, Danh mục, Nhắc nhở) đồng bộ phong cách Liquid Glass với `HomeScreen` và `WalletsScreen`.
+4. **SOP Compliance:**
+   - Chạy `gradlew testDebugUnitTest` đảm bảo 100% PASS (39/39 tests).
+   - Tăng `versionCode` lên 92, bump `versionName v1.7.7`.
+   - Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md` sang `[DONE]`.
+   - Chạy `build_and_install.ps1` nạp APK lên điện thoại.
+
+### Kết quả & Danh sách file đã chỉnh sửa
+- **Kết quả Unit Tests:** 39/39 tests PASS 100% (`.\gradlew.bat testDebugUnitTest` hoàn tất trong 16s).
+- **Danh sách file thay đổi:**
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`: Bọc backdrop tự động theo UI Style, nâng cấp ProfileHero và ProfileFeatureTiles đồng bộ tương phản Liquid Glass.
+  - `app/build.gradle.kts`: Bump `versionCode = 92`, `versionName = "1.7.7"`.
+  - `CHANGELOG.md`: Thêm mục release v1.7.7.
+
+### Trạng thái
+`[DONE]`
 
 ---
 
