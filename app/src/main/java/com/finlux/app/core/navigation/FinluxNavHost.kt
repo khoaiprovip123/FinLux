@@ -31,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.positionChange
@@ -116,11 +115,6 @@ fun FinluxNavHost(
         Box(
             Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    translationX = swipeDrag
-                    val width = size.width.coerceAtLeast(1f)
-                    alpha = 1f - (kotlin.math.abs(swipeDrag) / width * .08f).coerceIn(0f, .08f)
-                }
                 .pointerInput(currentRoute, swipeThresholdPx) {
                     if (currentRoute !in MainSwipeRoutes) return@pointerInput
                     awaitEachGesture {
