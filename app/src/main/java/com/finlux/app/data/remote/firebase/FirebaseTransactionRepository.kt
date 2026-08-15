@@ -70,19 +70,7 @@ class FirebaseTransactionRepository(
             val budgetRef = transaction.budgetRef(firestore, uid)
             firestore.runTransaction { atomic ->
                 val walletDoc = atomic.get(walletRef)
-                val balance = if (walletDoc.exists()) {
-                    walletDoc.getLong("balance") ?: 0L
-                } else {
-                    atomic.set(walletRef, mapOf(
-                        "name" to "Tiền mặt",
-                        "type" to "cash",
-                        "balance" to 0L,
-                        "color" to "#1F6FBF",
-                        "isDefault" to (transaction.walletId == "cash"),
-                        "createdAt" to FieldValue.serverTimestamp(),
-                    ))
-                    0L
-                }
+                val balance = walletDoc.getLong("balance") ?: 0L
                 val budgetDoc = if (budgetRef != null && transaction.type == TransactionType.EXPENSE) {
                     atomic.get(budgetRef)
                 } else null

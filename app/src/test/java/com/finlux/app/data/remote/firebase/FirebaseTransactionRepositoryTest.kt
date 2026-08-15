@@ -70,6 +70,7 @@ class FirebaseTransactionRepositoryTest {
         every { transactionDocRef.id } returns "new_tx_id"
         every { walletsColl.document("wallet_1") } returns walletDocRef
         every { budgetsColl.document(any()) } returns budgetDocRef
+        every { walletSnapshot.exists() } returns true
         every { walletSnapshot.getLong("balance") } returns 1_000_000L
 
         val transactionSlot = slot<Transaction.Function<Any?>>()
