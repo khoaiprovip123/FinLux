@@ -70,10 +70,13 @@ class FirebaseTransactionRepository(
             val budgetRef = transaction.budgetRef(firestore, uid)
             firestore.runTransaction { atomic ->
                 val balance = atomic.get(walletRef).getLong("balance") ?: error("Không tìm thấy ví")
+                val budgetDoc = if (budgetRef != null && transaction.type == TransactionType.EXPENSE) {
+                    atomic.get(budgetRef)
+                } else null
                 atomic.set(transactionRef, transaction.copy(id = transactionRef.id).toFirestoreMap())
                 atomic.update(walletRef, "balance", balance + transaction.balanceDelta())
-                // BR-06: atomically update budget.spentAmount for EXPENSE transactions
-                if (budgetRef != null && transaction.type == TransactionType.EXPENSE) {
+                // BR-06: atomically update budget.spentAmount for EXPENSE transactions if budget exists
+                if (budgetDoc != null && budgetDoc.exists() && budgetRef != null) {
                     atomic.update(budgetRef, "spentAmount", FieldValue.increment(transaction.amount.value))
                 }
             }.await()
@@ -94,19 +97,30 @@ class FirebaseTransactionRepository(
             val stored = atomic.get(transactionRef).toFinanceTransaction()
                 ?: error("Không tìm thấy giao dịch")
             val oldBalance = atomic.get(oldWalletRef).getLong("balance") ?: error("Không tìm thấy ví cũ")
+            val newBalance = if (oldWalletRef.path != newWalletRef.path) {
+                atomic.get(newWalletRef).getLong("balance") ?: error("Không tìm thấy ví mới")
+            } else null
+
+            val oldBudgetDoc = if (oldBudgetRef != null && original.type == TransactionType.EXPENSE) {
+                atomic.get(oldBudgetRef)
+            } else null
+            val newBudgetDoc = if (newBudgetRef != null && updated.type == TransactionType.EXPENSE) {
+                if (oldBudgetRef?.path == newBudgetRef.path) oldBudgetDoc
+                else atomic.get(newBudgetRef)
+            } else null
+
             if (oldWalletRef.path == newWalletRef.path) {
                 atomic.update(oldWalletRef, "balance", oldBalance - stored.balanceDelta() + updated.balanceDelta())
             } else {
-                val newBalance = atomic.get(newWalletRef).getLong("balance") ?: error("Không tìm thấy ví mới")
                 atomic.update(oldWalletRef, "balance", oldBalance - stored.balanceDelta())
-                atomic.update(newWalletRef, "balance", newBalance + updated.balanceDelta())
+                atomic.update(newWalletRef, "balance", (newBalance ?: 0L) + updated.balanceDelta())
             }
             atomic.set(transactionRef, updated.copy(id = original.id, createdAt = stored.createdAt).toFirestoreMap())
-            // BR-06: reverse old budget spent, apply new budget spent
-            if (oldBudgetRef != null && original.type == TransactionType.EXPENSE) {
+            // BR-06: reverse old budget spent, apply new budget spent if budget exists
+            if (oldBudgetDoc != null && oldBudgetDoc.exists() && oldBudgetRef != null) {
                 atomic.update(oldBudgetRef, "spentAmount", FieldValue.increment(-original.amount.value))
             }
-            if (newBudgetRef != null && updated.type == TransactionType.EXPENSE) {
+            if (newBudgetDoc != null && newBudgetDoc.exists() && newBudgetRef != null) {
                 atomic.update(newBudgetRef, "spentAmount", FieldValue.increment(updated.amount.value))
             }
         }.await()
@@ -124,10 +138,14 @@ class FirebaseTransactionRepository(
                 ?: error("Không tìm thấy giao dịch")
             val walletRef = firestore.userWallets(uid).document(stored.walletId)
             val balance = atomic.get(walletRef).getLong("balance") ?: error("Không tìm thấy ví")
+            val budgetDoc = if (budgetRef != null && stored.type == TransactionType.EXPENSE) {
+                atomic.get(budgetRef)
+            } else null
+
             atomic.delete(transactionRef)
             atomic.update(walletRef, "balance", balance - stored.balanceDelta())
-            // BR-06: reverse spentAmount when deleting an EXPENSE transaction
-            if (budgetRef != null && stored.type == TransactionType.EXPENSE) {
+            // BR-06: reverse spentAmount when deleting an EXPENSE transaction if budget exists
+            if (budgetDoc != null && budgetDoc.exists() && budgetRef != null) {
                 atomic.update(budgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
             }
         }.await()
