@@ -1,5 +1,27 @@
 # HANDOVER LOG - FINLUX APP
 
+## [DONE] Task: Fix Navigation Swipe Stutter, Prevent Home Reload & Safe Budget Transaction Handling (v1.6.7 - Code 86)
+
+**Ngày hoàn thành:** 2026-08-15
+
+### Mục tiêu
+- Khắc phục triệt để lỗi crash Firestore atomic update `NOT_FOUND` khi ghi nhận giao dịch vào danh mục không có sẵn ngân sách tháng.
+- Tinh chỉnh `FinluxNavHost.kt`: dọn dẹp các khai báo trùng lặp, tối ưu nhận diện cử chỉ vuốt ngang chuyển tab (Trang chủ ↔ Ví ↔ Báo cáo ↔ Hồ sơ) không giật khựng với cuộn dọc.
+- Ngăn chặn việc tải lại / render lại khi người dùng bấm vào tab Home đang mở hoặc chuyển qua lại giữa các tab (`saveState = true`, `restoreState = true`, `if (route != currentRoute)`).
+
+### Scope và file thực tế chỉnh sửa
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/build.gradle.kts`
+- `CHANGELOG.md`
+- `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- `gradlew testDebugUnitTest`: 100% PASS (BUILD SUCCESSFUL).
+- Phiên bản: `v1.6.7` - versionCode `86`.
+
+---
+
 ## [DONE] Task: Audit & Complete App-Wide Callstack Liquid Glass Migration
 
 **Ngày bắt đầu:** 2026-08-14

@@ -84,9 +84,7 @@ fun FinluxNavHost(
     var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val swipeTranslation = remember { Animatable(0f) }
     var swipeDrag by remember { mutableFloatStateOf(0f) }
-    val swipeAnimationScope = rememberCoroutineScope()
     val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
 
     val destination = destinationFlow?.collectAsState()?.value
@@ -106,10 +104,12 @@ fun FinluxNavHost(
     }
 
     val navigateMain: (String) -> Unit = { route ->
-        navController.navigate(route) {
-            launchSingleTop = true
-            restoreState = true
-            popUpTo(Route.Home.value) { saveState = true }
+        if (route != currentRoute) {
+            navController.navigate(route) {
+                popUpTo(Route.Home.value) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
         }
     }
     Box(Modifier.fillMaxSize()) {
@@ -117,9 +117,9 @@ fun FinluxNavHost(
             Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    translationX = swipeDrag + swipeTranslation.value
+                    translationX = swipeDrag
                     val width = size.width.coerceAtLeast(1f)
-                    alpha = 1f - (kotlin.math.abs(swipeDrag + swipeTranslation.value) / width * .08f).coerceIn(0f, .08f)
+                    alpha = 1f - (kotlin.math.abs(swipeDrag) / width * .08f).coerceIn(0f, .08f)
                 }
                 .pointerInput(currentRoute, swipeThresholdPx) {
                     if (currentRoute !in MainSwipeRoutes) return@pointerInput
@@ -129,23 +129,31 @@ fun FinluxNavHost(
                         var horizontalTravel = 0f
                         var verticalTravel = 0f
                         var trackingHorizontal = false
+                        var trackingVertical = false
                         var pressed = true
 
                         while (pressed) {
-                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            val event = awaitPointerEvent(PointerEventPass.Main)
                             val change = event.changes.firstOrNull { it.id == down.id } ?: break
                             val delta = change.positionChange()
                             horizontalTravel += delta.x
                             verticalTravel += delta.y
-                            if (!trackingHorizontal && kotlin.math.abs(horizontalTravel) > 12f) {
-                                trackingHorizontal = kotlin.math.abs(horizontalTravel) > kotlin.math.abs(verticalTravel) * 1.15f
+                            val absH = kotlin.math.abs(horizontalTravel)
+                            val absV = kotlin.math.abs(verticalTravel)
+
+                            if (!trackingHorizontal && !trackingVertical) {
+                                if (absV > 20f && absV > absH) {
+                                    trackingVertical = true
+                                } else if (absH > 28f && absH > absV * 1.5f) {
+                                    trackingHorizontal = true
+                                }
                             }
                             if (trackingHorizontal) {
                                 change.consume()
                                 val currentIndex = MainSwipeRoutes.indexOf(currentRoute)
                                 val hitsBoundary = (currentIndex == 0 && horizontalTravel > 0f) ||
                                     (currentIndex == MainSwipeRoutes.lastIndex && horizontalTravel < 0f)
-                                swipeDrag = horizontalTravel * if (hitsBoundary) .16f else .34f
+                                swipeDrag = horizontalTravel * if (hitsBoundary) .15f else .35f
                             }
                             pressed = change.pressed
                         }
@@ -157,24 +165,9 @@ fun FinluxNavHost(
                             threshold = swipeThresholdPx,
                             elapsedMillis = System.currentTimeMillis() - startedAt,
                         )
-                        val releasedAt = swipeDrag
                         swipeDrag = 0f
-                        swipeAnimationScope.launch {
-                            swipeTranslation.snapTo(releasedAt)
-                            if (target != null) {
-                                if (uiPreferences.animationsEnabled) {
-                                    swipeTranslation.animateTo(
-                                        targetValue = if (horizontalTravel < 0f) -46f else 46f,
-                                        animationSpec = spring(dampingRatio = .82f, stiffness = 520f),
-                                    )
-                                }
-                                navigateMain(target)
-                            }
-                            if (uiPreferences.animationsEnabled) {
-                                swipeTranslation.animateTo(0f, spring(dampingRatio = .78f, stiffness = 620f))
-                            } else {
-                                swipeTranslation.snapTo(0f)
-                            }
+                        if (target != null && target != currentRoute) {
+                            navigateMain(target)
                         }
                     }
                 },
@@ -279,67 +272,67 @@ fun FinluxNavHost(
                     },
                 )
             }
-            composable(Route.Notifications.value) { 
+            composable(Route.Notifications.value) {
                 NotificationsScreen(
                     onBack = navController::popBackStack,
                     payNotificationIdFlow = payNotificationIdFlow,
-                ) 
+                )
             }
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
         }
-        SwipeEdgeGlow(swipeDrag + swipeTranslation.value)
-        }
-        if (showAddTransaction) {
-            AddTransactionSheet(
-                initialType = initialTransactionType,
-                initialReceiptUri = pendingReceiptUri,
-                onDismiss = {
-                    showAddTransaction = false
-                    initialTransactionType = null
-                    pendingReceiptUri = null
-                },
-            )
-        }
-        if (showQuickAdd) {
-            QuickAddSheet(
-                onDismiss = { showQuickAdd = false },
-                onIncome = {
-                    showQuickAdd = false
-                    initialTransactionType = TransactionType.INCOME
-                    showAddTransaction = true
-                },
-                onExpense = {
-                    showQuickAdd = false
-                    initialTransactionType = TransactionType.EXPENSE
-                    showAddTransaction = true
-                },
-                onTransfer = {
-                    showQuickAdd = false
-                    walletTransferRequest += 1
-                    navigateMain(Route.Wallets.value)
-                },
-                onReceipt = {
-                    showQuickAdd = false
-                    showReceiptCapture = true
-                },
-                onGoal = {
-                    showQuickAdd = false
-                    navController.navigate(Route.Goals.value)
-                },
-            )
-        }
-        if (showReceiptCapture) {
-            ReceiptCaptureScreen(
-                onDismiss = { showReceiptCapture = false },
-                onCaptured = { uri ->
-                    showReceiptCapture = false
-                    pendingReceiptUri = uri
-                    initialTransactionType = TransactionType.EXPENSE
-                    showAddTransaction = true
-                },
-            )
-        }
+        SwipeEdgeGlow(swipeDrag)
+    }
+    if (showAddTransaction) {
+        AddTransactionSheet(
+            initialType = initialTransactionType,
+            initialReceiptUri = pendingReceiptUri,
+            onDismiss = {
+                showAddTransaction = false
+                initialTransactionType = null
+                pendingReceiptUri = null
+            },
+        )
+    }
+    if (showQuickAdd) {
+        QuickAddSheet(
+            onDismiss = { showQuickAdd = false },
+            onIncome = {
+                showQuickAdd = false
+                initialTransactionType = TransactionType.INCOME
+                showAddTransaction = true
+            },
+            onExpense = {
+                showQuickAdd = false
+                initialTransactionType = TransactionType.EXPENSE
+                showAddTransaction = true
+            },
+            onTransfer = {
+                showQuickAdd = false
+                walletTransferRequest += 1
+                navigateMain(Route.Wallets.value)
+            },
+            onReceipt = {
+                showQuickAdd = false
+                showReceiptCapture = true
+            },
+            onGoal = {
+                showQuickAdd = false
+                navController.navigate(Route.Goals.value)
+            },
+        )
+    }
+    if (showReceiptCapture) {
+        ReceiptCaptureScreen(
+            onDismiss = { showReceiptCapture = false },
+            onCaptured = { uri ->
+                showReceiptCapture = false
+                pendingReceiptUri = uri
+                initialTransactionType = TransactionType.EXPENSE
+                showAddTransaction = true
+            },
+        )
+    }
     }
 }
 
@@ -360,12 +353,6 @@ private fun BoxScope.SwipeEdgeGlow(offset: Float) {
             .background(Brush.horizontalGradient(colors)),
     )
 }
-
-private data class SwipeGesture(
-    val horizontalTravel: Float,
-    val verticalTravel: Float,
-    val elapsedMillis: Long,
-)
 
 private val MainSwipeRoutes = listOf(
     Route.Home.value,

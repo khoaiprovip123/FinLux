@@ -3,6 +3,20 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.6.7] - 2026-08-15
+
+### Added
+- **Xử lý Atomic Transaction chống lỗi thiếu Budget document (`FirebaseTransactionRepository.kt`):** Thêm kiểm tra `budgetDoc.exists()` trước khi cập nhật `spentAmount` trong transaction Firestore cho mọi thao tác Thêm, Sửa, Xóa giao dịch.
+
+### Changed
+- **Tối ưu cử chỉ vuốt chuyển tab mượt mà (`FinluxNavHost.kt`):** Dọn dẹp các đoạn code navigation trùng lặp, tối ưu thuật toán phân định hướng vuốt ngang vs cuộn dọc (tỷ lệ 1.5x) tránh xung đột giật khựng khi cuộn danh sách.
+- **Ngăn chặn reload trạng thái khi bấm Home (`FinluxNavHost.kt`):** Bổ sung kiểm tra `route != currentRoute` và sử dụng `saveState = true` / `restoreState = true` để giữ nguyên trạng thái UI khi người dùng chuyển đổi qua lại giữa các tab chính.
+
+### Fixed
+- **Lỗi `NOT_FOUND: No document to update` khi ghi giao dịch không có ngân sách:** Khắc phục triệt để lỗi crash/throw exception khi thêm chi tiêu vào danh mục chưa khởi tạo hạn mức ngân sách tháng.
+
+---
+
 ## [1.6.6] - 2026-08-14
 
 ### Added
