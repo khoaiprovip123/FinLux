@@ -3,105 +3,109 @@
 Tất cả những thay đổi quan trọng của dự án FinLux sẽ được ghi lại tại đây.
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/vi/1.0.0/) và tuân thủ [Semantic Versioning](https://semver.org/).
 
+## [1.7.6] - 2026-08-15
+
+### Fixed
+- **Khắc Phục Triệt Để Lỗi Lộ Icon Thùng Rác Xuyên Thấu Thẻ Ví (Zero Ghosting Swipe-to-Delete):**
+  - **Triệt tiêu hoàn toàn background khi chưa vuốt:** `backgroundContent` của `SwipeToDismissBox` được cấu hình render động, chỉ vẽ nền đỏ và icon thùng rác khi người dùng thực sự bắt đầu thao tác vuốt (`dismissDirection == EndToStart`).
+  - **Hiệu ứng mờ dần mượt mà (Dynamic Alpha & Scale):** Khi vuốt thẻ, nền đỏ và icon thùng rác xuất hiện với độ mờ tăng dần theo quãng đường vuốt kết hợp phóng to nhẹ (`graphicsLayer`), mang lại cảm giác phản hồi xúc giác chân thực.
+  - Khi thẻ ở vị trí bình thường (`Settled`), background hoàn toàn rỗng/trong suốt, đảm bảo 100% không bao giờ bị nhìn xuyên thấu qua lớp kính Liquid Glass làm che khuất số tiền và tỷ lệ %.
+  - Đồng bộ trên cả `ModernWalletsScreen` và `ClassicWalletsScreen`.
+
+---
+
+## [1.7.5] - 2026-08-15
+
+### Added & Improved
+- **Khôi Phục & Nâng Cấp Vuốt Trái Xóa Ví An Toàn (Safe Swipe-to-Delete with Confirmation):**
+  - Khôi phục cử chỉ vuốt thẻ ví từ Phải sang Trái (`SwipeToDismissBox`) với nền màu đỏ mềm mại bo cong 20dp chứa icon thùng rác `DeleteOutline`.
+  - **Cơ chế hoàn trả & xác nhận an toàn:** Khi vuốt qua ngưỡng, thẻ ví tự động trượt êm ái về vị trí cũ và hiển thị Dialog xác nhận: *"Bạn có chắc chắn muốn xóa ví [Tên ví]? Tất cả giao dịch thuộc ví này sẽ bị ảnh hưởng"*. Chỉ xóa khi người dùng chọn [Xóa vĩnh viễn].
+  - **Khóa cử chỉ bảo vệ Ví mặc định & Ví duy nhất:** Tự động vô hiệu hóa hoàn toàn cử chỉ vuốt (`enableDismissFromEndToStart = false`) đối với ví đang là mặc định hoặc ví duy nhất còn lại.
+  - Thẻ ví ở trạng thái bình thường giữ nguyên bố cục sạch đẹp, không có icon rác trần gây dính cục.
+  - Đồng bộ 100% trên cả `ModernWalletsScreen` và `ClassicWalletsScreen`.
+
+---
+
+## [1.7.4] - 2026-08-15
+
+### Fixed & Improved
+- **Tinh Chỉnh Bố Cục Thẻ Ví & UX Xóa Ví An Toàn (Refined Wallet Card Layout & Safety UX):**
+  - **Bỏ hẳn nút xóa trần trên thẻ ví:** Loại bỏ `SwipeToDismissBox` và icon thùng rác dính sát số tiền, tái cấu trúc cột bên phải thẻ ví thành hiển thị Số tiền in đậm to rõ và Tỷ lệ % ngay bên dưới một cách cân đối, sang trọng.
+  - **Chi tiết & Chỉnh sửa ví:** Khi bấm vào thẻ ví, mở `GlassBottomSheet` trực quan cho phép chỉnh sửa tên ví, số dư, loại ví, màu thẻ và nút gạt Switch "Đặt làm ví mặc định".
+  - **Chống xóa nhầm & Bảo vệ ví mặc định:**
+    * Nút [Xóa ví này] chỉ xuất hiện ở đáy BottomSheet chi tiết ví khi chỉnh sửa kèm Dialog xác nhận: "Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng".
+    * Tự động nhận diện và khóa/ẩn nút Xóa đối với **Ví mặc định** hoặc **Ví duy nhất còn lại**, kèm cảnh báo: "Không thể xóa ví mặc định. Vui lòng đặt ví khác làm mặc định trước khi xóa!".
+  - **Tinh chỉnh thanh cuộn Filter Chips:** Dãy chip lọc loại ví hỗ trợ `contentPadding = PaddingValues(horizontal = 16.dp)`, vuốt tràn lề mượt mà không dính mép màn hình.
+  - Đồng bộ chuẩn 100% trên cả 2 phong cách giao diện `ModernWalletsScreen` và `ClassicWalletsScreen`.
+
+---
+
+## [1.7.3] - 2026-08-15
+
+### Fixed & Redesigned
+- **Tái Thiết Kế Toàn Diện UI "Thêm ví mới" & "Chuyển tiền" (Add & Transfer Wallet UI):**
+  - Chuyển đổi dialog nổi thông thường sang `GlassBottomSheet` hiện đại, trượt lên mượt mà với scrim nền làm mờ sâu, triệt tiêu 100% hiện tượng chữ/danh sách ví phía sau bị lộ xuyên qua.
+  - Tăng độ phủ đặc `GlassDialogSurface` lên `0.98f` kết hợp viền tán sắc Chromatic Rim chống lóa và chống xuyên thấu nền.
+  - Bổ sung bộ chọn nhanh số dư dạng Chip thông minh (`+500K`, `+1M`, `+2M`, `+5M`, `+10M` và `+100K`, `+200K`...).
+  - Thiết kế bảng chọn màu ví trực quan với viền active và icon loại ví động (`CASH`, `BANK`, `EWALLET`, `CARD`, `INVESTMENT`).
+  - Hỗ trợ phím tắt chuyển tiền thông minh ngay từ `QuickAddSheet` kết nối trực tiếp vào `WalletsScreen`.
+  - Quét sạch và chuẩn hóa toàn bộ font chữ tiếng Việt UTF-8 không lỗi bảng mã.
+
+---
+
+## [1.7.2] - 2026-08-15
+
+### Added
+- **Ráp Trọn Vẹn Giao Diện Modern Luxury từ commit `6535f24`:**
+  - `ModernHomeScreen`: Bố cục Hero Balance Card phát quang đa lớp mới, các thẻ metric bo tròn 20dp, phân tích chi tiêu dạng spatial charts, và thanh điều hướng Floating Capsule Dock.
+  - `ModernBudgetScreen`: Progress cards đa lớp Callstack Liquid Glass với hiệu ứng đổ bóng phát quang.
+  - `ModernReportsScreen`: Analytics panels hiện đại với bộ chọn kỳ báo cáo dạng Capsule Pills.
+  - `ModernWalletsScreen`: Thẻ ví kính lỏng `LiquidGlassMode.CLEAR`, hỗ trợ thao tác vuốt xóa / chỉnh sửa trực quan.
+  - `ModernTransactionsScreen`: Nhóm giao dịch bo tròn với filter capsule hiện đại.
+  - Chuẩn hóa 100% tiếng Việt UTF-8 sạch và kết nối chính xác vào `com.finlux.app.core.designsystem.modern.*`.
+
+---
+
+## [1.7.1] - 2026-08-15
+
+### Fixed
+- **Cách ly hoàn toàn Design System (100% Dual-UI Isolation):**
+  - Khôi phục nguyên bản 100% các file Design System Cổ điển từ commit ổn định `280b722` (`LiquidGlass.kt`, `StyleBackdrop.kt`, `WaterGlass.kt`, `FinluxComponents.kt`, `FinluxBrand.kt`).
+  - Đóng gói toàn bộ component Modern Callstack vào thư mục riêng `core/designsystem/modern/` (`ModernLiquidGlass.kt`, `ModernStyleBackdrop.kt`, `ModernWaterGlass.kt`, `ModernFinluxComponents.kt`), loại bỏ hoàn toàn hiện tượng lóa sáng, chồng chéo gradient, và bể vỡ layout.
+  - Khôi phục 100% thanh điều hướng cổ điển chuẩn xác `ClassicMainBottomBar` (docked glass bar tiêu chuẩn từ `280b722`).
+- **Nâng cấp Giao diện Chọn Phong Cách trong Cài đặt (`SettingsScreen.kt`):**
+  - Thiết kế mục Card Cài đặt "Phong cách giao diện" có hiển thị tên phong cách hiện tại.
+  - Khi bấm vào mở `GlassBottomSheet` với 2 tùy chọn Radio trực quan:
+    * 🔘 **Liquid Glass (Cổ điển)**: "Giao diện thanh lịch, tương phản cao, ổn định".
+    * 🔘 **Modern Luxury (Hiện đại)**: "Giao diện kính lỏng Callstack, bo tròn, phong cách mới".
+  - Sửa lỗi encoding toàn bộ các chuỗi tiếng Việt trên các màn hình `modern/`.
+
+---
+
+## [1.7.0] - 2026-08-15
+
+### Added
+- **Kiến trúc Đa Phong Cách Giao Diện (Dual-UI Style Architecture):**
+  - Giữ trọn vẹn phong cách **Liquid Glass Classic** (v1.5.9) ổn định và tích hợp phong cách mới **Modern Luxury** (Callstack Liquid Glass chuẩn iOS 26).
+  - Bổ sung `enum class AppUiStyle { CLASSIC_LIQUID, MODERN_LUXURY }` trong tầng Domain Model và lưu trữ trong `DataStoreThemePreferenceRepository`.
+  - Cung cấp `LocalAppUiStyle` CompositionLocal xuyên suốt toàn bộ cây Composable thông qua `FinluxTheme`.
+  - Tách bạch cấu trúc màn hình và components theo cơ chế Dispatcher: `classic/` (ClassicHomeScreen, ClassicBudgetScreen, ClassicReportsScreen, ClassicWalletsScreen, ClassicTransactionsScreen, ClassicMainBottomBar) và `modern/` (ModernHomeScreen, ModernBudgetScreen, ModernReportsScreen, ModernWalletsScreen, ModernTransactionsScreen, ModernMainBottomBar).
+  - Tích hợp mục chọn **[🎨 Phong cách giao diện]** trong màn hình Cài đặt (`SettingsScreen.kt`) cho phép người dùng chuyển đổi mượt mà và lưu lại tùy chọn ngay tức thì.
+  - Bổ sung bộ kiểm thử đơn vị `RootViewModelTest` đạt 100% test coverage cho luồng chuyển đổi UI Style.
+
+---
+
 ## [1.6.7] - 2026-08-15
 
 ### Added
 - **Xử lý Atomic Transaction chống lỗi thiếu Budget document (`FirebaseTransactionRepository.kt`):** Thêm kiểm tra `budgetDoc.exists()` trước khi cập nhật `spentAmount` trong transaction Firestore cho mọi thao tác Thêm, Sửa, Xóa giao dịch.
 
 ### Changed
-- **Tối ưu cử chỉ vuốt chuyển tab mượt mà (`FinluxNavHost.kt`):** Dọn dẹp các đoạn code navigation trùng lặp, tối ưu thuật toán phân định hướng vuốt ngang vs cuộn dọc (tỷ lệ 1.5x) tránh xung đột giật khựng khi cuộn danh sách.
+- **Tối ưu cử chỉ vuốt chuyển tab mượt mà (`FinluxNavHost.kt`):** Dọn dẹp các đoạn code navigation trùng lặp, tối ưu thuật toán phân định hướng vuốt ngang vs cuộn dọc tránh xung đột giật khựng khi cuộn danh sách.
 - **Ngăn chặn reload trạng thái khi bấm Home (`FinluxNavHost.kt`):** Bổ sung kiểm tra `route != currentRoute` và sử dụng `saveState = true` / `restoreState = true` để giữ nguyên trạng thái UI khi người dùng chuyển đổi qua lại giữa các tab chính.
 
 ### Fixed
-- **Lỗi `NOT_FOUND: No document to update` khi ghi giao dịch không có ngân sách:** Khắc phục triệt để lỗi crash/throw exception khi thêm chi tiêu vào danh mục chưa khởi tạo hạn mức ngân sách tháng.
-
----
-
-## [1.6.6] - 2026-08-14
-
-### Added
-- **Callstack Liquid Glass System Primitive Suite (`LiquidGlass.kt`):** Bổ sung `LiquidGlassMode` (`CLEAR`, `REGULAR`, `NONE`), viền tán sắc quang học Chromatic Prism Rim (`1.2.dp`), phản hồi xúc giác đàn hồi Spring Physics (`scale = 0.975f`), và thành phần viên nang nước `LiquidGlassCapsule` cho toàn bộ bộ lọc và nhãn trạng thái.
-- **Tái thiết kế toàn bộ màn hình theo chuẩn Liquid Glass:** Nâng cấp Auth, Dashboard, Ví, Thu nhập, Chi tiêu, Giao dịch, Danh mục, Ngân sách, Báo cáo, Thông báo, Nhắc nhở, Mục tiêu, Quét hóa đơn và Hồ sơ sang backdrop/token kính dùng chung.
-- **Vuốt điều hướng bám ngón tay:** Hỗ trợ Trang chủ ↔ Ví ↔ Báo cáo ↔ Hồ sơ với edge resistance, glow định hướng và spring settle.
-
-### Changed
-- **Theme token theo lựa chọn người dùng:** Ba phong cách Tối giản hiện đại, Glassmorphism và Gradient năng động có palette/backdrop riêng nhưng luôn tuân theo Sáng/Tối/Hệ thống trên mọi màn hình.
-- **Chrome dùng chung:** Top bar, floating dock, FAB, alert dialog và bottom sheet chuyển sang `LiquidGlassSurface`; phần aura/refraction được tách khỏi lớp chữ/icon để bảo đảm độ đọc.
-- **Hồ sơ & Cài đặt:** Đưa Giới thiệu FinLux lên đầu, giữ khu vực ảnh đại diện/tên người dùng ngay sau đó và khôi phục bộ chọn phong cách giao diện.
-- **Đăng nhập mạng xã hội:** Chuẩn hóa ba thẻ Google, Apple và Facebook cùng kích thước; Google giữ luồng Credential Manager hiện tại, Apple/Facebook để callback sẵn cho cấu hình provider sau này.
-
-### Fixed
-- **Vuốt Báo cáo sang Hồ sơ:** Gắn gesture thực tế vào `NavHost` thay cho helper chưa được sử dụng; thao tác vuốt vẫn hoạt động song song với icon điều hướng đáy.
-- **Đồng bộ phiên bản:** Đồng bộ `versionName` thành `1.6.6` với `versionCode 83` và tài liệu bàn giao.
-- **Thiết bị dùng ba phím điều hướng:** Floating dock tiếp tục dùng `navigationBarsPadding()` và scaffold bottom inset để không bị system navigation che.
-
----
-
-## [1.6.5] - 2026-08-14
-
-### Added
-- **Translucent Water-Bubble Glass Surfaces (`LiquidGlass.kt` & `WaterGlass.kt`):** Nâng cấp độ trong suốt mờ ảo kiểu bóng nước lỏng (alpha `0.40f..0.75f`), viền khúc xạ đa sắc phản chiếu ánh sáng tự nhiên và bo góc tròn trịa `24.dp`.
-- **Floating Water-Bubble Dock (`LiquidGlass.kt` & `MainBottomBar.kt`):** Tái thiết kế Bottom Navigation thành viên nang bóng nước lơ lửng bo góc `36.dp`, hiệu ứng đổ bóng chất lỏng dịu mắt và viền phản quang quang học.
-- **Thẻ Kính Tài Sản Lăng Kính Hero & Chỉ Số (`HomeScreen.kt`):** Thêm nút kính mờ ẩn/hiện số dư và cấu trúc giọt nước lỏng hài hòa.
-
-### Changed
-- **Thống nhất toàn bộ ứng dụng sang Callstack Liquid Glass (`StyleBackdrop.kt`, `FinluxTheme.kt`, `HomeScreen.kt`):** Dọn dẹp triệt để các phong cách đồ họa cũ (Modern Dark phân mảnh, Dynamic Gradient phẳng), thống nhất toàn bộ nền sang `LiquidAuraBackdrop` với các khối cầu ánh sáng chuyển động mềm mại lọt qua bề mặt kính trong suốt.
-- **Tối giản SettingsScreen (`SettingsScreen.kt`):** Loại bỏ bộ chọn giao diện cũ, tập trung trực tiếp vào các tùy chỉnh độ nổi và mật độ của vật liệu Liquid Glass.
-
-### Fixed
-- **Lỗi chữ Xóa / icon Thùng rác hiện đè lên số dư ví (`WalletsScreen.kt`):** Chỉ hiển thị lớp `backgroundContent` của `SwipeToDismissBox` khi người dùng đang thực hiện cử chỉ vuốt (`dismissDirection != Settled`), ngăn chặn hoàn toàn việc các nút thao tác nền bị lộ xuyên qua thẻ kính mờ khi đang ở trạng thái tĩnh.
-- **Loại bỏ hiệu ứng lóa sáng che khuất chữ (`LiquidGlassSurface` & `WaterGlassCard`):** Gỡ bỏ hoàn toàn các lớp vẽ Canvas chèn hạt sáng che mờ subtitle; tối ưu độ tương phản văn bản 100% sắc nét.
-- **Tối ưu Tab Navigation & FAB:** Viên nang active mềm mại `38.dp x 26.dp` và FAB (+) quả cầu thủy tinh bóng nước phát sáng.
-
----
-
-## [1.6.4] - 2026-08-14
-
-### Fixed
-- **Lỗi Mờ Nhòe Thanh Menu (`LiquidGlass.kt`):** Loại bỏ `finluxBackgroundBlur` trên container `BottomAppBar` (RenderEffect áp dụng trực tiếp lên container làm mờ cả icon, text và FAB con); thay thế bằng màu nền kính mờ `surface` sắc nét kèm viền phản quang vát cạnh và bóng đổ nổi.
-
----
-
-## [1.6.3] - 2026-08-14
-
-### Added
-- **Liquid Glass Orb FAB (`LiquidGlass.kt`):** Tái thiết kế nút Thêm (+) trung tâm thành quả cầu kính khúc xạ đa tầng (Liquid Orb) với dải gradient 3 màu (Purple -> Blue -> Cyan), đường phản quang ánh sáng trắng (specular crescent highlight) và bóng đổ phát sáng (radiant glow).
-
-### Changed
-- **Liquid Glass Bottom Navigation Bar (`GlassBottomNav`):** Cấu hình bề mặt kính mờ trong suốt (`finluxBackgroundBlur`), viền phản quang gradient vát cạnh (`top refraction rim`), bóng ambient mềm mại và góc bo 28.dp.
-- **Tối ưu Tab Navigation Items (`MainBottomBar.kt`):** Loại bỏ hoàn toàn viền squircle thô trên các tab không chọn (Ví, Báo cáo, Hồ sơ); bổ sung hiệu ứng chuyển đổi mượt mà với spring scale và gradient indicator cho tab đang chọn.
-
----
-
-## [1.6.2] - 2026-08-14
-
-### Changed
-- **Chuẩn Hóa Đăng Nhập Google Toàn Chiều Ngang (`AuthScreens.kt`):** Loại bỏ nút Apple và Facebook placeholder; nâng cấp nút đăng nhập Google thành nút độc lập chính với bề rộng tràn màn hình ("Tiếp tục với Google").
-- **Lấp Đầy Khoảng Trống Đáy Form Đăng Nhập (`AuthScreens.kt`):** Tích hợp `BoxWithConstraints` và `defaultMinSize` cho thẻ `Surface` form Auth, kéo dãn liền mạch toàn bộ phần đáy màn hình và loại bỏ khoảng hở màu nền phía dưới điều khoản sử dụng.
-
----
-
-## [1.6.1] - 2026-08-14
-
-### Added
-- **Container Batching (`GlassEffectContainer`):** Bổ sung composable gom cụm `GlassEffectContainer` theo chuẩn Liquid Glass iOS 26, tối ưu hóa quá trình quản lý render pass và phân vùng viền kính cho nhiều phần tử con liền kề.
-
-### Changed
-- **Nâng Cấp Độ Tương Phản Trợ Năng (WCAG AA Compliance):** Tinh chỉnh màu `FinluxTextSecondary` và `onSurfaceVariant` từ `#768197` sang `#475569`, đảm bảo độ tương phản chữ phụ đạt chuẩn trên nền kính mờ sáng.
-- **Tối ưu Hóa Hiệu Ứng Phản Quang Kính Nước:** Chuẩn hóa dải phản xạ ánh sáng và viền khúc xạ đa lớp trong `LiquidGlassSurface` và `WaterGlassCard`.
-
----
-
-## [1.6.0] - 2026-08-14
-
-### Added
-- **Network Security Configuration (`network_security_config.xml`):** Khởi tạo cấu hình bảo mật mạng cấm toàn bộ cleartext HTTP traffic, ép buộc kết nối an toàn qua TLS.
-
-### Changed
-- **Tắt Backup Ứng Dụng (`AndroidManifest.xml`):** Đặt `android:allowBackup="false"` nhằm ngăn chặn rò rỉ dữ liệu tài chính, session và cache qua ADB backup.
-
-### Fixed
-- **Siết Chặt Phân Quyền Firestore (`firestore.rules`):** Áp dụng nguyên tắc Least Privilege `request.auth != null && request.auth.uid == uid` cho toàn bộ document và subcollection dưới `users/{uid}`. Đảm bảo user có toàn quyền thêm/sửa/xóa dữ liệu cá nhân của mình nhưng bị cấm hoàn toàn truy cập dữ liệu người khác.
+- **Lỗi `NOT_FOUND: No document to update` khi ghi giao dịch không có ngân sách:** Khắc phục triệt để lỗi crash khi thêm chi tiêu vào danh mục chưa khởi tạo hạn mức ngân sách tháng.
 
 ---
 

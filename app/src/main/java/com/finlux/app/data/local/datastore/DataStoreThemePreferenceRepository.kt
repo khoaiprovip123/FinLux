@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.CardDensity
 import com.finlux.app.domain.model.GlassIntensity
 import com.finlux.app.domain.model.ThemePreference
@@ -20,6 +21,7 @@ import javax.inject.Singleton
 
 private val Context.finluxDataStore by preferencesDataStore(name = "finlux_preferences")
 private val ThemeKey = stringPreferencesKey("theme_preference")
+private val UiStyleKey = stringPreferencesKey("app_ui_style")
 private val GlassIntensityKey = stringPreferencesKey("glass_intensity")
 private val CardDensityKey = stringPreferencesKey("card_density")
 private val AnimationsKey = booleanPreferencesKey("animations_enabled")
@@ -37,6 +39,16 @@ class DataStoreThemePreferenceRepository @Inject constructor(
 
     override suspend fun setPreference(preference: ThemePreference) {
         context.finluxDataStore.edit { it[ThemeKey] = preference.name }
+    }
+
+    override val uiStyle: Flow<AppUiStyle> = context.finluxDataStore.data.map { preferences ->
+        preferences[UiStyleKey]
+            ?.let { stored -> AppUiStyle.entries.firstOrNull { it.name == stored } }
+            ?: AppUiStyle.CLASSIC_LIQUID
+    }
+
+    override suspend fun setUiStyle(uiStyle: AppUiStyle) {
+        context.finluxDataStore.edit { it[UiStyleKey] = uiStyle.name }
     }
 
     override val preferences: Flow<UiPreferences> = context.finluxDataStore.data.map { stored ->

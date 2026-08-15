@@ -3,35 +3,22 @@ package com.finlux.app.core.designsystem
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -41,164 +28,65 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.finlux.app.domain.model.CardDensity
+import com.finlux.app.domain.model.VisualStyle
+
+private val GlassShape = RoundedCornerShape(20.dp)
 
 /**
- * Visual Effect modes matching @callstack/liquid-glass:
- * - CLEAR: Hyper-translucent, crystal glass with high backdrop aura transmission.
- * - REGULAR: Standard frosted glass material with soft diffusion.
- * - NONE: Completely dematerialized / transparent.
- */
-enum class LiquidGlassMode {
-    CLEAR,
-    REGULAR,
-    NONE,
-}
-
-val DefaultGlassShape = RoundedCornerShape(24.dp)
-val CapsuleGlassShape = RoundedCornerShape(36.dp)
-
-/**
- * Core Liquid Glass surface implementing Callstack Liquid Glass optics in Jetpack Compose:
- * - Chromatic prism refraction rim (White -> Cyan -> Purple -> White)
- * - Multi-stop translucent liquid gradient fill
- * - Dynamic ambient & spot shadow colored by material tint
+ * Base material for every glass component in UI_SPEC section 0. The alpha and border come from
+ * theme tokens, so light/dark behavior cannot diverge between feature screens.
  */
 @Composable
 fun LiquidGlassSurface(
     modifier: Modifier = Modifier,
-    mode: LiquidGlassMode = LiquidGlassMode.CLEAR,
-    tint: Color? = null,
-    shape: Shape = DefaultGlassShape,
-    elevation: Dp = 10.dp,
+    shape: RoundedCornerShape = GlassShape,
     padding: PaddingValues? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val preferences = LocalUiPreferences.current
     val tokens = LocalGlassTokens.current
+    val preferences = LocalUiPreferences.current
     val resolvedPadding = padding ?: PaddingValues(
         if (preferences.cardDensity == CardDensity.COMPACT) 12.dp else 16.dp,
     )
-    if (mode == LiquidGlassMode.NONE) {
-        Box(modifier = modifier) {
-            Box(modifier = Modifier.padding(resolvedPadding), content = content)
-        }
-        return
-    }
-
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
-    val supportsRealtimeEffects = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-
-    val surfaceFill = when (mode) {
-        LiquidGlassMode.CLEAR -> {
-            if (tint != null) {
-                if (dark) {
-                    Brush.linearGradient(
-                        listOf(
-                            tint.copy(alpha = if (supportsRealtimeEffects) 0.42f else 0.62f),
-                            Color(0x730A1526),
-                            tint.copy(alpha = 0.18f),
-                        ),
-                    )
-                } else {
-                    Brush.linearGradient(
-                        listOf(
-                            Color.White.copy(alpha = if (supportsRealtimeEffects) 0.58f else 0.76f),
-                            tint.copy(alpha = 0.16f),
-                            Color.White.copy(alpha = if (supportsRealtimeEffects) 0.42f else 0.62f),
-                        ),
-                    )
-                }
-            } else {
-                tokens.fill
-            }
-        }
-        LiquidGlassMode.REGULAR -> {
-            if (dark) {
-                Brush.linearGradient(
-                    listOf(
-                        Color(0x951C2C4E),
-                        Color(0x75101C32),
-                        tokens.accent.copy(alpha = .24f),
-                    ),
-                )
-            } else {
-                Brush.linearGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.85f),
-                        Color.White.copy(alpha = 0.68f),
-                        tokens.accent.copy(alpha = .18f),
-                    ),
-                )
-            }
-        }
-        LiquidGlassMode.NONE -> Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
-    }
-
-    val rimBorder = BorderStroke(
-        width = 1.2.dp,
-        brush = if (tint != null) {
-            Brush.linearGradient(
-                listOf(
-                    Color.White.copy(alpha = if (dark) 0.65f else 0.95f),
-                    FinluxCyan.copy(alpha = 0.48f),
-                    tint.copy(alpha = 0.46f),
-                    Color.White.copy(alpha = if (dark) 0.15f else 0.35f),
-                ),
-            )
-        } else {
-            tokens.border
-        },
-    )
-
-    val ambientGlow = tint ?: tokens.accent
-    val shadowAmbientAlpha = if (dark) 0.35f else 0.12f
-    val shadowSpotAlpha = if (dark) 0.45f else 0.18f
-
     Box(
         modifier = modifier
-            .shadow(
-                elevation = elevation,
-                shape = shape,
-                ambientColor = ambientGlow.copy(alpha = shadowAmbientAlpha),
-                spotColor = ambientGlow.copy(alpha = shadowSpotAlpha),
-            )
+            .shadow(9.dp, shape, ambientColor = tokens.shadow, spotColor = tokens.shadow)
             .clip(shape)
-            .background(surfaceFill)
-            .border(rimBorder, shape),
+            .border(BorderStroke(1.dp, tokens.border), shape)
+            .graphicsLayer { alpha = .999f }
+            .then(Modifier),
     ) {
-        // Optical layers remain behind content: text and icons are never blurred or tinted.
-        Box(modifier = Modifier.matchParentSize().background(surfaceFill))
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            (tint ?: tokens.accent).copy(alpha = if (dark) .16f else .11f),
-                            Color.Transparent,
-                        ),
-                        center = Offset(80f, 28f),
-                        radius = 420f,
-                    ),
-                ),
+                .graphicsLayer { alpha = .999f }
+                .then(Modifier)
+                .border(0.dp, Color.Transparent, shape),
         )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(shape)
+                .then(Modifier),
+        ) {
+            androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
+                drawRect(tokens.fill)
+                if (tokens.glow.alpha > 0f) drawCircle(tokens.glow, radius = size.minDimension * .8f)
+            }
+        }
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Box(modifier = Modifier.padding(resolvedPadding), content = content)
         }
@@ -216,164 +104,34 @@ fun Modifier.finluxBackgroundBlur(radius: Dp = 18.dp): Modifier =
             ).asComposeRenderEffect()
         }
     } else {
+        // UI_SPEC requires a static translucent fallback; LiquidGlassSurface supplies it.
         this
     }
 
-/**
- * Interactive Liquid Glass Card with spring physics haptic feel.
- */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    mode: LiquidGlassMode = LiquidGlassMode.CLEAR,
-    tint: Color? = null,
-    shape: Shape = DefaultGlassShape,
-    elevation: Dp = 10.dp,
-    padding: PaddingValues? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val preferences = LocalUiPreferences.current
-    val haptics = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (pressed && preferences.animationsEnabled) 0.975f else 1f,
-        animationSpec = spring(stiffness = 650f, dampingRatio = 0.72f),
+        targetValue = if (pressed && preferences.animationsEnabled) .975f else 1f,
+        animationSpec = spring(stiffness = 650f, dampingRatio = .72f),
         label = "glass-card-press",
     )
     val interactive = if (onClick != null) {
-        Modifier.clickable(interactionSource = interactionSource, indication = null) {
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            onClick()
-        }
+        Modifier.clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
     } else Modifier
-
     LiquidGlassSurface(
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .then(interactive),
-        mode = mode,
-        tint = tint,
-        shape = shape,
-        elevation = elevation,
-        padding = padding,
+        modifier = modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }.then(interactive),
         content = content,
     )
-}
-
-/**
- * Liquid Glass Pill / Capsule component for filter chips, active badges, status indicators.
- */
-@Composable
-fun LiquidGlassCapsule(
-    modifier: Modifier = Modifier,
-    selected: Boolean = false,
-    accentColor: Color = MaterialTheme.colorScheme.primary,
-    onClick: (() -> Unit)? = null,
-    content: @Composable RowScope.() -> Unit,
-) {
-    val preferences = LocalUiPreferences.current
-    val haptics = LocalHapticFeedback.current
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && preferences.animationsEnabled) 0.95f else 1f,
-        animationSpec = spring(stiffness = 650f, dampingRatio = 0.70f),
-        label = "capsule-press",
-    )
-
-    val capsuleFill = if (selected) {
-        if (dark) {
-            Brush.linearGradient(
-                listOf(
-                    accentColor.copy(alpha = 0.42f),
-                    Color(0x301E3558),
-                    accentColor.copy(alpha = 0.25f),
-                ),
-            )
-        } else {
-            Brush.linearGradient(
-                listOf(
-                    Color.White.copy(alpha = 0.88f),
-                    accentColor.copy(alpha = 0.20f),
-                    Color.White.copy(alpha = 0.65f),
-                ),
-            )
-        }
-    } else {
-        if (dark) {
-            Brush.linearGradient(
-                listOf(
-                    Color(0x40182846),
-                    Color(0x250C172B),
-                ),
-            )
-        } else {
-            Brush.linearGradient(
-                listOf(
-                    Color.White.copy(alpha = 0.50f),
-                    Color.White.copy(alpha = 0.25f),
-                ),
-            )
-        }
-    }
-
-    val rimBrush = if (selected) {
-        Brush.linearGradient(
-            listOf(
-                Color.White.copy(alpha = if (dark) 0.75f else 0.98f),
-                accentColor.copy(alpha = 0.60f),
-                Color.White.copy(alpha = if (dark) 0.20f else 0.40f),
-            ),
-        )
-    } else {
-        Brush.linearGradient(
-            listOf(
-                Color.White.copy(alpha = if (dark) 0.35f else 0.70f),
-                Color.White.copy(alpha = 0.10f),
-            ),
-        )
-    }
-
-    val shape = CapsuleGlassShape
-    val clickModifier = if (onClick != null) {
-        Modifier.clickable(interactionSource = interactionSource, indication = null) {
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            onClick()
-        }
-    } else Modifier
-
-    Box(
-        modifier = modifier
-            .heightIn(min = 44.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .shadow(
-                elevation = if (selected) 8.dp else 4.dp,
-                shape = shape,
-                ambientColor = (if (selected) accentColor else Color.Black).copy(alpha = if (dark) 0.25f else 0.10f),
-                spotColor = (if (selected) accentColor else Color.Black).copy(alpha = if (dark) 0.35f else 0.14f),
-            )
-            .clip(shape)
-            .background(capsuleFill)
-            .border(BorderStroke(1.1.dp, rimBrush), shape)
-            .then(clickModifier)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            content = content,
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -382,137 +140,55 @@ fun GlassTopBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
-    actions: @Composable RowScope.() -> Unit = {},
+    actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
-    ) {
-        LiquidGlassSurface(
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            mode = LiquidGlassMode.CLEAR,
-            shape = RoundedCornerShape(28.dp),
-            elevation = 8.dp,
-            padding = PaddingValues(0.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { navigationIcon() }
-                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) { title() }
-                Row(
-                    modifier = Modifier.widthIn(min = 48.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = actions,
-                )
-            }
-        }
-    }
+    TopAppBar(
+        modifier = modifier,
+        title = title,
+        navigationIcon = navigationIcon,
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+    )
 }
 
-/**
- * Floating Liquid Glass Dock (Capsule Navigation Bar).
- */
 @Composable
 fun GlassBottomNav(
     modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit,
+    content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
 ) {
-    val dockShape = RoundedCornerShape(36.dp)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        LiquidGlassSurface(
-            modifier = Modifier.fillMaxWidth().height(66.dp),
-            mode = LiquidGlassMode.REGULAR,
-            shape = dockShape,
-            elevation = 14.dp,
-            padding = PaddingValues(0.dp),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 6.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-                content = content,
-            )
-        }
+    val tokens = LocalGlassTokens.current
+    val style = LocalUiPreferences.current.visualStyle
+    val navColor = when (style) {
+        VisualStyle.MODERN_DARK -> Color(0xF207172A)
+        VisualStyle.GLASSMORPHISM -> Color(0xB83C4F86)
+        VisualStyle.DYNAMIC_GRADIENT -> MaterialTheme.colorScheme.surface.copy(alpha = .94f)
     }
+    BottomAppBar(
+        modifier = modifier
+            .shadow(12.dp, RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp), ambientColor = tokens.shadow)
+            .border(BorderStroke(1.dp, tokens.border), RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)),
+        containerColor = navColor,
+        content = content,
+    )
 }
 
-/**
- * Liquid Glass FAB (+) Orb Button.
- */
 @Composable
-fun GlassFab(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    val preferences = LocalUiPreferences.current
-    val tokens = LocalGlassTokens.current
-    val haptics = LocalHapticFeedback.current
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && preferences.animationsEnabled) 0.90f else 1f,
-        animationSpec = spring(stiffness = 650f, dampingRatio = 0.65f),
-        label = "glass-fab-press",
-    )
-
-    val orbGradient = Brush.linearGradient(
-        listOf(tokens.accent, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.tertiary),
-    )
-
-    Box(
-        modifier = modifier
-            .size(52.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .shadow(
-                elevation = 12.dp,
-                shape = CircleShape,
-                ambientColor = tokens.accent.copy(alpha = .28f),
-                spotColor = MaterialTheme.colorScheme.tertiary.copy(alpha = .34f),
-            )
-            .clip(CircleShape)
-            .background(orbGradient)
-            .border(
-                width = 1.2.dp,
-                brush = Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.85f),
-                        Color.White.copy(alpha = 0.25f),
-                    ),
-                ),
-                shape = CircleShape,
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onClick()
-                },
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        CompositionLocalProvider(LocalContentColor provides Color.White) {
-            content()
-        }
+fun GlassFab(onClick: () -> Unit, content: @Composable () -> Unit) {
+    val style = LocalUiPreferences.current.visualStyle
+    val gradient = when (style) {
+        VisualStyle.MODERN_DARK -> Brush.linearGradient(listOf(Color(0xFF075DB8), Color(0xFF13A3FF)))
+        VisualStyle.GLASSMORPHISM -> Brush.linearGradient(listOf(Color(0xFF6B43E8), Color(0xFF9B66FF), Color(0xFF42C8FF)))
+        VisualStyle.DYNAMIC_GRADIENT -> Brush.linearGradient(listOf(Color(0xFF8C2CFF), Color(0xFF4C55FF), Color(0xFF24C9DD)))
     }
+    val rim = if (style == VisualStyle.GLASSMORPHISM) Color.White.copy(alpha = .68f) else Color.White.copy(alpha = .28f)
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier.background(gradient, CircleShape).border(1.dp, rim, CircleShape),
+        shape = CircleShape,
+        containerColor = Color.Transparent,
+        contentColor = Color.White,
+        content = content,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -520,92 +196,30 @@ fun GlassFab(
 fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = null,
-        content = {
-            LiquidGlassSurface(
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
-                mode = LiquidGlassMode.REGULAR,
-                shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                elevation = 18.dp,
-                padding = PaddingValues(top = 10.dp),
-            ) {
-                content()
-            }
-        },
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .94f),
+        content = { content() },
     )
 }
 
 @Composable
-fun GlassDialogSurface(
-    modifier: Modifier = Modifier,
-    shape: androidx.compose.ui.graphics.Shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp),
-    content: @Composable BoxScope.() -> Unit,
-) {
-    LiquidGlassSurface(
-        modifier = modifier.fillMaxWidth().wrapContentHeight(),
-        mode = LiquidGlassMode.REGULAR,
-        shape = shape,
-        elevation = 18.dp,
-        content = content,
+fun GlassDialogSurface(content: @Composable BoxScope.() -> Unit) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.4f
+    val bgFill = if (isDark) Color(0xFF141F32).copy(alpha = 0.98f) else Color(0xFFF9FAFD).copy(alpha = 0.98f)
+    val borderBrush = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = if (isDark) 0.35f else 0.90f),
+            FinluxBlue.copy(alpha = if (isDark) 0.20f else 0.30f),
+            Color.White.copy(alpha = if (isDark) 0.10f else 0.40f),
+        ),
     )
-}
-
-/** Dialog host that guarantees the same glass material and contrast across the app. */
-@Composable
-fun GlassDialog(
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit,
-) {
-    Dialog(onDismissRequest = onDismissRequest) {
-        GlassDialogSurface {
-            Box(modifier = modifier.fillMaxWidth(), content = content)
-        }
-    }
-}
-
-/** Material-compatible alert content rendered on the shared regular glass surface. */
-@Composable
-fun GlassAlertDialog(
-    onDismissRequest: () -> Unit,
-    confirmButton: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    dismissButton: (@Composable () -> Unit)? = null,
-    icon: (@Composable () -> Unit)? = null,
-    title: (@Composable () -> Unit)? = null,
-    text: (@Composable () -> Unit)? = null,
-) {
-    GlassDialog(onDismissRequest = onDismissRequest, modifier = modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            icon?.invoke()
-            title?.invoke()
-            text?.invoke()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                dismissButton?.invoke()
-                confirmButton()
-            }
-        }
-    }
-}
-
-/**
- * iOS 26 Liquid Glass container pattern that batches glass children to optimize performance,
- * coordinate spacing, and avoid redundant render layers across multiple sibling glass elements.
- */
-@Composable
-fun GlassEffectContainer(
-    modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit,
-) {
+    val shape = RoundedCornerShape(24.dp)
     Box(
-        modifier = modifier
-            .clip(DefaultGlassShape),
+        modifier = Modifier
+            .shadow(elevation = 24.dp, shape = shape, ambientColor = FinluxBlue.copy(alpha = 0.25f), spotColor = FinluxPurple.copy(alpha = 0.25f))
+            .clip(shape)
+            .background(bgFill)
+            .border(1.2.dp, borderBrush, shape)
+            .padding(20.dp),
         content = content,
     )
 }

@@ -15,11 +15,18 @@ fun FinluxRoot(
     payNotificationIdFlow: MutableStateFlow<String?>? = null,
 ) {
     val theme = viewModel.theme.collectAsStateWithLifecycle().value
+    val uiStyle = viewModel.uiStyle.collectAsStateWithLifecycle().value
     val uiPreferences = viewModel.uiPreferences.collectAsStateWithLifecycle().value
-    FinluxTheme(preference = theme, uiPreferences = uiPreferences) {
+    FinluxTheme(
+        preference = theme,
+        uiStyle = uiStyle,
+        uiPreferences = uiPreferences,
+    ) {
         FinluxNavHost(
             selectedTheme = theme,
             onThemeSelected = viewModel::setTheme,
+            selectedUiStyle = uiStyle,
+            onUiStyleSelected = viewModel::setUiStyle,
             uiPreferences = uiPreferences,
             onUiPreferencesChanged = viewModel::setUiPreferences,
             destinationFlow = destinationFlow,
