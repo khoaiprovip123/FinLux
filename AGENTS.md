@@ -2,12 +2,12 @@
 
 ## Bối cảnh
 Đây là project Android **Finlux** — quản lý thu chi cá nhân, Kotlin + Jetpack Compose + Firebase,
-giao diện Liquid Glass. Đọc `CONTEXT.md`, `BA_SPEC.md`, `UI_SPEC.md`, `DATA_SPEC.md` trước khi code.
+giao diện Liquid Glass. Đọc `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md` trước khi code.
 
 ## Nguyên tắc bắt buộc
-1. **Không bịa nghiệp vụ.** Nếu yêu cầu chưa có trong `BA_SPEC.md`/`UI_SPEC.md`, dừng lại hỏi hoặc
+1. **Không bịa nghiệp vụ.** Nếu yêu cầu chưa có trong `docs/BA_SPEC.md`/`docs/UI_SPEC.md`, dừng lại hỏi hoặc
    ghi `// TODO: [Cần xác nhận] ...` thay vì tự suy diễn.
-2. **Tuân thủ Clean Architecture** đã định nghĩa trong `CONTEXT.md` — không viết logic nghiệp vụ
+2. **Tuân thủ Clean Architecture** đã định nghĩa trong `docs/CONTEXT.md` — không viết logic nghiệp vụ
    trực tiếp trong Composable hoặc trong lớp data.
 3. **Mọi thao tác ghi ảnh hưởng số dư ví PHẢI dùng Firestore Transaction** (BR-06, BR-14) — không
    dùng `set()`/`update()` rời rạc cho amount + balance.
@@ -49,16 +49,16 @@ giao diện Liquid Glass. Đọc `CONTEXT.md`, `BA_SPEC.md`, `UI_SPEC.md`, `DATA
 9. Polish: animation Liquid Glass, empty/error states, accessibility contrast
 
 ## Khi sinh code UI
-- Luôn tham chiếu đúng section trong `UI_SPEC.md` (ví dụ: "SCREEN: Home / Dashboard") thay vì tự
+- Luôn tham chiếu đúng section trong `docs/UI_SPEC.md` (ví dụ: "SCREEN: Home / Dashboard") thay vì tự
   thiết kế lại bố cục.
-- Giữ đúng tên field/action đã liệt kê để đồng bộ với `BA_SPEC.md`.
+- Giữ đúng tên field/action đã liệt kê để đồng bộ với `docs/BA_SPEC.md`.
 
 ## Khi sinh code data layer
-- Đúng path Firestore trong `DATA_SPEC.md` mục 1 (subcollection dưới `users/{uid}`).
-- Security Rules tham khảo `DATA_SPEC.md` mục 3, viết đầy đủ trước khi release (không để rule mở `allow read, write: if true`).
+- Đúng path Firestore trong `docs/DATA_SPEC.md` mục 1 (subcollection dưới `users/{uid}`).
+- Security Rules tham khảo `docs/DATA_SPEC.md` mục 3, viết đầy đủ trước khi release (không để rule mở `allow read, write: if true`).
 
 ## Cập nhật tài liệu
-Mỗi khi thay đổi phạm vi/nghiệp vụ trong lúc code, cập nhật lại `BA_SPEC.md`/`UI_SPEC.md` tương ứng
+Mỗi khi thay đổi phạm vi/nghiệp vụ trong lúc code, cập nhật lại `docs/BA_SPEC.md`/`docs/UI_SPEC.md` tương ứng
 và ghi log vào `CHANGELOG.md` — không để code và tài liệu lệch nhau.
 
 ## 🚀 MANDATORY RELEASE & VERSIONING WORKFLOW

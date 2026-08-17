@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 > nul
+pushd %~dp0..
 echo ==========================================
 echo    FINLUX - BUILD ^& INSTALL APK TO DEVICE
 echo ==========================================
@@ -58,4 +59,5 @@ if %ERRORLEVEL% EQU 0 (
     echo ❌ Nạp APK thất bại!
 )
 
+popd
 pause

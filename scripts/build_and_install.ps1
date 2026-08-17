@@ -1,5 +1,6 @@
 # Script build va nap APK FinLux vao dien thoai dang ket noi ADB
 $ErrorActionPreference = "Stop"
+Set-Location (Join-Path $PSScriptRoot "..")
 
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "   FINLUX - BUILD & INSTALL APK TO DEVICE  " -ForegroundColor Cyan

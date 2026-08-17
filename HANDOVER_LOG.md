@@ -2,7 +2,29 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.8.0 (versionCode 94) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công 4 hạng mục cải tiến lớn.
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
+
+---
+
+## [DONE] Task: Reorganize Root Files into Dedicated Directories
+
+**Ngày hoàn thành:** 2026-08-17
+
+### Mục tiêu
+- Gom nhóm và di chuyển các tệp tài liệu đặc tả, kịch bản thực thi và build artifact nằm ở thư mục gốc vào các thư mục chuyên biệt (`docs/`, `scripts/`, `artifacts/`).
+- Cập nhật toàn bộ các liên kết tài liệu tham chiếu trong `AGENTS.md`, `README.md`, `docs/CONTEXT.md` tương ứng.
+- Đảm bảo các script và môi trường build/test hoạt động bình thường trên nền tảng v1.8.0.
+
+### Scope và file thực tế chỉnh sửa
+- Di chuyển sang `docs/`: `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `docs/BACKLOG.md`, `docs/PROJECT_PROFILE.md`
+- Di chuyển sang `scripts/`: `scripts/build_and_install.bat`, `scripts/build_and_install.ps1`
+- Cập nhật liên kết tham chiếu: `AGENTS.md`, `README.md`, `docs/CONTEXT.md`
+- Cập nhật script root path: `scripts/build_and_install.bat`, `scripts/build_and_install.ps1`
+- Cập nhật `.gitignore`: Bổ sung bỏ qua `graphify-out/cache/` và `graphify-out/20*/`
+
+### Kết quả kiểm thử
+- `gradlew testDebugUnitTest`: **100% PASS** (BUILD SUCCESSFUL).
+- `gradlew assembleDebug`: **BUILD SUCCESSFUL**.
 
 ---
 

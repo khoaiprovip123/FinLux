@@ -57,10 +57,11 @@ functions/                    -- Cloud Functions (TypeScript), xem DATA_SPEC.md 
 ## File tài liệu liên quan
 | File | Nội dung |
 |------|----------|
-| `PROJECT_PROFILE.md` | Phạm vi, scope, team, timeline |
-| `BA_SPEC.md` | Use case, business rule, NFR |
-| `UI_SPEC.md` | Đặc tả từng màn hình + design system Liquid Glass |
-| `DATA_SPEC.md` | Firestore schema, Security Rules, Cloud Functions |
-| `PLAN.md` | Kế hoạch sprint |
+| `docs/PROJECT_PROFILE.md` | Phạm vi, scope, team, timeline |
+| `docs/BA_SPEC.md` | Use case, business rule, NFR |
+| `docs/UI_SPEC.md` | Đặc tả từng màn hình + design system Liquid Glass |
+| `docs/DATA_SPEC.md` | Firestore schema, Security Rules, Cloud Functions |
+| `docs/PLAN.md` | Kế hoạch sprint |
 | `AGENTS.md` | Hướng dẫn cho AI coding agent |
 | `CHANGELOG.md` | Lịch sử thay đổi |
+| `HANDOVER_LOG.md` | Nhật ký bàn giao và quản lý task |

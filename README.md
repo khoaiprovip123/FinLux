@@ -148,12 +148,15 @@ Dự án đi kèm bộ Unit Test đầy đủ cho các Use Case quan trọng:
 
 Dự án đi kèm bộ tài liệu đặc tả chi tiết phục vụ phát triển & đóng góp:
 
-- 📄 [`PROJECT_PROFILE.md`](PROJECT_PROFILE.md): Tổng quan dự án, phạm vi V1 và roadmap phát triển.
-- 📄 [`BA_SPEC.md`](BA_SPEC.md): Đặc tả nghiệp vụ, danh sách Use Cases và Ma trận Business Rules (BR-01 đến BR-14).
-- 📄 [`UI_SPEC.md`](UI_SPEC.md): Quy chuẩn thiết kế UI/UX, bố cục từng màn hình và Liquid Glass System.
-- 📄 [`DATA_SPEC.md`](DATA_SPEC.md): Firestore Schema, Security Rules và thiết kế Cloud Functions.
-- 📄 [`CONTEXT.md`](CONTEXT.md): Hướng dẫn kiến trúc kỹ thuật dành cho Nhà phát triển.
+- 📄 [`PROJECT_PROFILE.md`](docs/PROJECT_PROFILE.md): Tổng quan dự án, phạm vi V1 và roadmap phát triển.
+- 📄 [`BA_SPEC.md`](docs/BA_SPEC.md): Đặc tả nghiệp vụ, danh sách Use Cases và Ma trận Business Rules (BR-01 đến BR-14).
+- 📄 [`UI_SPEC.md`](docs/UI_SPEC.md): Quy chuẩn thiết kế UI/UX, bố cục từng màn hình và Liquid Glass System.
+- 📄 [`DATA_SPEC.md`](docs/DATA_SPEC.md): Firestore Schema, Security Rules và thiết kế Cloud Functions.
+- 📄 [`CONTEXT.md`](docs/CONTEXT.md): Hướng dẫn kiến trúc kỹ thuật dành cho Nhà phát triển.
+- 📄 [`PLAN.md`](docs/PLAN.md): Kế hoạch sprint và lộ trình kỹ thuật.
+- 📄 [`BACKLOG.md`](docs/BACKLOG.md): Danh sách tính năng và nhiệm vụ tồn đọng.
 - 📄 [`CHANGELOG.md`](CHANGELOG.md): Lịch sử cập nhật phiên bản dự án.
+- 📄 [`HANDOVER_LOG.md`](HANDOVER_LOG.md): Nhật ký bàn giao và quản lý task.
 - 📄 [`AGENTS.md`](AGENTS.md): Quy tắc & Hướng dẫn dành cho AI Coding Agents.
 
 ---
