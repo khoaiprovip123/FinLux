@@ -6,6 +6,22 @@
 
 ---
 
+## [DONE] Task: Remove Auto VersionCode Bump from build_and_install.ps1
+
+**Ngày:** 2026-08-17
+
+### Mục tiêu
+1. **Loại bỏ tính năng tự động tăng `versionCode` khi chạy script `build_and_install.ps1`:**
+   - Xóa logic tự động sửa file `app/build.gradle.kts` khi build debug & install qua ADB.
+   - Giữ nguyên thông tin hiển thị version hiện tại (`v$versionName (versionCode $versionCode)`) để tiện theo dõi mà không làm thay đổi code/file.
+
+### Kết quả & Danh sách file đã chỉnh sửa
+- **Danh sách file thay đổi:**
+  - `scripts/build_and_install.ps1`: Xóa bỏ đoạn regex ghi đè `versionCode = $newCode`, chỉ đọc và hiển thị phiên bản hiện tại từ `app/build.gradle.kts`.
+- **Trạng thái:** Hoàn tất, khi chạy `.\scripts\build_and_install.ps1` không còn tự động tăng `versionCode`.
+
+---
+
 ## [DONE] Task: Reorganize Root Files into Dedicated Directories
 
 **Ngày hoàn thành:** 2026-08-17

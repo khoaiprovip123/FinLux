@@ -61,18 +61,13 @@ if ($targetDevices.Count -eq 0) {
 
 $targetDevices | ForEach-Object { Write-Host "   -> Thiet bi tim thay: $_" -ForegroundColor Green }
 
-# 1.5 Auto Version Bump trong app/build.gradle.kts
+# 1.5 Hien thi thong tin phien ban hien tai tu app/build.gradle.kts (Khong tu dong tang versionCode)
 $gradleFile = "app/build.gradle.kts"
 if (Test-Path $gradleFile) {
-    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-    $content = [System.IO.File]::ReadAllText((Resolve-Path $gradleFile), $utf8NoBom)
-    if ($content -match "versionCode\s*=\s*(\d+)") {
-        $oldCode = [int]$matches[1]
-        $newCode = $oldCode + 1
-        $content = $content -replace "versionCode\s*=\s*\d+", "versionCode = $newCode"
-        [System.IO.File]::WriteAllText((Resolve-Path $gradleFile), $content, $utf8NoBom)
-        Write-Host "   -> Auto Version Bump: versionCode $oldCode -> $newCode" -ForegroundColor Cyan
-    }
+    $content = Get-Content $gradleFile -Raw
+    $vName = if ($content -match 'versionName\s*=\s*"([^"]+)"') { $matches[1] } else { "N/A" }
+    $vCode = if ($content -match 'versionCode\s*=\s*(\d+)') { $matches[1] } else { "N/A" }
+    Write-Host "   -> Thong tin phien ban: v$vName (versionCode $vCode)" -ForegroundColor Cyan
 }
 
 # 2. Build APK bang Gradle Wrapper
