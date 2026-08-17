@@ -12,11 +12,6 @@
 
 ## 📸 Giao diện ứng dụng (Screenshots)
 
-### 🌟 Thiết kế Đăng nhập & Đăng ký (3D Liquid Glass Auth UI)
-<p align="center">
-  <img src="docs/screenshots/qa-auth-3d.png" width="680" alt="Giao diện Đăng nhập & Đăng ký 3D Liquid Glass FinLux"/>
-</p>
-
 ### 📱 Màn hình chức năng chính (Core App Screens)
 | Đăng nhập & Xác thực | Trang chủ (Dashboard) | Quản lý Ngân sách | Báo cáo & Thống kê |
 | :---: | :---: | :---: | :---: |
