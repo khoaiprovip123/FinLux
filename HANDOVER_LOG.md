@@ -1,8 +1,41 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.2 (versionCode 100)
-- **Trạng thái Build:** 🟢 Hoàn thành Batch 1: P0 - Data Integrity & Security Hardening (100% tests pass).
+- **Phiên bản hiện tại:** v1.8.2 (versionCode 101)
+- **Trạng thái Build:** 🟢 Hoàn thành Batch 3: P1 - Architecture Hardening (100% tests pass).
+
+---
+
+## [DONE] Task: Batch 3 - P1 Architecture Hardening (Split God Repository)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **P1-01 (Split FirebaseReadRepository)**: Phân tách hoàn toàn god class `FirebaseReadRepository` thành 7 repository độc lập, tuân thủ Single Responsibility:
+   - `FirebaseWalletRepository.kt`
+   - `FirebaseCategoryRepository.kt`
+   - `FirebaseBudgetRepository.kt`
+   - `FirebaseReminderRepository.kt`
+   - `FirebaseGoalRepository.kt`
+   - `FirebaseNotificationRepository.kt`
+   - `FirebaseDashboardRepository.kt` (tích hợp chuẩn `FinanceTime`)
+2. Cập nhật `RepositoryModule.kt` inject độc lập từng repository riêng biệt.
+3. Xóa bỏ hoàn toàn file god `FirebaseReadRepository.kt`.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **48/48 PASS (100%)**
+- Build APK: Thành công và đã nạp trực tiếp lên máy (`7f4ca06a`)
+
+### Danh sách file đã chỉnh sửa
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseWalletRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseCategoryRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseReminderRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseNotificationRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDashboardRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseReadRepository.kt` (Deleted)
 
 ---
 
