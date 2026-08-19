@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.3 (versionCode 101) - Release
-- **Trạng thái Build:** 🟢 Hoàn thành hệ thống Tự động cập nhật OTA & GitHub Actions CI/CD Release (51/51 tests pass 100%).
+- **Phiên bản hiện tại:** v1.8.4 (versionCode 103) - Release
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (51/51 unit tests pass 100%).
 
 ---
 

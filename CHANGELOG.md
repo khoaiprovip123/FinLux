@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.4] - 2026-08-19
+### Added
+- **Tự Động Cập Nhật Ứng Dụng Không Cần Cài Lại (In-App OTA Auto-Update)**: Tự động phát hiện khi có phiên bản mới từ GitHub, hiển thị pop-up thông báo tính năng mới kèm thanh tiến trình tải và nút "Cài đặt ngay" trực tiếp trên điện thoại.
+- **Tích Hợp Tự Động Đóng Gói & Phát Hành APK (GitHub Actions CI/CD)**: Tự động chạy kiểm thử, đóng gói APK và phát hành GitHub Release mỗi khi cập nhật tính năng mới.
+
+### Fixed
+- **Kiểm Tra Bản Cập Nhật Thủ Công Trong Cài Đặt**: Bổ sung nút "Kiểm tra bản cập nhật mới" tại màn hình Hồ sơ & Cài đặt để người dùng chủ động làm mới ứng dụng bất kỳ lúc nào.
+
 ## [1.8.3] - 2026-08-19
 ### Fixed
 - **Độ chính xác tuyệt đối khi Sửa / Xóa giao dịch**: Khắc phục triệt để lỗi sai lệch số dư ví và ngân sách khi người dùng điều chỉnh hoặc xóa một khoản thu chi; hệ thống luôn tự động hoàn tiền và cập nhật số dư chuẩn xác theo đúng giao dịch thực tế.
