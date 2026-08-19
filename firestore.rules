@@ -1,6 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Helper functions
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
@@ -14,57 +15,79 @@ service cloud.firestore {
       return value is int && value >= 0;
     }
 
-    // User root document and subcollections are isolated per-user
+    // Root user profile document
     match /users/{uid} {
-      allow read, write: if isOwner(uid);
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid);
 
+      // Subcollection: Transactions
       match /transactions/{docId} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid)
-          && (request.resource.data == null // Delete
-              || (request.resource.data.type in ['income', 'expense', 'transfer_out', 'transfer_in', 'INCOME', 'EXPENSE', 'TRANSFER_OUT', 'TRANSFER_IN']
-                  && isPositiveMoney(request.resource.data.amount)
-                  && request.resource.data.walletId is string));
+        allow delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.type in [
+            'income', 'expense', 'transfer_out', 'transfer_in',
+            'INCOME', 'EXPENSE', 'TRANSFER_OUT', 'TRANSFER_IN'
+          ]
+          && isPositiveMoney(request.resource.data.amount)
+          && request.resource.data.walletId is string
+          && request.resource.data.walletId.size() > 0;
       }
 
+      // Subcollection: Wallets
       match /wallets/{docId} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid)
-          && (request.resource.data == null // Delete
-              || (request.resource.data.name is string
-                  && request.resource.data.balance is int));
+        allow delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.balance is int;
       }
 
+      // Subcollection: Budgets
       match /budgets/{docId} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid)
-          && (request.resource.data == null // Delete
-              || (request.resource.data.categoryId is string
-                  && request.resource.data.spentAmount is int));
+        allow delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.categoryId is string
+          && request.resource.data.categoryId.size() > 0
+          && request.resource.data.spentAmount is int
+          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
       }
 
+      // Subcollection: Categories
       match /categories/{docId} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid);
+        allow delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0;
       }
 
+      // Subcollection: Financial Goals
       match /goals/{docId} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid);
+        allow delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0;
       }
 
+      // Subcollection: Reminders
       match /reminders/{docId} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid);
+        allow delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.categoryId is string
+          && request.resource.data.walletId is string;
       }
 
+      // Subcollection: Notifications
       match /notifications/{docId} {
         allow read: if isOwner(uid);
-        allow write: if isOwner(uid);
-      }
-
-      match /{subcollection}/{docId} {
-        allow read, write: if isOwner(uid);
+        allow delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.title is string;
       }
     }
   }

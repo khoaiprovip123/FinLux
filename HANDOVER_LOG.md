@@ -4,6 +4,21 @@
 - **Phiên bản hiện tại:** v1.8.4 (versionCode 103) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (51/51 unit tests pass 100%).
 
+## [DONE] Task: P0-S01 - Firestore Rules Hardening (Default Deny & Explicit Validation)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+- Xóa bỏ hoàn toàn wildcard write bypass (`match /{subcollection}/{docId}`) ngăn chặn tuyệt đối việc ghi tài liệu không qua kiểm duyệt.
+- Chuyển sang mô hình **Default Deny + Explicit Allow** cho toàn bộ 7 subcollections: `transactions`, `wallets`, `budgets`, `categories`, `goals`, `reminders`, `notifications`.
+- Thực thi schema validation: `amount > 0` (int), type string/timestamp/bool, giới hạn giá trị tiền không âm cho ngân sách (`limitAmount >= 0`).
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **51/51 PASS (100%)**
+
+### Danh sách file đã chỉnh sửa
+- `firestore.rules`
+
 ---
 
 ## [DONE] Task: In-App Auto-Update & GitHub Actions CI/CD Auto-Release
