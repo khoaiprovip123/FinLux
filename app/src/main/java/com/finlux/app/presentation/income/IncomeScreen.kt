@@ -52,6 +52,7 @@ import com.finlux.app.core.navigation.Route
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
+import com.finlux.app.domain.model.FinanceTransaction
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -61,6 +62,9 @@ fun IncomeScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
     onAddIncome: () -> Unit,
+    onSelectTransaction: ((FinanceTransaction) -> Unit)? = null,
+    onActionTransaction: ((FinanceTransaction) -> Unit)? = null,
+    onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: IncomeViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
@@ -173,7 +177,11 @@ fun IncomeScreen(
                 items(state.transactions, key = { it.id }) { transaction ->
                     val category = state.categories[transaction.categoryId]
                     val accent = category?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
-                    GlassCard(Modifier.fillMaxWidth().animateContentSize()) {
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth().animateContentSize(),
+                        onClick = { onSelectTransaction?.invoke(transaction) },
+                        onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                                 Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward, null, tint = accent)

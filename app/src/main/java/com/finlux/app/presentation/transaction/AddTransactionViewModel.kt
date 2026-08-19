@@ -13,6 +13,7 @@ import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.repository.ReceiptStorageRepository
 import com.finlux.app.domain.usecase.AddTransactionUseCase
+import com.finlux.app.domain.usecase.EditTransactionUseCase
 import com.finlux.app.domain.usecase.DeleteCategoryUseCase
 import com.finlux.app.domain.usecase.SaveCategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +27,7 @@ import java.time.Instant
 import javax.inject.Inject
 
 data class AddTransactionUiState(
+    val editingTransaction: FinanceTransaction? = null,
     val type: TransactionType = TransactionType.EXPENSE,
     val amountInput: String = "",
     val categoryId: String? = null,
@@ -46,6 +48,7 @@ class AddTransactionViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     private val receiptStorageRepository: ReceiptStorageRepository,
     private val addTransaction: AddTransactionUseCase,
+    private val editTransaction: EditTransactionUseCase,
     private val saveCategory: SaveCategoryUseCase,
     private val deleteCategory: DeleteCategoryUseCase,
 ) : ViewModel() {
@@ -69,6 +72,38 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
 
+    fun setEditingTransaction(tx: FinanceTransaction?) {
+        if (tx == null) {
+            mutableState.update { current ->
+                val categoryType = current.type.toCategoryType()
+                current.copy(
+                    editingTransaction = null,
+                    amountInput = "",
+                    note = "",
+                    receiptUri = null,
+                    date = Instant.now(),
+                    walletId = current.wallets.firstOrNull()?.id,
+                    categoryId = current.categories.firstOrNull { it.type == categoryType }?.id,
+                    error = null,
+                )
+            }
+            return
+        }
+        mutableState.update { current ->
+            current.copy(
+                editingTransaction = tx,
+                type = tx.type,
+                amountInput = if (tx.amount.value > 0) tx.amount.value.toString() else "",
+                categoryId = tx.categoryId ?: current.categories.firstOrNull { it.type == tx.type.toCategoryType() }?.id,
+                walletId = tx.walletId.ifBlank { current.wallets.firstOrNull()?.id },
+                note = tx.note,
+                date = tx.date,
+                receiptUri = tx.receiptImageUrl,
+                error = null,
+            )
+        }
+    }
+
     fun setType(type: TransactionType) = mutableState.update { current ->
         current.copy(
             type = type,
@@ -85,33 +120,54 @@ class AddTransactionViewModel @Inject constructor(
 
     fun save() {
         val snapshot = state.value
+        val original = snapshot.editingTransaction
         val baseTransaction = FinanceTransaction(
+            id = original?.id.orEmpty(),
             type = snapshot.type,
             amount = Money(snapshot.amountInput.toLongOrNull() ?: 0L),
             categoryId = snapshot.categoryId,
             walletId = snapshot.walletId.orEmpty(),
             note = snapshot.note.trim(),
             date = snapshot.date,
+            receiptImageUrl = original?.receiptImageUrl,
+            createdAt = original?.createdAt ?: Instant.now(),
         )
         viewModelScope.launch {
             mutableState.update { it.copy(isSaving = true, error = null) }
-            val receiptUrl = snapshot.receiptUri?.let { uri ->
-                when (val upload = receiptStorageRepository.uploadReceipt(uri)) {
+            val receiptUrl = if (snapshot.receiptUri != null && snapshot.receiptUri != original?.receiptImageUrl) {
+                when (val upload = receiptStorageRepository.uploadReceipt(snapshot.receiptUri)) {
                     is AppResult.Success -> upload.value
                     is AppResult.Error -> {
                         mutableState.update { it.copy(isSaving = false, error = upload.message) }
                         return@launch
                     }
                 }
+            } else {
+                snapshot.receiptUri ?: original?.receiptImageUrl
             }
-            when (val result = addTransaction(baseTransaction.copy(receiptImageUrl = receiptUrl))) {
+            val transactionToSave = baseTransaction.copy(receiptImageUrl = receiptUrl)
+            val result = if (original != null) {
+                editTransaction(original, transactionToSave)
+            } else {
+                addTransaction(transactionToSave)
+            }
+            when (result) {
                 is AppResult.Success -> mutableState.update { it.copy(isSaving = false, saved = true) }
                 is AppResult.Error -> mutableState.update { it.copy(isSaving = false, error = result.message) }
             }
         }
     }
 
-    fun consumeSaved() = mutableState.update { it.copy(saved = false, amountInput = "", note = "", receiptUri = null, date = Instant.now()) }
+    fun consumeSaved() = mutableState.update {
+        it.copy(
+            saved = false,
+            editingTransaction = null,
+            amountInput = "",
+            note = "",
+            receiptUri = null,
+            date = Instant.now(),
+        )
+    }
 
     fun createCategory(name: String, iconKey: String, colorHex: String, onCreated: (String) -> Unit) {
         if (name.isBlank()) return

@@ -2,5 +2,8 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="avatar_capture" path="avatar-capture/" />
     <cache-path name="exports" path="exports/" />
+    <cache-path name="updates" path="updates/" />
     <cache-path name="cache_root" path="." />
+    <external-cache-path name="external_cache" path="." />
+    <external-path name="external_files" path="." />
 </paths>

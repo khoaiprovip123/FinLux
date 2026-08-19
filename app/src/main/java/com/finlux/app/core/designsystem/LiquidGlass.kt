@@ -5,8 +5,10 @@ import android.graphics.Shader
 import android.os.Build
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.border
@@ -108,10 +110,12 @@ fun Modifier.finluxBackgroundBlur(radius: Dp = 18.dp): Modifier =
         this
     }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val preferences = LocalUiPreferences.current
@@ -122,8 +126,13 @@ fun GlassCard(
         animationSpec = spring(stiffness = 650f, dampingRatio = .72f),
         label = "glass-card-press",
     )
-    val interactive = if (onClick != null) {
-        Modifier.clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+    val interactive = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = onClick ?: {},
+            onLongClick = onLongClick,
+        )
     } else Modifier
     LiquidGlassSurface(
         modifier = modifier.graphicsLayer {

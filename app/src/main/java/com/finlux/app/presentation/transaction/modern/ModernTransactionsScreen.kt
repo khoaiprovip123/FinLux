@@ -1,4 +1,4 @@
-﻿package com.finlux.app.presentation.transaction.modern
+package com.finlux.app.presentation.transaction.modern
 
 import com.finlux.app.presentation.transaction.*
 import com.finlux.app.core.designsystem.modern.*
@@ -19,8 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -44,13 +42,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.ExpenseRed
 import com.finlux.app.core.designsystem.FinluxTextSecondary
-import com.finlux.app.core.designsystem.modern.GlassCard
-import com.finlux.app.core.designsystem.modern.GlassAlertDialog
-import com.finlux.app.core.designsystem.modern.GlassTopBar
-import com.finlux.app.core.designsystem.GradientHeroCard
+import com.finlux.app.core.designsystem.GlassCard
+import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.IncomeGreen
+import com.finlux.app.core.designsystem.categoryIcon
+import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.toVnd
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -61,28 +60,45 @@ import com.finlux.app.core.navigation.Route
 @Composable
 fun ModernTransactionsScreen(
     onNavigate: ((String) -> Unit)? = null,
+    onAdd: (() -> Unit)? = null,
     onBack: (() -> Unit)? = null,
+    onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: TransactionsViewModel = hiltViewModel(),
 ) {
     val transactions = viewModel.transactions.collectAsStateWithLifecycle().value
+    val categories = viewModel.categories.collectAsStateWithLifecycle().value
+    val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
     val filter = viewModel.filter.collectAsStateWithLifecycle().value
     val total = transactions.sumOf { it.amount.value }
     val snackbar = remember { SnackbarHostState() }
+
+    var viewingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
+    var actionTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
     var pendingDelete by remember { mutableStateOf<FinanceTransaction?>(null) }
+
     LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
+
+    val isRootTab = onNavigate != null && onAdd != null
 
     Box(Modifier.fillMaxSize()) {
         com.finlux.app.core.designsystem.modern.FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
             topBar = {
                 GlassTopBar(
-                    title = { Text("Giao dịch", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                    title = { Text(if (isRootTab) "Lịch sử thu chi" else "Giao dịch", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                        if (!isRootTab) {
+                            IconButton(onClick = { onBack?.invoke() ?: onNavigate?.invoke(Route.Home.value) }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
+                            }
                         }
                     },
                 )
+            },
+            bottomBar = {
+                if (isRootTab) {
+                    MainBottomBar(Route.Transactions.value, onNavigate, onAdd)
+                }
             },
             containerColor = Color.Transparent,
             snackbarHost = { SnackbarHost(snackbar) },
@@ -127,23 +143,41 @@ fun ModernTransactionsScreen(
                     }
                     items(transactions, key = { it.id }) { transaction ->
                         val isIncome = transaction.type == TransactionType.INCOME
-                        val rowAccent = if (isIncome) IncomeGreen else ExpenseRed
-                        GlassCard(Modifier.fillMaxWidth()) {
+                        val cat = categories[transaction.categoryId]
+                        val rowAccent = cat?.let { colorFromHex(it.colorHex) } ?: if (isIncome) IncomeGreen else ExpenseRed
+
+                        GlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { viewingTransaction = transaction },
+                            onLongClick = { actionTransaction = transaction },
+                        ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.background(rowAccent.copy(alpha = .14f), RoundedCornerShape(14.dp))) {
-                                    Icon(Icons.Default.Payments, null, Modifier.padding(10.dp).size(22.dp), tint = rowAccent)
+                                    Icon(
+                                        cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments,
+                                        null,
+                                        Modifier.padding(10.dp).size(22.dp),
+                                        tint = rowAccent,
+                                    )
                                 }
                                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                                    Text(transaction.note.ifBlank { if (isIncome) "Thu nhập" else "Chi tiêu" }, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                    Text(transaction.note.ifBlank { cat?.name ?: if (isIncome) "Thu nhập" else "Chi tiêu" }, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                                     Text(
-                                        DateTimeFormatter.ofPattern("dd/MM/yyyy").format(transaction.date.atZone(ZoneId.systemDefault())),
+                                        DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm").format(transaction.date.atZone(ZoneId.systemDefault())),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = FinluxTextSecondary,
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text((if (isIncome) "+" else "-") + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                    IconButton(onClick = { pendingDelete = transaction }) { Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(onClick = { onEditTransaction?.invoke(transaction) }) {
+                                            Icon(Icons.Default.Edit, "Sửa giao dịch", tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                        IconButton(onClick = { pendingDelete = transaction }) {
+                                            Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -152,13 +186,37 @@ fun ModernTransactionsScreen(
             }
         }
     }
+
+    viewingTransaction?.let { tx ->
+        TransactionDetailSheet(
+            transaction = tx,
+            category = categories[tx.categoryId],
+            wallet = wallets[tx.walletId],
+            onDismiss = { viewingTransaction = null },
+            onEdit = { onEditTransaction?.invoke(it) },
+            onDelete = { pendingDelete = it },
+        )
+    }
+
+    actionTransaction?.let { tx ->
+        TransactionActionDialog(
+            transaction = tx,
+            category = categories[tx.categoryId],
+            onDismiss = { actionTransaction = null },
+            onViewDetails = { viewingTransaction = it },
+            onEdit = { onEditTransaction?.invoke(it) },
+            onDelete = { pendingDelete = it },
+        )
+    }
+
     pendingDelete?.let { transaction ->
-        GlassAlertDialog(
-            onDismissRequest = { pendingDelete = null },
-            title = { Text("Xóa giao dịch?") },
-            text = { Text("Số dư ví sẽ được hoàn lại tự động. Thao tác này không thể hoàn tác.") },
-            confirmButton = { TextButton(onClick = { viewModel.delete(transaction); pendingDelete = null }) { Text("Xóa", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("Hủy") } },
+        DeleteTransactionConfirmDialog(
+            transaction = transaction,
+            onDismiss = { pendingDelete = null },
+            onConfirm = {
+                viewModel.delete(it)
+                pendingDelete = null
+            },
         )
     }
 }

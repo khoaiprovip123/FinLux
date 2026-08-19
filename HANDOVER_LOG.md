@@ -1,8 +1,232 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.0 (versionCode 94) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
+- **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (63/63 unit tests pass 100%, assembleRelease pass).
+
+## [DONE] Task: Finlux v1.8.5 Security & Release Hardening Master Plan
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **P0-S01: Firestore Rules Hardening**:
+   - Xóa bỏ hoàn toàn wildcard write bypass (`match /{subcollection}/{docId}`) ngăn chặn tuyệt đối việc ghi tài liệu không qua kiểm duyệt.
+   - Chuyển sang mô hình **Default Deny + Explicit Allow** cho toàn bộ 7 subcollections: `transactions`, `wallets`, `budgets`, `categories`, `goals`, `reminders`, `notifications`.
+   - Thực thi schema validation: `amount > 0` (int), type string/timestamp/bool, giới hạn giá trị tiền không âm cho ngân sách (`limitAmount >= 0`).
+2. **P0-S02: Production Release Signing Keystore**:
+   - Tách biệt `signingConfigs.release` khỏi keystore debug, cấu hình nạp an toàn từ biến môi trường/CI Secrets (`FINLUX_KEYSTORE_PATH`, `FINLUX_KEYSTORE_PASSWORD`, `FINLUX_KEY_ALIAS`, `FINLUX_KEY_PASSWORD`).
+3. **P0-S03: Tách Biệt CI Kiểm Thử & CI Phát Hành Tagged Release**:
+   - Tạo workflow `.github/workflows/ci.yml` chỉ chạy kiểm thử unit test & lint trên PR/push `main`.
+   - Cập nhật `.github/workflows/release.yml` chỉ phát hành release khi gắn tag `v*`, tạo checksum SHA-256 và `update.json` cho OTA.
+4. **P0-S04: Xác Thực Toàn Vẹn OTA (Integrity Verification Chain)**:
+   - Bổ sung xác thực mã băm SHA-256, so khớp `versionCode`, kiểm tra `packageName` và xác thực chữ ký số certificate của APK trước khi mở cài đặt.
+5. **P0-T01: Deterministic Time in Tests**:
+   - Thay thế toàn bộ `Instant.now()`/`Timestamp.now()` bằng fixed instant (`2026-08-15T03:00:00Z`).
+6. **P0-T02: Complete Transaction Test Matrix**:
+   - Bổ sung kiểm thử biên: zero amount, negative amount, max money limit, reversing balance, wallet transfer balance checks.
+7. **P1-TZ01: Account Finance Timezone Strategy**:
+   - Bổ sung `FinanceClock` interface và chuẩn hóa múi giờ `Asia/Ho_Chi_Minh`.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **63/63 PASS (100%)**
+- `assembleRelease`: **BUILD SUCCESSFUL**
+
+### Danh sách file đã chỉnh sửa
+- `firestore.rules`
+- `app/build.gradle.kts`
+- `.github/workflows/ci.yml` (New)
+- `.github/workflows/release.yml`
+- `app/src/main/java/com/finlux/app/core/time/FinanceTime.kt`
+- `app/src/main/java/com/finlux/app/core/updater/AppUpdateManager.kt`
+- `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateViewModel.kt`
+- `app/src/test/java/com/finlux/app/core/updater/AppUpdateManagerTest.kt`
+- `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+- `docs/FINLUX_V1.8.5_AI_FIX_MASTER_PLAN.md`
+- `CHANGELOG.md`
+- `HANDOVER_LOG.md`
+
+---
+
+## [DONE] Task: In-App Auto-Update & GitHub Actions CI/CD Auto-Release
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **GitHub Actions CI/CD Workflow (`.github/workflows/release.yml`)**:
+   - Tự động chạy toàn bộ unit test khi đẩy code lên nhánh `main`.
+   - Tự động build APK release/debug.
+   - Tự động tạo GitHub Release với tag version chuẩn (`vX.Y.Z`), phát hành file `FinLux-vX.Y.Z.apk` và trích xuất changelog mô tả cập nhật tự động từ `CHANGELOG.md`.
+2. **Hệ thống tự động phát hiện và cập nhật trong app (`AppUpdateManager.kt` & `AppUpdateViewModel.kt`)**:
+   - Tự động kiểm tra phiên bản mới từ GitHub Releases API (`khoaiprovip123/FinLux`) ngay khi mở app và qua nút kiểm tra thủ công.
+   - Tải file APK trực tiếp trong ứng dụng kèm hiển thị thanh tiến trình download mượt mà.
+   - Tự động mở trình cài đặt Android (`ACTION_VIEW` qua `FileProvider`) để cập nhật app trực tiếp trên điện thoại mà không cần thao tác phức tạp.
+3. **Giao diện cập nhật Liquid Glass (`AppUpdateDialog.kt`) & Menu Cài đặt**:
+   - Modal thông báo phiên bản mới, tính năng nổi bật, tiến trình tải và nút cài đặt ngay.
+   - Nút "Kiểm tra bản cập nhật mới" trong mục Giới thiệu của `SettingsScreen`.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **51/51 PASS (100%)**
+- `assembleDebug`: **BUILD SUCCESSFUL**
+
+### Danh sách file đã chỉnh sửa
+- `.github/workflows/release.yml` (New)
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/res/xml/file_paths.xml`
+- `app/src/main/java/com/finlux/app/core/updater/AppUpdateManager.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateViewModel.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateDialog.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/test/java/com/finlux/app/core/updater/AppUpdateManagerTest.kt` (New)
+
+---
+
+## [DONE] Task: Batch 3 - P1 Architecture Hardening (Split God Repository)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **P1-01 (Split FirebaseReadRepository)**: Phân tách hoàn toàn god class `FirebaseReadRepository` thành 7 repository độc lập, tuân thủ Single Responsibility:
+   - `FirebaseWalletRepository.kt`
+   - `FirebaseCategoryRepository.kt`
+   - `FirebaseBudgetRepository.kt`
+   - `FirebaseReminderRepository.kt`
+   - `FirebaseGoalRepository.kt`
+   - `FirebaseNotificationRepository.kt`
+   - `FirebaseDashboardRepository.kt` (tích hợp chuẩn `FinanceTime`)
+2. Cập nhật `RepositoryModule.kt` inject độc lập từng repository riêng biệt.
+3. Xóa bỏ hoàn toàn file god `FirebaseReadRepository.kt`.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **48/48 PASS (100%)**
+- Build APK: Thành công và đã nạp trực tiếp lên máy (`7f4ca06a`)
+
+### Danh sách file đã chỉnh sửa
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseWalletRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseCategoryRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseReminderRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseNotificationRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDashboardRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseReadRepository.kt` (Deleted)
+
+---
+
+## [DONE] Task: Batch 1 - P0 Data Integrity & Security Hardening
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **P0-01 (Edit Transaction Stale Original)**: Sửa `FirebaseTransactionRepository.editWithBalanceUpdate` lấy `stored` từ Firestore làm authoritative source of truth cho `oldWalletRef`, `oldBudgetRef` và hoàn tiền budget theo `-stored.amount.value`.
+2. **P0-02 (Delete Transaction Stale Object)**: Sửa `FirebaseTransactionRepository.deleteWithBalanceUpdate` chỉ tin `transaction.id`, derive toàn bộ wallet/budget rollback từ `stored`.
+3. **P0-03 (Standardize Finance Timezone)**: Tạo `FinanceTime` chuẩn hóa múi giờ tài chính thống nhất (`Asia/Ho_Chi_Minh` / `systemDefault`), loại bỏ conflict UTC vs systemDefault giữa `budgetRef` và query giao dịch.
+4. **P0-04, P0-05, P0-06 (Invariants, Safe Math & Unit Tests)**: Mở rộng `FirebaseTransactionRepositoryTest` và `FinanceTimeTest` kiểm thử đầy đủ các kịch bản stale caller, invariant add/edit/delete/transfer, và dùng `Math.addExact`/`subtractExact` chống tràn số `Long`.
+5. **P0-07 (Firestore Security Rules Hardening)**: Cập nhật `firestore.rules` với validation kiểu dữ liệu, schema chuẩn và ràng buộc `isPositiveMoney(amount)`.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **48/48 PASS (100%)**
+- Build APK: Thành công và đã nạp trực tiếp lên máy (`7f4ca06a`)
+
+### Danh sách file đã chỉnh sửa
+- `app/src/main/java/com/finlux/app/core/time/FinanceTime.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+- `firestore.rules`
+- `app/src/test/java/com/finlux/app/core/time/FinanceTimeTest.kt` (New)
+- `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+
+---
+
+## [DONE] Task: Transaction Detail Modal, Long-Press Actions Popup, and Bottom History Tab (v1.8.2)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **Chạm đơn (Single-tap) vào giao dịch:** Mở giao diện xem Chi tiết giao dịch (`TransactionDetailSheet`) dạng Liquid Glass hiển thị chi tiết số tiền, danh mục, ví, ngày giờ, ghi chú, hóa đơn đính kèm kèm 2 nút hành động "Sửa" và "Xóa" (có dialog xác nhận an toàn).
+2. **Bấm giữ (Long-press) vào giao dịch:** Mở pop-up tùy chọn nhanh (`TransactionActionDialog`) gồm: "Xem chi tiết", "Sửa giao dịch", "Xóa giao dịch" kèm dialog xác nhận xóa và hoàn tiền số dư ví (`DeleteTransactionConfirmDialog`).
+3. **Thanh điều hướng dưới (Bottom Navigation):** Thay thế tab "Ví" thành tab "Lịch sử" (`Route.Transactions`, label: "Lịch sử", icon: `ReceiptLong`) để xem lại toàn bộ lịch sử thu/chi, hỗ trợ swipe gestures và bộ lọc Tất cả / Thu / Chi.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **46/46 PASS (100%)**
+- Build APK: Thành công tại `app/build/outputs/apk/debug/app-debug.apk`
+
+### Danh sách file đã chỉnh sửa
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt`
+- `app/src/test/java/com/finlux/app/core/navigation/MainSwipeNavigationTest.kt`
+- `app/src/test/java/com/finlux/app/presentation/transaction/TransactionsViewModelTest.kt`
+- `app/build.gradle.kts`
+- `CHANGELOG.md`
+
+---
+
+## [DONE] Task: Long-Press & Button-Only Edit Trigger (Chỉ mở sửa khi bấm giữ hoặc bấm nút sửa)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu Hoàn Thành
+- Thay đổi hành vi kích hoạt sửa giao dịch: Chỉ mở form sửa khi người dùng **bấm giữ (long-press)** vào giao dịch hoặc **bấm nút Sửa (icon Edit)**.
+- Loại bỏ mở form sửa khi chạm đơn (single tap) để tránh người dùng vô tình chạm nhầm mở form sửa.
+- Đồng bộ trên các màn hình: Home (Giao dịch gần đây), Transactions (Danh sách giao dịch Classic & Modern), Income (Thu nhập), Expense (Chi tiêu).
+- Bổ sung hỗ trợ `onLongClick` trực tiếp vào component thiết kế chung [GlassCard](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt) (Classic & Modern).
+
+### Scope và file thực tế chỉnh sửa
+- `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt`
+
+### Kết quả kiểm thử
+- `gradlew testDebugUnitTest`: **100% PASS** (BUILD SUCCESSFUL).
+- `gradlew assembleDebug` + `build_and_install.ps1`: **Cài đặt thành công lên thiết bị ADB `7f4ca06a`**.
+
+---
+
+## [DONE] Task: Fix Transaction Edit & Adjustment Capability (Sửa/Điều chỉnh giao dịch thu chi)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu Hoàn Thành
+- Sửa lỗi không điều chỉnh/chỉnh sửa được giao dịch thu/chi sau khi đã thêm vào hệ thống.
+- Tích hợp `EditTransactionUseCase` vào `AddTransactionViewModel`, thêm `setEditingTransaction(tx)` và xử lý update giao dịch trong `save()` theo chuẩn Firestore Transaction / Clean Architecture.
+- Bổ sung chế độ chỉnh sửa trong `AddTransactionSheet` (tiêu đề "Sửa giao dịch", nút "Lưu thay đổi", tự động fill toàn bộ thông tin: loại thu/chi, số tiền, danh mục, ví, ghi chú, ngày, hóa đơn).
+- Cho phép người dùng chạm vào bất kỳ giao dịch nào hoặc bấm icon Sửa (Edit) tại các màn hình: Home (Giao dịch gần đây), Transactions (Danh sách giao dịch Classic & Modern), Income (Thu nhập), Expense (Chi tiêu).
+
+### Scope và file thực tế chỉnh sửa
+- `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionViewModel.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt`
+- `app/src/test/java/com/finlux/app/presentation/transaction/AddTransactionViewModelTest.kt`
+
+### Kết quả kiểm thử
+- `gradlew testDebugUnitTest`: **100% PASS** (BUILD SUCCESSFUL).
+- `gradlew assembleDebug`: **BUILD SUCCESSFUL**.
 
 ---
 

@@ -1,5 +1,51 @@
 # Changelog
 
+## [1.8.5] - 2026-08-19
+### Added
+- **Xác Thực Tính Toàn Vẹn Bản Cập Nhật Tự Động (Secure OTA Verification)**: Tự động kiểm tra mã băm bảo mật SHA-256, chữ ký số và gói cài đặt trước khi mở cập nhật, bảo vệ điện thoại khỏi file cài đặt hỏng hoặc không rõ nguồn gốc.
+- **Quy Trình Tự Động Kiểm Thử & Phát Hành Độc Lập**: Tách biệt hệ thống kiểm tra chất lượng định kỳ và hệ thống phát hành bản dựng chính thức, nâng cao độ tin cậy và an toàn của phần mềm.
+
+### Changed
+- **Bảo Vệ Dữ Liệu Thu Chi Đám Mây Toàn Diện**: Tăng cường bảo mật cơ sở dữ liệu với chính sách kiểm duyệt chặt chẽ, ngăn chặn tuyệt đối các can thiệp bất hợp pháp vào dữ liệu tài chính của người dùng.
+- **Tối Ưu Hóa Kích Thước Ứng Dụng**: Loại bỏ các tài nguyên ảnh dư thừa, giúp bộ cài đặt nhẹ hơn và khởi động nhanh hơn.
+
+### Fixed
+- **Kiểm Thử Số Dư & Giao Dịch Toàn Diện**: Mở rộng 100% kịch bản kiểm thử tự động cho mọi thao tác Thu, Chi, Chuyển tiền giữa các ví, đảm bảo số dư ví và ngân sách luôn chính xác tuyệt đối.
+
+## [1.8.4] - 2026-08-19
+### Added
+- **Tự Động Cập Nhật Ứng Dụng Không Cần Cài Lại (In-App OTA Auto-Update)**: Tự động phát hiện khi có phiên bản mới từ GitHub, hiển thị pop-up thông báo tính năng mới kèm thanh tiến trình tải và nút "Cài đặt ngay" trực tiếp trên điện thoại.
+- **Tích Hợp Tự Động Đóng Gói & Phát Hành APK (GitHub Actions CI/CD)**: Tự động chạy kiểm thử, đóng gói APK và phát hành GitHub Release mỗi khi cập nhật tính năng mới.
+
+### Fixed
+- **Kiểm Tra Bản Cập Nhật Thủ Công Trong Cài Đặt**: Bổ sung nút "Kiểm tra bản cập nhật mới" tại màn hình Hồ sơ & Cài đặt để người dùng chủ động làm mới ứng dụng bất kỳ lúc nào.
+
+## [1.8.3] - 2026-08-19
+### Fixed
+- **Độ chính xác tuyệt đối khi Sửa / Xóa giao dịch**: Khắc phục triệt để lỗi sai lệch số dư ví và ngân sách khi người dùng điều chỉnh hoặc xóa một khoản thu chi; hệ thống luôn tự động hoàn tiền và cập nhật số dư chuẩn xác theo đúng giao dịch thực tế.
+- **Chuẩn hóa tính toán theo múi giờ Việt Nam**: Đảm bảo các giao dịch phát sinh vào thời điểm giao mùa hoặc đêm muộn đầu tháng / cuối tháng luôn được xếp đúng vào tháng tài chính tương ứng và đồng bộ chuẩn xác với hạn mức ngân sách tháng đó.
+- **Bảo vệ an toàn số dư**: Tự động kiểm tra và ngăn chặn các giao dịch có số tiền không hợp lệ hoặc vượt quá giới hạn an toàn.
+
+### Changed
+- **Tối ưu hóa tốc độ và độ ổn định hệ thống**: Phân tách độc lập các luồng xử lý ví, danh mục, ngân sách, nhắc nhở và mục tiêu giúp ứng dụng phản hồi nhanh hơn, tiết kiệm tài nguyên và hoạt động tin cậy hơn.
+
+## [1.8.2] - 2026-08-19
+### Added
+- **Chi Tiết Giao Dịch Khi Chạm Đơn (TransactionDetailSheet)**: Chạm vào bất kỳ giao dịch nào sẽ mở modal Liquid Glass xem đầy đủ thông tin: số tiền kèm badge thu/chi, danh mục, ví thanh toán, ngày giờ chuẩn xác, ghi chú và hóa đơn đính kèm. Bên trong có nút "Sửa" và "Xóa" kèm xác nhận an toàn.
+- **Pop-up Tùy Chọn Khi Bấm Giữ (TransactionActionDialog)**: Bấm giữ (Long-press) vào giao dịch sẽ hiển thị pop-up lựa chọn nhanh: "Xem chi tiết", "Sửa giao dịch", "Xóa giao dịch" kèm dialog xác nhận xóa (`DeleteTransactionConfirmDialog`).
+- **Tab Lịch Sử Thu/Chi Mới Tại Bottom Navigation Bar**: Thay thế vị trí tab "Ví" ở thanh điều hướng dưới bằng tab "Lịch sử" (`Route.Transactions`) với icon `ReceiptLong` để truy cập trực tiếp toàn bộ lịch sử thu/chi, hỗ trợ lọc Tất cả / Thu / Chi và chuyển tab bằng cử chỉ vuốt ngang mượt mà.
+
+### Changed
+- **Điều Hướng & Vuốt Ngang (Main Swipe Navigation)**: Cập nhật luồng vuốt ngang chính: `Trang chủ` <-> `Lịch sử` <-> `Báo cáo` <-> `Hồ sơ`.
+
+## [1.8.1] - 2026-08-19
+### Added
+- **Chỉnh Sửa & Điều Chỉnh Giao Dịch Thu Chi (UC-08)**: Hỗ trợ chạm vào bất kỳ giao dịch nào hoặc nhấn nút sửa (Edit) để mở form chỉnh sửa trực quan trên toàn bộ các màn hình (Home, Danh sách giao dịch Classic & Modern, Thu nhập, Chi tiêu).
+- **Edit Mode trong AddTransactionSheet**: Tự động nhận diện và nạp dữ liệu giao dịch cũ (loại thu/chi, số tiền, danh mục, ví, ghi chú, ngày, hóa đơn đính kèm), cập nhật tiêu đề "Sửa giao dịch" và nút "Lưu thay đổi".
+
+### Fixed
+- **Đồng Bộ Hoàn Tiền & Cập Nhật Số Dư Ví Nguyên Tử**: Kết nối `EditTransactionUseCase` với `AddTransactionViewModel`, hoàn nguyên số dư ví cũ và cập nhật số dư ví mới + ngân sách qua Firestore Transaction an toàn tuyệt đối.
+
 ## [1.8.0] - 2026-08-15
 ### Added
 - **Xuất Báo Cáo Tài Chính Excel (.csv) & PDF (UC-17)**: Hỗ trợ xuất dữ liệu thu chi chuẩn UTF-8 BOM cho Excel và tạo file PDF đa trang chuyên nghiệp kèm biểu đồ KPI, thống kê danh mục và bảng giao dịch chi tiết qua `ReportExporter` và `ExportReportDialog`.

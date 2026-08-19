@@ -7,15 +7,15 @@ import org.junit.jupiter.api.Test
 class MainSwipeNavigationTest {
     @Test
     fun `left swipe moves to next main screen`() {
-        assertEquals(Route.Wallets.value, mainRouteAfterSwipe(Route.Home.value, -90f, 72f))
-        assertEquals(Route.Reports.value, mainRouteAfterSwipe(Route.Wallets.value, -90f, 72f))
+        assertEquals(Route.Transactions.value, mainRouteAfterSwipe(Route.Home.value, -90f, 72f))
+        assertEquals(Route.Reports.value, mainRouteAfterSwipe(Route.Transactions.value, -90f, 72f))
         assertEquals(Route.Settings.value, mainRouteAfterSwipe(Route.Reports.value, -90f, 72f))
     }
 
     @Test
     fun `right swipe moves to previous main screen`() {
         assertEquals(Route.Reports.value, mainRouteAfterSwipe(Route.Settings.value, 90f, 72f))
-        assertEquals(Route.Wallets.value, mainRouteAfterSwipe(Route.Reports.value, 90f, 72f))
+        assertEquals(Route.Transactions.value, mainRouteAfterSwipe(Route.Reports.value, 90f, 72f))
     }
 
     @Test

@@ -5,9 +5,15 @@ import com.finlux.app.data.demo.DemoFinluxRepository
 import com.finlux.app.data.local.datastore.DataStoreThemePreferenceRepository
 import com.finlux.app.data.local.reminder.AlarmReminderScheduler
 import com.finlux.app.data.remote.firebase.FirebaseAuthRepository
-import com.finlux.app.data.remote.firebase.FirebaseReadRepository
+import com.finlux.app.data.remote.firebase.FirebaseBudgetRepository
+import com.finlux.app.data.remote.firebase.FirebaseCategoryRepository
+import com.finlux.app.data.remote.firebase.FirebaseDashboardRepository
+import com.finlux.app.data.remote.firebase.FirebaseGoalRepository
+import com.finlux.app.data.remote.firebase.FirebaseNotificationRepository
 import com.finlux.app.data.remote.firebase.FirebaseReceiptStorageRepository
+import com.finlux.app.data.remote.firebase.FirebaseReminderRepository
 import com.finlux.app.data.remote.firebase.FirebaseTransactionRepository
+import com.finlux.app.data.remote.firebase.FirebaseWalletRepository
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
@@ -85,7 +91,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
-    ): WalletRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+    ): WalletRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseWalletRepository(auth, firestore)
+        } else demo
 
     @Provides
     @Singleton
@@ -93,7 +102,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
-    ): CategoryRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+    ): CategoryRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseCategoryRepository(auth, firestore)
+        } else demo
 
     @Provides
     @Singleton
@@ -101,7 +113,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
-    ): BudgetRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+    ): BudgetRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseBudgetRepository(auth, firestore)
+        } else demo
 
     @Provides
     @Singleton
@@ -109,7 +124,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
-    ): ReminderRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+    ): ReminderRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseReminderRepository(auth, firestore)
+        } else demo
 
     @Provides
     @Singleton
@@ -117,7 +135,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
-    ): GoalRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+    ): GoalRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseGoalRepository(auth, firestore)
+        } else demo
 
     @Provides
     @Singleton
@@ -125,9 +146,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         storage: FirebaseStorage?,
-    ): ReceiptStorageRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && storage != null) {
-        FirebaseReceiptStorageRepository(auth, storage)
-    } else demo
+    ): ReceiptStorageRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && storage != null) {
+            FirebaseReceiptStorageRepository(auth, storage)
+        } else demo
 
     @Provides
     @Singleton
@@ -135,7 +157,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
-    ): DashboardRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+    ): DashboardRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseDashboardRepository(auth, firestore)
+        } else demo
 
     @Provides
     @Singleton
@@ -143,5 +168,8 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
-    ): NotificationRepository = if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) FirebaseReadRepository(auth, firestore) else demo
+    ): NotificationRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseNotificationRepository(auth, firestore)
+        } else demo
 }
