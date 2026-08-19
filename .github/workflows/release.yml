@@ -1,15 +1,9 @@
-name: Build and Release FinLux APK
+name: Tagged Release Pipeline
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'app/**'
-      - 'gradle/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'CHANGELOG.md'
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -17,6 +11,7 @@ permissions:
 
 jobs:
   build-and-release:
+    name: Build, Sign and Publish Release
     runs-on: ubuntu-latest
 
     steps:
@@ -37,27 +32,91 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --no-daemon
-
-      - name: Extract Version Info
+      - name: Extract and Validate Version Info
         id: version_info
         run: |
           VERSION_NAME=$(grep 'versionName = ' app/build.gradle.kts | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
           VERSION_CODE=$(grep 'versionCode = ' app/build.gradle.kts | head -n 1 | tr -dc '0-9')
+          EXPECTED_TAG="v${VERSION_NAME}"
+          CURRENT_TAG="${GITHUB_REF_NAME}"
+
           echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
           echo "VERSION_CODE=${VERSION_CODE}" >> $GITHUB_ENV
-          echo "TAG_NAME=v${VERSION_NAME}" >> $GITHUB_ENV
-          echo "Extracted Version: v${VERSION_NAME} (code: ${VERSION_CODE})"
+          echo "TAG_NAME=${EXPECTED_TAG}" >> $GITHUB_ENV
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+          echo "Build Gradle Version: ${VERSION_NAME} (code: ${VERSION_CODE})"
+          echo "Target Tag: ${EXPECTED_TAG}"
 
-      - name: Prepare APK Artifact
+          # Version Guard for tag pushes
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            if [[ "${CURRENT_TAG}" != "${EXPECTED_TAG}" ]]; then
+              echo "::error::Tag mismatch! Git tag is '${CURRENT_TAG}' but app/build.gradle.kts defines '${EXPECTED_TAG}'"
+              exit 1
+            fi
+          fi
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Configure Release Keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FINLUX_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.FINLUX_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FINLUX_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FINLUX_KEY_PASSWORD }}
         run: |
-          mkdir -p release_apk
-          cp app/build/outputs/apk/debug/app-debug.apk release_apk/FinLux-v${{ env.VERSION_NAME }}.apk
-          echo "APK prepared: release_apk/FinLux-v${{ env.VERSION_NAME }}.apk"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Decoding private release keystore from secrets..."
+            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.keystore
+            echo "FINLUX_KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
+            echo "FINLUX_KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> $GITHUB_ENV
+            echo "FINLUX_KEY_ALIAS=${KEY_ALIAS}" >> $GITHUB_ENV
+            echo "FINLUX_KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
+            echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
+          else
+            echo "No private release keystore secret configured. Using fallback signing."
+            echo "HAS_RELEASE_KEY=false" >> $GITHUB_ENV
+          fi
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Clean up Keystore Secret File
+        if: always()
+        run: |
+          rm -f /tmp/release.keystore
+
+      - name: Package Release Artifacts & Generate Checksums
+        run: |
+          mkdir -p release_artifacts
+          APK_SOURCE="app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK_SOURCE" ]; then
+            APK_SOURCE="app/build/outputs/apk/debug/app-debug.apk"
+          fi
+          
+          TARGET_APK="release_artifacts/FinLux-v${{ env.VERSION_NAME }}.apk"
+          cp "$APK_SOURCE" "$TARGET_APK"
+          
+          # Generate SHA-256 Checksum
+          cd release_artifacts
+          SHA256_HASH=$(sha256sum "FinLux-v${{ env.VERSION_NAME }}.apk" | awk '{print $1}')
+          echo "$SHA256_HASH  FinLux-v${{ env.VERSION_NAME }}.apk" > "FinLux-v${{ env.VERSION_NAME }}.apk.sha256"
+          
+          # Generate update.json for OTA verification
+          cat <<EOF > update.json
+          {
+            "versionName": "${{ env.VERSION_NAME }}",
+            "versionCode": ${{ env.VERSION_CODE }},
+            "apkName": "FinLux-v${{ env.VERSION_NAME }}.apk",
+            "sha256": "${SHA256_HASH}",
+            "tag": "v${{ env.VERSION_NAME }}"
+          }
+          EOF
+          cd ..
+          
+          echo "Generated SHA-256: ${SHA256_HASH}"
+          cat release_artifacts/update.json
 
       - name: Extract Release Notes from CHANGELOG
         id: changelog
@@ -73,17 +132,17 @@ jobs:
               if match:
                   notes = match.group(1).strip()
               else:
-                  notes = f'FinLux v{version} release build.'
+                  notes = f'FinLux v{version} official release.'
               with open('release_notes.txt', 'w', encoding='utf-8') as out:
                   out.write(notes)
           except Exception as e:
               with open('release_notes.txt', 'w', encoding='utf-8') as out:
-                  out.write(f'FinLux v{version} release build.')
+                  out.write(f'FinLux v{version} official release.')
           "
           echo "Extracted release notes:"
           cat release_notes.txt
 
-      - name: Create or Update GitHub Release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
@@ -91,6 +150,9 @@ jobs:
           body_path: release_notes.txt
           draft: false
           prerelease: false
-          files: release_apk/FinLux-v${{ env.VERSION_NAME }}.apk
+          files: |
+            release_artifacts/FinLux-v${{ env.VERSION_NAME }}.apk
+            release_artifacts/FinLux-v${{ env.VERSION_NAME }}.apk.sha256
+            release_artifacts/update.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

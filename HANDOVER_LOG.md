@@ -1,23 +1,49 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.4 (versionCode 103) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (51/51 unit tests pass 100%).
+- **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (63/63 unit tests pass 100%, assembleRelease pass).
 
-## [DONE] Task: P0-S01 - Firestore Rules Hardening (Default Deny & Explicit Validation)
+## [DONE] Task: Finlux v1.8.5 Security & Release Hardening Master Plan
 
 **Ngày hoàn thành:** 2026-08-19
 
 ### Mục tiêu đã hoàn thành
-- Xóa bỏ hoàn toàn wildcard write bypass (`match /{subcollection}/{docId}`) ngăn chặn tuyệt đối việc ghi tài liệu không qua kiểm duyệt.
-- Chuyển sang mô hình **Default Deny + Explicit Allow** cho toàn bộ 7 subcollections: `transactions`, `wallets`, `budgets`, `categories`, `goals`, `reminders`, `notifications`.
-- Thực thi schema validation: `amount > 0` (int), type string/timestamp/bool, giới hạn giá trị tiền không âm cho ngân sách (`limitAmount >= 0`).
+1. **P0-S01: Firestore Rules Hardening**:
+   - Xóa bỏ hoàn toàn wildcard write bypass (`match /{subcollection}/{docId}`) ngăn chặn tuyệt đối việc ghi tài liệu không qua kiểm duyệt.
+   - Chuyển sang mô hình **Default Deny + Explicit Allow** cho toàn bộ 7 subcollections: `transactions`, `wallets`, `budgets`, `categories`, `goals`, `reminders`, `notifications`.
+   - Thực thi schema validation: `amount > 0` (int), type string/timestamp/bool, giới hạn giá trị tiền không âm cho ngân sách (`limitAmount >= 0`).
+2. **P0-S02: Production Release Signing Keystore**:
+   - Tách biệt `signingConfigs.release` khỏi keystore debug, cấu hình nạp an toàn từ biến môi trường/CI Secrets (`FINLUX_KEYSTORE_PATH`, `FINLUX_KEYSTORE_PASSWORD`, `FINLUX_KEY_ALIAS`, `FINLUX_KEY_PASSWORD`).
+3. **P0-S03: Tách Biệt CI Kiểm Thử & CI Phát Hành Tagged Release**:
+   - Tạo workflow `.github/workflows/ci.yml` chỉ chạy kiểm thử unit test & lint trên PR/push `main`.
+   - Cập nhật `.github/workflows/release.yml` chỉ phát hành release khi gắn tag `v*`, tạo checksum SHA-256 và `update.json` cho OTA.
+4. **P0-S04: Xác Thực Toàn Vẹn OTA (Integrity Verification Chain)**:
+   - Bổ sung xác thực mã băm SHA-256, so khớp `versionCode`, kiểm tra `packageName` và xác thực chữ ký số certificate của APK trước khi mở cài đặt.
+5. **P0-T01: Deterministic Time in Tests**:
+   - Thay thế toàn bộ `Instant.now()`/`Timestamp.now()` bằng fixed instant (`2026-08-15T03:00:00Z`).
+6. **P0-T02: Complete Transaction Test Matrix**:
+   - Bổ sung kiểm thử biên: zero amount, negative amount, max money limit, reversing balance, wallet transfer balance checks.
+7. **P1-TZ01: Account Finance Timezone Strategy**:
+   - Bổ sung `FinanceClock` interface và chuẩn hóa múi giờ `Asia/Ho_Chi_Minh`.
 
 ### Kết quả kiểm thử
-- `testDebugUnitTest`: **51/51 PASS (100%)**
+- `testDebugUnitTest`: **63/63 PASS (100%)**
+- `assembleRelease`: **BUILD SUCCESSFUL**
 
 ### Danh sách file đã chỉnh sửa
 - `firestore.rules`
+- `app/build.gradle.kts`
+- `.github/workflows/ci.yml` (New)
+- `.github/workflows/release.yml`
+- `app/src/main/java/com/finlux/app/core/time/FinanceTime.kt`
+- `app/src/main/java/com/finlux/app/core/updater/AppUpdateManager.kt`
+- `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateViewModel.kt`
+- `app/src/test/java/com/finlux/app/core/updater/AppUpdateManagerTest.kt`
+- `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+- `docs/FINLUX_V1.8.5_AI_FIX_MASTER_PLAN.md`
+- `CHANGELOG.md`
+- `HANDOVER_LOG.md`
 
 ---
 

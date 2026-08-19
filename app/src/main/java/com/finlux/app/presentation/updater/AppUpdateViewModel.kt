@@ -61,7 +61,10 @@ class AppUpdateViewModel @Inject constructor(
         viewModelScope.launch {
             _downloadProgress.value = 0f
             _uiState.value = UpdateUiState.Downloading(info, 0f)
-            val downloadResult = updateManager.downloadApk(info.downloadUrl) { progress ->
+            val downloadResult = updateManager.downloadApk(
+                downloadUrl = info.downloadUrl,
+                expectedSha256 = info.sha256Checksum,
+            ) { progress ->
                 _downloadProgress.value = progress
                 _uiState.value = UpdateUiState.Downloading(info, progress)
             }

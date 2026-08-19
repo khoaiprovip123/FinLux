@@ -3,6 +3,24 @@ package com.finlux.app.core.time
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Interface contract for time and timezone querying across financial modules.
+ */
+interface FinanceClock {
+    val zoneId: ZoneId
+    fun now(): Instant
+}
+
+@Singleton
+class SystemFinanceClock @Inject constructor() : FinanceClock {
+    override val zoneId: ZoneId
+        get() = FinanceTime.defaultZone
+
+    override fun now(): Instant = Instant.now()
+}
 
 /**
  * Standardized Financial Timezone and Month conversion for FinLux.
@@ -10,8 +28,10 @@ import java.time.ZoneId
  * budgets, reports, and dashboards.
  */
 object FinanceTime {
+    val VIETNAM_ZONE: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+
     val defaultZone: ZoneId
-        get() = ZoneId.systemDefault()
+        get() = runCatching { ZoneId.systemDefault() }.getOrDefault(VIETNAM_ZONE)
 
     fun financialMonth(instant: Instant, zone: ZoneId = defaultZone): YearMonth {
         return YearMonth.from(instant.atZone(zone))

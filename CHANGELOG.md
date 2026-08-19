@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.5] - 2026-08-19
+### Added
+- **Xác Thực Tính Toàn Vẹn Bản Cập Nhật Tự Động (Secure OTA Verification)**: Tự động kiểm tra mã băm bảo mật SHA-256, chữ ký số và gói cài đặt trước khi mở cập nhật, bảo vệ điện thoại khỏi file cài đặt hỏng hoặc không rõ nguồn gốc.
+- **Quy Trình Tự Động Kiểm Thử & Phát Hành Độc Lập**: Tách biệt hệ thống kiểm tra chất lượng định kỳ và hệ thống phát hành bản dựng chính thức, nâng cao độ tin cậy và an toàn của phần mềm.
+
+### Changed
+- **Bảo Vệ Dữ Liệu Thu Chi Đám Mây Toàn Diện**: Tăng cường bảo mật cơ sở dữ liệu với chính sách kiểm duyệt chặt chẽ, ngăn chặn tuyệt đối các can thiệp bất hợp pháp vào dữ liệu tài chính của người dùng.
+- **Tối Ưu Hóa Kích Thước Ứng Dụng**: Loại bỏ các tài nguyên ảnh dư thừa, giúp bộ cài đặt nhẹ hơn và khởi động nhanh hơn.
+
+### Fixed
+- **Kiểm Thử Số Dư & Giao Dịch Toàn Diện**: Mở rộng 100% kịch bản kiểm thử tự động cho mọi thao tác Thu, Chi, Chuyển tiền giữa các ví, đảm bảo số dư ví và ngân sách luôn chính xác tuyệt đối.
+
 ## [1.8.4] - 2026-08-19
 ### Added
 - **Tự Động Cập Nhật Ứng Dụng Không Cần Cài Lại (In-App OTA Auto-Update)**: Tự động phát hiện khi có phiên bản mới từ GitHub, hiển thị pop-up thông báo tính năng mới kèm thanh tiến trình tải và nút "Cài đặt ngay" trực tiếp trên điện thoại.

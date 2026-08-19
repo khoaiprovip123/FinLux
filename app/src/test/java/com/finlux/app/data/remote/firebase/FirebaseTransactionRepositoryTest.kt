@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.util.Date
 
 class FirebaseTransactionRepositoryTest {
     private val auth: FirebaseAuth = mockk()
@@ -33,10 +34,18 @@ class FirebaseTransactionRepositoryTest {
 
     private lateinit var repository: FirebaseTransactionRepository
 
+    // Fixed deterministic timestamp for tests (P0-T01)
+    private val fixedInstant: Instant = Instant.parse("2026-08-15T03:00:00Z")
+    private val fixedTimestamp: Timestamp = Timestamp(Date.from(fixedInstant))
+
     @BeforeEach
     fun setUp() {
         repository = FirebaseTransactionRepository(auth, firestore)
     }
+
+    // ==========================================
+    // ADD TRANSACTION TESTS
+    // ==========================================
 
     @Test
     fun `addWithBalanceUpdate returns error when user not signed in`() = runTest {
@@ -50,7 +59,33 @@ class FirebaseTransactionRepositoryTest {
     }
 
     @Test
-    fun `addWithBalanceUpdate executes atomic transaction successfully`() = runTest {
+    fun `addWithBalanceUpdate rejects zero or negative amount`() = runTest {
+        every { auth.currentUser } returns user
+        every { user.uid } returns "test_uid"
+
+        val zeroTx = sampleTransaction(amount = 0L)
+        val zeroResult = repository.addWithBalanceUpdate(zeroTx)
+        assertInstanceOf(AppResult.Error::class.java, zeroResult)
+        assertTrue((zeroResult as AppResult.Error).message.contains("Số tiền không hợp lệ"))
+
+        val negativeTx = sampleTransaction(amount = -50_000L)
+        val negResult = repository.addWithBalanceUpdate(negativeTx)
+        assertInstanceOf(AppResult.Error::class.java, negResult)
+    }
+
+    @Test
+    fun `addWithBalanceUpdate rejects amount exceeding max limit`() = runTest {
+        every { auth.currentUser } returns user
+        every { user.uid } returns "test_uid"
+
+        val hugeTx = sampleTransaction(amount = 1_000_000_000_000_000L)
+        val result = repository.addWithBalanceUpdate(hugeTx)
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertTrue((result as AppResult.Error).message.contains("Số tiền không hợp lệ"))
+    }
+
+    @Test
+    fun `addWithBalanceUpdate executes atomic transaction successfully for EXPENSE`() = runTest {
         val uid = "test_uid"
         every { auth.currentUser } returns user
         every { user.uid } returns uid
@@ -59,10 +94,11 @@ class FirebaseTransactionRepositoryTest {
         val transactionsColl: CollectionReference = mockk()
         val walletsColl: CollectionReference = mockk()
         val budgetsColl: CollectionReference = mockk()
-        val transactionDocRef: DocumentReference = mockk()
-        val walletDocRef: DocumentReference = mockk()
+        val transactionDocRef: DocumentReference = mockk(relaxed = true)
+        val walletDocRef: DocumentReference = mockk(relaxed = true)
         val budgetDocRef: DocumentReference = mockk(relaxed = true)
         val walletSnapshot: DocumentSnapshot = mockk()
+        val budgetSnapshot: DocumentSnapshot = mockk()
 
         every { firestore.collection("users").document(uid) } returns userDocRef
         every { userDocRef.collection("transactions") } returns transactionsColl
@@ -74,11 +110,14 @@ class FirebaseTransactionRepositoryTest {
         every { budgetsColl.document(any()) } returns budgetDocRef
         every { walletSnapshot.exists() } returns true
         every { walletSnapshot.getLong("balance") } returns 1_000_000L
+        every { budgetSnapshot.exists() } returns true
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(walletDocRef) } returns walletSnapshot
+        every { atomicTx.get(budgetDocRef) } returns budgetSnapshot
 
         val transactionSlot = slot<Transaction.Function<Any?>>()
         every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
-            val atomicTx: Transaction = mockk(relaxed = true)
-            every { atomicTx.get(walletDocRef) } returns walletSnapshot
             transactionSlot.captured.apply(atomicTx)
             Tasks.forResult<Any?>(null)
         }
@@ -88,8 +127,52 @@ class FirebaseTransactionRepositoryTest {
 
         assertInstanceOf(AppResult.Success::class.java, result)
         assertEquals("new_tx_id", (result as AppResult.Success).value)
-        verify { firestore.runTransaction<Any?>(any()) }
+        // Verify balance deducted: 1_000_000 - 200_000 = 800_000
+        verify { atomicTx.update(walletDocRef, "balance", 800_000L) }
     }
+
+    @Test
+    fun `addWithBalanceUpdate executes atomic transaction successfully for INCOME`() = runTest {
+        val uid = "test_uid"
+        every { auth.currentUser } returns user
+        every { user.uid } returns uid
+
+        val userDocRef: DocumentReference = mockk()
+        val transactionsColl: CollectionReference = mockk()
+        val walletsColl: CollectionReference = mockk()
+        val transactionDocRef: DocumentReference = mockk(relaxed = true)
+        val walletDocRef: DocumentReference = mockk(relaxed = true)
+        val walletSnapshot: DocumentSnapshot = mockk()
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("transactions") } returns transactionsColl
+        every { userDocRef.collection("wallets") } returns walletsColl
+        every { transactionsColl.document() } returns transactionDocRef
+        every { transactionDocRef.id } returns "income_tx_id"
+        every { walletsColl.document("wallet_1") } returns walletDocRef
+        every { walletSnapshot.exists() } returns true
+        every { walletSnapshot.getLong("balance") } returns 500_000L
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(walletDocRef) } returns walletSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
+        every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
+            transactionSlot.captured.apply(atomicTx)
+            Tasks.forResult<Any?>(null)
+        }
+
+        val incomeTx = sampleTransaction(walletId = "wallet_1", amount = 300_000L).copy(type = TransactionType.INCOME)
+        val result = repository.addWithBalanceUpdate(incomeTx)
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+        // Verify balance added: 500_000 + 300_000 = 800_000
+        verify { atomicTx.update(walletDocRef, "balance", 800_000L) }
+    }
+
+    // ==========================================
+    // EDIT TRANSACTION TESTS
+    // ==========================================
 
     @Test
     fun `editWithBalanceUpdate derives old state from stored document and reverses correctly`() = runTest {
@@ -101,100 +184,116 @@ class FirebaseTransactionRepositoryTest {
         val transactionsColl: CollectionReference = mockk()
         val walletsColl: CollectionReference = mockk()
         val budgetsColl: CollectionReference = mockk()
-        val transactionDocRef: DocumentReference = mockk()
-        val storedWalletDocRef: DocumentReference = mockk()
-        val updatedWalletDocRef: DocumentReference = mockk()
-        val storedBudgetDocRef: DocumentReference = mockk(relaxed = true)
-        val updatedBudgetDocRef: DocumentReference = mockk(relaxed = true)
+        val transactionDocRef: DocumentReference = mockk(relaxed = true)
+        val oldWalletDocRef: DocumentReference = mockk(relaxed = true)
+        val newWalletDocRef: DocumentReference = mockk(relaxed = true)
+        val oldBudgetDocRef: DocumentReference = mockk(relaxed = true)
 
-        val txSnapshot: DocumentSnapshot = mockk()
-        val storedWalletSnapshot: DocumentSnapshot = mockk()
-        val updatedWalletSnapshot: DocumentSnapshot = mockk()
-        val storedBudgetSnapshot: DocumentSnapshot = mockk()
-        val updatedBudgetSnapshot: DocumentSnapshot = mockk()
+        every { oldWalletDocRef.path } returns "users/test_uid/wallets/wallet_old"
+        every { newWalletDocRef.path } returns "users/test_uid/wallets/wallet_new"
+        every { oldBudgetDocRef.path } returns "users/test_uid/budgets/budget_old"
+
+        val txSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val oldWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val newWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val oldBudgetSnapshot: DocumentSnapshot = mockk(relaxed = true)
 
         every { firestore.collection("users").document(uid) } returns userDocRef
         every { userDocRef.collection("transactions") } returns transactionsColl
         every { userDocRef.collection("wallets") } returns walletsColl
         every { userDocRef.collection("budgets") } returns budgetsColl
-        every { transactionsColl.document("tx_100") } returns transactionDocRef
+        every { transactionsColl.document("tx_123") } returns transactionDocRef
+        every { walletsColl.document("wallet_old") } returns oldWalletDocRef
+        every { walletsColl.document("wallet_new") } returns newWalletDocRef
+        every { budgetsColl.document(any()) } returns oldBudgetDocRef
 
-        every { walletsColl.document("wallet_stored") } returns storedWalletDocRef
-        every { walletsColl.document("wallet_updated") } returns updatedWalletDocRef
-        every { storedWalletDocRef.path } returns "users/$uid/wallets/wallet_stored"
-        every { updatedWalletDocRef.path } returns "users/$uid/wallets/wallet_updated"
-
-        every { budgetsColl.document("cat_stored_2026-08") } returns storedBudgetDocRef
-        every { budgetsColl.document("cat_updated_2026-08") } returns updatedBudgetDocRef
-        every { storedBudgetDocRef.path } returns "users/$uid/budgets/cat_stored_2026-08"
-        every { updatedBudgetDocRef.path } returns "users/$uid/budgets/cat_updated_2026-08"
-
-        val nowTimestamp = Timestamp.now()
-        // Stored document in Firestore has amount 300,000, wallet_stored, cat_stored
-        every { txSnapshot.id } returns "tx_100"
-        every { txSnapshot.getString("id") } returns "tx_100"
-        every { txSnapshot.getString("walletId") } returns "wallet_stored"
-        every { txSnapshot.getLong("amount") } returns 300_000L
+        // Stored document in Firestore
+        every { txSnapshot.id } returns "tx_123"
+        every { txSnapshot.getLong("amount") } returns 1_000_000L
         every { txSnapshot.getString("type") } returns "expense"
-        every { txSnapshot.getString("note") } returns "Old note"
-        every { txSnapshot.getTimestamp("date") } returns nowTimestamp
-        every { txSnapshot.getTimestamp("createdAt") } returns nowTimestamp
-        every { txSnapshot.getTimestamp("updatedAt") } returns nowTimestamp
-        every { txSnapshot.getString("categoryId") } returns "cat_stored"
-        every { txSnapshot.getString("relatedWalletId") } returns null
+        every { txSnapshot.getString("categoryId") } returns "cat_food"
+        every { txSnapshot.getString("walletId") } returns "wallet_old"
+        every { txSnapshot.getString("note") } returns "Stored Note"
         every { txSnapshot.getString("receiptImageUrl") } returns null
+        every { txSnapshot.getString("relatedWalletId") } returns null
+        every { txSnapshot.getTimestamp("date") } returns fixedTimestamp
+        every { txSnapshot.getTimestamp("createdAt") } returns fixedTimestamp
+        every { txSnapshot.getTimestamp("updatedAt") } returns fixedTimestamp
 
-        every { storedWalletSnapshot.getLong("balance") } returns 1_000_000L
-        every { updatedWalletSnapshot.getLong("balance") } returns 2_000_000L
-        every { storedBudgetSnapshot.exists() } returns true
-        every { updatedBudgetSnapshot.exists() } returns true
+        every { oldWalletSnapshot.exists() } returns true
+        every { oldWalletSnapshot.getLong("balance") } returns 2_000_000L
+
+        every { newWalletSnapshot.exists() } returns true
+        every { newWalletSnapshot.getLong("balance") } returns 500_000L
+
+        every { oldBudgetSnapshot.exists() } returns true
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(transactionDocRef) } returns txSnapshot
+        every { atomicTx.get(oldWalletDocRef) } returns oldWalletSnapshot
+        every { atomicTx.get(newWalletDocRef) } returns newWalletSnapshot
+        every { atomicTx.get(oldBudgetDocRef) } returns oldBudgetSnapshot
 
         val transactionSlot = slot<Transaction.Function<Any?>>()
-        val atomicTx: Transaction = mockk(relaxed = true)
         every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
-            every { atomicTx.get(transactionDocRef) } returns txSnapshot
-            every { atomicTx.get(storedWalletDocRef) } returns storedWalletSnapshot
-            every { atomicTx.get(updatedWalletDocRef) } returns updatedWalletSnapshot
-            every { atomicTx.get(storedBudgetDocRef) } returns storedBudgetSnapshot
-            every { atomicTx.get(updatedBudgetDocRef) } returns updatedBudgetSnapshot
             transactionSlot.captured.apply(atomicTx)
             Tasks.forResult<Any?>(null)
         }
 
-        // Stale caller object has amount 100_000, wallet_stale (should NOT be trusted)
-        val staleOriginal = FinanceTransaction(
-            id = "tx_100",
-            type = TransactionType.EXPENSE,
-            amount = Money(100_000L), // Stale amount!
-            categoryId = "cat_stale",
-            walletId = "wallet_stale",
-            note = "Stale note",
-            date = Instant.now(),
-        )
-
-        val updated = FinanceTransaction(
-            id = "tx_100",
-            type = TransactionType.EXPENSE,
-            amount = Money(500_000L),
-            categoryId = "cat_updated",
-            walletId = "wallet_updated",
-            note = "Updated note",
-            date = Instant.now(),
-        )
+        // Caller sends stale original (amount: 800_000 instead of 1_000_000)
+        val staleOriginal = sampleTransaction(id = "tx_123", walletId = "wallet_old", amount = 800_000L)
+        val updated = sampleTransaction(id = "tx_123", walletId = "wallet_new", amount = 300_000L)
 
         val result = repository.editWithBalanceUpdate(staleOriginal, updated)
+
         assertInstanceOf(AppResult.Success::class.java, result)
 
-        // Verify stored wallet is credited back +300_000 (1_000_000 - (-300_000) = 1_300_000)
-        verify { atomicTx.update(storedWalletDocRef, "balance", 1_300_000L) }
-        // Verify updated wallet is debited -500_000 (2_000_000 - 500_000 = 1_500_000)
-        verify { atomicTx.update(updatedWalletDocRef, "balance", 1_500_000L) }
-        // Verify stored budget is decremented by stored amount -300_000
-        verify { atomicTx.update(storedBudgetDocRef, "spentAmount", any()) }
+        // Verify old wallet reversed with stored amount 1_000_000 -> 2_000_000 + 1_000_000 = 3_000_000
+        verify { atomicTx.update(oldWalletDocRef, "balance", 3_000_000L) }
+        // Verify new wallet deducted 300_000 -> 500_000 - 300_000 = 200_000
+        verify { atomicTx.update(newWalletDocRef, "balance", 200_000L) }
+        // Verify budget updated with net delta
+        verify { atomicTx.update(oldBudgetDocRef, "spentAmount", any<FieldValue>()) }
     }
 
     @Test
-    fun `deleteWithBalanceUpdate derives wallet and budget strictly from stored document`() = runTest {
+    fun `editWithBalanceUpdate fails if stored transaction not found`() = runTest {
+        val uid = "test_uid"
+        every { auth.currentUser } returns user
+        every { user.uid } returns uid
+
+        val userDocRef: DocumentReference = mockk()
+        val transactionsColl: CollectionReference = mockk()
+        val transactionDocRef: DocumentReference = mockk(relaxed = true)
+        val txSnapshot: DocumentSnapshot = mockk(relaxed = true)
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("transactions") } returns transactionsColl
+        every { transactionsColl.document("missing_tx") } returns transactionDocRef
+        every { txSnapshot.getLong("amount") } returns null
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(transactionDocRef) } returns txSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
+        every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
+            transactionSlot.captured.apply(atomicTx)
+            Tasks.forResult<Any?>(null)
+        }
+
+        val original = sampleTransaction(id = "missing_tx")
+        val updated = sampleTransaction(id = "missing_tx", amount = 50_000L)
+
+        val result = repository.editWithBalanceUpdate(original, updated)
+        assertInstanceOf(AppResult.Error::class.java, result)
+    }
+
+    // ==========================================
+    // DELETE TRANSACTION TESTS
+    // ==========================================
+
+    @Test
+    fun `deleteWithBalanceUpdate derives state from stored document and reverses correctly`() = runTest {
         val uid = "test_uid"
         every { auth.currentUser } returns user
         every { user.uid } returns uid
@@ -203,101 +302,114 @@ class FirebaseTransactionRepositoryTest {
         val transactionsColl: CollectionReference = mockk()
         val walletsColl: CollectionReference = mockk()
         val budgetsColl: CollectionReference = mockk()
-        val transactionDocRef: DocumentReference = mockk()
-        val storedWalletDocRef: DocumentReference = mockk()
-        val storedBudgetDocRef: DocumentReference = mockk(relaxed = true)
-        val txSnapshot: DocumentSnapshot = mockk()
-        val walletSnapshot: DocumentSnapshot = mockk()
-        val budgetSnapshot: DocumentSnapshot = mockk()
+        val transactionDocRef: DocumentReference = mockk(relaxed = true)
+        val walletDocRef: DocumentReference = mockk(relaxed = true)
+        val budgetDocRef: DocumentReference = mockk(relaxed = true)
+
+        val txSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val walletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val budgetSnapshot: DocumentSnapshot = mockk(relaxed = true)
 
         every { firestore.collection("users").document(uid) } returns userDocRef
         every { userDocRef.collection("transactions") } returns transactionsColl
         every { userDocRef.collection("wallets") } returns walletsColl
         every { userDocRef.collection("budgets") } returns budgetsColl
-        every { transactionsColl.document("tx_123") } returns transactionDocRef
-        every { walletsColl.document("wallet_stored_actual") } returns storedWalletDocRef
-        every { budgetsColl.document("cat_stored_actual_2026-08") } returns storedBudgetDocRef
+        every { transactionsColl.document("tx_del") } returns transactionDocRef
+        every { walletsColl.document("wallet_del") } returns walletDocRef
+        every { budgetsColl.document(any()) } returns budgetDocRef
 
-        val nowTimestamp = Timestamp.now()
-        every { txSnapshot.id } returns "tx_123"
-        every { txSnapshot.getString("id") } returns "tx_123"
-        every { txSnapshot.getString("walletId") } returns "wallet_stored_actual"
-        every { txSnapshot.getLong("amount") } returns 250_000L
+        // Stored document in Firestore
+        every { txSnapshot.id } returns "tx_del"
+        every { txSnapshot.getLong("amount") } returns 500_000L
         every { txSnapshot.getString("type") } returns "expense"
-        every { txSnapshot.getString("note") } returns "Actual lunch"
-        every { txSnapshot.getTimestamp("date") } returns nowTimestamp
-        every { txSnapshot.getTimestamp("createdAt") } returns nowTimestamp
-        every { txSnapshot.getTimestamp("updatedAt") } returns nowTimestamp
-        every { txSnapshot.getString("categoryId") } returns "cat_stored_actual"
-        every { txSnapshot.getString("relatedWalletId") } returns null
+        every { txSnapshot.getString("categoryId") } returns "cat_food"
+        every { txSnapshot.getString("walletId") } returns "wallet_del"
+        every { txSnapshot.getString("note") } returns ""
         every { txSnapshot.getString("receiptImageUrl") } returns null
+        every { txSnapshot.getString("relatedWalletId") } returns null
+        every { txSnapshot.getTimestamp("date") } returns fixedTimestamp
+        every { txSnapshot.getTimestamp("createdAt") } returns fixedTimestamp
+        every { txSnapshot.getTimestamp("updatedAt") } returns fixedTimestamp
 
-        every { walletSnapshot.getLong("balance") } returns 750_000L
+        every { walletSnapshot.exists() } returns true
+        every { walletSnapshot.getLong("balance") } returns 1_000_000L
+
         every { budgetSnapshot.exists() } returns true
 
-        val transactionSlot = slot<Transaction.Function<Any?>>()
         val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(transactionDocRef) } returns txSnapshot
+        every { atomicTx.get(walletDocRef) } returns walletSnapshot
+        every { atomicTx.get(budgetDocRef) } returns budgetSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
         every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
-            every { atomicTx.get(transactionDocRef) } returns txSnapshot
-            every { atomicTx.get(storedWalletDocRef) } returns walletSnapshot
-            every { atomicTx.get(storedBudgetDocRef) } returns budgetSnapshot
             transactionSlot.captured.apply(atomicTx)
             Tasks.forResult<Any?>(null)
         }
 
-        // Caller has stale walletId and stale amount
-        val staleTx = sampleTransaction(id = "tx_123", walletId = "stale_wallet", amount = 10_000L)
+        // Caller passes stale transaction with wrong amount (200_000 instead of 500_000)
+        val staleTx = sampleTransaction(id = "tx_del", walletId = "wallet_del", amount = 200_000L)
         val result = repository.deleteWithBalanceUpdate(staleTx)
 
         assertInstanceOf(AppResult.Success::class.java, result)
-        // Verify delete is called on document
+
+        // Verify balance refunded with stored amount: 1_000_000 + 500_000 = 1_500_000
+        verify { atomicTx.update(walletDocRef, "balance", 1_500_000L) }
+        // Verify budget reversed with stored amount: -500_000
+        verify { atomicTx.update(budgetDocRef, "spentAmount", any<FieldValue>()) }
+        // Verify document deleted
         verify { atomicTx.delete(transactionDocRef) }
-        // Verify balance refunded is based on stored: 750_000 - (-250_000) = 1_000_000
-        verify { atomicTx.update(storedWalletDocRef, "balance", 1_000_000L) }
     }
 
+    // ==========================================
+    // TRANSFER BETWEEN WALLETS TESTS
+    // ==========================================
+
     @Test
-    fun `transferBetweenWallets validates source and destination and executes atomic transfer`() = runTest {
+    fun `transferBetweenWallets executes atomic OUT and IN transactions successfully`() = runTest {
         val uid = "test_uid"
         every { auth.currentUser } returns user
         every { user.uid } returns uid
 
         val userDocRef: DocumentReference = mockk()
-        val walletsColl: CollectionReference = mockk()
         val transactionsColl: CollectionReference = mockk()
-        val sourceWalletRef: DocumentReference = mockk()
-        val destWalletRef: DocumentReference = mockk()
-        val outTxRef: DocumentReference = mockk()
-        val inTxRef: DocumentReference = mockk()
+        val walletsColl: CollectionReference = mockk()
+        val outTxDocRef: DocumentReference = mockk(relaxed = true)
+        val inTxDocRef: DocumentReference = mockk(relaxed = true)
+        val sourceWalletRef: DocumentReference = mockk(relaxed = true)
+        val destWalletRef: DocumentReference = mockk(relaxed = true)
 
-        val sourceSnapshot: DocumentSnapshot = mockk()
-        val destSnapshot: DocumentSnapshot = mockk()
+        val sourceWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val destWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
 
         every { firestore.collection("users").document(uid) } returns userDocRef
-        every { userDocRef.collection("wallets") } returns walletsColl
         every { userDocRef.collection("transactions") } returns transactionsColl
+        every { userDocRef.collection("wallets") } returns walletsColl
+        every { transactionsColl.document(any()) } returns outTxDocRef andThen inTxDocRef
+        every { outTxDocRef.id } returns "out_id"
+        every { inTxDocRef.id } returns "in_id"
+
         every { walletsColl.document("wallet_src") } returns sourceWalletRef
         every { walletsColl.document("wallet_dst") } returns destWalletRef
-        every { transactionsColl.document(match { it.endsWith("_out") }) } returns outTxRef
-        every { transactionsColl.document(match { it.endsWith("_in") }) } returns inTxRef
-        every { outTxRef.id } returns "pair_out"
-        every { inTxRef.id } returns "pair_in"
 
-        every { sourceSnapshot.getLong("balance") } returns 500_000L
-        every { sourceSnapshot.getString("type") } returns "CASH"
-        every { destSnapshot.getLong("balance") } returns 100_000L
+        every { sourceWalletSnapshot.exists() } returns true
+        every { sourceWalletSnapshot.getString("type") } returns "cash"
+        every { sourceWalletSnapshot.getLong("balance") } returns 500_000L
+
+        every { destWalletSnapshot.exists() } returns true
+        every { destWalletSnapshot.getLong("balance") } returns 100_000L
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(sourceWalletRef) } returns sourceWalletSnapshot
+        every { atomicTx.get(destWalletRef) } returns destWalletSnapshot
 
         val transactionSlot = slot<Transaction.Function<Any?>>()
-        val atomicTx: Transaction = mockk(relaxed = true)
         every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
-            every { atomicTx.get(sourceWalletRef) } returns sourceSnapshot
-            every { atomicTx.get(destWalletRef) } returns destSnapshot
             transactionSlot.captured.apply(atomicTx)
             Tasks.forResult<Any?>(null)
         }
 
-        // Test transfer amount 200_000
-        val result = repository.transferBetweenWallets("wallet_src", "wallet_dst", 200_000L, "Chuyển tiền", Instant.now())
+        val result = repository.transferBetweenWallets("wallet_src", "wallet_dst", 200_000L, "Chuyển tiền", fixedInstant)
         assertInstanceOf(AppResult.Success::class.java, result)
 
         // Verify source deducted 200_000 -> 300_000, dest added 200_000 -> 300_000
@@ -310,9 +422,66 @@ class FirebaseTransactionRepositoryTest {
         every { auth.currentUser } returns user
         every { user.uid } returns "test_uid"
 
-        val result = repository.transferBetweenWallets("same_wallet", "same_wallet", 100_000L, "", Instant.now())
+        val result = repository.transferBetweenWallets("same_wallet", "same_wallet", 100_000L, "", fixedInstant)
         assertInstanceOf(AppResult.Error::class.java, result)
         assertTrue((result as AppResult.Error).message.contains("Hai ví phải khác nhau"))
+    }
+
+    @Test
+    fun `transferBetweenWallets fails if amount is zero or negative`() = runTest {
+        every { auth.currentUser } returns user
+        every { user.uid } returns "test_uid"
+
+        val zeroResult = repository.transferBetweenWallets("src", "dst", 0L, "", fixedInstant)
+        assertInstanceOf(AppResult.Error::class.java, zeroResult)
+
+        val negResult = repository.transferBetweenWallets("src", "dst", -50_000L, "", fixedInstant)
+        assertInstanceOf(AppResult.Error::class.java, negResult)
+    }
+
+    @Test
+    fun `transferBetweenWallets fails if non-card source has insufficient balance`() = runTest {
+        val uid = "test_uid"
+        every { auth.currentUser } returns user
+        every { user.uid } returns uid
+
+        val userDocRef: DocumentReference = mockk()
+        val walletsColl: CollectionReference = mockk()
+        val transactionsColl: CollectionReference = mockk()
+        val txDocRef: DocumentReference = mockk(relaxed = true)
+        val sourceWalletRef: DocumentReference = mockk(relaxed = true)
+        val destWalletRef: DocumentReference = mockk(relaxed = true)
+        val sourceWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val destWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("wallets") } returns walletsColl
+        every { userDocRef.collection("transactions") } returns transactionsColl
+        every { transactionsColl.document(any()) } returns txDocRef
+        every { walletsColl.document("wallet_src") } returns sourceWalletRef
+        every { walletsColl.document("wallet_dst") } returns destWalletRef
+
+        every { sourceWalletSnapshot.exists() } returns true
+        every { sourceWalletSnapshot.getString("type") } returns "cash"
+        every { sourceWalletSnapshot.getLong("balance") } returns 50_000L // only 50k
+
+        every { destWalletSnapshot.exists() } returns true
+        every { destWalletSnapshot.getLong("balance") } returns 100_000L
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(sourceWalletRef) } returns sourceWalletSnapshot
+        every { atomicTx.get(destWalletRef) } returns destWalletSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
+        every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
+            transactionSlot.captured.apply(atomicTx)
+            Tasks.forResult<Any?>(null)
+        }
+
+        // Try to transfer 200_000 from wallet with only 50_000
+        val result = repository.transferBetweenWallets("wallet_src", "wallet_dst", 200_000L, "", fixedInstant)
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertTrue((result as AppResult.Error).message.contains("Số dư ví nguồn không đủ"))
     }
 
     private fun sampleTransaction(
@@ -326,6 +495,6 @@ class FirebaseTransactionRepositoryTest {
         categoryId = "cat_food",
         walletId = walletId,
         note = "Ăn trưa",
-        date = Instant.now(),
+        date = fixedInstant,
     )
 }
