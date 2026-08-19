@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.8.2] - 2026-08-19
+### Added
+- **Chi Tiết Giao Dịch Khi Chạm Đơn (TransactionDetailSheet)**: Chạm vào bất kỳ giao dịch nào sẽ mở modal Liquid Glass xem đầy đủ thông tin: số tiền kèm badge thu/chi, danh mục, ví thanh toán, ngày giờ chuẩn xác, ghi chú và hóa đơn đính kèm. Bên trong có nút "Sửa" và "Xóa" kèm xác nhận an toàn.
+- **Pop-up Tùy Chọn Khi Bấm Giữ (TransactionActionDialog)**: Bấm giữ (Long-press) vào giao dịch sẽ hiển thị pop-up lựa chọn nhanh: "Xem chi tiết", "Sửa giao dịch", "Xóa giao dịch" kèm dialog xác nhận xóa (`DeleteTransactionConfirmDialog`).
+- **Tab Lịch Sử Thu/Chi Mới Tại Bottom Navigation Bar**: Thay thế vị trí tab "Ví" ở thanh điều hướng dưới bằng tab "Lịch sử" (`Route.Transactions`) với icon `ReceiptLong` để truy cập trực tiếp toàn bộ lịch sử thu/chi, hỗ trợ lọc Tất cả / Thu / Chi và chuyển tab bằng cử chỉ vuốt ngang mượt mà.
+
+### Changed
+- **Điều Hướng & Vuốt Ngang (Main Swipe Navigation)**: Cập nhật luồng vuốt ngang chính: `Trang chủ` <-> `Lịch sử` <-> `Báo cáo` <-> `Hồ sơ`.
+
+## [1.8.1] - 2026-08-19
+### Added
+- **Chỉnh Sửa & Điều Chỉnh Giao Dịch Thu Chi (UC-08)**: Hỗ trợ chạm vào bất kỳ giao dịch nào hoặc nhấn nút sửa (Edit) để mở form chỉnh sửa trực quan trên toàn bộ các màn hình (Home, Danh sách giao dịch Classic & Modern, Thu nhập, Chi tiêu).
+- **Edit Mode trong AddTransactionSheet**: Tự động nhận diện và nạp dữ liệu giao dịch cũ (loại thu/chi, số tiền, danh mục, ví, ghi chú, ngày, hóa đơn đính kèm), cập nhật tiêu đề "Sửa giao dịch" và nút "Lưu thay đổi".
+
+### Fixed
+- **Đồng Bộ Hoàn Tiền & Cập Nhật Số Dư Ví Nguyên Tử**: Kết nối `EditTransactionUseCase` với `AddTransactionViewModel`, hoàn nguyên số dư ví cũ và cập nhật số dư ví mới + ngân sách qua Firestore Transaction an toàn tuyệt đối.
+
 ## [1.8.0] - 2026-08-15
 ### Added
 - **Xuất Báo Cáo Tài Chính Excel (.csv) & PDF (UC-17)**: Hỗ trợ xuất dữ liệu thu chi chuẩn UTF-8 BOM cho Excel và tạo file PDF đa trang chuyên nghiệp kèm biểu đồ KPI, thống kê danh mục và bảng giao dịch chi tiết qua `ReportExporter` và `ExportReportDialog`.

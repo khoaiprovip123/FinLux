@@ -3,8 +3,10 @@ package com.finlux.app.presentation.home.classic
 import com.finlux.app.presentation.home.*
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -88,6 +90,9 @@ fun ClassicHomeScreen(
     onNavigate: (String) -> Unit,
     onAdd: () -> Unit,
     onNotifications: () -> Unit,
+    onSelectTransaction: ((FinanceTransaction) -> Unit)? = null,
+    onActionTransaction: ((FinanceTransaction) -> Unit)? = null,
+    onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     NotificationPermissionHandler()
@@ -177,7 +182,13 @@ fun ClassicHomeScreen(
                     }
                 } else {
                     items(state.transactions.take(6), key = { it.id }) { transaction ->
-                        ReferenceTransactionRow(transaction, categories[transaction.categoryId], showBalance)
+                        ReferenceTransactionRow(
+                            transaction = transaction,
+                            category = categories[transaction.categoryId],
+                            showBalance = showBalance,
+                            onClick = { onSelectTransaction?.invoke(transaction) },
+                            onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
+                        )
                     }
                 }
             }
@@ -358,8 +369,15 @@ private fun ReferenceMetric(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ReferenceTransactionRow(transaction: FinanceTransaction, category: Category?, showBalance: Boolean) {
+private fun ReferenceTransactionRow(
+    transaction: FinanceTransaction,
+    category: Category?,
+    showBalance: Boolean,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+) {
     val income = transaction.type == TransactionType.INCOME
     val accent = category?.let { colorFromHex(it.colorHex) } ?: if (income) IncomeGreen else ExpenseRed
     val zoneId = ZoneId.systemDefault()
@@ -373,8 +391,18 @@ private fun ReferenceTransactionRow(transaction: FinanceTransaction, category: C
         else      -> transaction.date.atZone(zoneId).format(DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm"))
     }
     val rowHeight = if (transaction.note.isNotBlank()) 68.dp else 58.dp
+    val clickableModifier = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            onClick = { onClick?.invoke() },
+            onLongClick = { onLongClick?.invoke() },
+        )
+    } else Modifier
+
     Row(
-        Modifier.fillMaxWidth().height(rowHeight),
+        Modifier
+            .fillMaxWidth()
+            .height(rowHeight)
+            .then(clickableModifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(

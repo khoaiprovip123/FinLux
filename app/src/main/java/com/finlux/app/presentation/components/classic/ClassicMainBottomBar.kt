@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
@@ -46,7 +46,7 @@ fun ClassicMainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, on
     // on 3-button devices that would squeeze the 48dp system inset into the content area.
     GlassBottomNav(Modifier.fillMaxWidth()) {
         DestinationItem(Route.Home, "Trang chủ", selectedRoute, onNavigate, Icons.Filled.Home, Icons.Outlined.Home)
-        DestinationItem(Route.Wallets, "Ví", selectedRoute, onNavigate, Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet)
+        DestinationItem(Route.Transactions, "Lịch sử", selectedRoute, onNavigate, Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong)
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             GlassFab(onClick = onAdd) { Icon(Icons.Default.Add, contentDescription = "Thêm giao dịch") }
         }

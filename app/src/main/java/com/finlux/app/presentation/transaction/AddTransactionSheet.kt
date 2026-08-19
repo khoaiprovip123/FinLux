@@ -70,6 +70,7 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.walletIcon
+import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.presentation.home.toVnd
@@ -83,6 +84,7 @@ fun AddTransactionSheet(
     onDismiss: () -> Unit,
     initialType: TransactionType? = null,
     initialReceiptUri: String? = null,
+    initialTransaction: FinanceTransaction? = null,
     viewModel: AddTransactionViewModel = hiltViewModel(),
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -94,7 +96,13 @@ fun AddTransactionSheet(
     var categoryToEdit by remember { mutableStateOf<com.finlux.app.domain.model.Category?>(null) }
     var categoryToDelete by remember { mutableStateOf<com.finlux.app.domain.model.Category?>(null) }
 
-    LaunchedEffect(initialType) { initialType?.let(viewModel::setType) }
+    LaunchedEffect(initialTransaction) {
+        if (initialTransaction != null) {
+            viewModel.setEditingTransaction(initialTransaction)
+        } else {
+            initialType?.let(viewModel::setType)
+        }
+    }
     LaunchedEffect(initialReceiptUri) { if (initialReceiptUri != null) viewModel.setReceipt(initialReceiptUri) }
     LaunchedEffect(state.saved) { if (state.saved) { viewModel.consumeSaved(); onDismiss() } }
     GlassBottomSheet(onDismiss = onDismiss) {
@@ -103,7 +111,16 @@ fun AddTransactionSheet(
             verticalArrangement = Arrangement.spacedBy(15.dp),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column { Text("Thêm giao dịch", style = MaterialTheme.typography.titleLarge); Text("Ghi nhận đầy đủ để báo cáo chính xác", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Column {
+                    Text(
+                        if (state.editingTransaction != null) "Sửa giao dịch" else "Thêm giao dịch",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        if (state.editingTransaction != null) "Cập nhật thông tin giao dịch chính xác" else "Ghi nhận đầy đủ để báo cáo chính xác",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Icon(Icons.Default.ReceiptLong, null, tint = MaterialTheme.colorScheme.primary)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -203,7 +220,10 @@ fun AddTransactionSheet(
             }
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(viewModel::save, Modifier.fillMaxWidth().height(54.dp), enabled = !state.isSaving) {
-                Text(if (state.isSaving) "Đang lưu…" else "Lưu giao dịch", fontWeight = FontWeight.Bold)
+                Text(
+                    if (state.isSaving) "Đang lưu…" else if (state.editingTransaction != null) "Lưu thay đổi" else "Lưu giao dịch",
+                    fontWeight = FontWeight.Bold,
+                )
             }
             Spacer(Modifier.height(8.dp))
         }

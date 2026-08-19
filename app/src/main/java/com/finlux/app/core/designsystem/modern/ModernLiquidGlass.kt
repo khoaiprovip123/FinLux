@@ -8,9 +8,11 @@ import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -223,6 +225,7 @@ fun Modifier.finluxBackgroundBlur(radius: Dp = 18.dp): Modifier =
 /**
  * Interactive Liquid Glass Card with spring physics haptic feel.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
@@ -232,6 +235,7 @@ fun GlassCard(
     elevation: Dp = 10.dp,
     padding: PaddingValues? = null,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val preferences = LocalUiPreferences.current
@@ -243,11 +247,23 @@ fun GlassCard(
         animationSpec = spring(stiffness = 650f, dampingRatio = 0.72f),
         label = "glass-card-press",
     )
-    val interactive = if (onClick != null) {
-        Modifier.clickable(interactionSource = interactionSource, indication = null) {
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            onClick()
-        }
+    val interactive = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = {
+                onClick?.let {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    it()
+                }
+            },
+            onLongClick = onLongClick?.let { action ->
+                {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    action()
+                }
+            },
+        )
     } else Modifier
 
     LiquidGlassSurface(

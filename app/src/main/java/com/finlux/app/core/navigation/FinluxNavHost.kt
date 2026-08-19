@@ -57,10 +57,17 @@ import com.finlux.app.presentation.notifications.NotificationsScreen
 import com.finlux.app.presentation.reminders.RemindersScreen
 import com.finlux.app.presentation.reports.ReportsScreen
 import com.finlux.app.presentation.settings.SettingsScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.finlux.app.presentation.transaction.TransactionDetailSheet
+import com.finlux.app.presentation.transaction.TransactionActionDialog
+import com.finlux.app.presentation.transaction.DeleteTransactionConfirmDialog
+import com.finlux.app.presentation.transaction.TransactionsViewModel
 import com.finlux.app.presentation.transaction.AddTransactionSheet
 import com.finlux.app.presentation.transaction.TransactionsScreen
 import com.finlux.app.presentation.wallet.WalletsScreen
 import com.finlux.app.domain.model.TransactionType
+import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.components.QuickAddSheet
 import com.finlux.app.presentation.receipt.ReceiptCaptureScreen
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,7 +85,15 @@ fun FinluxNavHost(
     destinationFlow: MutableStateFlow<String?>? = null,
     payNotificationIdFlow: MutableStateFlow<String?>? = null,
 ) {
+    val transactionsViewModel: TransactionsViewModel = hiltViewModel()
+    val allCategories = transactionsViewModel.categories.collectAsStateWithLifecycle().value
+    val allWallets = transactionsViewModel.wallets.collectAsStateWithLifecycle().value
+
     var showAddTransaction by remember { mutableStateOf(false) }
+    var editingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
+    var viewingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
+    var actionTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
+    var pendingDeleteTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
     var showQuickAdd by remember { mutableStateOf(false) }
     var walletTransferRequest by remember { mutableStateOf(0) }
     var initialTransactionType by remember { mutableStateOf<TransactionType?>(null) }
@@ -217,9 +232,19 @@ fun FinluxNavHost(
                     onNavigate = navigateMain,
                     onAdd = { showQuickAdd = true },
                     onNotifications = { navController.navigate(Route.Notifications.value) },
+                    onSelectTransaction = { viewingTransaction = it },
+                    onActionTransaction = { actionTransaction = it },
+                    onEditTransaction = { editingTransaction = it },
                 )
             }
-            composable(Route.Transactions.value) { TransactionsScreen(onNavigate = navigateMain, onBack = navController::popBackStack) }
+            composable(Route.Transactions.value) {
+                TransactionsScreen(
+                    onNavigate = navigateMain,
+                    onAdd = { showQuickAdd = true },
+                    onBack = navController::popBackStack,
+                    onEditTransaction = { editingTransaction = it },
+                )
+            }
             composable(Route.Reports.value) {
                 ReportsScreen(onNavigate = navigateMain, onAdd = { showQuickAdd = true }, onBack = navController::popBackStack)
             }
@@ -259,6 +284,9 @@ fun FinluxNavHost(
                         initialTransactionType = TransactionType.INCOME
                         showAddTransaction = true
                     },
+                    onSelectTransaction = { viewingTransaction = it },
+                    onActionTransaction = { actionTransaction = it },
+                    onEditTransaction = { editingTransaction = it },
                 )
             }
             composable(Route.Expense.value) {
@@ -269,6 +297,9 @@ fun FinluxNavHost(
                         initialTransactionType = TransactionType.EXPENSE
                         showAddTransaction = true
                     },
+                    onSelectTransaction = { viewingTransaction = it },
+                    onActionTransaction = { actionTransaction = it },
+                    onEditTransaction = { editingTransaction = it },
                 )
             }
             composable(Route.Notifications.value) {
@@ -291,6 +322,59 @@ fun FinluxNavHost(
                 showAddTransaction = false
                 initialTransactionType = null
                 pendingReceiptUri = null
+            },
+        )
+    }
+    if (editingTransaction != null) {
+        AddTransactionSheet(
+            initialTransaction = editingTransaction,
+            onDismiss = {
+                editingTransaction = null
+            },
+        )
+    }
+    viewingTransaction?.let { tx ->
+        TransactionDetailSheet(
+            transaction = tx,
+            category = allCategories[tx.categoryId],
+            wallet = allWallets[tx.walletId],
+            onDismiss = { viewingTransaction = null },
+            onEdit = {
+                viewingTransaction = null
+                editingTransaction = it
+            },
+            onDelete = {
+                viewingTransaction = null
+                pendingDeleteTransaction = it
+            },
+        )
+    }
+    actionTransaction?.let { tx ->
+        TransactionActionDialog(
+            transaction = tx,
+            category = allCategories[tx.categoryId],
+            onDismiss = { actionTransaction = null },
+            onViewDetails = {
+                actionTransaction = null
+                viewingTransaction = it
+            },
+            onEdit = {
+                actionTransaction = null
+                editingTransaction = it
+            },
+            onDelete = {
+                actionTransaction = null
+                pendingDeleteTransaction = it
+            },
+        )
+    }
+    pendingDeleteTransaction?.let { tx ->
+        DeleteTransactionConfirmDialog(
+            transaction = tx,
+            onDismiss = { pendingDeleteTransaction = null },
+            onConfirm = {
+                transactionsViewModel.delete(it)
+                pendingDeleteTransaction = null
             },
         )
     }
@@ -356,7 +440,7 @@ private fun BoxScope.SwipeEdgeGlow(offset: Float) {
 
 private val MainSwipeRoutes = listOf(
     Route.Home.value,
-    Route.Wallets.value,
+    Route.Transactions.value,
     Route.Reports.value,
     Route.Settings.value,
 )

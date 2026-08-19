@@ -56,6 +56,7 @@ import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.navigation.Route
 import com.finlux.app.presentation.components.MainBottomBar
+import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
 import java.time.ZoneId
@@ -69,6 +70,9 @@ fun ExpenseScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
     onAddExpense: () -> Unit,
+    onSelectTransaction: ((FinanceTransaction) -> Unit)? = null,
+    onActionTransaction: ((FinanceTransaction) -> Unit)? = null,
+    onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: ExpenseViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
@@ -107,7 +111,11 @@ fun ExpenseScreen(
             else items(state.transactions.take(12), key = { it.id }) { transaction ->
                 val category = state.categories[transaction.categoryId]
                 val accent = category?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
-                GlassCard(Modifier.fillMaxWidth()) {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onSelectTransaction?.invoke(transaction) },
+                    onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.TrendingDown, null, tint = accent) }
                         Column(Modifier.weight(1f).padding(horizontal = 11.dp)) {

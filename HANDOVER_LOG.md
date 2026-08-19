@@ -1,8 +1,100 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.0 (versionCode 94) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
+- **Phiên bản hiện tại:** v1.8.2 (versionCode 98) - Release
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (46/46 unit tests pass 100%).
+
+---
+
+## [DONE] Task: Transaction Detail Modal, Long-Press Actions Popup, and Bottom History Tab (v1.8.2)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **Chạm đơn (Single-tap) vào giao dịch:** Mở giao diện xem Chi tiết giao dịch (`TransactionDetailSheet`) dạng Liquid Glass hiển thị chi tiết số tiền, danh mục, ví, ngày giờ, ghi chú, hóa đơn đính kèm kèm 2 nút hành động "Sửa" và "Xóa" (có dialog xác nhận an toàn).
+2. **Bấm giữ (Long-press) vào giao dịch:** Mở pop-up tùy chọn nhanh (`TransactionActionDialog`) gồm: "Xem chi tiết", "Sửa giao dịch", "Xóa giao dịch" kèm dialog xác nhận xóa và hoàn tiền số dư ví (`DeleteTransactionConfirmDialog`).
+3. **Thanh điều hướng dưới (Bottom Navigation):** Thay thế tab "Ví" thành tab "Lịch sử" (`Route.Transactions`, label: "Lịch sử", icon: `ReceiptLong`) để xem lại toàn bộ lịch sử thu/chi, hỗ trợ swipe gestures và bộ lọc Tất cả / Thu / Chi.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **46/46 PASS (100%)**
+- Build APK: Thành công tại `app/build/outputs/apk/debug/app-debug.apk`
+
+### Danh sách file đã chỉnh sửa
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt`
+- `app/src/test/java/com/finlux/app/core/navigation/MainSwipeNavigationTest.kt`
+- `app/src/test/java/com/finlux/app/presentation/transaction/TransactionsViewModelTest.kt`
+- `app/build.gradle.kts`
+- `CHANGELOG.md`
+
+---
+
+## [DONE] Task: Long-Press & Button-Only Edit Trigger (Chỉ mở sửa khi bấm giữ hoặc bấm nút sửa)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu Hoàn Thành
+- Thay đổi hành vi kích hoạt sửa giao dịch: Chỉ mở form sửa khi người dùng **bấm giữ (long-press)** vào giao dịch hoặc **bấm nút Sửa (icon Edit)**.
+- Loại bỏ mở form sửa khi chạm đơn (single tap) để tránh người dùng vô tình chạm nhầm mở form sửa.
+- Đồng bộ trên các màn hình: Home (Giao dịch gần đây), Transactions (Danh sách giao dịch Classic & Modern), Income (Thu nhập), Expense (Chi tiêu).
+- Bổ sung hỗ trợ `onLongClick` trực tiếp vào component thiết kế chung [GlassCard](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt) (Classic & Modern).
+
+### Scope và file thực tế chỉnh sửa
+- `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt`
+
+### Kết quả kiểm thử
+- `gradlew testDebugUnitTest`: **100% PASS** (BUILD SUCCESSFUL).
+- `gradlew assembleDebug` + `build_and_install.ps1`: **Cài đặt thành công lên thiết bị ADB `7f4ca06a`**.
+
+---
+
+## [DONE] Task: Fix Transaction Edit & Adjustment Capability (Sửa/Điều chỉnh giao dịch thu chi)
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu Hoàn Thành
+- Sửa lỗi không điều chỉnh/chỉnh sửa được giao dịch thu/chi sau khi đã thêm vào hệ thống.
+- Tích hợp `EditTransactionUseCase` vào `AddTransactionViewModel`, thêm `setEditingTransaction(tx)` và xử lý update giao dịch trong `save()` theo chuẩn Firestore Transaction / Clean Architecture.
+- Bổ sung chế độ chỉnh sửa trong `AddTransactionSheet` (tiêu đề "Sửa giao dịch", nút "Lưu thay đổi", tự động fill toàn bộ thông tin: loại thu/chi, số tiền, danh mục, ví, ghi chú, ngày, hóa đơn).
+- Cho phép người dùng chạm vào bất kỳ giao dịch nào hoặc bấm icon Sửa (Edit) tại các màn hình: Home (Giao dịch gần đây), Transactions (Danh sách giao dịch Classic & Modern), Income (Thu nhập), Expense (Chi tiêu).
+
+### Scope và file thực tế chỉnh sửa
+- `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionViewModel.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt`
+- `app/src/test/java/com/finlux/app/presentation/transaction/AddTransactionViewModelTest.kt`
+
+### Kết quả kiểm thử
+- `gradlew testDebugUnitTest`: **100% PASS** (BUILD SUCCESSFUL).
+- `gradlew assembleDebug`: **BUILD SUCCESSFUL**.
 
 ---
 
