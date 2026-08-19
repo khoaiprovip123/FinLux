@@ -70,6 +70,8 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.components.QuickAddSheet
 import com.finlux.app.presentation.receipt.ReceiptCaptureScreen
+import com.finlux.app.presentation.updater.AppUpdateDialog
+import com.finlux.app.presentation.updater.AppUpdateViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -86,8 +88,14 @@ fun FinluxNavHost(
     payNotificationIdFlow: MutableStateFlow<String?>? = null,
 ) {
     val transactionsViewModel: TransactionsViewModel = hiltViewModel()
+    val updateViewModel: AppUpdateViewModel = hiltViewModel()
+    val updateUiState by updateViewModel.uiState.collectAsStateWithLifecycle()
     val allCategories = transactionsViewModel.categories.collectAsStateWithLifecycle().value
     val allWallets = transactionsViewModel.wallets.collectAsStateWithLifecycle().value
+
+    LaunchedEffect(Unit) {
+        updateViewModel.checkForUpdates(silent = true)
+    }
 
     var showAddTransaction by remember { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
@@ -265,6 +273,7 @@ fun FinluxNavHost(
                     },
                     onAdd = { showQuickAdd = true },
                     onSignedOut = { navController.replaceGraphStart(Route.Login.value) },
+                    onCheckUpdate = { updateViewModel.checkForUpdates(silent = false) },
                 )
             }
             composable(Route.Categories.value) { CategoriesScreen(onBack = navController::popBackStack) }
@@ -417,6 +426,12 @@ fun FinluxNavHost(
             },
         )
     }
+        AppUpdateDialog(
+            uiState = updateUiState,
+            onDownloadAndInstall = { updateViewModel.downloadAndInstall(it) },
+            onInstallDownloaded = { updateViewModel.installDownloadedApk(it) },
+            onDismiss = { updateViewModel.dismissUpdate() },
+        )
     }
 }
 

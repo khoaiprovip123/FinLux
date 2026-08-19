@@ -2,7 +2,41 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.8.3 (versionCode 101) - Release
-- **Trạng thái Build:** 🟢 Hoàn thành Batch 1 (P0) & Batch 3 (P1) (48/48 unit tests pass 100%).
+- **Trạng thái Build:** 🟢 Hoàn thành hệ thống Tự động cập nhật OTA & GitHub Actions CI/CD Release (51/51 tests pass 100%).
+
+---
+
+## [DONE] Task: In-App Auto-Update & GitHub Actions CI/CD Auto-Release
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **GitHub Actions CI/CD Workflow (`.github/workflows/release.yml`)**:
+   - Tự động chạy toàn bộ unit test khi đẩy code lên nhánh `main`.
+   - Tự động build APK release/debug.
+   - Tự động tạo GitHub Release với tag version chuẩn (`vX.Y.Z`), phát hành file `FinLux-vX.Y.Z.apk` và trích xuất changelog mô tả cập nhật tự động từ `CHANGELOG.md`.
+2. **Hệ thống tự động phát hiện và cập nhật trong app (`AppUpdateManager.kt` & `AppUpdateViewModel.kt`)**:
+   - Tự động kiểm tra phiên bản mới từ GitHub Releases API (`khoaiprovip123/FinLux`) ngay khi mở app và qua nút kiểm tra thủ công.
+   - Tải file APK trực tiếp trong ứng dụng kèm hiển thị thanh tiến trình download mượt mà.
+   - Tự động mở trình cài đặt Android (`ACTION_VIEW` qua `FileProvider`) để cập nhật app trực tiếp trên điện thoại mà không cần thao tác phức tạp.
+3. **Giao diện cập nhật Liquid Glass (`AppUpdateDialog.kt`) & Menu Cài đặt**:
+   - Modal thông báo phiên bản mới, tính năng nổi bật, tiến trình tải và nút cài đặt ngay.
+   - Nút "Kiểm tra bản cập nhật mới" trong mục Giới thiệu của `SettingsScreen`.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **51/51 PASS (100%)**
+- `assembleDebug`: **BUILD SUCCESSFUL**
+
+### Danh sách file đã chỉnh sửa
+- `.github/workflows/release.yml` (New)
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/res/xml/file_paths.xml`
+- `app/src/main/java/com/finlux/app/core/updater/AppUpdateManager.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateViewModel.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateDialog.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/test/java/com/finlux/app/core/updater/AppUpdateManagerTest.kt` (New)
 
 ---
 

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -52,6 +53,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -119,6 +121,7 @@ fun SettingsScreen(
     onNavigate: (String) -> Unit,
     onAdd: () -> Unit,
     onSignedOut: () -> Unit,
+    onCheckUpdate: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val user = viewModel.user.collectAsStateWithLifecycle().value
@@ -441,7 +444,7 @@ fun SettingsScreen(
                         }
                     }
                 }
-                item { AboutFinluxCard() }
+                item { AboutFinluxCard(onCheckUpdate = onCheckUpdate) }
                 item {
                     Button(
                         onClick = { viewModel.signOut(onSignedOut) },
@@ -757,13 +760,13 @@ private fun ProfileMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector
 }
 
 @Composable
-private fun AboutFinluxCard() {
+private fun AboutFinluxCard(onCheckUpdate: () -> Unit) {
     GlassCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FinluxBrandMark(size = 64.dp)
                 Spacer(Modifier.width(14.dp))
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text("Giới thiệu FinLux", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Text("Phiên bản ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                     Text("Tài chính rõ ràng, cuộc sống nhẹ nhàng", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -774,6 +777,20 @@ private fun AboutFinluxCard() {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            OutlinedButton(
+                onClick = onCheckUpdate,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SystemUpdate,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Kiểm tra bản cập nhật mới", fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
