@@ -1,8 +1,32 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.2 (versionCode 98) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (46/46 unit tests pass 100%).
+- **Phiên bản hiện tại:** v1.8.2 (versionCode 100)
+- **Trạng thái Build:** 🟢 Hoàn thành Batch 1: P0 - Data Integrity & Security Hardening (100% tests pass).
+
+---
+
+## [DONE] Task: Batch 1 - P0 Data Integrity & Security Hardening
+
+**Ngày hoàn thành:** 2026-08-19
+
+### Mục tiêu đã hoàn thành
+1. **P0-01 (Edit Transaction Stale Original)**: Sửa `FirebaseTransactionRepository.editWithBalanceUpdate` lấy `stored` từ Firestore làm authoritative source of truth cho `oldWalletRef`, `oldBudgetRef` và hoàn tiền budget theo `-stored.amount.value`.
+2. **P0-02 (Delete Transaction Stale Object)**: Sửa `FirebaseTransactionRepository.deleteWithBalanceUpdate` chỉ tin `transaction.id`, derive toàn bộ wallet/budget rollback từ `stored`.
+3. **P0-03 (Standardize Finance Timezone)**: Tạo `FinanceTime` chuẩn hóa múi giờ tài chính thống nhất (`Asia/Ho_Chi_Minh` / `systemDefault`), loại bỏ conflict UTC vs systemDefault giữa `budgetRef` và query giao dịch.
+4. **P0-04, P0-05, P0-06 (Invariants, Safe Math & Unit Tests)**: Mở rộng `FirebaseTransactionRepositoryTest` và `FinanceTimeTest` kiểm thử đầy đủ các kịch bản stale caller, invariant add/edit/delete/transfer, và dùng `Math.addExact`/`subtractExact` chống tràn số `Long`.
+5. **P0-07 (Firestore Security Rules Hardening)**: Cập nhật `firestore.rules` với validation kiểu dữ liệu, schema chuẩn và ràng buộc `isPositiveMoney(amount)`.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **48/48 PASS (100%)**
+- Build APK: Thành công và đã nạp trực tiếp lên máy (`7f4ca06a`)
+
+### Danh sách file đã chỉnh sửa
+- `app/src/main/java/com/finlux/app/core/time/FinanceTime.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+- `firestore.rules`
+- `app/src/test/java/com/finlux/app/core/time/FinanceTimeTest.kt` (New)
+- `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
 
 ---
 

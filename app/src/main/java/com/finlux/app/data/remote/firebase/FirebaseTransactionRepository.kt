@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
@@ -20,6 +21,8 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.util.UUID
 import java.util.Date
+
+private const val MAX_MONEY_AMOUNT = 999_999_999_999_999L
 
 class FirebaseTransactionRepository(
     private val auth: FirebaseAuth,
@@ -49,9 +52,8 @@ class FirebaseTransactionRepository(
             close()
             return@callbackFlow
         }
-        val zone = ZoneId.systemDefault()
-        val start = month.atDay(1).atStartOfDay(zone).toInstant()
-        val end = month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
+        val start = FinanceTime.monthStart(month)
+        val end = FinanceTime.monthEnd(month)
         val registration = firestore.userTransactions(uid)
             .whereGreaterThanOrEqualTo("date", Timestamp(Date.from(start)))
             .whereLessThan("date", Timestamp(Date.from(end)))
@@ -64,18 +66,20 @@ class FirebaseTransactionRepository(
 
     override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String> =
         firebaseResult("Không thể thêm giao dịch") {
+            require(transaction.amount.value in 1..MAX_MONEY_AMOUNT) { "Số tiền không hợp lệ" }
             val uid = requireUid()
             val transactionRef = firestore.userTransactions(uid).document()
             val walletRef = firestore.userWallets(uid).document(transaction.walletId)
             val budgetRef = transaction.budgetRef(firestore, uid)
             firestore.runTransaction { atomic ->
                 val walletDoc = atomic.get(walletRef)
-                val balance = walletDoc.getLong("balance") ?: 0L
+                val balance = walletDoc.getLong("balance") ?: error("Không tìm thấy ví")
                 val budgetDoc = if (budgetRef != null && transaction.type == TransactionType.EXPENSE) {
                     atomic.get(budgetRef)
                 } else null
+                val updatedBalance = Math.addExact(balance, transaction.balanceDelta())
                 atomic.set(transactionRef, transaction.copy(id = transactionRef.id).toFirestoreMap())
-                atomic.update(walletRef, "balance", balance + transaction.balanceDelta())
+                atomic.update(walletRef, "balance", updatedBalance)
                 // BR-06: atomically update budget.spentAmount for EXPENSE transactions if budget exists
                 if (budgetDoc != null && budgetDoc.exists() && budgetRef != null) {
                     atomic.update(budgetRef, "spentAmount", FieldValue.increment(transaction.amount.value))
@@ -88,21 +92,25 @@ class FirebaseTransactionRepository(
         original: FinanceTransaction,
         updated: FinanceTransaction,
     ): AppResult<Unit> = firebaseResult("Không thể sửa giao dịch") {
+        require(updated.amount.value in 1..MAX_MONEY_AMOUNT) { "Số tiền không hợp lệ" }
         val uid = requireUid()
         val transactionRef = firestore.userTransactions(uid).document(original.id)
-        val oldWalletRef = firestore.userWallets(uid).document(original.walletId)
         val newWalletRef = firestore.userWallets(uid).document(updated.walletId)
-        val oldBudgetRef = original.budgetRef(firestore, uid)
         val newBudgetRef = updated.budgetRef(firestore, uid)
+
         firestore.runTransaction { atomic ->
+            // P0-01: Use stored document from Firestore as authoritative source of truth for old state
             val stored = atomic.get(transactionRef).toFinanceTransaction()
                 ?: error("Không tìm thấy giao dịch")
+            val oldWalletRef = firestore.userWallets(uid).document(stored.walletId)
+            val oldBudgetRef = stored.budgetRef(firestore, uid)
+
             val oldBalance = atomic.get(oldWalletRef).getLong("balance") ?: error("Không tìm thấy ví cũ")
             val newBalance = if (oldWalletRef.path != newWalletRef.path) {
                 atomic.get(newWalletRef).getLong("balance") ?: error("Không tìm thấy ví mới")
             } else null
 
-            val oldBudgetDoc = if (oldBudgetRef != null && original.type == TransactionType.EXPENSE) {
+            val oldBudgetDoc = if (oldBudgetRef != null && stored.type == TransactionType.EXPENSE) {
                 atomic.get(oldBudgetRef)
             } else null
             val newBudgetDoc = if (newBudgetRef != null && updated.type == TransactionType.EXPENSE) {
@@ -111,15 +119,21 @@ class FirebaseTransactionRepository(
             } else null
 
             if (oldWalletRef.path == newWalletRef.path) {
-                atomic.update(oldWalletRef, "balance", oldBalance - stored.balanceDelta() + updated.balanceDelta())
+                val finalBalance = Math.addExact(
+                    Math.subtractExact(oldBalance, stored.balanceDelta()),
+                    updated.balanceDelta(),
+                )
+                atomic.update(oldWalletRef, "balance", finalBalance)
             } else {
-                atomic.update(oldWalletRef, "balance", oldBalance - stored.balanceDelta())
-                atomic.update(newWalletRef, "balance", (newBalance ?: 0L) + updated.balanceDelta())
+                val finalOldBalance = Math.subtractExact(oldBalance, stored.balanceDelta())
+                val finalNewBalance = Math.addExact(newBalance ?: 0L, updated.balanceDelta())
+                atomic.update(oldWalletRef, "balance", finalOldBalance)
+                atomic.update(newWalletRef, "balance", finalNewBalance)
             }
-            atomic.set(transactionRef, updated.copy(id = original.id, createdAt = stored.createdAt).toFirestoreMap())
-            // BR-06: reverse old budget spent, apply new budget spent if budget exists
+            atomic.set(transactionRef, updated.copy(id = stored.id, createdAt = stored.createdAt).toFirestoreMap())
+            // BR-06: reverse old budget spent based on stored, apply new budget spent
             if (oldBudgetDoc != null && oldBudgetDoc.exists() && oldBudgetRef != null) {
-                atomic.update(oldBudgetRef, "spentAmount", FieldValue.increment(-original.amount.value))
+                atomic.update(oldBudgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
             }
             if (newBudgetDoc != null && newBudgetDoc.exists() && newBudgetRef != null) {
                 atomic.update(newBudgetRef, "spentAmount", FieldValue.increment(updated.amount.value))
@@ -133,19 +147,21 @@ class FirebaseTransactionRepository(
     ): AppResult<Unit> = firebaseResult("Không thể xóa giao dịch") {
         val uid = requireUid()
         val transactionRef = firestore.userTransactions(uid).document(transaction.id)
-        val budgetRef = transaction.budgetRef(firestore, uid)
         firestore.runTransaction { atomic ->
+            // P0-02: Derive walletRef and budgetRef strictly from stored transaction in Firestore
             val stored = atomic.get(transactionRef).toFinanceTransaction()
                 ?: error("Không tìm thấy giao dịch")
             val walletRef = firestore.userWallets(uid).document(stored.walletId)
             val balance = atomic.get(walletRef).getLong("balance") ?: error("Không tìm thấy ví")
+            val budgetRef = stored.budgetRef(firestore, uid)
             val budgetDoc = if (budgetRef != null && stored.type == TransactionType.EXPENSE) {
                 atomic.get(budgetRef)
             } else null
 
             atomic.delete(transactionRef)
-            atomic.update(walletRef, "balance", balance - stored.balanceDelta())
-            // BR-06: reverse spentAmount when deleting an EXPENSE transaction if budget exists
+            val finalBalance = Math.subtractExact(balance, stored.balanceDelta())
+            atomic.update(walletRef, "balance", finalBalance)
+            // BR-06: reverse spentAmount when deleting an EXPENSE transaction based on stored
             if (budgetDoc != null && budgetDoc.exists() && budgetRef != null) {
                 atomic.update(budgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
             }
@@ -161,7 +177,7 @@ class FirebaseTransactionRepository(
         date: Instant,
     ): AppResult<Unit> = firebaseResult("Không thể chuyển tiền") {
         require(sourceWalletId != destinationWalletId) { "Hai ví phải khác nhau" }
-        require(amount > 0L) { "Số tiền phải lớn hơn 0" }
+        require(amount in 1..MAX_MONEY_AMOUNT) { "Số tiền phải lớn hơn 0" }
         val uid = requireUid()
         val sourceRef = firestore.userWallets(uid).document(sourceWalletId)
         val destinationRef = firestore.userWallets(uid).document(destinationWalletId)
@@ -196,8 +212,8 @@ class FirebaseTransactionRepository(
                 walletId = destinationWalletId,
                 relatedWalletId = sourceWalletId,
             )
-            atomic.update(sourceRef, "balance", sourceBalance - amount)
-            atomic.update(destinationRef, "balance", destinationBalance + amount)
+            atomic.update(sourceRef, "balance", Math.subtractExact(sourceBalance, amount))
+            atomic.update(destinationRef, "balance", Math.addExact(destinationBalance, amount))
             atomic.set(outRef, outgoing.toFirestoreMap())
             atomic.set(inRef, incoming.toFirestoreMap())
         }.await()
@@ -215,10 +231,11 @@ class FirebaseTransactionRepository(
 internal fun FinanceTransaction.budgetRef(
     firestore: FirebaseFirestore,
     uid: String,
+    zone: ZoneId = FinanceTime.defaultZone,
 ): DocumentReference? {
     if (type != TransactionType.EXPENSE) return null
     val catId = categoryId ?: return null
-    val month = YearMonth.from(date.atZone(java.time.ZoneOffset.UTC))
+    val month = FinanceTime.financialMonth(date, zone)
     val budgetId = "${catId}_${month}"
     return firestore.collection("users").document(uid).collection("budgets").document(budgetId)
 }
