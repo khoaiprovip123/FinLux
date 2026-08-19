@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.3] - 2026-08-19
+### Fixed
+- **Độ chính xác tuyệt đối khi Sửa / Xóa giao dịch**: Khắc phục triệt để lỗi sai lệch số dư ví và ngân sách khi người dùng điều chỉnh hoặc xóa một khoản thu chi; hệ thống luôn tự động hoàn tiền và cập nhật số dư chuẩn xác theo đúng giao dịch thực tế.
+- **Chuẩn hóa tính toán theo múi giờ Việt Nam**: Đảm bảo các giao dịch phát sinh vào thời điểm giao mùa hoặc đêm muộn đầu tháng / cuối tháng luôn được xếp đúng vào tháng tài chính tương ứng và đồng bộ chuẩn xác với hạn mức ngân sách tháng đó.
+- **Bảo vệ an toàn số dư**: Tự động kiểm tra và ngăn chặn các giao dịch có số tiền không hợp lệ hoặc vượt quá giới hạn an toàn.
+
+### Changed
+- **Tối ưu hóa tốc độ và độ ổn định hệ thống**: Phân tách độc lập các luồng xử lý ví, danh mục, ngân sách, nhắc nhở và mục tiêu giúp ứng dụng phản hồi nhanh hơn, tiết kiệm tài nguyên và hoạt động tin cậy hơn.
+
 ## [1.8.2] - 2026-08-19
 ### Added
 - **Chi Tiết Giao Dịch Khi Chạm Đơn (TransactionDetailSheet)**: Chạm vào bất kỳ giao dịch nào sẽ mở modal Liquid Glass xem đầy đủ thông tin: số tiền kèm badge thu/chi, danh mục, ví thanh toán, ngày giờ chuẩn xác, ghi chú và hóa đơn đính kèm. Bên trong có nút "Sửa" và "Xóa" kèm xác nhận an toàn.

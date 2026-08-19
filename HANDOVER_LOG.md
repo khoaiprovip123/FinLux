@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.2 (versionCode 101)
-- **Trạng thái Build:** 🟢 Hoàn thành Batch 3: P1 - Architecture Hardening (100% tests pass).
+- **Phiên bản hiện tại:** v1.8.3 (versionCode 101) - Release
+- **Trạng thái Build:** 🟢 Hoàn thành Batch 1 (P0) & Batch 3 (P1) (48/48 unit tests pass 100%).
 
 ---
 
