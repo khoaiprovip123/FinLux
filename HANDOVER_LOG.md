@@ -4,6 +4,27 @@
 - **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (63/63 unit tests pass 100%, assembleRelease pass).
 
+## [IN PROGRESS] Task: Finlux Prism UI Theme & Design System Implementation (Phase UI-1 & UI-2)
+
+**Ngày bắt đầu:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+
+### Mục tiêu
+1. **Phase UI-1 — Design Tokens**:
+   - Khởi tạo hệ thống Token mở rộng: Color Tokens (Primary, Semantic, Surface, Dark), Typography Tokens, Spacing Tokens, Radius Tokens, Motion Tokens.
+   - Định nghĩa `FinluxDesignTokens` & `AppUiStyle.PRISM`.
+2. **Phase UI-2 — Shared Components Foundation**:
+   - Xây dựng component library chung: `FinluxScreenHeader`, `FinluxHeroCard`, `FinluxMetricCard`, `FinluxSectionHeader`, `FinluxTransactionRow`, `FinluxFilterChip`, `FinluxBottomDock`, `FinluxBottomSheet`, `FinluxDialog`, `FinluxEmptyState`, v.v.
+   - Fix P0 Semantic color cho transaction và gỡ bỏ background artifact.
+
+### Danh sách file dự kiến chỉnh sửa / tạo mới
+- `docs/FINLUX_PRISM_UI_THEME_SPEC.md`
+- `app/src/main/java/com/finlux/app/core/designsystem/theme/...`
+- `app/src/main/java/com/finlux/app/core/designsystem/component/...`
+- `HANDOVER_LOG.md`
+
+---
+
 ## [DONE] Task: Finlux v1.8.5 Security & Release Hardening Master Plan
 
 **Ngày hoàn thành:** 2026-08-19
