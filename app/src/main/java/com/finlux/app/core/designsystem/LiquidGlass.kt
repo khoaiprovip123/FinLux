@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
@@ -23,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -152,7 +154,7 @@ fun GlassTopBar(
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
 ) {
     TopAppBar(
-        modifier = modifier,
+        modifier = modifier.statusBarsPadding(),
         title = title,
         navigationIcon = navigationIcon,
         actions = actions,
@@ -205,8 +207,10 @@ fun GlassFab(onClick: () -> Unit, content: @Composable () -> Unit) {
 fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.4f
     val containerBg = if (isDark) Color(0xFF0F172A) else Color(0xFFFFFFFF)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = containerBg,
         scrimColor = Color.Black.copy(alpha = 0.65f),
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),

@@ -6,6 +6,7 @@ import com.finlux.app.core.designsystem.LocalAppUiStyle
 import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.presentation.budget.classic.ClassicBudgetScreen
 import com.finlux.app.presentation.budget.modern.ModernBudgetScreen
+import com.finlux.app.presentation.budget.prism.PrismBudgetScreen
 
 @Composable
 fun BudgetScreen(
@@ -22,6 +23,12 @@ fun BudgetScreen(
             viewModel = viewModel,
         )
         AppUiStyle.MODERN_LUXURY -> ModernBudgetScreen(
+            onNavigate = onNavigate,
+            onAdd = onAdd,
+            onBack = onBack,
+            viewModel = viewModel,
+        )
+        AppUiStyle.PRISM -> PrismBudgetScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,

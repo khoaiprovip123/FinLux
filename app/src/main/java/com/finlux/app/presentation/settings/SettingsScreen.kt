@@ -110,6 +110,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
+import com.finlux.app.presentation.settings.prism.PrismSettingsScreen
+
 @Composable
 fun SettingsScreen(
     selectedTheme: ThemePreference,
@@ -124,6 +126,23 @@ fun SettingsScreen(
     onCheckUpdate: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
+    if (selectedUiStyle == AppUiStyle.PRISM) {
+        PrismSettingsScreen(
+            selectedTheme = selectedTheme,
+            onThemeSelected = onThemeSelected,
+            selectedUiStyle = selectedUiStyle,
+            onUiStyleSelected = onUiStyleSelected,
+            uiPreferences = uiPreferences,
+            onUiPreferencesChanged = onUiPreferencesChanged,
+            onNavigate = onNavigate,
+            onAdd = onAdd,
+            onSignedOut = onSignedOut,
+            onCheckUpdate = onCheckUpdate,
+            viewModel = viewModel,
+        )
+        return
+    }
+
     val user = viewModel.user.collectAsStateWithLifecycle().value
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
     val totalAssets = wallets.sumOf { it.balance.value }
@@ -504,7 +523,22 @@ fun SettingsScreen(
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-                        // Option 1: Modern Luxury (Công nghệ hiện đại)
+                        // Option 1: FinLux Prism (Data-first + Spatial + Bento)
+                        UiStyleCard(
+                            title = "FinLux Prism",
+                            badge = "Prism 2026",
+                            badgeColors = listOf(Color(0xFF3A7BFF), Color(0xFF6F52F5), Color(0xFF23C7E8)),
+                            description = "Data-first, bố cục Bento, bề mặt Soft Surface mượt mà, tối giản hiệu ứng kính để tập trung dữ liệu.",
+                            icon = "💎",
+                            tags = listOf("📊 Data-First", "🍱 Bento Layout", "✨ Soft Surface", "⚡ Mượt mà"),
+                            isSelected = selectedUiStyle == AppUiStyle.PRISM,
+                            onClick = {
+                                onUiStyleSelected(AppUiStyle.PRISM)
+                                showUiStyleSheet = false
+                            },
+                        )
+
+                        // Option 2: Modern Luxury (Công nghệ hiện đại)
                         UiStyleCard(
                             title = "Modern Luxury",
                             badge = "NextGen 2026",
@@ -519,7 +553,7 @@ fun SettingsScreen(
                             },
                         )
 
-                        // Option 2: Liquid Glass Classic (Cổ điển tinh gọn)
+                        // Option 3: Liquid Glass Classic (Cổ điển tinh gọn)
                         UiStyleCard(
                             title = "Liquid Glass",
                             badge = "Classic v1.5",
@@ -1008,6 +1042,7 @@ private val ThemePreference.label: String get() = when (this) {
     ThemePreference.SYSTEM -> "Hệ thống"
 }
 private val AppUiStyle.label: String get() = when (this) {
+    AppUiStyle.PRISM -> "FinLux Prism (Mới)"
     AppUiStyle.CLASSIC_LIQUID -> "Liquid Glass (Cổ điển)"
     AppUiStyle.MODERN_LUXURY -> "Modern Luxury (Hiện đại)"
 }

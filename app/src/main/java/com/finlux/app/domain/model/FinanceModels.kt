@@ -7,7 +7,7 @@ enum class TransactionType { INCOME, EXPENSE, TRANSFER_OUT, TRANSFER_IN }
 enum class CategoryType { INCOME, EXPENSE }
 enum class WalletType { CASH, BANK, EWALLET, CARD, INVESTMENT, OTHER }
 enum class ThemePreference { LIGHT, DARK, SYSTEM }
-enum class AppUiStyle { CLASSIC_LIQUID, MODERN_LUXURY }
+enum class AppUiStyle { CLASSIC_LIQUID, MODERN_LUXURY, PRISM }
 enum class ReminderRecurrence { DAILY, WEEKLY, MONTHLY }
 enum class GlassIntensity { SOFT, BALANCED, VIVID }
 enum class CardDensity { COMFORTABLE, COMPACT }
