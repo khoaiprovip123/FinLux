@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -206,8 +207,10 @@ fun GlassFab(onClick: () -> Unit, content: @Composable () -> Unit) {
 fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.4f
     val containerBg = if (isDark) Color(0xFF0F172A) else Color(0xFFFFFFFF)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = containerBg,
         scrimColor = Color.Black.copy(alpha = 0.65f),
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
