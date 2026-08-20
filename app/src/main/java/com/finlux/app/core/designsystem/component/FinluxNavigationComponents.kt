@@ -144,17 +144,25 @@ private fun FinluxNavTabItem(
         label = "nav-tab-color",
     )
 
+    val bgModifier = if (isSelected) {
+        Modifier.background(
+            color = tokens.primary.copy(alpha = if (tokens.isDark) 0.18f else 0.10f),
+            shape = RoundedCornerShape(16.dp),
+        )
+    } else Modifier
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .then(bgModifier)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = true),
                 onClick = onClick,
             )
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = 6.dp),
     ) {
         Icon(
             imageVector = tab.icon,
