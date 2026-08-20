@@ -96,9 +96,7 @@ fun PrismReportsScreen(
             )
         },
         bottomBar = {
-            if (isRootTab) {
-                MainBottomBar(Route.Reports.value, onNavigate, onAdd)
-            }
+            MainBottomBar(Route.Reports.value, onNavigate, onAdd)
         },
         containerColor = tokens.background,
     ) { padding ->
@@ -110,7 +108,7 @@ fun PrismReportsScreen(
                 start = tokens.spacing.lg,
                 end = tokens.spacing.lg,
                 top = tokens.spacing.xs,
-                bottom = if (isRootTab) 112.dp else 24.dp,
+                bottom = 140.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(tokens.spacing.md),
         ) {
@@ -156,7 +154,7 @@ fun PrismReportsScreen(
                 ) {
                     FinluxMetricCard(
                         title = "Tổng thu nhập",
-                        value = formatVndAmount(state.summary.income.value, isCompact = true),
+                        value = formatVndAmount(state.summary.income.value),
                         supportingText = if (state.previousIncome > 0L) {
                             val pct = (((state.summary.income.value - state.previousIncome) * 100.0) / state.previousIncome).toInt()
                             if (pct >= 0) "+$pct%" else "$pct%"
@@ -166,7 +164,7 @@ fun PrismReportsScreen(
                     )
                     FinluxMetricCard(
                         title = "Tổng chi tiêu",
-                        value = formatVndAmount(state.summary.expense.value, isCompact = true),
+                        value = formatVndAmount(state.summary.expense.value),
                         supportingText = if (state.previousExpense > 0L) {
                             val pct = (((state.summary.expense.value - state.previousExpense) * 100.0) / state.previousExpense).toInt()
                             if (pct <= 0) "$pct% (tốt)" else "+$pct%"

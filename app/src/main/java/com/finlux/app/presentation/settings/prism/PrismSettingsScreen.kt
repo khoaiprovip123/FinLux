@@ -238,7 +238,7 @@ fun PrismSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 120.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 140.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Profile Hero Card
@@ -823,23 +823,19 @@ private fun PrismUiStyleOptionCard(
                             fontWeight = FontWeight.Bold,
                             color = tokens.onSurface,
                         )
-                        Surface(
-                            shape = RoundedCornerShape(tokens.radius.smallChip),
-                            color = Color.Transparent,
-                            border = BorderStroke(1.dp, badgeGradient.first().copy(alpha = 0.6f)),
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(tokens.radius.smallChip))
+                                .background(Brush.horizontalGradient(badgeGradient))
+                                .padding(horizontal = 8.dp, vertical = 2.5.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .background(Brush.horizontalGradient(badgeGradient).copyAlpha(0.15f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = badge,
-                                    style = FinluxTextStyles.MicroLabel,
-                                    fontWeight = FontWeight.Bold,
-                                    color = badgeGradient.first(),
-                                )
-                            }
+                            Text(
+                                text = badge,
+                                style = FinluxTextStyles.MicroLabel,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                            )
                         }
                     }
                     Text(
@@ -877,11 +873,15 @@ private fun PrismUiStyleOptionCard(
                 tags.forEach { tag ->
                     Surface(
                         shape = RoundedCornerShape(tokens.radius.smallChip),
-                        color = if (isSelected) tokens.primary.copy(alpha = 0.10f) else tokens.surfaceSoft,
+                        color = if (isSelected) tokens.primary.copy(alpha = 0.12f) else tokens.background,
+                        border = BorderStroke(
+                            0.5.dp,
+                            if (isSelected) tokens.primary.copy(alpha = 0.35f) else tokens.onSurface.copy(alpha = 0.08f)
+                        ),
                     ) {
                         Text(
                             text = tag,
-                            style = FinluxTextStyles.MicroLabel,
+                            style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.Medium),
                             color = if (isSelected) tokens.primary else tokens.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         )

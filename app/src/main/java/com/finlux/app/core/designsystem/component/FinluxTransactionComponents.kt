@@ -123,7 +123,7 @@ fun FinluxFilterChip(
     val shape = RoundedCornerShape(tokens.radius.smallChip)
 
     val containerColor = if (isSelected) {
-        tokens.primary.copy(alpha = if (tokens.isDark) 0.22f else 0.14f)
+        tokens.primary.copy(alpha = if (tokens.isDark) 0.26f else 0.14f)
     } else {
         tokens.surfaceSoft
     }
@@ -135,9 +135,9 @@ fun FinluxFilterChip(
     }
 
     val borderColor = if (isSelected) {
-        tokens.primary.copy(alpha = 0.40f)
+        tokens.primary.copy(alpha = 0.85f)
     } else {
-        tokens.onSurface.copy(alpha = tokens.borderAlpha)
+        tokens.onSurface.copy(alpha = 0.08f)
     }
 
     Box(
