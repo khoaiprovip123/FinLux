@@ -122,7 +122,7 @@ fun PrismTransactionsScreen(
                     start = tokens.spacing.lg,
                     end = tokens.spacing.lg,
                     top = tokens.spacing.sm,
-                    bottom = if (isRootTab) 112.dp else 24.dp,
+                    bottom = if (isRootTab) 140.dp else 24.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(tokens.spacing.md),
             ) {

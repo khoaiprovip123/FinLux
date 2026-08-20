@@ -74,12 +74,6 @@ fun FinluxSoftCard(
 
     Box(
         modifier = modifier
-            .shadow(
-                elevation = tokens.elevation / 2,
-                shape = shape,
-                ambientColor = Color.Black.copy(alpha = 0.05f),
-                spotColor = Color.Black.copy(alpha = 0.08f),
-            )
             .clip(shape)
             .background(tokens.surfaceSoft)
             .border(BorderStroke(1.dp, border), shape)
