@@ -7,6 +7,7 @@ import com.finlux.app.core.designsystem.LocalAppUiStyle
 import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.presentation.wallet.classic.ClassicWalletsScreen
 import com.finlux.app.presentation.wallet.modern.ModernWalletsScreen
+import com.finlux.app.presentation.wallet.prism.PrismWalletsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +27,13 @@ fun WalletsScreen(
             viewModel = viewModel,
         )
         AppUiStyle.MODERN_LUXURY -> ModernWalletsScreen(
+            onBack = onBack,
+            onNavigate = onNavigate,
+            onAdd = onAdd,
+            transferRequestKey = transferRequestKey,
+            viewModel = viewModel,
+        )
+        AppUiStyle.PRISM -> PrismWalletsScreen(
             onBack = onBack,
             onNavigate = onNavigate,
             onAdd = onAdd,

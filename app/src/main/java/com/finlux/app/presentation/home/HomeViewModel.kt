@@ -14,6 +14,7 @@ import com.finlux.app.domain.repository.DashboardRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.repository.BudgetRepository
+import com.finlux.app.domain.repository.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -26,9 +27,19 @@ data class HomeUiState(
     val summary: DashboardSummary = DashboardSummary(),
     val wallets: List<Wallet> = emptyList(),
     val transactions: List<FinanceTransaction> = emptyList(),
+    val monthTransactions: List<FinanceTransaction> = emptyList(),
     val categories: List<Category> = emptyList(),
     val budgetRemaining: Long = 0L,
     val budgetRemainingPercent: Int = 0,
+    val unreadNotificationsCount: Int = 0,
+)
+
+private data class FinancialOverview(
+    val summary: DashboardSummary,
+    val budgetRemaining: Long,
+    val budgetRemainingPercent: Int,
+    val monthTransactions: List<FinanceTransaction>,
+    val unreadCount: Int,
 )
 
 @HiltViewModel
@@ -39,16 +50,16 @@ class HomeViewModel @Inject constructor(
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
     budgetRepository: BudgetRepository,
+    notificationRepository: NotificationRepository,
 ) : ViewModel() {
     private val currentMonth = YearMonth.now()
 
-    private val summaryAndBudget = combine(
+    private val financialOverviewFlow = combine(
         dashboardRepository.observeCurrentMonthSummary(),
         budgetRepository.observeBudgets(currentMonth),
         transactionRepository.observeMonth(currentMonth),
-    ) { summary, budgets, monthTransactions ->
-        // BR-09: Calculate spentAmount dynamically from actual transactions,
-        // so "Ngân sách còn lại" is always accurate regardless of stored spentAmount field.
+        notificationRepository.observeNotifications(),
+    ) { summary, budgets, monthTransactions, notifications ->
         val spentByCategory = monthTransactions
             .filter { it.type == TransactionType.EXPENSE && it.categoryId != null }
             .groupBy { it.categoryId!! }
@@ -57,24 +68,34 @@ class HomeViewModel @Inject constructor(
         val spent = budgets.sumOf { spentByCategory[it.categoryId] ?: 0L }
         val remaining = limit - spent
         val percent = if (limit <= 0L) 0 else ((remaining.coerceAtLeast(0L) * 100L) / limit).toInt()
-        Triple(summary, remaining, percent)
+        val unread = notifications.count { !it.isRead }
+
+        FinancialOverview(
+            summary = summary,
+            budgetRemaining = remaining,
+            budgetRemainingPercent = percent,
+            monthTransactions = monthTransactions,
+            unreadCount = unread,
+        )
     }
 
     val state = combine(
         authRepository.currentUser,
-        summaryAndBudget,
+        financialOverviewFlow,
         walletRepository.observeWallets(),
         transactionRepository.observeRecent(),
         categoryRepository.observeCategories(),
-    ) { user, financial, wallets, transactions, categories ->
+    ) { user, overview, wallets, transactions, categories ->
         HomeUiState(
             user = user,
-            summary = financial.first,
+            summary = overview.summary,
             wallets = wallets,
             transactions = transactions,
+            monthTransactions = overview.monthTransactions,
             categories = categories,
-            budgetRemaining = financial.second,
-            budgetRemainingPercent = financial.third,
+            budgetRemaining = overview.budgetRemaining,
+            budgetRemainingPercent = overview.budgetRemainingPercent,
+            unreadNotificationsCount = overview.unreadCount,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 }

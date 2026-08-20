@@ -2,7 +2,186 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (63/63 unit tests pass 100%, assembleRelease pass).
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
+
+## [DONE] Task: Ergonomic & Pixel-Perfect Refinement for Add Transaction Sheet
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Định dạng số tiền tự động (Thousand dot separator):**
+   - Tự động định dạng dấu chấm phân cách hàng nghìn theo chuẩn Việt Nam ngay khi gõ (ví dụ `728000` ➔ `728.000 ₫`).
+   - Gom gọn số tiền và ký hiệu `₫` liền kề nhau, màu xanh lá đậm `#16A34A` khi Thêm thu / đỏ `#DC2626` khi Thêm chi.
+2. ✅ **Bố cục 2 dòng thông tin công thái học (Ergonomic 2-Line Row Layout):**
+   - Thay thế các hàng đơn bằng thẻ 2 dòng trực quan: Tiêu đề nhỏ (10.5sp Bold hoa) + Giá trị lớn (15sp SemiBold) + Mô tả phụ / số dư.
+   - Loại bỏ mục "Hình thức: Tiền mặt" bị trùng lặp với "Ví: Tiền mặt".
+   - Bổ sung hàng *Hóa đơn & Chứng từ* (chạm để quét/chụp ảnh).
+3. ✅ **Build & Install:** Đã biên dịch APK và cài đặt trực tiếp lên điện thoại Xiaomi (`7f4ca06a`).
+
+## [DONE] Task: Pixel-Perfect Create Transaction Flow Redesign (Quick Add, Add Form & Category Picker)
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Màn hình Tạo giao dịch Hub (`QuickAddSheet.kt`):**
+   - Header "Tạo giao dịch", subtitle, nút đóng `✕`.
+   - Bento Grid 2x2: *Thêm thu* (xanh lá), *Thêm chi* (đỏ hồng), *Chuyển tiền* (xanh dương), *Scan hóa đơn* (tím).
+   - Banner full-width: *Thêm mục tiêu* (tím lavender).
+   - Danh sách *Giao dịch gần đây* (3 item có icon vuông bo góc, giờ, tên, danh mục, số tiền, chevron `>`) + nút "Xem tất cả".
+   - Footer tip `💡 Bạn cũng có thể nhấn giữ nút + để tạo nhanh`.
+2. ✅ **Form Thêm chi / Thêm thu (`AddTransactionSheet.kt`):**
+   - Header có nút quay lại `<` + tiêu đề + nút Lưu tròn màu xanh dương có dấu tích `✓`.
+   - 3 Tab phân loại (Chi tiêu, Trả nợ, Đầu tư / Thu nhập, Thu nợ, Thưởng).
+   - Khung nhập số tiền cỡ lớn (32sp ExtraBold) + icon máy tính 🖩 + 4 chip số tiền nhanh (`+10k`, `+50k`, `+100k`, `+500k`).
+   - 5 hàng thông tin thẻ bo góc: *Danh mục*, *Ví thanh toán*, *Thời gian*, *Ghi chú*, *Hình thức*.
+3. ✅ **Modal Chọn danh mục (`CategoryPickerBottomSheet`):**
+   - Header tiêu đề + nút đóng `✕`.
+   - Thanh tìm kiếm "Tìm danh mục" bo tròn mềm mại.
+   - Lưới 4 cột các danh mục: icon bo góc 16dp, danh mục được chọn có viền đỏ + huy hiệu checkmark đỏ `✓`.
+   - Nút dưới cùng `+ Thêm danh mục mới`.
+4. ✅ **Build APK:** Đã biên dịch thành công APK `app-debug.apk`.
+
+## [DONE] Task: 3D Spatial Financial Ledger Graphic & Extra Bold Amount on Transactions
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **In đậm số tiền cực đại:** Nâng cấp số tiền lên `32sp`, `FontWeight.ExtraBold` với màu sắc nhận diện sắc nét (Xanh dương / Xanh lá / Đỏ).
+2. ✅ **Thiết kế hình ảnh đồ họa 3D Sổ thu chi không gian (`Prism3DTransactionIllustration`):**
+   - **Tầng 1 (Aura):** Vầng hào quang tỏa sáng ánh ngọc phía sau.
+   - **Tầng 2 (Receipt Sheet):** Tấm phiếu hóa đơn kính Frosted Glass nghiêng `-14°` có các dải chi tiết giao dịch dập mờ.
+   - **Tầng 3 (Holographic Card):** Thẻ ngân hàng ánh kim nghiêng `+10°` có chip EMV vàng, sóng không tiếp xúc và biểu tượng VIP kép.
+   - **Tầng 4 (Golden Coin `₫`):** Đồng xu vàng 3D nổi bật ở góc tiền cảnh với ký hiệu `₫` in đậm.
+   - **Tầng 5 (Sparkle):** Ngôi sao vàng lấp lánh `✦` ở góc trên.
+3. ✅ **Build & Install:** Đã biên dịch thành công và cài đặt lên máy `7f4ca06a`.
+
+## [DONE] Task: 3D Spatial Holographic Cards & Golden Coin Illustration on Hero Card
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Thiết kế đồ họa không gian 3D Hologram (`PrismWallet3DIllustration`):**
+   - Thay thế các khung wireframe cũ bằng cụm **thẻ ngân hàng 3D không gian (Spatial Layering)** có góc nghiêng 3D thực tế (`graphicsLayer`).
+   - Thẻ Hologram Cyan Cyber phía sau có chip EMV vàng và sóng chạm không tiếp xúc.
+   - Thẻ Frosted Liquid Glass phía trước có hiệu ứng kính mờ ánh kim, viền sáng trắng và biểu tượng VIP kép.
+   - Đồng xu vàng 3D nổi (`₫`) đổ bóng ánh kim rực rỡ ở góc tiền cảnh.
+   - Ngôi sao lấp lánh (Sparkle accent) và hào quang tỏa sáng (Aura radial gradient) phía sau.
+2. ✅ **Build & Install:** Đã biên dịch thành công và cài đặt lên máy `7f4ca06a`.
+
+## [DONE] Task: Sticky Fixed Top Header on PrismHomeScreen
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Cố định Top Header khi cuộn trang:** Đưa `PrismHomeTopHeader` ("Xin chào 👋", Tên người dùng, Chuông thông báo có chấm đỏ, Avatar) vào `topBar` của `Scaffold` với background đồng nhất màu nền, giúp thanh header luôn ghim cố định ở đỉnh màn hình khi người dùng vuốt cuộn lên xuống danh sách thẻ tài sản và giao dịch.
+2. ✅ **Build & Install:** Đã build thành công và cài đặt lên máy `7f4ca06a`.
+
+## [DONE] Task: Pixel-Perfect Transaction Detail Bottom Sheet & Action Redesign
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Thiết kế chuẩn xác theo ảnh mẫu (`TransactionDetailSheet.kt`):**
+   - Thanh kéo (Drag handle) chuẩn trên đỉnh.
+   - Header có icon danh mục bo góc mềm mại + Tiêu đề "Chi tiết giao dịch" + Nút đóng tròn (✕).
+   - Thẻ số tiền nổi bật (Hero Card) có gradient nền dịu nhẹ, tag pill chấm tròn "• Khoản chi tiêu" / "• Khoản thu nhập", số tiền cỡ lớn (32sp Bold) màu sắc ngữ nghĩa.
+   - Khung thông tin 4 hàng (Danh mục, Ví thanh toán, Thời gian, Ghi chú) kèm icon vuông bo góc và divider thanh mảnh.
+   - 2 Thẻ hành động đặt cạnh nhau (Side-by-side): ✏️ *Chỉnh sửa giao dịch* và 🗑️ *Xóa giao dịch này* (kèm subtitle mô tả + mũi tên chevron).
+   - Footer bảo mật: Icon khiên + "Giao dịch được bảo mật tuyệt đối".
+2. ✅ **Build & Install:** Đã biên dịch thành công và cài đặt lên máy `7f4ca06a`.
+
+## [DONE] Task: Fix UI Report Issues from Real Device Testing (docs/Report)
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Status Bar Padding:** Đã thêm `statusBarsPadding()` vào `FinluxScreenHeader` và `GlassTopBar`, loại bỏ hoàn toàn hiện tượng tai thỏ / status bar hệ thống đè lên header trên toàn bộ các màn hình (Báo cáo, Lịch sử, Ví, Ngân sách, Cài đặt).
+2. ✅ **Progress Bar Dot Artifact:** Thay thế `LinearProgressIndicator` của Material 3 bằng rounded Box progress bar trên cả `PrismReportsScreen` và `PrismBudgetScreen`, loại bỏ dấu chấm tròn thừa ở đuôi thanh tiến độ.
+3. ✅ **Prism Settings Screen:** Tạo `PrismSettingsScreen.kt` chuyên biệt chuẩn Bento Data-First, hiển thị trực tiếp bộ chọn UI Theme Style (💎 FinLux Prism / ✨ Modern Luxury / 💧 Classic Liquid) trên màn hình chính của Cài đặt.
+4. ✅ **Metric Card Typography:** Tăng kích thước và độ đậm của font số liệu trong `FinluxMetricCard` (19sp Bold) giúp các chỉ số thu chi dễ nhìn và nổi bật hơn.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **PASS 100%** (Tất cả unit tests đều vượt qua).
+- `packageDebug`: **BUILD SUCCESSFUL** (Đã tạo file APK mới nhất tại `app/build/outputs/apk/debug/app-debug.apk`).
+
+### Danh sách file đã chỉnh sửa / tạo mới:
+- [FinluxHeaderComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt) `[MODIFIED]`
+- [FinluxCardComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt) `[MODIFIED]`
+- [LiquidGlass.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt) `[MODIFIED]`
+- [PrismReportsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt) `[MODIFIED]`
+- [PrismBudgetScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt) `[MODIFIED]`
+- [PrismSettingsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt) `[NEW]`
+- [SettingsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt) `[MODIFIED]`
+
+
+## [DONE] Task: Finlux Prism UI Theme & Design System Implementation
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+
+### Tiến độ các Phase:
+- [x] **Phase UI-1 — Design Tokens**:
+  - `FinluxColors`: Tokens màu Primary (`PrimaryBlue`, `PrimaryViolet`, `PrimaryCyan`), Semantic (`IncomeGreen`, `ExpenseRed`, `TransferBlue`, `BudgetViolet`, `WarningAmber`, `NeutralGray`), Surface Light/Dark (`BackgroundLight`, `BackgroundDark`, `SurfacePrimary`, `SurfaceSoft`, `SurfaceGlass`, `BorderSoft`).
+  - `FinluxSpacing`, `FinluxRadius`, `FinluxMotion`.
+  - `FinluxTextStyles` & `FinluxTypography`: Chuẩn hóa Display Amount (36sp), Screen Title (28sp), Section Title (20sp), Card Title (16sp), Body (15sp), Caption (12.5sp), Micro Label (11.5sp).
+  - `FinluxDesignTokens`: Hợp nhất contract tokens cho Prism, Classic Liquid, Modern Luxury qua `LocalFinluxTokens`, `LocalFinluxSpacing`, `LocalFinluxRadius`.
+- [x] **Phase UI-2 — Shared Components Foundation**:
+  - `FinluxScreenHeader`, `FinluxSectionHeader`.
+  - `FinluxSoftCard`, `FinluxHeroCard`, `FinluxMetricCard`, `FinluxInsightCard`.
+  - `FinluxAmountText`, `formatVndAmount`, `getTransactionSemanticColor`, `FinluxFilterChip`, `FinluxTransactionRow`.
+  - `FinluxBottomSheet`, `FinluxDialog`.
+  - `FinluxEmptyState`, `FinluxErrorState`, `FinluxOfflineState`.
+  - `FinluxBottomDock`, `FinluxCenterFab`.
+- [x] **Phase UI-3 — Theme Switching (`AppUiStyle.PRISM`)**:
+  - Thêm `AppUiStyle.PRISM` vào model enum và DataStore preference.
+  - Cập nhật `FinluxTheme.kt` mapping Prism colors/tokens.
+  - Cập nhật `SettingsScreen.kt` với Card chọn "FinLux Prism (Data-first + Spatial + Bento)".
+- [x] **Phase UI-4 — Navigation & Bottom Dock**:
+  - Tích hợp `FinluxBottomDock` trong `MainBottomBar.kt` khi chọn UI Style PRISM.
+- [x] **Phase UI-5 — Home / Dashboard Screen**:
+  - Tạo `PrismHomeScreen.kt` chuẩn Bento grid: Hero net worth, Income/Expense cards, Quick actions, AI insight, Recent transaction list.
+  - Tích hợp routing trong `HomeScreen.kt`.
+- [x] **Phase UI-6 — Transactions Screen + Detail**:
+  - Tạo `PrismTransactionsScreen.kt`: Filter chip bar (Tất cả, Thu, Chi), Bento summary card, Semantic transaction rows, Transaction Detail sheet, Action & Delete confirmation dialogs.
+  - Tích hợp routing trong `TransactionsScreen.kt`.
+- [x] **Phase UI-7 — Wallets & Budget Screens**:
+  - Tạo `PrismWalletsScreen.kt`: Total assets hero, Add wallet & Transfer bottom sheets, List ví với type icon & color, Delete dialog.
+  - Tạo `PrismBudgetScreen.kt`: Month navigation, Remaining budget hero, Category budget list với dynamic spent tracking & progress indicator, Add/edit budget bottom sheet.
+  - Tích hợp routing trong `WalletsScreen.kt` & `BudgetScreen.kt`.
+- [x] **Phase UI-8 — Reports Screen & Consistency Polish**:
+  - Tạo `PrismReportsScreen.kt`: Period selector chips (Tháng này, Tháng trước, 3 tháng...), Net cash flow hero, Income vs Expense metrics, AI insight, Category breakdown bento blocks với progress bars, Export report dialog.
+  - Tích hợp routing trong `ReportsScreen.kt`.
+
+### Kết quả kiểm thử toàn diện
+- `testDebugUnitTest`: **PASS 100%** (Tất cả unit test đều vượt qua).
+- `assembleDebug`: **BUILD SUCCESSFUL** (Đóng gói APK debug thành công không lỗi).
+
+### Danh sách file đã tạo / chỉnh sửa:
+- [FinluxTokens.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt) `[NEW]`
+- [Typography.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/Typography.kt) `[MODIFIED]`
+- [FinluxTheme.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt) `[MODIFIED]`
+- [FinanceModels.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt) `[MODIFIED]`
+- [FinluxHeaderComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt) `[NEW]`
+- [FinluxCardComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt) `[NEW]`
+- [FinluxTransactionComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt) `[NEW]`
+- [FinluxModalComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxModalComponents.kt) `[NEW]`
+- [FinluxFeedbackComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt) `[NEW]`
+- [FinluxNavigationComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt) `[NEW]`
+- [FinluxDesignSystemTest.kt](file:///d:/BT/FinLux/app/src/test/java/com/finlux/app/core/designsystem/FinluxDesignSystemTest.kt) `[NEW]`
+- [MainBottomBar.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/components/MainBottomBar.kt) `[MODIFIED]`
+- [HomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt) `[MODIFIED]`
+- [PrismHomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt) `[NEW]`
+- [TransactionsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/TransactionsScreen.kt) `[MODIFIED]`
+- [PrismTransactionsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt) `[NEW]`
+- [WalletsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/WalletsScreen.kt) `[MODIFIED]`
+- [PrismWalletsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt) `[NEW]`
+- [BudgetScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/budget/BudgetScreen.kt) `[MODIFIED]`
+- [PrismBudgetScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt) `[NEW]`
+- [ReportsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/reports/ReportsScreen.kt) `[MODIFIED]`
+- [PrismReportsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt) `[NEW]`
+- [SettingsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt) `[MODIFIED]`
+
+---
 
 ## [DONE] Task: Finlux v1.8.5 Security & Release Hardening Master Plan
 

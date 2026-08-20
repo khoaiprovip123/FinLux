@@ -7,6 +7,7 @@ import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.home.classic.ClassicHomeScreen
 import com.finlux.app.presentation.home.modern.ModernHomeScreen
+import com.finlux.app.presentation.home.prism.PrismHomeScreen
 
 @Composable
 fun HomeScreen(
@@ -29,6 +30,15 @@ fun HomeScreen(
             viewModel = viewModel,
         )
         AppUiStyle.MODERN_LUXURY -> ModernHomeScreen(
+            onNavigate = onNavigate,
+            onAdd = onAdd,
+            onNotifications = onNotifications,
+            onSelectTransaction = onSelectTransaction,
+            onActionTransaction = onActionTransaction,
+            onEditTransaction = onEditTransaction,
+            viewModel = viewModel,
+        )
+        AppUiStyle.PRISM -> PrismHomeScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onNotifications = onNotifications,
