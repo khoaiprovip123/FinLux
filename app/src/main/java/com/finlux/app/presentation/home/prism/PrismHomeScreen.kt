@@ -10,6 +10,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,8 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -45,10 +48,12 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -65,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -89,6 +95,7 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.HomeViewModel
+import com.finlux.app.presentation.transaction.TransactionActionDialog
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -112,6 +119,18 @@ fun PrismHomeScreen(
     val tokens = LocalFinluxTokens.current
 
     Scaffold(
+        topBar = {
+            PrismHomeTopHeader(
+                displayName = state.user?.displayName?.ifBlank { "Văn Khoai" } ?: "Văn Khoai",
+                photoUrl = state.user?.photoUrl,
+                unreadCount = state.unreadNotificationsCount,
+                onProfile = { onNavigate(Route.Settings.value) },
+                onNotifications = onNotifications,
+                modifier = Modifier
+                    .background(tokens.background)
+                    .padding(horizontal = 20.dp),
+            )
+        },
         bottomBar = { MainBottomBar(Route.Home.value, onNavigate, onAdd) },
         containerColor = tokens.background,
     ) { scaffoldPadding ->
@@ -122,23 +141,12 @@ fun PrismHomeScreen(
             contentPadding = PaddingValues(
                 start = 20.dp,
                 end = 20.dp,
-                top = 10.dp,
+                top = 8.dp,
                 bottom = 140.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            // 1. Top Header: "Xin chào 👋" + "Văn Khoai" + Bell notification + Avatar
-            item {
-                PrismHomeTopHeader(
-                    displayName = state.user?.displayName?.ifBlank { "Văn Khoai" } ?: "Văn Khoai",
-                    photoUrl = state.user?.photoUrl,
-                    unreadCount = state.unreadNotificationsCount,
-                    onProfile = { onNavigate(Route.Settings.value) },
-                    onNotifications = onNotifications,
-                )
-            }
-
-            // 2. Main Hero Card (Tổng tài sản - 6.110.000 đ - Tài sản ròng + 3D Wallet illustration)
+            // 1. Main Hero Card (Tổng tài sản - 6.110.000 đ - Tài sản ròng + 3D Wallet illustration)
             item {
                 PrismHeroNetWorthCard(
                     totalBalance = totalBalance,
@@ -232,7 +240,7 @@ fun PrismHomeScreen(
                 }
             } else {
                 items(
-                    items = state.transactions.take(6),
+                    items = state.transactions.take(10),
                     key = { it.id },
                 ) { tx ->
                     val category = tx.categoryId?.let { categoriesMap[it] }
@@ -243,17 +251,55 @@ fun PrismHomeScreen(
                         category = category,
                         wallet = wallet,
                         showBalance = showBalance,
-                        onClick = {
-                            if (onSelectTransaction != null) {
-                                onSelectTransaction(tx)
-                            } else if (onEditTransaction != null) {
-                                onEditTransaction(tx)
-                            }
-                        },
+                        onClick = { onSelectTransaction?.invoke(tx) },
                         onLongClick = onActionTransaction?.let { { it(tx) } },
                     )
                 }
+
+                // "Xem thêm" button when there are more than 10 transactions
+                if (state.transactions.size > 10) {
+                    item {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = tokens.surfaceSoft,
+                            border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.20f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(bounded = true),
+                                    onClick = { onNavigate(Route.Transactions.value) },
+                                ),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 14.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Xem tất cả ${state.transactions.size} giao dịch",
+                                    style = FinluxTextStyles.Caption.copy(
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                                    color = tokens.primary,
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = tokens.primary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
+                }
             }
+
         }
     }
 }
@@ -276,7 +322,7 @@ private fun PrismHomeTopHeader(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(top = 4.dp, bottom = 4.dp),
+            .padding(top = 6.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -366,29 +412,97 @@ private fun PrismHeroNetWorthCard(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 14.dp,
+                elevation = 18.dp,
                 shape = shape,
-                ambientColor = Color(0xFF4C68FF).copy(alpha = 0.28f),
-                spotColor = Color(0xFF865BF9).copy(alpha = 0.36f),
+                ambientColor = Color(0xFF4C68FF).copy(alpha = 0.32f),
+                spotColor = Color(0xFF865BF9).copy(alpha = 0.42f),
             )
             .clip(shape)
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF4C66FF),
-                        Color(0xFF6B58F8),
-                        Color(0xFF865BF9),
-                        Color(0xFF9F72FB),
+                        Color(0xFF3A5FFF),
+                        Color(0xFF5E50F8),
+                        Color(0xFF7C5AF9),
+                        Color(0xFF9B6EFB),
                     ),
                     start = Offset(0f, 0f),
                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                 )
             )
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)), shape)
-            .padding(22.dp),
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)), shape),
     ) {
+        // ── Decorative Background Layer ──────────────────────────────
+        Canvas(modifier = Modifier.matchParentSize()) {
+            // Large top-right glowing orb
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                    center = Offset(size.width * 0.82f, size.height * 0.0f),
+                    radius = size.width * 0.52f,
+                ),
+                center = Offset(size.width * 0.82f, 0f),
+                radius = size.width * 0.52f,
+            )
+
+            // Bottom-left secondary orb
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0xFF38BDF8).copy(alpha = 0.22f), Color.Transparent),
+                    center = Offset(size.width * 0.15f, size.height * 1.1f),
+                    radius = size.width * 0.45f,
+                ),
+                center = Offset(size.width * 0.15f, size.height * 1.1f),
+                radius = size.width * 0.45f,
+            )
+
+            // Decorative large arc line (top-right)
+            drawArc(
+                color = Color.White.copy(alpha = 0.08f),
+                startAngle = 160f,
+                sweepAngle = 100f,
+                useCenter = false,
+                topLeft = Offset(size.width * 0.45f, -size.width * 0.42f),
+                size = Size(size.width * 0.85f, size.width * 0.85f),
+                style = Stroke(width = 1.5.dp.toPx()),
+            )
+
+            // Decorative smaller arc
+            drawArc(
+                color = Color.White.copy(alpha = 0.12f),
+                startAngle = 165f,
+                sweepAngle = 80f,
+                useCenter = false,
+                topLeft = Offset(size.width * 0.52f, -size.width * 0.28f),
+                size = Size(size.width * 0.62f, size.width * 0.62f),
+                style = Stroke(width = 1.dp.toPx()),
+            )
+
+            // Dots grid pattern (bottom-right area)
+            val dotRadius = 1.8.dp.toPx()
+            val dotSpacing = 14.dp.toPx()
+            val gridStartX = size.width * 0.60f
+            val gridStartY = size.height * 0.55f
+            for (row in 0..3) {
+                for (col in 0..4) {
+                    val cx = gridStartX + col * dotSpacing
+                    val cy = gridStartY + row * dotSpacing
+                    if (cx < size.width - 8.dp.toPx()) {
+                        drawCircle(
+                            color = Color.White.copy(alpha = 0.18f),
+                            radius = dotRadius,
+                            center = Offset(cx, cy),
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Content ──────────────────────────────────────────────────
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(22.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -485,78 +599,227 @@ private fun PrismHeroNetWorthCard(
 }
 
 /**
- * Visual 3D Wallet & Coin Graphic
+ * Visual 3D Spatial Holographic Cards & Golden Coin Graphic
  */
 @Composable
 private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier,
+        modifier = modifier.size(110.dp),
         contentAlignment = Alignment.Center,
     ) {
-        // Glowing halo sphere in background
+        // 1. Radial Aura Glow
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color.White.copy(alpha = 0.45f), Color.Transparent),
+                    colors = listOf(
+                        Color(0xFF38BDF8).copy(alpha = 0.35f),
+                        Color(0xFF818CF8).copy(alpha = 0.18f),
+                        Color.Transparent,
+                    ),
                     center = center,
-                    radius = size.minDimension / 1.5f,
-                )
+                    radius = size.minDimension * 0.70f,
+                ),
             )
         }
 
-        // Layer 1: Back Card
+        // 2. Back Card: Cyber Blue Hologram Card
         Surface(
             modifier = Modifier
-                .size(width = 68.dp, height = 46.dp)
-                .align(Alignment.TopEnd)
-                .padding(top = 4.dp, end = 6.dp),
-            shape = RoundedCornerShape(8.dp),
-            color = Color(0xFF38BDF8).copy(alpha = 0.85f),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.6f)),
-        ) {}
-
-        // Layer 2: Main Wallet Front Body (Translucent glass style)
-        Surface(
-            modifier = Modifier
-                .size(width = 82.dp, height = 58.dp)
-                .align(Alignment.Center),
-            shape = RoundedCornerShape(14.dp),
-            color = Color.White.copy(alpha = 0.35f),
-            border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.85f)),
+                .size(width = 68.dp, height = 44.dp)
+                .graphicsLayer {
+                    rotationZ = -13f
+                    translationX = -6f
+                    translationY = -12f
+                }
+                .shadow(
+                    elevation = 10.dp,
+                    shape = RoundedCornerShape(10.dp),
+                    ambientColor = Color(0xFF0284C7).copy(alpha = 0.4f),
+                    spotColor = Color(0xFF0284C7).copy(alpha = 0.6f),
+                ),
+            shape = RoundedCornerShape(10.dp),
+            color = Color.Transparent,
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.65f)),
         ) {
             Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.CenterEnd,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF00C6FF),
+                                Color(0xFF0072FF),
+                                Color(0xFF4F46E5),
+                            ),
+                        ),
+                    )
+                    .padding(5.dp),
             ) {
-                // Wallet clasp
+                // Micro EMV Chip
                 Surface(
-                    modifier = Modifier
-                        .size(width = 24.dp, height = 20.dp)
-                        .padding(end = 4.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color.White.copy(alpha = 0.70f),
+                    shape = RoundedCornerShape(2.5.dp),
+                    color = Color(0xFFFDE047),
+                    modifier = Modifier.size(width = 11.dp, height = 8.dp),
                 ) {}
+
+                // Contactless Signal Waves
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    horizontalArrangement = Arrangement.spacedBy(1.5.dp),
+                ) {
+                    Box(modifier = Modifier.size(width = 1.5.dp, height = 5.dp).background(Color.White.copy(alpha = 0.7f), CircleShape))
+                    Box(modifier = Modifier.size(width = 1.5.dp, height = 8.dp).background(Color.White.copy(alpha = 0.7f), CircleShape))
+                }
             }
         }
 
-        // Layer 3: Floating Glowing Coin
+        // 3. Front Card: Frosted Platinum Liquid Glass Card
         Surface(
             modifier = Modifier
-                .size(32.dp)
-                .align(Alignment.BottomEnd),
-            shape = CircleShape,
-            color = Color(0xFFC084FC).copy(alpha = 0.90f),
-            border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.95f)),
-            shadowElevation = 6.dp,
+                .size(width = 82.dp, height = 54.dp)
+                .graphicsLayer {
+                    rotationZ = 6f
+                    translationX = 4f
+                    translationY = 6f
+                }
+                .shadow(
+                    elevation = 14.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    ambientColor = Color(0xFF4338CA).copy(alpha = 0.35f),
+                    spotColor = Color(0xFF4338CA).copy(alpha = 0.5f),
+                ),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.Transparent,
+            border = BorderStroke(
+                1.5.dp,
+                Brush.linearGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.95f),
+                        Color.White.copy(alpha = 0.35f),
+                    ),
+                ),
+            ),
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "đ",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.40f),
+                                Color.White.copy(alpha = 0.15f),
+                            ),
+                        ),
+                    )
+                    .padding(6.dp),
+            ) {
+                // Gold Chip
+                Surface(
+                    shape = RoundedCornerShape(3.dp),
+                    color = Color(0xFFF59E0B),
+                    border = BorderStroke(0.5.dp, Color(0xFFFEF08A)),
+                    modifier = Modifier
+                        .size(width = 14.dp, height = 10.dp)
+                        .align(Alignment.TopStart),
+                ) {}
+
+                // Dual VIP Intersecting Circles
+                Row(
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                    horizontalArrangement = Arrangement.spacedBy((-5).dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(15.dp)
+                            .background(Color(0xFFEC4899).copy(alpha = 0.80f), CircleShape),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(15.dp)
+                            .background(Color(0xFFFBBF24).copy(alpha = 0.80f), CircleShape),
+                    )
+                }
+
+                // Embossed card numbers placeholder
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(bottom = 2.dp)
+                        .size(width = 22.dp, height = 3.dp)
+                        .background(Color.White.copy(alpha = 0.75f), CircleShape),
                 )
             }
+        }
+
+        // 4. Floating 3D Gold Coin with ₫ symbol
+        Surface(
+            modifier = Modifier
+                .size(34.dp)
+                .align(Alignment.BottomEnd)
+                .graphicsLayer {
+                    translationX = 10f
+                    translationY = 10f
+                }
+                .shadow(
+                    elevation = 10.dp,
+                    shape = CircleShape,
+                    ambientColor = Color(0xFFF59E0B).copy(alpha = 0.6f),
+                    spotColor = Color(0xFFF59E0B).copy(alpha = 0.8f),
+                ),
+            shape = CircleShape,
+            color = Color.Transparent,
+            border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.95f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFFBEB),
+                                Color(0xFFFBBF24),
+                                Color(0xFFD97706),
+                            ),
+                        ),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "₫",
+                    color = Color.White,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 17.sp,
+                )
+            }
+        }
+
+        // 5. Sparkle Accent (Top Left)
+        Canvas(
+            modifier = Modifier
+                .size(18.dp)
+                .align(Alignment.TopStart),
+        ) {
+            val center = Offset(size.width / 2, size.height / 2)
+            val rayLength = size.width * 0.45f
+            drawLine(
+                color = Color.White.copy(alpha = 0.90f),
+                start = Offset(center.x, center.y - rayLength),
+                end = Offset(center.x, center.y + rayLength),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = Color.White.copy(alpha = 0.90f),
+                start = Offset(center.x - rayLength, center.y),
+                end = Offset(center.x + rayLength, center.y),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
+            drawCircle(
+                color = Color.White,
+                radius = 2.dp.toPx(),
+                center = center,
+            )
         }
     }
 }
@@ -575,141 +838,166 @@ private fun PrismSummaryTrioCard(
     onNetClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FinluxSoftCard(
+    Row(
         modifier = modifier.fillMaxWidth(),
-        radius = 22.dp,
-        padding = 16.dp,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Column 1: Thu tháng này
-            PrismTrioMetricColumn(
-                icon = Icons.Default.ArrowDownward,
-                iconColor = FinluxColors.IncomeGreen,
-                iconBgColor = FinluxColors.IncomeGreen.copy(alpha = 0.12f),
-                title = "Thu tháng này",
-                value = if (showBalance) formatVndAmount(income) else "••••",
-                subtext = "— 0% so với trước",
-                subtextColor = LocalFinluxTokens.current.onSurfaceVariant,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(bounded = false),
-                        onClick = onIncomeClick,
-                    ),
-            )
+        // Column 1: Thu tháng này
+        PrismTrioMetricCard(
+            icon = Icons.Default.ArrowDownward,
+            accentColor = Color(0xFF10B981),
+            title = "Thu tháng này",
+            value = if (showBalance) formatVndAmount(income) else "••••",
+            trendText = "— 0%",
+            trendSubtext = "so với trước",
+            isTrendPositive = null,
+            onClick = onIncomeClick,
+            modifier = Modifier.weight(1f),
+        )
 
-            Spacer(Modifier.width(8.dp))
+        // Column 2: Chi tháng này
+        PrismTrioMetricCard(
+            icon = Icons.Default.ArrowUpward,
+            accentColor = Color(0xFFF43F5E),
+            title = "Chi tháng này",
+            value = if (showBalance) formatVndAmount(expense) else "••••",
+            trendText = "▲ 18,7%",
+            trendSubtext = "so với trước",
+            isTrendPositive = false,
+            onClick = onExpenseClick,
+            modifier = Modifier.weight(1f),
+        )
 
-            // Column 2: Chi tháng này
-            PrismTrioMetricColumn(
-                icon = Icons.Default.ArrowUpward,
-                iconColor = FinluxColors.ExpenseRed,
-                iconBgColor = FinluxColors.ExpenseRed.copy(alpha = 0.12f),
-                title = "Chi tháng này",
-                value = if (showBalance) formatVndAmount(expense) else "••••",
-                subtext = "▲ 18,7% so với trước",
-                subtextColor = FinluxColors.ExpenseRed,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(bounded = false),
-                        onClick = onExpenseClick,
-                    ),
-            )
-
-            Spacer(Modifier.width(8.dp))
-
-            // Column 3: Dòng tiền (ròng)
-            PrismTrioMetricColumn(
-                icon = Icons.Default.PieChart,
-                iconColor = Color(0xFF3B82F6),
-                iconBgColor = Color(0xFF3B82F6).copy(alpha = 0.12f),
-                title = "Dòng tiền (ròng)",
-                value = if (showBalance) (if (net < 0) "-${formatVndAmount(-net)}" else formatVndAmount(net)) else "••••",
-                subtext = if (net < 0) "▼ 18,7% so với trước" else "▲ 0% so với trước",
-                subtextColor = if (net < 0) FinluxColors.ExpenseRed else FinluxColors.IncomeGreen,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(bounded = false),
-                        onClick = onNetClick,
-                    ),
-            )
-        }
+        // Column 3: Dòng tiền (ròng)
+        PrismTrioMetricCard(
+            icon = Icons.Default.PieChart,
+            accentColor = if (net < 0) Color(0xFFF43F5E) else Color(0xFF6366F1),
+            title = "Dòng tiền (ròng)",
+            value = if (showBalance) (if (net < 0) "-${formatVndAmount(-net)}" else "+${formatVndAmount(net)}") else "••••",
+            trendText = if (net < 0) "▼ 18,7%" else "▲ 0%",
+            trendSubtext = "so với trước",
+            isTrendPositive = net >= 0,
+            onClick = onNetClick,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
 @Composable
-private fun PrismTrioMetricColumn(
+private fun PrismTrioMetricCard(
     icon: ImageVector,
-    iconColor: Color,
-    iconBgColor: Color,
+    accentColor: Color,
     title: String,
     value: String,
-    subtext: String,
-    subtextColor: Color,
+    trendText: String,
+    trendSubtext: String,
+    isTrendPositive: Boolean?,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
+    val shape = RoundedCornerShape(20.dp)
 
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    Surface(
+        shape = shape,
+        color = tokens.surface,
+        border = BorderStroke(
+            1.2.dp,
+            if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0x1A5A6EA0),
+        ),
+        shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
+        modifier = modifier
+            .clip(shape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick,
+            ),
     ) {
-        // Top Icon
-        Box(
+        Column(
             modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(iconBgColor),
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            accentColor.copy(alpha = if (tokens.isDark) 0.14f else 0.07f),
+                            Color.Transparent,
+                        ),
+                    ),
+                )
+                .padding(horizontal = 12.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = iconColor,
-                modifier = Modifier.size(18.dp),
+            // Top: Circular Icon
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(accentColor.copy(alpha = if (tokens.isDark) 0.22f else 0.14f))
+                    .border(BorderStroke(1.dp, accentColor.copy(alpha = 0.30f)), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = accentColor,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            // Title
+            Text(
+                text = title,
+                style = FinluxTextStyles.Caption.copy(
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+                color = tokens.onSurfaceVariant,
+                maxLines = 1,
             )
+
+            // Amount Value
+            Text(
+                text = value,
+                style = FinluxTextStyles.CardTitle.copy(
+                    fontSize = 15.5.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.3).sp,
+                ),
+                color = tokens.onSurface,
+                maxLines = 1,
+            )
+
+            // Bottom Trend Pill
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = when (isTrendPositive) {
+                    true -> Color(0xFF10B981).copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
+                    false -> Color(0xFFF43F5E).copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
+                    null -> tokens.surfaceSoft
+                },
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Text(
+                        text = trendText,
+                        style = FinluxTextStyles.MicroLabel.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = when (isTrendPositive) {
+                            true -> Color(0xFF10B981)
+                            false -> Color(0xFFF43F5E)
+                            null -> tokens.onSurfaceVariant
+                        },
+                    )
+                }
+            }
         }
-
-        Spacer(Modifier.height(2.dp))
-
-        // Title
-        Text(
-            text = title,
-            style = FinluxTextStyles.Caption.copy(fontSize = 11.sp),
-            color = tokens.onSurfaceVariant,
-            maxLines = 1,
-        )
-
-        // Value
-        Text(
-            text = value,
-            style = FinluxTextStyles.CardTitle.copy(
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-            ),
-            color = tokens.onSurface,
-            maxLines = 1,
-        )
-
-        // Subtext (Trend)
-        Text(
-            text = subtext,
-            style = FinluxTextStyles.MicroLabel.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium,
-            ),
-            color = subtextColor,
-            maxLines = 1,
-        )
     }
 }
 
@@ -1293,7 +1581,9 @@ private fun PrismDonutChart(
 }
 
 /**
- * 7. Recent Transaction Item (matching screenshot)
+ * 7. Recent Transaction Item
+ * - Tap → xem chi tiết
+ * - Long press → hiển thị pop-up Sửa / Xóa
  */
 @Composable
 private fun PrismRecentTransactionItem(
@@ -1318,20 +1608,25 @@ private fun PrismRecentTransactionItem(
     val dateText = remember(transaction.date) {
         dateFormatter.format(transaction.date.atZone(ZoneId.systemDefault()))
     }
-
     val walletName = wallet?.name ?: "Ví chính"
 
     FinluxSoftCard(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
         radius = 18.dp,
         padding = 14.dp,
-        onClick = onClick,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // Category Icon in soft rounded square
+            // Category Icon
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
@@ -1349,7 +1644,7 @@ private fun PrismRecentTransactionItem(
 
             Spacer(Modifier.width(12.dp))
 
-            // Center Column: Note + Pill badge + Date
+            // Center: Note + Date
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -1365,7 +1660,6 @@ private fun PrismRecentTransactionItem(
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                     )
-                    // Sample "Nhắc nhở" badge if note contains reminder
                     if (transaction.note.contains("nhắc", ignoreCase = true) || transaction.note.contains("trọ", ignoreCase = true)) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
@@ -1390,7 +1684,7 @@ private fun PrismRecentTransactionItem(
 
             Spacer(Modifier.width(8.dp))
 
-            // Right Column: Amount + Wallet Name
+            // Right: Amount + Wallet
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(2.dp),

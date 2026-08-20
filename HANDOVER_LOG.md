@@ -4,6 +4,92 @@
 - **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
 
+## [DONE] Task: Ergonomic & Pixel-Perfect Refinement for Add Transaction Sheet
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Định dạng số tiền tự động (Thousand dot separator):**
+   - Tự động định dạng dấu chấm phân cách hàng nghìn theo chuẩn Việt Nam ngay khi gõ (ví dụ `728000` ➔ `728.000 ₫`).
+   - Gom gọn số tiền và ký hiệu `₫` liền kề nhau, màu xanh lá đậm `#16A34A` khi Thêm thu / đỏ `#DC2626` khi Thêm chi.
+2. ✅ **Bố cục 2 dòng thông tin công thái học (Ergonomic 2-Line Row Layout):**
+   - Thay thế các hàng đơn bằng thẻ 2 dòng trực quan: Tiêu đề nhỏ (10.5sp Bold hoa) + Giá trị lớn (15sp SemiBold) + Mô tả phụ / số dư.
+   - Loại bỏ mục "Hình thức: Tiền mặt" bị trùng lặp với "Ví: Tiền mặt".
+   - Bổ sung hàng *Hóa đơn & Chứng từ* (chạm để quét/chụp ảnh).
+3. ✅ **Build & Install:** Đã biên dịch APK và cài đặt trực tiếp lên điện thoại Xiaomi (`7f4ca06a`).
+
+## [DONE] Task: Pixel-Perfect Create Transaction Flow Redesign (Quick Add, Add Form & Category Picker)
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Màn hình Tạo giao dịch Hub (`QuickAddSheet.kt`):**
+   - Header "Tạo giao dịch", subtitle, nút đóng `✕`.
+   - Bento Grid 2x2: *Thêm thu* (xanh lá), *Thêm chi* (đỏ hồng), *Chuyển tiền* (xanh dương), *Scan hóa đơn* (tím).
+   - Banner full-width: *Thêm mục tiêu* (tím lavender).
+   - Danh sách *Giao dịch gần đây* (3 item có icon vuông bo góc, giờ, tên, danh mục, số tiền, chevron `>`) + nút "Xem tất cả".
+   - Footer tip `💡 Bạn cũng có thể nhấn giữ nút + để tạo nhanh`.
+2. ✅ **Form Thêm chi / Thêm thu (`AddTransactionSheet.kt`):**
+   - Header có nút quay lại `<` + tiêu đề + nút Lưu tròn màu xanh dương có dấu tích `✓`.
+   - 3 Tab phân loại (Chi tiêu, Trả nợ, Đầu tư / Thu nhập, Thu nợ, Thưởng).
+   - Khung nhập số tiền cỡ lớn (32sp ExtraBold) + icon máy tính 🖩 + 4 chip số tiền nhanh (`+10k`, `+50k`, `+100k`, `+500k`).
+   - 5 hàng thông tin thẻ bo góc: *Danh mục*, *Ví thanh toán*, *Thời gian*, *Ghi chú*, *Hình thức*.
+3. ✅ **Modal Chọn danh mục (`CategoryPickerBottomSheet`):**
+   - Header tiêu đề + nút đóng `✕`.
+   - Thanh tìm kiếm "Tìm danh mục" bo tròn mềm mại.
+   - Lưới 4 cột các danh mục: icon bo góc 16dp, danh mục được chọn có viền đỏ + huy hiệu checkmark đỏ `✓`.
+   - Nút dưới cùng `+ Thêm danh mục mới`.
+4. ✅ **Build APK:** Đã biên dịch thành công APK `app-debug.apk`.
+
+## [DONE] Task: 3D Spatial Financial Ledger Graphic & Extra Bold Amount on Transactions
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **In đậm số tiền cực đại:** Nâng cấp số tiền lên `32sp`, `FontWeight.ExtraBold` với màu sắc nhận diện sắc nét (Xanh dương / Xanh lá / Đỏ).
+2. ✅ **Thiết kế hình ảnh đồ họa 3D Sổ thu chi không gian (`Prism3DTransactionIllustration`):**
+   - **Tầng 1 (Aura):** Vầng hào quang tỏa sáng ánh ngọc phía sau.
+   - **Tầng 2 (Receipt Sheet):** Tấm phiếu hóa đơn kính Frosted Glass nghiêng `-14°` có các dải chi tiết giao dịch dập mờ.
+   - **Tầng 3 (Holographic Card):** Thẻ ngân hàng ánh kim nghiêng `+10°` có chip EMV vàng, sóng không tiếp xúc và biểu tượng VIP kép.
+   - **Tầng 4 (Golden Coin `₫`):** Đồng xu vàng 3D nổi bật ở góc tiền cảnh với ký hiệu `₫` in đậm.
+   - **Tầng 5 (Sparkle):** Ngôi sao vàng lấp lánh `✦` ở góc trên.
+3. ✅ **Build & Install:** Đã biên dịch thành công và cài đặt lên máy `7f4ca06a`.
+
+## [DONE] Task: 3D Spatial Holographic Cards & Golden Coin Illustration on Hero Card
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Thiết kế đồ họa không gian 3D Hologram (`PrismWallet3DIllustration`):**
+   - Thay thế các khung wireframe cũ bằng cụm **thẻ ngân hàng 3D không gian (Spatial Layering)** có góc nghiêng 3D thực tế (`graphicsLayer`).
+   - Thẻ Hologram Cyan Cyber phía sau có chip EMV vàng và sóng chạm không tiếp xúc.
+   - Thẻ Frosted Liquid Glass phía trước có hiệu ứng kính mờ ánh kim, viền sáng trắng và biểu tượng VIP kép.
+   - Đồng xu vàng 3D nổi (`₫`) đổ bóng ánh kim rực rỡ ở góc tiền cảnh.
+   - Ngôi sao lấp lánh (Sparkle accent) và hào quang tỏa sáng (Aura radial gradient) phía sau.
+2. ✅ **Build & Install:** Đã biên dịch thành công và cài đặt lên máy `7f4ca06a`.
+
+## [DONE] Task: Sticky Fixed Top Header on PrismHomeScreen
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Cố định Top Header khi cuộn trang:** Đưa `PrismHomeTopHeader` ("Xin chào 👋", Tên người dùng, Chuông thông báo có chấm đỏ, Avatar) vào `topBar` của `Scaffold` với background đồng nhất màu nền, giúp thanh header luôn ghim cố định ở đỉnh màn hình khi người dùng vuốt cuộn lên xuống danh sách thẻ tài sản và giao dịch.
+2. ✅ **Build & Install:** Đã build thành công và cài đặt lên máy `7f4ca06a`.
+
+## [DONE] Task: Pixel-Perfect Transaction Detail Bottom Sheet & Action Redesign
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Thiết kế chuẩn xác theo ảnh mẫu (`TransactionDetailSheet.kt`):**
+   - Thanh kéo (Drag handle) chuẩn trên đỉnh.
+   - Header có icon danh mục bo góc mềm mại + Tiêu đề "Chi tiết giao dịch" + Nút đóng tròn (✕).
+   - Thẻ số tiền nổi bật (Hero Card) có gradient nền dịu nhẹ, tag pill chấm tròn "• Khoản chi tiêu" / "• Khoản thu nhập", số tiền cỡ lớn (32sp Bold) màu sắc ngữ nghĩa.
+   - Khung thông tin 4 hàng (Danh mục, Ví thanh toán, Thời gian, Ghi chú) kèm icon vuông bo góc và divider thanh mảnh.
+   - 2 Thẻ hành động đặt cạnh nhau (Side-by-side): ✏️ *Chỉnh sửa giao dịch* và 🗑️ *Xóa giao dịch này* (kèm subtitle mô tả + mũi tên chevron).
+   - Footer bảo mật: Icon khiên + "Giao dịch được bảo mật tuyệt đối".
+2. ✅ **Build & Install:** Đã biên dịch thành công và cài đặt lên máy `7f4ca06a`.
+
 ## [DONE] Task: Fix UI Report Issues from Real Device Testing (docs/Report)
 
 **Ngày hoàn thành:** 2026-08-20
