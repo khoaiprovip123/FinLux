@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -273,16 +274,21 @@ fun PrismReportsScreen(
                                 )
                             }
 
-                            LinearProgressIndicator(
-                                progress = { progressFloat },
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
-                                    .clip(RoundedCornerShape(3.dp)),
-                                color = catColor,
-                                trackColor = tokens.surfaceSoft,
-                                strokeCap = StrokeCap.Round,
-                            )
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(tokens.surfaceSoft),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fraction = progressFloat)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(catColor),
+                                )
+                            }
                         }
                     }
                 }

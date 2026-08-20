@@ -110,6 +110,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
+import com.finlux.app.presentation.settings.prism.PrismSettingsScreen
+
 @Composable
 fun SettingsScreen(
     selectedTheme: ThemePreference,
@@ -124,6 +126,23 @@ fun SettingsScreen(
     onCheckUpdate: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
+    if (selectedUiStyle == AppUiStyle.PRISM) {
+        PrismSettingsScreen(
+            selectedTheme = selectedTheme,
+            onThemeSelected = onThemeSelected,
+            selectedUiStyle = selectedUiStyle,
+            onUiStyleSelected = onUiStyleSelected,
+            uiPreferences = uiPreferences,
+            onUiPreferencesChanged = onUiPreferencesChanged,
+            onNavigate = onNavigate,
+            onAdd = onAdd,
+            onSignedOut = onSignedOut,
+            onCheckUpdate = onCheckUpdate,
+            viewModel = viewModel,
+        )
+        return
+    }
+
     val user = viewModel.user.collectAsStateWithLifecycle().value
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
     val totalAssets = wallets.sumOf { it.balance.value }

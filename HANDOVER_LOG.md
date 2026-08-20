@@ -2,7 +2,31 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (63/63 unit tests pass 100%, assembleRelease pass).
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
+
+## [DONE] Task: Fix UI Report Issues from Real Device Testing (docs/Report)
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `feature/prism-ui-theme`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Status Bar Padding:** Đã thêm `statusBarsPadding()` vào `FinluxScreenHeader` và `GlassTopBar`, loại bỏ hoàn toàn hiện tượng tai thỏ / status bar hệ thống đè lên header trên toàn bộ các màn hình (Báo cáo, Lịch sử, Ví, Ngân sách, Cài đặt).
+2. ✅ **Progress Bar Dot Artifact:** Thay thế `LinearProgressIndicator` của Material 3 bằng rounded Box progress bar trên cả `PrismReportsScreen` và `PrismBudgetScreen`, loại bỏ dấu chấm tròn thừa ở đuôi thanh tiến độ.
+3. ✅ **Prism Settings Screen:** Tạo `PrismSettingsScreen.kt` chuyên biệt chuẩn Bento Data-First, hiển thị trực tiếp bộ chọn UI Theme Style (💎 FinLux Prism / ✨ Modern Luxury / 💧 Classic Liquid) trên màn hình chính của Cài đặt.
+4. ✅ **Metric Card Typography:** Tăng kích thước và độ đậm của font số liệu trong `FinluxMetricCard` (19sp Bold) giúp các chỉ số thu chi dễ nhìn và nổi bật hơn.
+
+### Kết quả kiểm thử
+- `testDebugUnitTest`: **PASS 100%** (Tất cả unit tests đều vượt qua).
+- `packageDebug`: **BUILD SUCCESSFUL** (Đã tạo file APK mới nhất tại `app/build/outputs/apk/debug/app-debug.apk`).
+
+### Danh sách file đã chỉnh sửa / tạo mới:
+- [FinluxHeaderComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt) `[MODIFIED]`
+- [FinluxCardComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt) `[MODIFIED]`
+- [LiquidGlass.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt) `[MODIFIED]`
+- [PrismReportsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt) `[MODIFIED]`
+- [PrismBudgetScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt) `[MODIFIED]`
+- [PrismSettingsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt) `[NEW]`
+- [SettingsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt) `[MODIFIED]`
+
 
 ## [DONE] Task: Finlux Prism UI Theme & Design System Implementation
 

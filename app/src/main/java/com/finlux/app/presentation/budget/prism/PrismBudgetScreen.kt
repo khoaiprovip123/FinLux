@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -290,16 +291,21 @@ fun PrismBudgetScreen(
                             }
 
                             // Progress Bar
-                            LinearProgressIndicator(
-                                progress = { progressFloat },
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = statusColor,
-                                trackColor = tokens.surfaceSoft,
-                                strokeCap = StrokeCap.Round,
-                            )
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(tokens.surfaceSoft),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fraction = progressFloat)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(statusColor),
+                                )
+                            }
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

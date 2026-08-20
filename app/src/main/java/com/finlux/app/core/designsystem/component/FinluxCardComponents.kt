@@ -243,9 +243,11 @@ fun FinluxMetricCard(
 
             Text(
                 text = value,
-                style = FinluxTextStyles.CardTitle,
+                style = FinluxTextStyles.SectionTitle.copy(
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
                 color = accentColor,
-                fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )
 

@@ -31,6 +31,8 @@ import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 
+import androidx.compose.foundation.layout.statusBarsPadding
+
 /**
  * Standard Screen Header (FinLux Prism Spec 8.1 & 24)
  */
@@ -50,7 +52,8 @@ fun FinluxScreenHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .statusBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
