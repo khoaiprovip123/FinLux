@@ -787,9 +787,9 @@ private fun PrismUiStyleOptionCard(
             .clip(RoundedCornerShape(tokens.radius.standardCard))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(tokens.radius.standardCard),
-        color = if (isSelected) tokens.primary.copy(alpha = 0.08f) else tokens.surfaceSoft,
-        border = if (isSelected) BorderStroke(1.8.dp, tokens.primary) else BorderStroke(1.dp, tokens.surfaceSoft),
-        shadowElevation = if (isSelected) tokens.elevation else 0.dp,
+        color = if (isSelected) tokens.primary.copy(alpha = 0.06f) else tokens.surfaceSoft,
+        border = if (isSelected) BorderStroke(1.5.dp, tokens.primary) else BorderStroke(1.dp, tokens.onSurface.copy(alpha = 0.06f)),
+        shadowElevation = 0.dp,
     ) {
         Column(
             modifier = Modifier
@@ -804,7 +804,7 @@ private fun PrismUiStyleOptionCard(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = if (isSelected) tokens.primary.copy(alpha = 0.18f) else tokens.surfaceSoft,
+                    color = if (isSelected) tokens.primary.copy(alpha = 0.14f) else tokens.surface,
                     modifier = Modifier.size(42.dp),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -849,7 +849,7 @@ private fun PrismUiStyleOptionCard(
                 Surface(
                     shape = CircleShape,
                     color = if (isSelected) tokens.primary else Color.Transparent,
-                    border = BorderStroke(2.dp, if (isSelected) tokens.primary else tokens.surfaceSoft),
+                    border = BorderStroke(2.dp, if (isSelected) tokens.primary else tokens.onSurface.copy(alpha = 0.2f)),
                     modifier = Modifier.size(22.dp),
                 ) {
                     if (isSelected) {
@@ -873,7 +873,7 @@ private fun PrismUiStyleOptionCard(
                 tags.forEach { tag ->
                     Surface(
                         shape = RoundedCornerShape(tokens.radius.smallChip),
-                        color = if (isSelected) tokens.primary.copy(alpha = 0.12f) else tokens.background,
+                        color = if (isSelected) tokens.primary.copy(alpha = 0.10f) else tokens.surface,
                         border = BorderStroke(
                             0.5.dp,
                             if (isSelected) tokens.primary.copy(alpha = 0.35f) else tokens.onSurface.copy(alpha = 0.08f)
