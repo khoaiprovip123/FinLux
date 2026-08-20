@@ -167,7 +167,7 @@ fun PrismBudgetScreen(
                     shape = RoundedCornerShape(tokens.radius.input),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = tokens.primary,
-                        contentColor = Color.White,
+                        contentColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
                     ),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -421,10 +421,13 @@ fun PrismBudgetScreen(
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(tokens.radius.input),
-                    colors = ButtonDefaults.buttonColors(containerColor = tokens.primary),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = tokens.primary,
+                        contentColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                    ),
                     enabled = (limitInput.toLongOrNull() ?: 0L) > 0L && selectedCategoryId.isNotBlank(),
                 ) {
-                    Text("Lưu ngân sách", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Lưu ngân sách", fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.height(16.dp))
             }

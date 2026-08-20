@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -199,8 +200,12 @@ fun PrismSettingsScreen(
                     onClick = { viewModel.updateDisplayName(nameDraft) },
                     enabled = nameDraft.isNotBlank() && !nameState.isLoading,
                     shape = RoundedCornerShape(tokens.radius.input),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = tokens.primary,
+                        contentColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                    ),
                 ) {
-                    if (nameState.isLoading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    if (nameState.isLoading) CircularProgressIndicator(Modifier.size(18.dp), color = if (tokens.isDark) Color(0xFF002B3D) else Color.White, strokeWidth = 2.dp)
                     else Text("Lưu tên", fontWeight = FontWeight.Bold)
                 }
             },
@@ -910,6 +915,7 @@ private fun ThemeOptionChip(
         color = if (selected) tokens.primary else tokens.surfaceSoft,
         border = BorderStroke(1.dp, if (selected) tokens.primary else Color.Transparent),
     ) {
+        val activeTextColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White
         Row(
             modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -918,14 +924,14 @@ private fun ThemeOptionChip(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) Color.White else tokens.onSurfaceVariant,
+                tint = if (selected) activeTextColor else tokens.onSurfaceVariant,
                 modifier = Modifier.size(16.dp),
             )
             Spacer(Modifier.width(6.dp))
             Text(
                 text = label,
                 style = FinluxTextStyles.Caption,
-                color = if (selected) Color.White else tokens.onSurface,
+                color = if (selected) activeTextColor else tokens.onSurface,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             )
         }

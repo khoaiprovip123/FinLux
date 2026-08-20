@@ -188,7 +188,7 @@ fun FinluxDialog(
                             shape = RoundedCornerShape(tokens.radius.smallChip),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (isConfirmDestructive) FinluxColors.ExpenseRed else tokens.primary,
-                                contentColor = Color.White,
+                                contentColor = if (isConfirmDestructive) Color.White else if (tokens.isDark) Color(0xFF002B3D) else Color.White,
                             ),
                         ) {
                             Text(confirmLabel, style = FinluxTextStyles.Caption, fontWeight = FontWeight.Bold)
