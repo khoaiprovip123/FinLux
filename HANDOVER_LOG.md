@@ -4,24 +4,43 @@
 - **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (63/63 unit tests pass 100%, assembleRelease pass).
 
-## [IN PROGRESS] Task: Finlux Prism UI Theme & Design System Implementation (Phase UI-1 & UI-2)
+## [IN PROGRESS] Task: Finlux Prism UI Theme & Design System Implementation
 
 **Ngày bắt đầu:** 2026-08-20
 **Nhánh git:** `feature/prism-ui-theme`
 
-### Mục tiêu
-1. **Phase UI-1 — Design Tokens**:
-   - Khởi tạo hệ thống Token mở rộng: Color Tokens (Primary, Semantic, Surface, Dark), Typography Tokens, Spacing Tokens, Radius Tokens, Motion Tokens.
-   - Định nghĩa `FinluxDesignTokens` & `AppUiStyle.PRISM`.
-2. **Phase UI-2 — Shared Components Foundation**:
-   - Xây dựng component library chung: `FinluxScreenHeader`, `FinluxHeroCard`, `FinluxMetricCard`, `FinluxSectionHeader`, `FinluxTransactionRow`, `FinluxFilterChip`, `FinluxBottomDock`, `FinluxBottomSheet`, `FinluxDialog`, `FinluxEmptyState`, v.v.
-   - Fix P0 Semantic color cho transaction và gỡ bỏ background artifact.
+### Tiến độ các Phase:
+- [x] **Phase UI-1 — Design Tokens**:
+  - `FinluxColors`: Tokens màu Primary (`PrimaryBlue`, `PrimaryViolet`, `PrimaryCyan`), Semantic (`IncomeGreen`, `ExpenseRed`, `TransferBlue`, `BudgetViolet`, `WarningAmber`, `NeutralGray`), Surface Light/Dark (`BackgroundLight`, `BackgroundDark`, `SurfacePrimary`, `SurfaceSoft`, `SurfaceGlass`, `BorderSoft`).
+  - `FinluxSpacing`, `FinluxRadius`, `FinluxMotion`.
+  - `FinluxTextStyles` & `FinluxTypography`: Chuẩn hóa Display Amount (36sp), Screen Title (28sp), Section Title (20sp), Card Title (16sp), Body (15sp), Caption (12.5sp), Micro Label (11.5sp).
+  - `FinluxDesignTokens`: Hợp nhất contract tokens cho Prism, Classic Liquid, Modern Luxury qua `LocalFinluxTokens`, `LocalFinluxSpacing`, `LocalFinluxRadius`.
+- [x] **Phase UI-2 — Shared Components Foundation**:
+  - `FinluxScreenHeader`, `FinluxSectionHeader`.
+  - `FinluxSoftCard`, `FinluxHeroCard`, `FinluxMetricCard`, `FinluxInsightCard`.
+  - `FinluxAmountText`, `formatVndAmount`, `getTransactionSemanticColor`, `FinluxFilterChip`, `FinluxTransactionRow`.
+  - `FinluxBottomSheet`, `FinluxDialog`.
+  - `FinluxEmptyState`, `FinluxErrorState`, `FinluxOfflineState`.
+  - `FinluxBottomDock`, `FinluxCenterFab`.
+  - Unit test `FinluxDesignSystemTest`: 100% PASS.
+- [ ] **Phase UI-3 — Theme Switching**:
+- [ ] **Phase UI-4..8 — Screen Integration & UI Consistency Fixes**:
 
-### Danh sách file dự kiến chỉnh sửa / tạo mới
-- `docs/FINLUX_PRISM_UI_THEME_SPEC.md`
-- `app/src/main/java/com/finlux/app/core/designsystem/theme/...`
-- `app/src/main/java/com/finlux/app/core/designsystem/component/...`
-- `HANDOVER_LOG.md`
+### Kết quả kiểm thử Phase UI-1 & UI-2
+- `testDebugUnitTest`: **PASS (100%)**
+- `assembleDebug`: **BUILD SUCCESSFUL**
+
+### Danh sách file đã tạo / chỉnh sửa:
+- [FinluxTokens.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt) [NEW]
+- [Typography.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/Typography.kt) [MODIFIED]
+- [FinluxTheme.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt) [MODIFIED]
+- [FinluxHeaderComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt) [NEW]
+- [FinluxCardComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt) [NEW]
+- [FinluxTransactionComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt) [NEW]
+- [FinluxModalComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxModalComponents.kt) [NEW]
+- [FinluxFeedbackComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt) [NEW]
+- [FinluxNavigationComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt) [NEW]
+- [FinluxDesignSystemTest.kt](file:///d:/BT/FinLux/app/src/test/java/com/finlux/app/core/designsystem/FinluxDesignSystemTest.kt) [NEW]
 
 ---
 
