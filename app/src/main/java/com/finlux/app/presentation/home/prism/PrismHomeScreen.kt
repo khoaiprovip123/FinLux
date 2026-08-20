@@ -416,16 +416,20 @@ private fun PrismHeroNetWorthCard(
                 Text(
                     text = if (showBalance) formatVndAmount(totalBalance) else "••••••••",
                     style = FinluxTextStyles.DisplayAmount.copy(
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.5).sp,
                     ),
                     color = Color.White,
                 )
 
                 Text(
                     text = "Tài sản ròng",
-                    style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
-                    color = Color.White.copy(alpha = 0.80f),
+                    style = FinluxTextStyles.Caption.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                    color = Color.White.copy(alpha = 0.85f),
                 )
 
                 Spacer(Modifier.height(14.dp))
@@ -682,8 +686,8 @@ private fun PrismTrioMetricColumn(
         Text(
             text = value,
             style = FinluxTextStyles.CardTitle.copy(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
             ),
             color = tokens.onSurface,
             maxLines = 1,
@@ -933,14 +937,17 @@ private fun PrismCategoryExpenseBreakdownCard(
                                     if (totalExpense > 0L) formatVndAmount(totalExpense, isCompact = true) else "2,3 tr"
                                 } else "••••",
                                 style = FinluxTextStyles.CardTitle.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 18.sp,
                                 ),
                                 color = tokens.onSurface,
                             )
                             Text(
                                 text = "Tổng chi",
-                                style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
+                                style = FinluxTextStyles.MicroLabel.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                ),
                                 color = tokens.onSurfaceVariant,
                             )
                         }
@@ -989,7 +996,7 @@ private fun PrismCategoryExpenseBreakdownCard(
                                 // Category Name
                                 Text(
                                     text = cat.name,
-                                    style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
+                                    style = FinluxTextStyles.Caption.copy(fontSize = 12.5.sp),
                                     color = tokens.onSurface,
                                     maxLines = 1,
                                     modifier = Modifier.weight(1f),
@@ -999,8 +1006,8 @@ private fun PrismCategoryExpenseBreakdownCard(
                                 Text(
                                     text = if (showBalance) formatVndAmount(sum) else "••••",
                                     style = FinluxTextStyles.Caption.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
                                     ),
                                     color = tokens.onSurface,
                                 )
@@ -1015,8 +1022,8 @@ private fun PrismCategoryExpenseBreakdownCard(
                                     Text(
                                         text = "$percent%",
                                         style = FinluxTextStyles.MicroLabel.copy(
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
                                         ),
                                         color = tokens.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
@@ -1204,8 +1211,8 @@ private fun PrismRecentTransactionItem(
                 Text(
                     text = if (showBalance) amountFormatted else "••••",
                     style = FinluxTextStyles.CardTitle.copy(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
                     ),
                     color = if (isIncome) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                 )
