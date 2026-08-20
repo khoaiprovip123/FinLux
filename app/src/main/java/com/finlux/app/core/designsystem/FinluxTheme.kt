@@ -264,12 +264,20 @@ fun FinluxTheme(
         }
     }
 
+    val finluxTokens = when (uiStyle) {
+        AppUiStyle.CLASSIC_LIQUID -> if (dark) com.finlux.app.core.designsystem.theme.ClassicLiquidDarkTokens else com.finlux.app.core.designsystem.theme.ClassicLiquidLightTokens
+        AppUiStyle.MODERN_LUXURY -> if (dark) com.finlux.app.core.designsystem.theme.ModernLuxuryDarkTokens else com.finlux.app.core.designsystem.theme.ModernLuxuryLightTokens
+    }
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = FinluxTypography,
     ) {
         CompositionLocalProvider(
             LocalGlassTokens provides tokens,
+            com.finlux.app.core.designsystem.theme.LocalFinluxTokens provides finluxTokens,
+            com.finlux.app.core.designsystem.theme.LocalFinluxSpacing provides finluxTokens.spacing,
+            com.finlux.app.core.designsystem.theme.LocalFinluxRadius provides finluxTokens.radius,
             LocalAppUiStyle provides uiStyle,
             LocalUiPreferences provides uiPreferences,
             LocalContentColor provides MaterialTheme.colorScheme.onSurface,
