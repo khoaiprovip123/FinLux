@@ -4,9 +4,9 @@
 - **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công (63/63 unit tests pass 100%, assembleRelease pass).
 
-## [IN PROGRESS] Task: Finlux Prism UI Theme & Design System Implementation
+## [DONE] Task: Finlux Prism UI Theme & Design System Implementation
 
-**Ngày bắt đầu:** 2026-08-20
+**Ngày hoàn thành:** 2026-08-20
 **Nhánh git:** `feature/prism-ui-theme`
 
 ### Tiến độ các Phase:
@@ -22,25 +22,54 @@
   - `FinluxBottomSheet`, `FinluxDialog`.
   - `FinluxEmptyState`, `FinluxErrorState`, `FinluxOfflineState`.
   - `FinluxBottomDock`, `FinluxCenterFab`.
-  - Unit test `FinluxDesignSystemTest`: 100% PASS.
-- [ ] **Phase UI-3 — Theme Switching**:
-- [ ] **Phase UI-4..8 — Screen Integration & UI Consistency Fixes**:
+- [x] **Phase UI-3 — Theme Switching (`AppUiStyle.PRISM`)**:
+  - Thêm `AppUiStyle.PRISM` vào model enum và DataStore preference.
+  - Cập nhật `FinluxTheme.kt` mapping Prism colors/tokens.
+  - Cập nhật `SettingsScreen.kt` với Card chọn "FinLux Prism (Data-first + Spatial + Bento)".
+- [x] **Phase UI-4 — Navigation & Bottom Dock**:
+  - Tích hợp `FinluxBottomDock` trong `MainBottomBar.kt` khi chọn UI Style PRISM.
+- [x] **Phase UI-5 — Home / Dashboard Screen**:
+  - Tạo `PrismHomeScreen.kt` chuẩn Bento grid: Hero net worth, Income/Expense cards, Quick actions, AI insight, Recent transaction list.
+  - Tích hợp routing trong `HomeScreen.kt`.
+- [x] **Phase UI-6 — Transactions Screen + Detail**:
+  - Tạo `PrismTransactionsScreen.kt`: Filter chip bar (Tất cả, Thu, Chi), Bento summary card, Semantic transaction rows, Transaction Detail sheet, Action & Delete confirmation dialogs.
+  - Tích hợp routing trong `TransactionsScreen.kt`.
+- [x] **Phase UI-7 — Wallets & Budget Screens**:
+  - Tạo `PrismWalletsScreen.kt`: Total assets hero, Add wallet & Transfer bottom sheets, List ví với type icon & color, Delete dialog.
+  - Tạo `PrismBudgetScreen.kt`: Month navigation, Remaining budget hero, Category budget list với dynamic spent tracking & progress indicator, Add/edit budget bottom sheet.
+  - Tích hợp routing trong `WalletsScreen.kt` & `BudgetScreen.kt`.
+- [x] **Phase UI-8 — Reports Screen & Consistency Polish**:
+  - Tạo `PrismReportsScreen.kt`: Period selector chips (Tháng này, Tháng trước, 3 tháng...), Net cash flow hero, Income vs Expense metrics, AI insight, Category breakdown bento blocks với progress bars, Export report dialog.
+  - Tích hợp routing trong `ReportsScreen.kt`.
 
-### Kết quả kiểm thử Phase UI-1 & UI-2
-- `testDebugUnitTest`: **PASS (100%)**
-- `assembleDebug`: **BUILD SUCCESSFUL**
+### Kết quả kiểm thử toàn diện
+- `testDebugUnitTest`: **PASS 100%** (Tất cả unit test đều vượt qua).
+- `assembleDebug`: **BUILD SUCCESSFUL** (Đóng gói APK debug thành công không lỗi).
 
 ### Danh sách file đã tạo / chỉnh sửa:
-- [FinluxTokens.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt) [NEW]
-- [Typography.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/Typography.kt) [MODIFIED]
-- [FinluxTheme.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt) [MODIFIED]
-- [FinluxHeaderComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt) [NEW]
-- [FinluxCardComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt) [NEW]
-- [FinluxTransactionComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt) [NEW]
-- [FinluxModalComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxModalComponents.kt) [NEW]
-- [FinluxFeedbackComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt) [NEW]
-- [FinluxNavigationComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt) [NEW]
-- [FinluxDesignSystemTest.kt](file:///d:/BT/FinLux/app/src/test/java/com/finlux/app/core/designsystem/FinluxDesignSystemTest.kt) [NEW]
+- [FinluxTokens.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt) `[NEW]`
+- [Typography.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/Typography.kt) `[MODIFIED]`
+- [FinluxTheme.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt) `[MODIFIED]`
+- [FinanceModels.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt) `[MODIFIED]`
+- [FinluxHeaderComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt) `[NEW]`
+- [FinluxCardComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt) `[NEW]`
+- [FinluxTransactionComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt) `[NEW]`
+- [FinluxModalComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxModalComponents.kt) `[NEW]`
+- [FinluxFeedbackComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt) `[NEW]`
+- [FinluxNavigationComponents.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt) `[NEW]`
+- [FinluxDesignSystemTest.kt](file:///d:/BT/FinLux/app/src/test/java/com/finlux/app/core/designsystem/FinluxDesignSystemTest.kt) `[NEW]`
+- [MainBottomBar.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/components/MainBottomBar.kt) `[MODIFIED]`
+- [HomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt) `[MODIFIED]`
+- [PrismHomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt) `[NEW]`
+- [TransactionsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/TransactionsScreen.kt) `[MODIFIED]`
+- [PrismTransactionsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt) `[NEW]`
+- [WalletsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/WalletsScreen.kt) `[MODIFIED]`
+- [PrismWalletsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt) `[NEW]`
+- [BudgetScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/budget/BudgetScreen.kt) `[MODIFIED]`
+- [PrismBudgetScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt) `[NEW]`
+- [ReportsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/reports/ReportsScreen.kt) `[MODIFIED]`
+- [PrismReportsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt) `[NEW]`
+- [SettingsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt) `[MODIFIED]`
 
 ---
 

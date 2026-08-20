@@ -2,6 +2,7 @@ package com.finlux.app.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.finlux.app.core.designsystem.LocalAppUiStyle
+import com.finlux.app.core.designsystem.component.FinluxBottomDock
 import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.presentation.components.classic.ClassicMainBottomBar
 import com.finlux.app.presentation.components.modern.ModernMainBottomBar
@@ -18,10 +19,15 @@ fun MainBottomBar(
             onNavigate = onNavigate,
             onAdd = onAdd,
         )
-        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernMainBottomBar(
+        AppUiStyle.MODERN_LUXURY -> ModernMainBottomBar(
             selectedRoute = selectedRoute,
             onNavigate = onNavigate,
             onAdd = onAdd,
+        )
+        AppUiStyle.PRISM -> FinluxBottomDock(
+            currentRoute = selectedRoute,
+            onNavigate = onNavigate,
+            onQuickAdd = onAdd,
         )
     }
 }

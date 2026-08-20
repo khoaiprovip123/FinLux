@@ -7,6 +7,7 @@ import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.transaction.classic.ClassicTransactionsScreen
 import com.finlux.app.presentation.transaction.modern.ModernTransactionsScreen
+import com.finlux.app.presentation.transaction.prism.PrismTransactionsScreen
 
 @Composable
 fun TransactionsScreen(
@@ -24,7 +25,14 @@ fun TransactionsScreen(
             onEditTransaction = onEditTransaction,
             viewModel = viewModel,
         )
-        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernTransactionsScreen(
+        AppUiStyle.MODERN_LUXURY -> ModernTransactionsScreen(
+            onNavigate = onNavigate,
+            onAdd = onAdd,
+            onBack = onBack,
+            onEditTransaction = onEditTransaction,
+            viewModel = viewModel,
+        )
+        AppUiStyle.PRISM -> PrismTransactionsScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,
