@@ -109,8 +109,6 @@ fun FinluxNavHost(
     var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    var swipeDrag by remember { mutableFloatStateOf(0f) }
-    val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
 
     val destination = destinationFlow?.collectAsState()?.value
     LaunchedEffect(destination) {
@@ -138,60 +136,6 @@ fun FinluxNavHost(
         }
     }
     Box(Modifier.fillMaxSize()) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .pointerInput(currentRoute, swipeThresholdPx) {
-                    if (currentRoute !in MainSwipeRoutes) return@pointerInput
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        val startedAt = System.currentTimeMillis()
-                        var horizontalTravel = 0f
-                        var verticalTravel = 0f
-                        var trackingHorizontal = false
-                        var trackingVertical = false
-                        var pressed = true
-
-                        while (pressed) {
-                            val event = awaitPointerEvent(PointerEventPass.Main)
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            val delta = change.positionChange()
-                            horizontalTravel += delta.x
-                            verticalTravel += delta.y
-                            val absH = kotlin.math.abs(horizontalTravel)
-                            val absV = kotlin.math.abs(verticalTravel)
-
-                            if (!trackingHorizontal && !trackingVertical) {
-                                if (absV > 20f && absV > absH) {
-                                    trackingVertical = true
-                                } else if (absH > 28f && absH > absV * 1.5f) {
-                                    trackingHorizontal = true
-                                }
-                            }
-                            if (trackingHorizontal) {
-                                change.consume()
-                                val currentIndex = MainSwipeRoutes.indexOf(currentRoute)
-                                val hitsBoundary = (currentIndex == 0 && horizontalTravel > 0f) ||
-                                    (currentIndex == MainSwipeRoutes.lastIndex && horizontalTravel < 0f)
-                                swipeDrag = horizontalTravel * if (hitsBoundary) .15f else .35f
-                            }
-                            pressed = change.pressed
-                        }
-
-                        val target = mainRouteAfterSwipe(
-                            currentRoute = currentRoute,
-                            horizontalTravel = horizontalTravel,
-                            verticalTravel = verticalTravel,
-                            threshold = swipeThresholdPx,
-                            elapsedMillis = System.currentTimeMillis() - startedAt,
-                        )
-                        swipeDrag = 0f
-                        if (target != null && target != currentRoute) {
-                            navigateMain(target)
-                        }
-                    }
-                },
-        ) {
         NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
@@ -321,111 +265,109 @@ fun FinluxNavHost(
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
         }
-        SwipeEdgeGlow(swipeDrag)
-    }
-    if (showAddTransaction) {
-        AddTransactionSheet(
-            initialType = initialTransactionType,
-            initialReceiptUri = pendingReceiptUri,
-            onDismiss = {
-                showAddTransaction = false
-                initialTransactionType = null
-                pendingReceiptUri = null
-            },
-        )
-    }
-    if (editingTransaction != null) {
-        AddTransactionSheet(
-            initialTransaction = editingTransaction,
-            onDismiss = {
-                editingTransaction = null
-            },
-        )
-    }
-    viewingTransaction?.let { tx ->
-        TransactionDetailSheet(
-            transaction = tx,
-            category = allCategories[tx.categoryId],
-            wallet = allWallets[tx.walletId],
-            onDismiss = { viewingTransaction = null },
-            onEdit = {
-                viewingTransaction = null
-                editingTransaction = it
-            },
-            onDelete = {
-                viewingTransaction = null
-                pendingDeleteTransaction = it
-            },
-        )
-    }
-    actionTransaction?.let { tx ->
-        TransactionActionDialog(
-            transaction = tx,
-            category = allCategories[tx.categoryId],
-            onDismiss = { actionTransaction = null },
-            onViewDetails = {
-                actionTransaction = null
-                viewingTransaction = it
-            },
-            onEdit = {
-                actionTransaction = null
-                editingTransaction = it
-            },
-            onDelete = {
-                actionTransaction = null
-                pendingDeleteTransaction = it
-            },
-        )
-    }
-    pendingDeleteTransaction?.let { tx ->
-        DeleteTransactionConfirmDialog(
-            transaction = tx,
-            onDismiss = { pendingDeleteTransaction = null },
-            onConfirm = {
-                transactionsViewModel.delete(it)
-                pendingDeleteTransaction = null
-            },
-        )
-    }
-    if (showQuickAdd) {
-        QuickAddSheet(
-            onDismiss = { showQuickAdd = false },
-            onIncome = {
-                showQuickAdd = false
-                initialTransactionType = TransactionType.INCOME
-                showAddTransaction = true
-            },
-            onExpense = {
-                showQuickAdd = false
-                initialTransactionType = TransactionType.EXPENSE
-                showAddTransaction = true
-            },
-            onTransfer = {
-                showQuickAdd = false
-                walletTransferRequest += 1
-                navigateMain(Route.Wallets.value)
-            },
-            onReceipt = {
-                showQuickAdd = false
-                showReceiptCapture = true
-            },
-            onGoal = {
-                showQuickAdd = false
-                navController.navigate(Route.Goals.value)
-            },
-        )
-    }
-    if (showReceiptCapture) {
-        ReceiptCaptureScreen(
-            onDismiss = { showReceiptCapture = false },
-            onCaptured = { uri ->
-                showReceiptCapture = false
-                pendingReceiptUri = uri
-                initialTransactionType = TransactionType.EXPENSE
-                showAddTransaction = true
-            },
-        )
-    }
+        if (showAddTransaction) {
+            AddTransactionSheet(
+                initialType = initialTransactionType,
+                initialReceiptUri = pendingReceiptUri,
+                onDismiss = {
+                    showAddTransaction = false
+                    initialTransactionType = null
+                    pendingReceiptUri = null
+                },
+            )
+        }
+        if (editingTransaction != null) {
+            AddTransactionSheet(
+                initialTransaction = editingTransaction,
+                onDismiss = {
+                    editingTransaction = null
+                },
+            )
+        }
+        viewingTransaction?.let { tx ->
+            TransactionDetailSheet(
+                transaction = tx,
+                category = allCategories[tx.categoryId],
+                wallet = allWallets[tx.walletId],
+                onDismiss = { viewingTransaction = null },
+                onEdit = {
+                    viewingTransaction = null
+                    editingTransaction = it
+                },
+                onDelete = {
+                    viewingTransaction = null
+                    pendingDeleteTransaction = it
+                },
+            )
+        }
+        actionTransaction?.let { tx ->
+            TransactionActionDialog(
+                transaction = tx,
+                category = allCategories[tx.categoryId],
+                onDismiss = { actionTransaction = null },
+                onViewDetails = {
+                    actionTransaction = null
+                    viewingTransaction = it
+                },
+                onEdit = {
+                    actionTransaction = null
+                    editingTransaction = it
+                },
+                onDelete = {
+                    actionTransaction = null
+                    pendingDeleteTransaction = it
+                },
+            )
+        }
+        pendingDeleteTransaction?.let { tx ->
+            DeleteTransactionConfirmDialog(
+                transaction = tx,
+                onDismiss = { pendingDeleteTransaction = null },
+                onConfirm = {
+                    transactionsViewModel.delete(it)
+                    pendingDeleteTransaction = null
+                },
+            )
+        }
+        if (showQuickAdd) {
+            QuickAddSheet(
+                onDismiss = { showQuickAdd = false },
+                onIncome = {
+                    showQuickAdd = false
+                    initialTransactionType = TransactionType.INCOME
+                    showAddTransaction = true
+                },
+                onExpense = {
+                    showQuickAdd = false
+                    initialTransactionType = TransactionType.EXPENSE
+                    showAddTransaction = true
+                },
+                onTransfer = {
+                    showQuickAdd = false
+                    walletTransferRequest += 1
+                    navigateMain(Route.Wallets.value)
+                },
+                onReceipt = {
+                    showQuickAdd = false
+                    showReceiptCapture = true
+                },
+                onGoal = {
+                    showQuickAdd = false
+                    navController.navigate(Route.Goals.value)
+                },
+            )
+        }
+        if (showReceiptCapture) {
+            ReceiptCaptureScreen(
+                onDismiss = { showReceiptCapture = false },
+                onCaptured = { uri ->
+                    showReceiptCapture = false
+                    pendingReceiptUri = uri
+                    initialTransactionType = TransactionType.EXPENSE
+                    showAddTransaction = true
+                },
+            )
+        }
         AppUpdateDialog(
             uiState = updateUiState,
             onDownloadAndInstall = { updateViewModel.downloadAndInstall(it) },
@@ -433,24 +375,6 @@ fun FinluxNavHost(
             onDismiss = { updateViewModel.dismissUpdate() },
         )
     }
-}
-
-@Composable
-private fun BoxScope.SwipeEdgeGlow(offset: Float) {
-    if (kotlin.math.abs(offset) < 1f) return
-    val revealFromLeft = offset > 0f
-    val strength = (kotlin.math.abs(offset) / 80f).coerceIn(0f, 1f)
-    val colors = if (revealFromLeft) {
-        listOf(Color(0xFF47C8FF).copy(alpha = .34f * strength), Color.Transparent)
-    } else {
-        listOf(Color.Transparent, Color(0xFF7758F6).copy(alpha = .34f * strength))
-    }
-    Box(
-        Modifier.align(if (revealFromLeft) Alignment.CenterStart else Alignment.CenterEnd)
-            .fillMaxHeight()
-            .width(54.dp)
-            .background(Brush.horizontalGradient(colors)),
-    )
 }
 
 private val MainSwipeRoutes = listOf(
