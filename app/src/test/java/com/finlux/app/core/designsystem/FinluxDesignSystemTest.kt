@@ -47,4 +47,13 @@ class FinluxDesignSystemTest {
         assertEquals(FinluxColors.SurfacePrimaryLight, PrismLightTokens.surface)
         assertEquals(FinluxColors.SurfacePrimaryDark, PrismDarkTokens.surface)
     }
+
+    @Test
+    fun `AppUiStyle contains PRISM and preserves enum order`() {
+        val styles = com.finlux.app.domain.model.AppUiStyle.entries
+        assertTrue(styles.contains(com.finlux.app.domain.model.AppUiStyle.PRISM))
+        assertEquals(com.finlux.app.domain.model.AppUiStyle.CLASSIC_LIQUID, styles[0])
+        assertEquals(com.finlux.app.domain.model.AppUiStyle.MODERN_LUXURY, styles[1])
+        assertEquals(com.finlux.app.domain.model.AppUiStyle.PRISM, styles[2])
+    }
 }

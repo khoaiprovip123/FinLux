@@ -28,7 +28,7 @@ fun HomeScreen(
             onEditTransaction = onEditTransaction,
             viewModel = viewModel,
         )
-        AppUiStyle.MODERN_LUXURY -> ModernHomeScreen(
+        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernHomeScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onNotifications = onNotifications,

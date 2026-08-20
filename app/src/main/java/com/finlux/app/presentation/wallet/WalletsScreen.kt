@@ -25,7 +25,7 @@ fun WalletsScreen(
             transferRequestKey = transferRequestKey,
             viewModel = viewModel,
         )
-        AppUiStyle.MODERN_LUXURY -> ModernWalletsScreen(
+        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernWalletsScreen(
             onBack = onBack,
             onNavigate = onNavigate,
             onAdd = onAdd,

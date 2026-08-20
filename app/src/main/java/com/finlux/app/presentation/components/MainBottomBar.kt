@@ -18,7 +18,7 @@ fun MainBottomBar(
             onNavigate = onNavigate,
             onAdd = onAdd,
         )
-        AppUiStyle.MODERN_LUXURY -> ModernMainBottomBar(
+        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernMainBottomBar(
             selectedRoute = selectedRoute,
             onNavigate = onNavigate,
             onAdd = onAdd,

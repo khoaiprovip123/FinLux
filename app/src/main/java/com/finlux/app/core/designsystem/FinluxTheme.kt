@@ -112,6 +112,35 @@ private val GlassLightColors = lightColorScheme(
     error = ExpenseRed,
 )
 
+// Prism Color Palettes (FinLux Prism Spec 2.1)
+private val PrismLightColors = lightColorScheme(
+    primary = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryBlue,
+    onPrimary = Color.White,
+    secondary = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryViolet,
+    tertiary = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryCyan,
+    background = com.finlux.app.core.designsystem.theme.FinluxColors.BackgroundLight,
+    surface = com.finlux.app.core.designsystem.theme.FinluxColors.SurfacePrimaryLight,
+    surfaceVariant = com.finlux.app.core.designsystem.theme.FinluxColors.SurfaceSoftLight,
+    onSurface = com.finlux.app.core.designsystem.theme.FinluxColors.TextPrimaryLight,
+    onSurfaceVariant = com.finlux.app.core.designsystem.theme.FinluxColors.TextSecondaryLight,
+    outlineVariant = com.finlux.app.core.designsystem.theme.FinluxColors.BorderSoftLight,
+    error = com.finlux.app.core.designsystem.theme.FinluxColors.ExpenseRed,
+)
+
+private val PrismDarkColors = darkColorScheme(
+    primary = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryCyan,
+    onPrimary = Color(0xFF003548),
+    secondary = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryViolet,
+    tertiary = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryBlue,
+    background = com.finlux.app.core.designsystem.theme.FinluxColors.BackgroundDark,
+    surface = com.finlux.app.core.designsystem.theme.FinluxColors.SurfacePrimaryDark,
+    surfaceVariant = com.finlux.app.core.designsystem.theme.FinluxColors.SurfaceSoftDark,
+    onSurface = com.finlux.app.core.designsystem.theme.FinluxColors.TextPrimaryDark,
+    onSurfaceVariant = com.finlux.app.core.designsystem.theme.FinluxColors.TextSecondaryDark,
+    outlineVariant = com.finlux.app.core.designsystem.theme.FinluxColors.BorderSoftDark,
+    error = com.finlux.app.core.designsystem.theme.FinluxColors.ExpenseRed,
+)
+
 @Immutable
 data class GlassTokens(
     val fill: Brush,
@@ -161,6 +190,7 @@ fun FinluxTheme(
     }
 
     val colorScheme = when (uiStyle) {
+        AppUiStyle.PRISM -> if (dark) PrismDarkColors else PrismLightColors
         AppUiStyle.MODERN_LUXURY -> when (uiPreferences.visualStyle) {
             VisualStyle.MODERN_DARK -> if (dark) ModernDarkColors else ModernLightColors
             VisualStyle.GLASSMORPHISM -> if (dark) GlassColors else GlassLightColors
@@ -173,98 +203,149 @@ fun FinluxTheme(
         }
     }
 
-    val tokens = if (uiStyle == AppUiStyle.MODERN_LUXURY) {
-        if (dark) {
-            GlassTokens(
-                fill = Brush.linearGradient(
-                    listOf(
-                        Color(0x8A1B2C4E),
-                        Color(0x64101B30),
-                        styleAccent.copy(alpha = .18f * vividness),
-                    ),
-                ),
-                border = Brush.linearGradient(
-                    listOf(
-                        Color.White.copy(alpha = .55f),
-                        FinluxCyan.copy(alpha = .34f * vividness),
-                        styleAccent.copy(alpha = .42f * vividness),
-                        Color.White.copy(alpha = .12f),
-                    ),
-                ),
-                shadow = Color(0xFF040A18).copy(alpha = .45f),
-                glow = styleAccent.copy(alpha = .22f * vividness),
-                accent = styleAccent,
-                backdrop = when (uiPreferences.visualStyle) {
-                    VisualStyle.MODERN_DARK -> listOf(Color(0xFF020B18), Color(0xFF071426), Color(0xFF020D1E))
-                    VisualStyle.GLASSMORPHISM -> listOf(Color(0xFF111938), Color(0xFF1B1942), Color(0xFF08172B))
-                    VisualStyle.DYNAMIC_GRADIENT -> listOf(Color(0xFF07101F), Color(0xFF10162B), Color(0xFF07111D))
-                },
-            )
-        } else {
-            GlassTokens(
-                fill = Brush.linearGradient(
-                    listOf(
-                        Color.White.copy(alpha = .58f),
-                        Color.White.copy(alpha = .42f),
-                        styleAccent.copy(alpha = .12f * vividness),
-                    ),
-                ),
-                border = Brush.linearGradient(
-                    listOf(
-                        Color.White.copy(alpha = .98f),
-                        FinluxCyan.copy(alpha = .30f * vividness),
-                        styleAccent.copy(alpha = .38f * vividness),
-                        Color.White.copy(alpha = .42f),
-                    ),
-                ),
-                shadow = Color(0x18183258),
-                glow = styleAccent.copy(alpha = .14f * vividness),
-                accent = styleAccent,
-                backdrop = when (uiPreferences.visualStyle) {
-                    VisualStyle.MODERN_DARK -> listOf(Color(0xFFEAF4FF), Color(0xFFF8FBFF), Color(0xFFEAF7FB))
-                    VisualStyle.GLASSMORPHISM -> listOf(Color(0xFFF1EFFF), Color(0xFFFAF8FF), Color(0xFFEAF8FF))
-                    VisualStyle.DYNAMIC_GRADIENT -> listOf(Color(0xFFF2F7FF), Color(0xFFF9F5FF), Color(0xFFECF9FF))
-                },
-            )
-        }
-    } else {
-        // Classic Liquid Glass Tokens (v1.5.9 100% exact)
-        when (uiPreferences.visualStyle) {
-            VisualStyle.MODERN_DARK -> GlassTokens(
-                fill = Brush.verticalGradient(listOf(Color(0xE60A1B31), Color(0xF0061426))),
-                border = Brush.linearGradient(listOf(Color(0xFF1A9BFF).copy(alpha = .46f), Color.White.copy(alpha = .07f))),
-                shadow = Color.Black.copy(alpha = .46f),
-                glow = FinluxBlue.copy(alpha = .08f * vividness),
-                accent = FinluxBlue,
-            )
-            VisualStyle.GLASSMORPHISM -> GlassTokens(
-                fill = Brush.linearGradient(listOf(Color.White.copy(alpha = .20f), Color(0xFF6E57D9).copy(alpha = .18f), Color.White.copy(alpha = .08f))),
-                border = Brush.linearGradient(listOf(Color.White.copy(alpha = .58f), Color(0xFF8C6CFF).copy(alpha = .48f), Color.White.copy(alpha = .12f))),
-                shadow = Color(0xFF091434).copy(alpha = .42f),
-                glow = Color(0xFF9B7CFF).copy(alpha = .18f * vividness),
-                accent = Color(0xFF8B5CFF),
-            )
-            VisualStyle.DYNAMIC_GRADIENT -> if (dark) {
+    val tokens = when (uiStyle) {
+        AppUiStyle.PRISM -> {
+            if (dark) {
                 GlassTokens(
-                    fill = Brush.verticalGradient(listOf(Color(0xF01A2332), Color(0xE6151C29), FinluxPurple.copy(alpha = .08f * vividness))),
-                    border = Brush.linearGradient(listOf(Color.White.copy(alpha = .18f * vividness), FinluxPurple.copy(alpha = .16f * vividness), FinluxCyan.copy(alpha = .10f * vividness))),
-                    shadow = Color.Black.copy(alpha = .32f),
-                    glow = FinluxPurple.copy(alpha = .10f * vividness),
-                    accent = FinluxCyan,
+                    fill = Brush.verticalGradient(
+                        listOf(
+                            com.finlux.app.core.designsystem.theme.FinluxColors.SurfacePrimaryDark.copy(alpha = 0.88f),
+                            com.finlux.app.core.designsystem.theme.FinluxColors.SurfaceSoftDark.copy(alpha = 0.92f),
+                        ),
+                    ),
+                    border = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.20f),
+                            Color.Transparent,
+                        ),
+                    ),
+                    shadow = Color(0xFF040A18).copy(alpha = 0.40f),
+                    glow = Color.Transparent,
+                    accent = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryCyan,
+                    backdrop = listOf(
+                        com.finlux.app.core.designsystem.theme.FinluxColors.BackgroundDark,
+                        com.finlux.app.core.designsystem.theme.FinluxColors.SurfacePrimaryDark,
+                    ),
                 )
             } else {
                 GlassTokens(
-                    fill = Brush.verticalGradient(listOf(Color.White.copy(alpha = .94f), Color(0xEDF9FBFF), FinluxCyan.copy(alpha = .035f * vividness))),
-                    border = Brush.linearGradient(listOf(Color.White, FinluxBlue.copy(alpha = .18f * vividness), Color(0xFFDDE7F5))),
-                    shadow = Color(0x24284A78),
-                    glow = FinluxBlue.copy(alpha = .05f * vividness),
+                    fill = Brush.verticalGradient(
+                        listOf(
+                            com.finlux.app.core.designsystem.theme.FinluxColors.SurfaceGlassLight,
+                            com.finlux.app.core.designsystem.theme.FinluxColors.SurfaceSoftLight.copy(alpha = 0.90f),
+                        ),
+                    ),
+                    border = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.85f),
+                            com.finlux.app.core.designsystem.theme.FinluxColors.BorderSoftLight,
+                        ),
+                    ),
+                    shadow = Color(0x10183258),
+                    glow = Color.Transparent,
+                    accent = com.finlux.app.core.designsystem.theme.FinluxColors.PrimaryBlue,
+                    backdrop = listOf(
+                        com.finlux.app.core.designsystem.theme.FinluxColors.BackgroundLight,
+                        Color.White,
+                    ),
+                )
+            }
+        }
+        AppUiStyle.MODERN_LUXURY -> {
+            if (dark) {
+                GlassTokens(
+                    fill = Brush.linearGradient(
+                        listOf(
+                            Color(0x8A1B2C4E),
+                            Color(0x64101B30),
+                            styleAccent.copy(alpha = .18f * vividness),
+                        ),
+                    ),
+                    border = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = .55f),
+                            FinluxCyan.copy(alpha = .34f * vividness),
+                            styleAccent.copy(alpha = .42f * vividness),
+                            Color.White.copy(alpha = .12f),
+                        ),
+                    ),
+                    shadow = Color(0xFF040A18).copy(alpha = .45f),
+                    glow = styleAccent.copy(alpha = .22f * vividness),
+                    accent = styleAccent,
+                    backdrop = when (uiPreferences.visualStyle) {
+                        VisualStyle.MODERN_DARK -> listOf(Color(0xFF020B18), Color(0xFF071426), Color(0xFF020D1E))
+                        VisualStyle.GLASSMORPHISM -> listOf(Color(0xFF111938), Color(0xFF1B1942), Color(0xFF08172B))
+                        VisualStyle.DYNAMIC_GRADIENT -> listOf(Color(0xFF07101F), Color(0xFF10162B), Color(0xFF07111D))
+                    },
+                )
+            } else {
+                GlassTokens(
+                    fill = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = .58f),
+                            Color.White.copy(alpha = .42f),
+                            styleAccent.copy(alpha = .12f * vividness),
+                        ),
+                    ),
+                    border = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = .98f),
+                            FinluxCyan.copy(alpha = .30f * vividness),
+                            styleAccent.copy(alpha = .38f * vividness),
+                            Color.White.copy(alpha = .42f),
+                        ),
+                    ),
+                    shadow = Color(0x18183258),
+                    glow = styleAccent.copy(alpha = .14f * vividness),
+                    accent = styleAccent,
+                    backdrop = when (uiPreferences.visualStyle) {
+                        VisualStyle.MODERN_DARK -> listOf(Color(0xFFEAF4FF), Color(0xFFF8FBFF), Color(0xFFEAF7FB))
+                        VisualStyle.GLASSMORPHISM -> listOf(Color(0xFFF1EFFF), Color(0xFFFAF8FF), Color(0xFFEAF8FF))
+                        VisualStyle.DYNAMIC_GRADIENT -> listOf(Color(0xFFF2F7FF), Color(0xFFF9F5FF), Color(0xFFECF9FF))
+                    },
+                )
+            }
+        }
+        AppUiStyle.CLASSIC_LIQUID -> {
+            // Classic Liquid Glass Tokens (v1.5.9 100% exact)
+            when (uiPreferences.visualStyle) {
+                VisualStyle.MODERN_DARK -> GlassTokens(
+                    fill = Brush.verticalGradient(listOf(Color(0xE60A1B31), Color(0xF0061426))),
+                    border = Brush.linearGradient(listOf(Color(0xFF1A9BFF).copy(alpha = .46f), Color.White.copy(alpha = .07f))),
+                    shadow = Color.Black.copy(alpha = .46f),
+                    glow = FinluxBlue.copy(alpha = .08f * vividness),
                     accent = FinluxBlue,
                 )
+                VisualStyle.GLASSMORPHISM -> GlassTokens(
+                    fill = Brush.linearGradient(listOf(Color.White.copy(alpha = .20f), Color(0xFF6E57D9).copy(alpha = .18f), Color.White.copy(alpha = .08f))),
+                    border = Brush.linearGradient(listOf(Color.White.copy(alpha = .58f), Color(0xFF8C6CFF).copy(alpha = .48f), Color.White.copy(alpha = .12f))),
+                    shadow = Color(0xFF091434).copy(alpha = .42f),
+                    glow = Color(0xFF9B7CFF).copy(alpha = .18f * vividness),
+                    accent = Color(0xFF8B5CFF),
+                )
+                VisualStyle.DYNAMIC_GRADIENT -> if (dark) {
+                    GlassTokens(
+                        fill = Brush.verticalGradient(listOf(Color(0xF01A2332), Color(0xE6151C29), FinluxPurple.copy(alpha = .08f * vividness))),
+                        border = Brush.linearGradient(listOf(Color.White.copy(alpha = .18f * vividness), FinluxPurple.copy(alpha = .16f * vividness), FinluxCyan.copy(alpha = .10f * vividness))),
+                        shadow = Color.Black.copy(alpha = .32f),
+                        glow = FinluxPurple.copy(alpha = .10f * vividness),
+                        accent = FinluxCyan,
+                    )
+                } else {
+                    GlassTokens(
+                        fill = Brush.verticalGradient(listOf(Color.White.copy(alpha = .94f), Color(0xEDF9FBFF), FinluxCyan.copy(alpha = .035f * vividness))),
+                        border = Brush.linearGradient(listOf(Color.White, FinluxBlue.copy(alpha = .18f * vividness), Color(0xFFDDE7F5))),
+                        shadow = Color(0x24284A78),
+                        glow = FinluxBlue.copy(alpha = .05f * vividness),
+                        accent = FinluxBlue,
+                    )
+                }
             }
         }
     }
 
     val finluxTokens = when (uiStyle) {
+        AppUiStyle.PRISM -> if (dark) com.finlux.app.core.designsystem.theme.PrismDarkTokens else com.finlux.app.core.designsystem.theme.PrismLightTokens
         AppUiStyle.CLASSIC_LIQUID -> if (dark) com.finlux.app.core.designsystem.theme.ClassicLiquidDarkTokens else com.finlux.app.core.designsystem.theme.ClassicLiquidLightTokens
         AppUiStyle.MODERN_LUXURY -> if (dark) com.finlux.app.core.designsystem.theme.ModernLuxuryDarkTokens else com.finlux.app.core.designsystem.theme.ModernLuxuryLightTokens
     }

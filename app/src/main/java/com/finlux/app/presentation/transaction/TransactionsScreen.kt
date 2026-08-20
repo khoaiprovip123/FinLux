@@ -24,7 +24,7 @@ fun TransactionsScreen(
             onEditTransaction = onEditTransaction,
             viewModel = viewModel,
         )
-        AppUiStyle.MODERN_LUXURY -> ModernTransactionsScreen(
+        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernTransactionsScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,

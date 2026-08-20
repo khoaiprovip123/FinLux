@@ -21,7 +21,7 @@ fun BudgetScreen(
             onBack = onBack,
             viewModel = viewModel,
         )
-        AppUiStyle.MODERN_LUXURY -> ModernBudgetScreen(
+        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernBudgetScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,

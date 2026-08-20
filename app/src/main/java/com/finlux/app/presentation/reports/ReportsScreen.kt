@@ -21,7 +21,7 @@ fun ReportsScreen(
             onBack = onBack,
             viewModel = viewModel,
         )
-        AppUiStyle.MODERN_LUXURY -> ModernReportsScreen(
+        AppUiStyle.MODERN_LUXURY, AppUiStyle.PRISM -> ModernReportsScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,
