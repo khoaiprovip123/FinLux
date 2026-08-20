@@ -1,6 +1,8 @@
 package com.finlux.app.presentation.home.prism
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -24,6 +26,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -165,11 +171,12 @@ fun PrismHomeScreen(
                 )
             }
 
-            // 5. "Chi tiêu theo danh mục" Section with Donut Chart
+            // 5. "Chi tiêu theo danh mục" Section with Donut Chart Horizontal Pager
             item {
                 PrismCategoryExpenseBreakdownCard(
                     monthTransactions = state.monthTransactions.ifEmpty { state.transactions },
                     categories = state.categories,
+                    wallets = state.wallets,
                     showBalance = showBalance,
                     onViewDetail = { onNavigate(Route.Reports.value) },
                 )
@@ -811,34 +818,63 @@ private fun PrismRoundTile(
 }
 
 /**
- * 5. "Chi tiêu theo danh mục" Section with Donut Chart and Category Shares
+ * 5. "Chi tiêu theo danh mục" Section with 5-Page Interactive Carousel HorizontalPager
  */
 @Composable
 private fun PrismCategoryExpenseBreakdownCard(
     monthTransactions: List<FinanceTransaction>,
     categories: List<Category>,
+    wallets: List<Wallet>,
     showBalance: Boolean,
     onViewDetail: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
+    val coroutineScope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 5 })
+
     val expenseTransactions = remember(monthTransactions) {
         monthTransactions.filter { it.type == TransactionType.EXPENSE }
+    }
+    val incomeTransactions = remember(monthTransactions) {
+        monthTransactions.filter { it.type == TransactionType.INCOME }
     }
     val totalExpense = remember(expenseTransactions) {
         expenseTransactions.sumOf { it.amount.value }
     }
+    val totalIncome = remember(incomeTransactions) {
+        incomeTransactions.sumOf { it.amount.value }
+    }
 
-    // Default sample palette if no real transactions yet
-    val chartPalette = listOf(
-        Color(0xFF6366F1), // Indigo Purple
+    // Default sample palette for charts
+    val expensePalette1 = listOf(
+        Color(0xFF6366F1), // Indigo
         Color(0xFFEC4899), // Pink
         Color(0xFFF97316), // Orange
+    )
+    val expensePalette2 = listOf(
         Color(0xFF14B8A6), // Teal
         Color(0xFF06B6D4), // Cyan
+        Color(0xFF8B5CF6), // Purple
+    )
+    val incomePalette = listOf(
+        Color(0xFF10B981), // Emerald
+        Color(0xFF06B6D4), // Cyan
+        Color(0xFF3B82F6), // Blue
+    )
+    val budgetPalette = listOf(
+        Color(0xFF8B5CF6), // Violet
+        Color(0xFFEC4899), // Pink
+        Color(0xFFF59E0B), // Amber
+    )
+    val walletPalette = listOf(
+        Color(0xFF3B82F6), // Blue
+        Color(0xFF10B981), // Emerald
+        Color(0xFFF97316), // Orange
     )
 
-    val categoryShares = remember(expenseTransactions, categories, totalExpense) {
+    // Compute actual grouped expenses
+    val allExpenseShares = remember(expenseTransactions, categories, totalExpense) {
         if (totalExpense > 0L) {
             val grouped = expenseTransactions.groupBy { it.categoryId }
             grouped.mapNotNull { (catId, txs) ->
@@ -854,17 +890,96 @@ private fun PrismCategoryExpenseBreakdownCard(
                 val sum = txs.sumOf { it.amount.value }
                 val percent = ((sum * 100.0) / totalExpense).toInt()
                 Triple(cat, sum, percent)
-            }.sortedByDescending { it.second }.take(5)
+            }.sortedByDescending { it.second }
         } else {
-            // Default sample items if user hasn't added expenses this month yet
             listOf(
-                Triple(Category("1", "Nhà ở", CategoryType.EXPENSE, "Home", "#6366F1", true, Instant.now()), 2_200_000L, 97),
-                Triple(Category("2", "Ăn uống", CategoryType.EXPENSE, "Restaurant", "#EC4899", true, Instant.now()), 65_000L, 2),
-                Triple(Category("3", "Đi lại", CategoryType.EXPENSE, "DirectionsCar", "#F97316", true, Instant.now()), 0L, 0),
-                Triple(Category("4", "Mua sắm", CategoryType.EXPENSE, "ShoppingBag", "#14B8A6", true, Instant.now()), 0L, 0),
-                Triple(Category("5", "Giải trí", CategoryType.EXPENSE, "SportsEsports", "#06B6D4", true, Instant.now()), 0L, 0),
+                Triple(Category("1", "Tiền Trọ", CategoryType.EXPENSE, "Home", "#6366F1", true, Instant.now()), 2_200_000L, 87),
+                Triple(Category("2", "Ăn uống", CategoryType.EXPENSE, "Restaurant", "#EC4899", true, Instant.now()), 205_000L, 8),
+                Triple(Category("3", "Tiền Mạng", CategoryType.EXPENSE, "Wifi", "#F97316", true, Instant.now()), 100_000L, 3),
+                Triple(Category("4", "Đi lại", CategoryType.EXPENSE, "DirectionsCar", "#14B8A6", true, Instant.now()), 0L, 0),
+                Triple(Category("5", "Mua sắm", CategoryType.EXPENSE, "ShoppingBag", "#06B6D4", true, Instant.now()), 0L, 0),
+                Triple(Category("6", "Giải trí", CategoryType.EXPENSE, "SportsEsports", "#8B5CF6", true, Instant.now()), 0L, 0),
             )
         }
+    }
+
+    // Page 0: Top 1-3 Expenses
+    val page0Shares = remember(allExpenseShares) {
+        allExpenseShares.take(3)
+    }
+
+    // Page 1: Next 4-6 Expenses (or fallback)
+    val page1Shares = remember(allExpenseShares) {
+        val next = allExpenseShares.drop(3).take(3)
+        if (next.isNotEmpty()) next else listOf(
+            Triple(Category("4", "Đi lại", CategoryType.EXPENSE, "DirectionsCar", "#14B8A6", true, Instant.now()), 0L, 0),
+            Triple(Category("5", "Mua sắm", CategoryType.EXPENSE, "ShoppingBag", "#06B6D4", true, Instant.now()), 0L, 0),
+            Triple(Category("6", "Giải trí", CategoryType.EXPENSE, "SportsEsports", "#8B5CF6", true, Instant.now()), 0L, 0),
+        )
+    }
+
+    // Page 2: Income shares
+    val incomeShares = remember(incomeTransactions, categories, totalIncome) {
+        if (totalIncome > 0L) {
+            val grouped = incomeTransactions.groupBy { it.categoryId }
+            grouped.mapNotNull { (catId, txs) ->
+                val cat = categories.find { it.id == catId } ?: Category(
+                    id = catId ?: "income_other",
+                    name = "Khác",
+                    type = CategoryType.INCOME,
+                    icon = "AccountBalance",
+                    colorHex = "#10B981",
+                    isDefault = false,
+                    createdAt = Instant.now(),
+                )
+                val sum = txs.sumOf { it.amount.value }
+                val percent = ((sum * 100.0) / totalIncome).toInt()
+                Triple(cat, sum, percent)
+            }.sortedByDescending { it.second }.take(3)
+        } else {
+            listOf(
+                Triple(Category("101", "Lương chính", CategoryType.INCOME, "Work", "#10B981", true, Instant.now()), 0L, 0),
+                Triple(Category("102", "Thưởng", CategoryType.INCOME, "CardGiftcard", "#06B6D4", true, Instant.now()), 0L, 0),
+                Triple(Category("103", "Đầu tư", CategoryType.INCOME, "TrendingUp", "#3B82F6", true, Instant.now()), 0L, 0),
+            )
+        }
+    }
+
+    // Page 3: Budget shares
+    val budgetShares = listOf(
+        Triple(Category("201", "Thiết yếu (50%)", CategoryType.EXPENSE, "Shield", "#8B5CF6", true, Instant.now()), 2_505_000L, 65),
+        Triple(Category("202", "Mong muốn (30%)", CategoryType.EXPENSE, "Favorite", "#EC4899", true, Instant.now()), 0L, 0),
+        Triple(Category("203", "Tiết kiệm (20%)", CategoryType.EXPENSE, "Savings", "#F59E0B", true, Instant.now()), 0L, 0),
+    )
+
+    // Page 4: Wallets asset distribution
+    val totalWalletBalance = wallets.sumOf { it.balance.value }
+    val walletShares = remember(wallets, totalWalletBalance) {
+        if (wallets.isNotEmpty() && totalWalletBalance > 0L) {
+            wallets.map { w ->
+                val pct = ((w.balance.value * 100.0) / totalWalletBalance).toInt()
+                Triple(
+                    Category(id = w.id, name = w.name, type = CategoryType.EXPENSE, icon = "AccountBalanceWallet", colorHex = "#3B82F6", isDefault = false, createdAt = Instant.now()),
+                    w.balance.value,
+                    pct,
+                )
+            }.sortedByDescending { it.second }.take(3)
+        } else {
+            listOf(
+                Triple(Category("301", "Ví chính", CategoryType.EXPENSE, "AccountBalanceWallet", "#3B82F6", true, Instant.now()), 6_110_000L, 100),
+                Triple(Category("302", "Tiền mặt", CategoryType.EXPENSE, "Payments", "#10B981", true, Instant.now()), 0L, 0),
+                Triple(Category("303", "Ngân hàng", CategoryType.EXPENSE, "AccountBalance", "#F97316", true, Instant.now()), 0L, 0),
+            )
+        }
+    }
+
+    val dynamicTitle = when (pagerState.currentPage) {
+        0 -> "Chi tiêu theo danh mục"
+        1 -> "Chi tiêu khác & phụ"
+        2 -> "Nguồn thu nhập theo danh mục"
+        3 -> "Phân bổ định mức ngân sách"
+        4 -> "Cơ cấu tài sản theo ví"
+        else -> "Chi tiêu theo danh mục"
     }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -877,7 +992,7 @@ private fun PrismCategoryExpenseBreakdownCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Chi tiêu theo danh mục",
+                text = dynamicTitle,
                 style = FinluxTextStyles.SectionTitle,
                 fontWeight = FontWeight.Bold,
                 color = tokens.onSurface,
@@ -906,7 +1021,7 @@ private fun PrismCategoryExpenseBreakdownCard(
             }
         }
 
-        // Breakdown Card
+        // Breakdown Card with HorizontalPager
         FinluxSoftCard(
             modifier = Modifier.fillMaxWidth(),
             radius = 22.dp,
@@ -916,137 +1031,210 @@ private fun PrismCategoryExpenseBreakdownCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Row(
+                HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Left: Donut Chart
-                    Box(
-                        modifier = Modifier
-                            .weight(0.44f)
-                            .height(130.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        PrismDonutChart(
-                            percentages = categoryShares.map { it.third },
-                            colors = chartPalette,
+                ) { page ->
+                    when (page) {
+                        0 -> PrismBreakdownPageContent(
+                            shares = page0Shares,
+                            colors = expensePalette1,
+                            centerAmount = if (totalExpense > 0L) formatVndAmount(totalExpense, isCompact = true) else "2,5 tr",
+                            centerLabel = "Tổng chi",
+                            showBalance = showBalance,
                         )
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = if (showBalance) {
-                                    if (totalExpense > 0L) formatVndAmount(totalExpense, isCompact = true) else "2,3 tr"
-                                } else "••••",
-                                style = FinluxTextStyles.CardTitle.copy(
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 18.sp,
-                                ),
-                                color = tokens.onSurface,
-                            )
-                            Text(
-                                text = "Tổng chi",
-                                style = FinluxTextStyles.MicroLabel.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium,
-                                ),
-                                color = tokens.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.width(12.dp))
-
-                    // Right: Category legend list
-                    Column(
-                        modifier = Modifier.weight(0.56f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        categoryShares.forEachIndexed { index, (cat, sum, percent) ->
-                            val color = chartPalette.getOrElse(index) { Color(0xFF6366F1) }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                // Color Dot
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(color),
-                                )
-                                Spacer(Modifier.width(6.dp))
-
-                                // Category Icon
-                                Surface(
-                                    modifier = Modifier.size(24.dp),
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = color.copy(alpha = 0.12f),
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = categoryIcon(cat.icon),
-                                            contentDescription = null,
-                                            tint = color,
-                                            modifier = Modifier.size(13.dp),
-                                        )
-                                    }
-                                }
-
-                                Spacer(Modifier.width(6.dp))
-
-                                // Category Name
-                                Text(
-                                    text = cat.name,
-                                    style = FinluxTextStyles.Caption.copy(fontSize = 12.5.sp),
-                                    color = tokens.onSurface,
-                                    maxLines = 1,
-                                    modifier = Modifier.weight(1f),
-                                )
-
-                                // Amount
-                                Text(
-                                    text = if (showBalance) formatVndAmount(sum) else "••••",
-                                    style = FinluxTextStyles.Caption.copy(
-                                        fontSize = 13.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                    color = tokens.onSurface,
-                                )
-
-                                Spacer(Modifier.width(6.dp))
-
-                                // Percentage badge
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = tokens.background,
-                                ) {
-                                    Text(
-                                        text = "$percent%",
-                                        style = FinluxTextStyles.MicroLabel.copy(
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        ),
-                                        color = tokens.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                                    )
-                                }
-                            }
-                        }
+                        1 -> PrismBreakdownPageContent(
+                            shares = page1Shares,
+                            colors = expensePalette2,
+                            centerAmount = if (totalExpense > 0L) formatVndAmount(totalExpense, isCompact = true) else "2,5 tr",
+                            centerLabel = "Nhóm 2",
+                            showBalance = showBalance,
+                        )
+                        2 -> PrismBreakdownPageContent(
+                            shares = incomeShares,
+                            colors = incomePalette,
+                            centerAmount = if (totalIncome > 0L) formatVndAmount(totalIncome, isCompact = true) else "0 đ",
+                            centerLabel = "Tổng thu",
+                            showBalance = showBalance,
+                        )
+                        3 -> PrismBreakdownPageContent(
+                            shares = budgetShares,
+                            colors = budgetPalette,
+                            centerAmount = "65%",
+                            centerLabel = "Đã chi tiêu",
+                            showBalance = showBalance,
+                        )
+                        4 -> PrismBreakdownPageContent(
+                            shares = walletShares,
+                            colors = walletPalette,
+                            centerAmount = if (totalWalletBalance > 0L) formatVndAmount(totalWalletBalance, isCompact = true) else "6,1 tr",
+                            centerLabel = "Tài sản ví",
+                            showBalance = showBalance,
+                        )
                     }
                 }
 
-                // Carousel Dots
+                // Interactive Carousel Dots Indicator
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     repeat(5) { idx ->
+                        val isSelected = pagerState.currentPage == idx
+                        val dotWidth by animateDpAsState(
+                            targetValue = if (isSelected) 18.dp else 6.dp,
+                            animationSpec = tween(300),
+                            label = "dot-w-$idx",
+                        )
+                        val dotColor by animateColorAsState(
+                            targetValue = if (isSelected) tokens.primary else tokens.onSurfaceVariant.copy(alpha = 0.25f),
+                            animationSpec = tween(300),
+                            label = "dot-c-$idx",
+                        )
+
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 3.dp)
-                                .size(width = if (idx == 1) 14.dp else 5.dp, height = 5.dp)
+                                .size(width = dotWidth, height = 6.dp)
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(if (idx == 1) tokens.primary else tokens.onSurfaceVariant.copy(alpha = 0.25f)),
+                                .background(dotColor)
+                                .clickable {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(idx)
+                                    }
+                                },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Reusable Page Content for Carousel Breakdown
+ */
+@Composable
+private fun PrismBreakdownPageContent(
+    shares: List<Triple<Category, Long, Int>>,
+    colors: List<Color>,
+    centerAmount: String,
+    centerLabel: String,
+    showBalance: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Left: Donut Chart
+        Box(
+            modifier = Modifier
+                .weight(0.44f)
+                .height(130.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            PrismDonutChart(
+                percentages = shares.map { it.third },
+                colors = colors,
+            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = if (showBalance) centerAmount else "••••",
+                    style = FinluxTextStyles.CardTitle.copy(
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp,
+                    ),
+                    color = tokens.onSurface,
+                )
+                Text(
+                    text = centerLabel,
+                    style = FinluxTextStyles.MicroLabel.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                    color = tokens.onSurfaceVariant,
+                )
+            }
+        }
+
+        Spacer(Modifier.width(12.dp))
+
+        // Right: Category legend list
+        Column(
+            modifier = Modifier.weight(0.56f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            shares.forEachIndexed { index, (cat, sum, percent) ->
+                val color = colors.getOrElse(index) { Color(0xFF6366F1) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Color Dot
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(color),
+                    )
+                    Spacer(Modifier.width(6.dp))
+
+                    // Category Icon
+                    Surface(
+                        modifier = Modifier.size(24.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        color = color.copy(alpha = 0.12f),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = categoryIcon(cat.icon),
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(13.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.width(6.dp))
+
+                    // Category Name
+                    Text(
+                        text = cat.name,
+                        style = FinluxTextStyles.Caption.copy(fontSize = 12.5.sp),
+                        color = tokens.onSurface,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    // Amount
+                    Text(
+                        text = if (showBalance) formatVndAmount(sum) else "••••",
+                        style = FinluxTextStyles.Caption.copy(
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = tokens.onSurface,
+                    )
+
+                    Spacer(Modifier.width(6.dp))
+
+                    // Percentage badge
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = tokens.background,
+                    ) {
+                        Text(
+                            text = "$percent%",
+                            style = FinluxTextStyles.MicroLabel.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = tokens.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                         )
                     }
                 }
