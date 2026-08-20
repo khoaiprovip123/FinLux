@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.8.6] - 2026-08-20
+### Added
+- **Bộ 3 Màn Hình Tạo Giao Dịch Thế Hệ Mới (FinLux Prism Quick Add Hub & Forms)**:
+  - **Quick Add Hub Modal**: Bento grid 2x2 sống động (Thêm thu, Thêm chi, Chuyển tiền, Scan hóa đơn), banner Thêm mục tiêu, danh sách 3 giao dịch gần nhất và gợi ý tương tác thông minh.
+  - **Form Thêm Chi / Thêm Thu Tinh Gọn & Công Thái Học**: Header nút Lưu tròn xanh `✓`, 3 tab phân loại pill, ô nhập số tiền siêu lớn 32sp in đậm tự động định dạng phân tách hàng nghìn (`728.000 ₫`) theo thời gian thực và 4 chip cộng tiền nhanh (`+10k`, `+50k`, `+100k`, `+500k`).
+  - **Thẻ Thông Tin 2 Tầng Công Thái Học**: Danh mục, Ví nguồn kèm số dư thời gian thực, Thời gian giao dịch thông minh ("Hôm nay, dd/MM/yyyy • HH:mm"), Ghi chú và Đính kèm hóa đơn/chứng từ.
+  - **Modal Chọn & Quản Lý Danh Mục (Category Picker Sheet)**: Tìm kiếm tức thì, lưới 4 cột icon bo góc với hiệu ứng viền và huy hiệu đỏ `✓` cho danh mục được chọn, hỗ trợ tạo danh mục mới.
+- **Đồ Họa Minh Họa 3D Sổ Thu Chi Không Gian (Prism3DTransactionIllustration)**:
+  - Tích hợp cụm đồ họa 3D Liquid Glass gồm Hóa đơn kính mờ nghiêng -14°, Thẻ ngân hàng Hologram ánh kim nghiêng +10°, Đồng xu vàng `₫` tiền cảnh và Ngôi sao lấp lánh trên thẻ tổng quan Lịch sử giao dịch.
+
+### Changed
+- **Nâng Cấp Thiết Kế Giao Diện Toàn Diện (FinLux Prism UI Theme)**: Chuẩn hóa toàn bộ hệ thống màu sắc, bo góc 22-28dp, đổ bóng mềm mại và kiểu chữ ExtraBold trên toàn bộ các màn hình chính (Trang chủ, Lịch sử giao dịch, Tạo giao dịch).
+- **Tối Ưu Trải Nghiệm Nhập Liệu Tài Chính**: Bỏ các trường dữ liệu trùng lặp, tối ưu hóa kích thước và vị trí các nút bấm giúp thao tác bằng một tay nhanh chóng và chính xác.
+
+### Fixed
+- **Định Dạng Tiền Tệ Trực Tiếp (Real-time Currency Formatting)**: Loại bỏ triệt để hiện tượng ngắt quãng giữa số tiền và ký hiệu tiền tệ, tự động thêm dấu chấm hàng nghìn chuẩn tiếng Việt.
+
 ## [1.8.5] - 2026-08-19
 ### Added
 - **Xác Thực Tính Toàn Vẹn Bản Cập Nhật Tự Động (Secure OTA Verification)**: Tự động kiểm tra mã băm bảo mật SHA-256, chữ ký số và gói cài đặt trước khi mở cập nhật, bảo vệ điện thoại khỏi file cài đặt hỏng hoặc không rõ nguồn gốc.
