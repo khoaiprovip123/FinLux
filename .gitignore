@@ -10,11 +10,10 @@ local.properties
 # Signing and service accounts
 *.jks
 *.keystore
-!app/debug.keystore
-!gradle/debug.keystore
 *.pepk
 *.env
 service-account*.json
+app/google-services.json
 
 # OS / generated output
 .DS_Store

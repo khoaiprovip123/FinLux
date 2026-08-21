@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.8.7] - 2026-08-21
+### Added
+- Bổ sung Firebase Cloud Functions thế hệ 2 cho đối soát ngân sách, cảnh báo ngưỡng 80%/100%, reset hạn mức tháng và gửi nhắc nhở định kỳ qua FCM.
+- Bổ sung empty state và unit test cho dữ liệu biểu đồ Báo cáo Prism.
+- Bổ sung menu Cài đặt Prism theo nhóm Tài khoản, Quản lý tài chính, Ứng dụng, Hỗ trợ và Thông tin; có hộp tùy chỉnh giao diện riêng và thẻ tổng tài sản ẩn/hiện số dư.
+
+### Changed
+- Thiết kế lại màn Đăng nhập/Đăng ký theo bố cục premium trắng–tím: nhận diện thương hiệu căn giữa, header đăng ký gradient có minh họa 3D, form bo tròn, hỗ trợ bàn phím/safe area và giữ đủ contract Google/Apple/Facebook.
+- Thanh điều hướng và cử chỉ vuốt chính dùng đúng luồng `Trang chủ ↔ Lịch sử ↔ Báo cáo ↔ Hồ sơ`, có hiệu ứng bám ngón tay và spring Liquid Glass thống nhất; quản lý Ví nằm trong Cài đặt.
+- Báo cáo Prism dùng hoàn toàn dữ liệu giao dịch thực tế cho tab, biểu đồ, tooltip và so sánh kỳ; loại dữ liệu minh họa hard-code.
+- Gia cố Firestore Rules để giao dịch và biến động số dư ví phải được ghi nguyên tử, đồng thời kiểm tra schema ví/ngân sách.
+- Thiết kế lại hồ sơ/Cài đặt theo Liquid Glass thích ứng sáng-tối, giữ đầy đủ đổi avatar/tên, Ví, Ngân sách, Danh mục, Nhắc nhở, Thông báo, sinh trắc học, cập nhật và đăng xuất.
+
+### Fixed
+- Sửa lỗi hiển thị chữ dọc 'Nhắc nhở' trong thẻ giao dịch gần nhất của PrismHomeScreen: loại bỏ badge hardcoded bị chèn ép layout và áp dụng TextOverflow.Ellipsis cho tiêu đề giao dịch.
+- Sửa header Báo cáo Prism bị thanh trạng thái hệ thống đè lên tiêu đề, nút Bộ lọc và nút xuất file trên thiết bị edge-to-edge.
+- Đăng ký không còn báo thành công khi seed hồ sơ, ví hoặc danh mục thất bại; tài khoản Auth mới được rollback để người dùng thử lại.
+- Đồng bộ FCM token sau đăng nhập/đăng ký và khi token thiết bị thay đổi; lỗi đồng bộ token không làm hỏng phiên đăng nhập.
+- Sửa biên tháng của tác vụ ngân sách theo đúng múi giờ `Asia/Ho_Chi_Minh`.
+
 ## [1.8.6] - 2026-08-20
 ### Added
 - **Bộ 3 Màn Hình Tạo Giao Dịch Thế Hệ Mới (FinLux Prism Quick Add Hub & Forms)**:

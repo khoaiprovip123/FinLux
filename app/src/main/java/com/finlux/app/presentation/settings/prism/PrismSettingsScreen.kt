@@ -12,8 +12,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -30,26 +29,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.HeadsetMic
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -71,6 +72,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,9 +84,8 @@ import com.finlux.app.BuildConfig
 import com.finlux.app.core.designsystem.FinluxBrandMark
 import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.FinluxUserAvatar
-import com.finlux.app.core.designsystem.component.FinluxScreenHeader
-import com.finlux.app.core.designsystem.component.FinluxSectionHeader
-import com.finlux.app.core.designsystem.component.FinluxSoftCard
+import com.finlux.app.core.designsystem.GlassCard
+import com.finlux.app.core.designsystem.component.FinluxHeroCard
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -95,6 +96,25 @@ import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.settings.SettingsViewModel
 import java.io.File
 import kotlinx.coroutines.delay
+
+internal enum class PrismSettingsAction(val route: String? = null) {
+    ACCOUNT,
+    WALLETS("wallets"),
+    BUDGET("budget"),
+    APPEARANCE,
+    CATEGORIES("categories"),
+    REMINDERS("reminders"),
+    NOTIFICATIONS("notifications"),
+    BACKUP,
+    SECURITY,
+    SUPPORT,
+    ABOUT,
+    UPDATE,
+}
+
+internal val prismSettingsActions = PrismSettingsAction.entries
+
+private data class InfoDialogContent(val title: String, val message: String)
 
 @Composable
 fun PrismSettingsScreen(
@@ -113,7 +133,6 @@ fun PrismSettingsScreen(
     val tokens = LocalFinluxTokens.current
     val user = viewModel.user.collectAsStateWithLifecycle().value
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
-    val totalAssets = wallets.sumOf { it.balance.value }
     val avatarState = viewModel.avatarState.collectAsStateWithLifecycle().value
     val nameState = viewModel.nameState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
@@ -121,12 +140,19 @@ fun PrismSettingsScreen(
     var showAvatarSource by remember { mutableStateOf(false) }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var showNameEditor by remember { mutableStateOf(false) }
+    var showAppearance by remember { mutableStateOf(false) }
+    var infoDialog by remember { mutableStateOf<InfoDialogContent?>(null) }
+    var amountVisible by remember { mutableStateOf(true) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
 
     fun openNameEditor() {
         nameDraft = user?.displayName.orEmpty()
         viewModel.clearNameMessage()
         showNameEditor = true
+    }
+
+    fun navigateTo(action: PrismSettingsAction) {
+        action.route?.let(onNavigate)
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -148,14 +174,14 @@ fun PrismSettingsScreen(
     if (showAvatarSource) {
         AlertDialog(
             onDismissRequest = { showAvatarSource = false },
-            title = { Text("Đổi ảnh đại diện", fontWeight = FontWeight.Bold, style = FinluxTextStyles.SectionTitle) },
+            title = { Text("Đổi ảnh đại diện", style = FinluxTextStyles.SectionTitle, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PrismAvatarSourceButton(Icons.Default.PhotoLibrary, "Chọn từ thư viện") {
+                    SettingsDialogAction(Icons.Default.PhotoLibrary, "Chọn từ thư viện") {
                         showAvatarSource = false
                         galleryLauncher.launch("image/*")
                     }
-                    PrismAvatarSourceButton(Icons.Default.CameraAlt, "Chụp ảnh mới") {
+                    SettingsDialogAction(Icons.Default.CameraAlt, "Chụp ảnh mới") {
                         showAvatarSource = false
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                             openCamera()
@@ -168,29 +194,30 @@ fun PrismSettingsScreen(
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showAvatarSource = false }) { Text("Hủy") } },
             shape = RoundedCornerShape(tokens.radius.dialog),
-            containerColor = tokens.surfaceSoft,
+            containerColor = tokens.surface,
         )
     }
 
     if (showNameEditor) {
         AlertDialog(
             onDismissRequest = { if (!nameState.isLoading) showNameEditor = false },
-            title = { Text("Đổi tên hiển thị", fontWeight = FontWeight.Bold, style = FinluxTextStyles.SectionTitle) },
+            title = { Text("Thông tin tài khoản", style = FinluxTextStyles.SectionTitle, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = nameDraft,
-                        onValueChange = { nameDraft = it },
-                        singleLine = true,
+                        onValueChange = { nameDraft = it.take(40) },
                         label = { Text("Tên người dùng") },
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(tokens.radius.input),
                     )
+                    Text(user?.email.orEmpty(), style = FinluxTextStyles.Caption, color = tokens.onSurfaceVariant)
                     nameState.message?.let { message ->
                         Text(
                             message,
-                            color = if (nameState.isError) FinluxColors.ExpenseRed else tokens.primary,
                             style = FinluxTextStyles.Caption,
+                            color = if (nameState.isError) FinluxColors.ExpenseRed else tokens.primary,
                         )
                     }
                 }
@@ -200,18 +227,43 @@ fun PrismSettingsScreen(
                     onClick = { viewModel.updateDisplayName(nameDraft) },
                     enabled = nameDraft.isNotBlank() && !nameState.isLoading,
                     shape = RoundedCornerShape(tokens.radius.input),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = tokens.primary,
-                        contentColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
-                    ),
                 ) {
-                    if (nameState.isLoading) CircularProgressIndicator(Modifier.size(18.dp), color = if (tokens.isDark) Color(0xFF002B3D) else Color.White, strokeWidth = 2.dp)
-                    else Text("Lưu tên", fontWeight = FontWeight.Bold)
+                    if (nameState.isLoading) {
+                        CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    } else {
+                        Text("Lưu tên", fontWeight = FontWeight.Bold)
+                    }
                 }
             },
-            dismissButton = { TextButton(onClick = { showNameEditor = false }, enabled = !nameState.isLoading) { Text("Hủy") } },
+            dismissButton = {
+                TextButton(onClick = { showNameEditor = false }, enabled = !nameState.isLoading) { Text("Hủy") }
+            },
             shape = RoundedCornerShape(tokens.radius.dialog),
-            containerColor = tokens.surfaceSoft,
+            containerColor = tokens.surface,
+        )
+    }
+
+    if (showAppearance) {
+        AppearanceDialog(
+            selectedTheme = selectedTheme,
+            onThemeSelected = onThemeSelected,
+            selectedUiStyle = selectedUiStyle,
+            onUiStyleSelected = onUiStyleSelected,
+            uiPreferences = uiPreferences,
+            onUiPreferencesChanged = onUiPreferencesChanged,
+            onDismiss = { showAppearance = false },
+        )
+    }
+
+    infoDialog?.let { content ->
+        AlertDialog(
+            onDismissRequest = { infoDialog = null },
+            icon = { FinluxBrandMark(size = 42.dp) },
+            title = { Text(content.title, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
+            text = { Text(content.message, color = tokens.onSurfaceVariant) },
+            confirmButton = { TextButton(onClick = { infoDialog = null }) { Text("Đã hiểu") } },
+            shape = RoundedCornerShape(tokens.radius.dialog),
+            containerColor = tokens.surface,
         )
     }
 
@@ -223,19 +275,9 @@ fun PrismSettingsScreen(
     }
 
     Scaffold(
-        topBar = {
-            FinluxScreenHeader(
-                title = "Hồ sơ & Cài đặt",
-                subtitle = "Tài khoản & Cá nhân hóa",
-                onBack = { onNavigate("home") },
-            )
-        },
+        topBar = { SettingsTitle() },
         bottomBar = {
-            MainBottomBar(
-                selectedRoute = "settings",
-                onNavigate = onNavigate,
-                onAdd = onAdd,
-            )
+            MainBottomBar(selectedRoute = "settings", onNavigate = onNavigate, onAdd = onAdd)
         },
         containerColor = tokens.background,
     ) { padding ->
@@ -243,654 +285,317 @@ fun PrismSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 140.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            // Profile Hero Card
             item {
-                PrismProfileHero(
-                    name = user?.displayName ?: "Người dùng",
+                ProfileCard(
+                    name = user?.displayName?.ifBlank { "Người dùng FinLux" } ?: "Người dùng FinLux",
                     email = user?.email.orEmpty(),
                     photoUrl = user?.photoUrl,
-                    loading = avatarState.isLoading,
-                    totalAssets = totalAssets,
-                    onAvatar = { showAvatarSource = true },
-                    onEditName = ::openNameEditor,
+                    isAvatarLoading = avatarState.isLoading,
+                    onAvatarClick = { showAvatarSource = true },
+                    onProfileClick = ::openNameEditor,
                 )
             }
 
-            // Status message feedback
+            item {
+                FinluxHeroCard(
+                    title = "Tổng tài sản",
+                    amountText = formatVndAmount(wallets.sumOf { it.balance.value }),
+                    isAmountVisible = amountVisible,
+                    onToggleVisibility = { amountVisible = !amountVisible },
+                    extraContent = {
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "${wallets.size} ví và tài khoản đang được tổng hợp",
+                            style = FinluxTextStyles.Caption,
+                            color = Color.White.copy(alpha = 0.82f),
+                        )
+                    },
+                )
+            }
+
+            item {
+                SettingsGroupCard(
+                    listOf(
+                        SettingsMenuItem(Icons.Default.PersonOutline, "Tài khoản", Color(0xFF2563EB), onClick = ::openNameEditor),
+                        SettingsMenuItem(Icons.Default.AccountBalanceWallet, "Ví & tài khoản", Color(0xFF7C3AED), onClick = { navigateTo(PrismSettingsAction.WALLETS) }),
+                        SettingsMenuItem(Icons.Default.Savings, "Ngân sách", Color(0xFF059669), onClick = { navigateTo(PrismSettingsAction.BUDGET) }),
+                        SettingsMenuItem(Icons.Default.Palette, "Giao diện", Color(0xFFF97316), onClick = { showAppearance = true }),
+                    ),
+                )
+            }
+
+            item {
+                SettingsSectionLabel("QUẢN LÝ TÀI CHÍNH")
+                Spacer(Modifier.height(8.dp))
+                SettingsGroupCard(
+                    listOf(
+                        SettingsMenuItem(Icons.Default.Category, "Danh mục thu chi", Color(0xFF8B5CF6), onClick = { navigateTo(PrismSettingsAction.CATEGORIES) }),
+                        SettingsMenuItem(Icons.Default.Alarm, "Nhắc nhở thanh toán", Color(0xFFF59E0B), onClick = { navigateTo(PrismSettingsAction.REMINDERS) }),
+                    ),
+                )
+            }
+
+            item {
+                SettingsSectionLabel("CÀI ĐẶT ỨNG DỤNG")
+                Spacer(Modifier.height(8.dp))
+                SettingsGroupCard(
+                    listOf(
+                        SettingsMenuItem(Icons.Default.NotificationsNone, "Thông báo", Color(0xFF4F46E5), onClick = { navigateTo(PrismSettingsAction.NOTIFICATIONS) }),
+                        SettingsMenuItem(
+                            Icons.Default.Backup,
+                            "Sao lưu dữ liệu",
+                            Color(0xFF2563EB),
+                            subtitle = "Đồng bộ tự động qua tài khoản FinLux",
+                            onClick = {
+                                infoDialog = InfoDialogContent(
+                                    "Sao lưu & đồng bộ",
+                                    "Dữ liệu tài chính được Firestore lưu và đồng bộ tự động giữa các thiết bị đăng nhập cùng tài khoản. Khi có mạng, thay đổi sẽ được cập nhật theo thời gian thực.",
+                                )
+                            },
+                        ),
+                        SettingsMenuItem(
+                            Icons.Default.Fingerprint,
+                            "Bảo mật",
+                            Color(0xFF4F46E5),
+                            subtitle = "Khóa ứng dụng bằng sinh trắc học",
+                            trailing = {
+                                Switch(
+                                    checked = uiPreferences.biometricEnabled,
+                                    onCheckedChange = { onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = it)) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = tokens.primary,
+                                    ),
+                                )
+                            },
+                            onClick = { onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = !uiPreferences.biometricEnabled)) },
+                        ),
+                    ),
+                )
+            }
+
+            item {
+                SettingsSectionLabel("HỖ TRỢ")
+                Spacer(Modifier.height(8.dp))
+                SettingsGroupCard(
+                    listOf(
+                        SettingsMenuItem(Icons.Default.HeadsetMic, "Hỗ trợ", Color(0xFF4F46E5)) {
+                            infoDialog = InfoDialogContent(
+                                "Trung tâm hỗ trợ",
+                                "Nếu dữ liệu chưa cập nhật, hãy kiểm tra kết nối mạng và đăng nhập đúng tài khoản. Với thông báo, hãy kiểm tra quyền thông báo của FinLux trong Cài đặt Android.",
+                            )
+                        },
+                    ),
+                )
+            }
+
+            item {
+                SettingsSectionLabel("THÔNG TIN")
+                Spacer(Modifier.height(8.dp))
+                SettingsGroupCard(
+                    listOf(
+                        SettingsMenuItem(Icons.Default.Info, "Giới thiệu FinLux", Color(0xFF4F46E5)) {
+                            infoDialog = InfoDialogContent(
+                                "FinLux",
+                                "Tài chính rõ ràng, cuộc sống nhẹ nhàng. FinLux giúp quản lý thu chi, ví, ngân sách, mục tiêu và báo cáo trong một trải nghiệm thống nhất.\n\nPhiên bản ${BuildConfig.VERSION_NAME}",
+                            )
+                        },
+                        SettingsMenuItem(
+                            Icons.Default.SystemUpdate,
+                            "Kiểm tra cập nhật",
+                            Color(0xFF4F46E5),
+                            subtitle = "Phiên bản ${BuildConfig.VERSION_NAME}",
+                            badge = "Kiểm tra",
+                            onClick = onCheckUpdate,
+                        ),
+                    ),
+                )
+            }
+
+            item {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(tokens.radius.standardCard))
+                        .clickable { viewModel.signOut(onSignedOut) },
+                    shape = RoundedCornerShape(tokens.radius.standardCard),
+                    color = FinluxColors.ExpenseRed.copy(alpha = if (tokens.isDark) 0.12f else 0.06f),
+                    border = BorderStroke(1.dp, FinluxColors.ExpenseRed.copy(alpha = 0.42f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 18.dp, horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = FinluxColors.ExpenseRed)
+                        Spacer(Modifier.width(10.dp))
+                        Text("Đăng xuất", color = FinluxColors.ExpenseRed, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    }
+                }
+            }
+
             avatarState.message?.let { message ->
                 item {
                     Text(
                         message,
-                        color = if (avatarState.isError) FinluxColors.ExpenseRed else tokens.primary,
                         style = FinluxTextStyles.Caption,
+                        color = if (avatarState.isError) FinluxColors.ExpenseRed else tokens.primary,
                     )
                     LaunchedEffect(message) { delay(2_500); viewModel.clearAvatarMessage() }
                 }
             }
-            nameState.message?.takeIf { !showNameEditor }?.let { message ->
-                item {
-                    Text(
-                        message,
-                        color = if (nameState.isError) FinluxColors.ExpenseRed else tokens.primary,
-                        style = FinluxTextStyles.Caption,
-                    )
-                    LaunchedEffect(message) { delay(2_500); viewModel.clearNameMessage() }
-                }
-            }
-
-            // Quick Feature Grid (Bento style)
-            item {
-                FinluxSectionHeader(title = "Quản lý nhanh")
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    PrismQuickTile(
-                        icon = Icons.Default.AccountBalanceWallet,
-                        title = "Ví của tôi",
-                        subtitle = "${wallets.size} ví",
-                        color = tokens.primary,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onNavigate("wallets") },
-                    )
-                    PrismQuickTile(
-                        icon = Icons.Default.Savings,
-                        title = "Ngân sách",
-                        subtitle = "Theo dõi",
-                        color = FinluxColors.PrimaryViolet,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onNavigate("budget") },
-                    )
-                    PrismQuickTile(
-                        icon = Icons.Default.Category,
-                        title = "Danh mục",
-                        subtitle = "Tùy chỉnh",
-                        color = FinluxColors.IncomeGreen,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onNavigate("categories") },
-                    )
-                    PrismQuickTile(
-                        icon = Icons.Default.Alarm,
-                        title = "Nhắc nhở",
-                        subtitle = "Định kỳ",
-                        color = FinluxColors.WarningAmber,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onNavigate("reminders") },
-                    )
-                }
-            }
-
-            // UI Style / Theme Selector (Bento Hero Selector)
-            item {
-                FinluxSectionHeader(title = "Phong cách giao diện")
-                Spacer(Modifier.height(8.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PrismUiStyleOptionCard(
-                        title = "FinLux Prism",
-                        badge = "Khuyên dùng 2026",
-                        badgeGradient = listOf(Color(0xFF3A7BFF), Color(0xFF6F52F5), Color(0xFF23C7E8)),
-                        description = "Data-first, bố cục Bento Box, Soft Surface mượt mà, tối giản hiệu ứng kính để tập trung dữ liệu.",
-                        icon = "💎",
-                        tags = listOf("📊 Data-First", "🍱 Bento Layout", "✨ Soft Surface", "⚡ 120 FPS"),
-                        isSelected = selectedUiStyle == AppUiStyle.PRISM,
-                        onClick = { onUiStyleSelected(AppUiStyle.PRISM) },
-                    )
-
-                    PrismUiStyleOptionCard(
-                        title = "Modern Luxury",
-                        badge = "NextGen Glass",
-                        badgeGradient = listOf(Color(0xFF3478F6), Color(0xFF7758F6)),
-                        description = "Kính lỏng 3D đa tầng, bo tròn sang trọng, chuyển động sống động và công nghệ hiện đại.",
-                        icon = "✨",
-                        tags = listOf("💎 Kính lỏng 3D", "🌌 Hiệu ứng Aurora", "🎨 Glow"),
-                        isSelected = selectedUiStyle == AppUiStyle.MODERN_LUXURY,
-                        onClick = { onUiStyleSelected(AppUiStyle.MODERN_LUXURY) },
-                    )
-
-                    PrismUiStyleOptionCard(
-                        title = "Liquid Glass Classic",
-                        badge = "Classic v1.5",
-                        badgeGradient = listOf(Color(0xFF0284C7), Color(0xFF0D9488)),
-                        description = "Thiết kế thanh lịch, độ tương phản cao, tối ưu trực quan và siêu nhẹ.",
-                        icon = "💧",
-                        tags = listOf("🎯 Trực quan", "📊 Tương phản cao", "⚡ Tối giản"),
-                        isSelected = selectedUiStyle == AppUiStyle.CLASSIC_LIQUID,
-                        onClick = { onUiStyleSelected(AppUiStyle.CLASSIC_LIQUID) },
-                    )
-                }
-            }
-
-            // Theme Preference (Light / Dark / System)
-            item {
-                FinluxSectionHeader(title = "Chế độ hiển thị")
-                Spacer(Modifier.height(8.dp))
-                FinluxSoftCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        ThemeOptionChip(
-                            icon = Icons.Default.LightMode,
-                            label = "Sáng",
-                            selected = selectedTheme == ThemePreference.LIGHT,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onThemeSelected(ThemePreference.LIGHT) },
-                        )
-                        ThemeOptionChip(
-                            icon = Icons.Default.DarkMode,
-                            label = "Tối",
-                            selected = selectedTheme == ThemePreference.DARK,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onThemeSelected(ThemePreference.DARK) },
-                        )
-                        ThemeOptionChip(
-                            icon = Icons.Default.SettingsBrightness,
-                            label = "Hệ thống",
-                            selected = selectedTheme == ThemePreference.SYSTEM,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onThemeSelected(ThemePreference.SYSTEM) },
-                        )
-                    }
-                }
-            }
-
-            // Security & Settings Rows
-            item {
-                FinluxSectionHeader(title = "Bảo mật & Cài đặt")
-                Spacer(Modifier.height(8.dp))
-                FinluxSoftCard(modifier = Modifier.fillMaxWidth()) {
-                    Column {
-                        PrismSettingsRow(
-                            icon = Icons.Default.Edit,
-                            label = "Thông tin tài khoản",
-                            onClick = { openNameEditor() },
-                        )
-                        PrismSettingsRow(
-                            icon = Icons.Default.NotificationsNone,
-                            label = "Cài đặt thông báo",
-                            onClick = { onNavigate("notifications") },
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(tokens.radius.smallChip),
-                                    color = tokens.primary.copy(alpha = 0.12f),
-                                    modifier = Modifier.size(38.dp),
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            Icons.Default.Fingerprint,
-                                            contentDescription = null,
-                                            tint = tokens.primary,
-                                            modifier = Modifier.size(20.dp),
-                                        )
-                                    }
-                                }
-                                Column {
-                                    Text(
-                                        "Khóa ứng dụng Sinh trắc học",
-                                        style = FinluxTextStyles.CardTitle,
-                                        color = tokens.onSurface,
-                                    )
-                                    Text(
-                                        "Vân tay / Khuôn mặt khi mở app",
-                                        style = FinluxTextStyles.Caption,
-                                        color = tokens.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                            Switch(
-                                checked = uiPreferences.biometricEnabled,
-                                onCheckedChange = { onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = it)) },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = tokens.primary,
-                                    uncheckedTrackColor = tokens.surfaceSoft,
-                                ),
-                            )
-                        }
-                    }
-                }
-            }
-
-            // About FinLux
-            item {
-                FinluxSectionHeader(title = "Về FinLux")
-                Spacer(Modifier.height(8.dp))
-                FinluxSoftCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            FinluxBrandMark(size = 56.dp)
-                            Spacer(Modifier.width(14.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    "FinLux Finance",
-                                    style = FinluxTextStyles.SectionTitle,
-                                    fontWeight = FontWeight.Bold,
-                                    color = tokens.onSurface,
-                                )
-                                Text(
-                                    "Phiên bản ${BuildConfig.VERSION_NAME}",
-                                    style = FinluxTextStyles.Caption,
-                                    color = tokens.primary,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    "Tài chính rõ ràng, cuộc sống nhẹ nhàng",
-                                    style = FinluxTextStyles.MicroLabel,
-                                    color = tokens.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        Text(
-                            "FinLux giúp bạn quản lý thu chi, ví, ngân sách, mục tiêu và báo cáo trong một trải nghiệm Bento Data-First thống nhất.",
-                            style = FinluxTextStyles.Body,
-                            color = tokens.onSurfaceVariant,
-                        )
-
-                        OutlinedButton(
-                            onClick = onCheckUpdate,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(tokens.radius.input),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.SystemUpdate,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = tokens.primary,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Kiểm tra bản cập nhật mới", fontWeight = FontWeight.SemiBold, color = tokens.primary)
-                        }
-                    }
-                }
-            }
-
-            // Sign out button
-            item {
-                OutlinedButton(
-                    onClick = { viewModel.signOut(onSignedOut) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(tokens.radius.input),
-                    border = BorderStroke(1.dp, FinluxColors.ExpenseRed.copy(alpha = 0.5f)),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = null,
-                        tint = FinluxColors.ExpenseRed,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("Đăng xuất tài khoản", color = FinluxColors.ExpenseRed, fontWeight = FontWeight.Bold)
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun PrismProfileHero(
+private fun SettingsTitle() {
+    val tokens = LocalFinluxTokens.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(top = 18.dp, bottom = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            "Cài đặt",
+            style = FinluxTextStyles.ScreenTitle.copy(fontSize = 27.sp),
+            color = tokens.onSurface,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun ProfileCard(
     name: String,
     email: String,
     photoUrl: String?,
-    loading: Boolean,
-    totalAssets: Long,
-    onAvatar: () -> Unit,
-    onEditName: () -> Unit,
+    isAvatarLoading: Boolean,
+    onAvatarClick: () -> Unit,
+    onProfileClick: () -> Unit,
 ) {
     val tokens = LocalFinluxTokens.current
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(tokens.radius.heroCard),
-        color = Color.Transparent,
-        shadowElevation = tokens.elevation,
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            tokens.primary,
-                            FinluxColors.PrimaryViolet,
-                            Color(0xFF0EA5E9),
-                        )
-                    )
+    GlassCard(modifier = Modifier.fillMaxWidth(), onClick = onProfileClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.clickable(onClick = onAvatarClick)) {
+                FinluxUserAvatar(
+                    photoUrl = photoUrl,
+                    displayName = name,
+                    size = 76.dp,
+                    editable = false,
+                    onClick = onAvatarClick,
                 )
-                .padding(20.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.clickable(onClick = onAvatar)) {
-                        FinluxUserAvatar(
-                            photoUrl = photoUrl,
-                            displayName = name,
-                            size = 64.dp,
-                            editable = false,
-                            onClick = onAvatar,
-                        )
-                        Surface(
-                            shape = CircleShape,
-                            color = Color(0xFF3B82F6),
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(22.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                if (loading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(12.dp),
-                                        color = Color.White,
-                                        strokeWidth = 2.dp,
-                                    )
-                                } else {
-                                    Icon(
-                                        Icons.Default.Edit,
-                                        contentDescription = "Đổi ảnh",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(12.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.width(16.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Text(
-                                text = name,
-                                style = FinluxTextStyles.SectionTitle,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Surface(
-                                shape = RoundedCornerShape(tokens.radius.smallChip),
-                                color = Color.White.copy(alpha = 0.22f),
-                            ) {
-                                Text(
-                                    "Premium",
-                                    style = FinluxTextStyles.MicroLabel,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                )
-                            }
-                        }
-                        Text(
-                            text = email.ifBlank { "Tài khoản FinLux" },
-                            style = FinluxTextStyles.Caption,
-                            color = Color.White.copy(alpha = 0.85f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = "Chạm để chỉnh sửa thông tin",
-                            style = FinluxTextStyles.MicroLabel,
-                            color = Color.White.copy(alpha = 0.65f),
-                        )
-                    }
-
-                    IconButton(onClick = onEditName) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Chỉnh sửa tên",
-                            tint = Color.White.copy(alpha = 0.85f),
-                        )
-                    }
-                }
-
-                // Total assets sub-card
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(tokens.radius.input),
-                    color = Color.White.copy(alpha = 0.16f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(
-                                "Tổng tài sản",
-                                style = FinluxTextStyles.MicroLabel,
-                                color = Color.White.copy(alpha = 0.8f),
-                            )
-                            Text(
-                                formatVndAmount(totalAssets),
-                                style = FinluxTextStyles.DisplayAmount.copy(fontSize = 20.sp),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                            )
-                            Text(
-                                "Quản lý tập trung & an toàn",
-                                style = FinluxTextStyles.MicroLabel,
-                                color = Color.White.copy(alpha = 0.65f),
-                            )
-                        }
-
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.25f),
-                            modifier = Modifier.size(38.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.AccountBalanceWallet,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PrismQuickTile(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    val tokens = LocalFinluxTokens.current
-
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(tokens.radius.input))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(tokens.radius.input),
-        color = tokens.surfaceSoft,
-        border = BorderStroke(1.dp, tokens.surfaceSoft),
-    ) {
-        Column(
-            modifier = Modifier.padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Surface(
-                shape = RoundedCornerShape(tokens.radius.smallChip),
-                color = color.copy(alpha = 0.12f),
-                modifier = Modifier.size(34.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-            }
-            Text(
-                text = title,
-                style = FinluxTextStyles.Caption,
-                color = tokens.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
-            Text(
-                text = subtitle,
-                style = FinluxTextStyles.MicroLabel,
-                color = tokens.onSurfaceVariant,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun PrismUiStyleOptionCard(
-    title: String,
-    badge: String,
-    badgeGradient: List<Color>,
-    description: String,
-    icon: String,
-    tags: List<String>,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    val tokens = LocalFinluxTokens.current
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(tokens.radius.standardCard))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(tokens.radius.standardCard),
-        color = if (isSelected) tokens.primary.copy(alpha = 0.06f) else tokens.surfaceSoft,
-        border = if (isSelected) BorderStroke(1.5.dp, tokens.primary) else BorderStroke(1.dp, tokens.onSurface.copy(alpha = 0.06f)),
-        shadowElevation = 0.dp,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(24.dp),
                     shape = CircleShape,
-                    color = if (isSelected) tokens.primary.copy(alpha = 0.14f) else tokens.surface,
-                    modifier = Modifier.size(42.dp),
+                    color = tokens.primary,
+                    border = BorderStroke(2.dp, tokens.surface),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(icon, fontSize = 20.sp)
-                    }
-                }
-
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            text = title,
-                            style = FinluxTextStyles.CardTitle,
-                            fontWeight = FontWeight.Bold,
-                            color = tokens.onSurface,
-                        )
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(tokens.radius.smallChip))
-                                .background(Brush.horizontalGradient(badgeGradient))
-                                .padding(horizontal = 8.dp, vertical = 2.5.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = badge,
-                                style = FinluxTextStyles.MicroLabel,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                            )
-                        }
-                    }
-                    Text(
-                        text = description,
-                        style = FinluxTextStyles.Caption,
-                        color = tokens.onSurfaceVariant,
-                    )
-                }
-
-                // Radio Indicator
-                Surface(
-                    shape = CircleShape,
-                    color = if (isSelected) tokens.primary else Color.Transparent,
-                    border = BorderStroke(2.dp, if (isSelected) tokens.primary else tokens.onSurface.copy(alpha = 0.2f)),
-                    modifier = Modifier.size(22.dp),
-                ) {
-                    if (isSelected) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = "Selected",
-                                tint = Color.White,
-                                modifier = Modifier.size(14.dp),
-                            )
+                        if (isAvatarLoading) {
+                            CircularProgressIndicator(Modifier.size(13.dp), color = Color.White, strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.CameraAlt, contentDescription = "Đổi ảnh đại diện", tint = Color.White, modifier = Modifier.size(13.dp))
                         }
                     }
                 }
             }
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(
+                    name,
+                    style = FinluxTextStyles.SectionTitle,
+                    color = tokens.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    email.ifBlank { "Tài khoản FinLux" },
+                    style = FinluxTextStyles.Caption,
+                    color = tokens.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(Brush.horizontalGradient(listOf(Color(0xFF5B32F4), Color(0xFF1749D9))))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                ) {
+                    Text("◆  FinLux Premium", color = Color.White, style = FinluxTextStyles.Caption, fontWeight = FontWeight.Bold)
+                }
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = "Mở hồ sơ", tint = tokens.onSurfaceVariant, modifier = Modifier.size(26.dp))
+        }
+    }
+}
 
-            // Tags
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                tags.forEach { tag ->
+private data class SettingsMenuItem(
+    val icon: ImageVector,
+    val title: String,
+    val tint: Color,
+    val subtitle: String? = null,
+    val badge: String? = null,
+    val trailing: (@Composable () -> Unit)? = null,
+    val onClick: () -> Unit,
+)
+
+@Composable
+private fun SettingsGroupCard(items: List<SettingsMenuItem>) {
+    val tokens = LocalFinluxTokens.current
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            items.forEachIndexed { index, item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable(onClick = item.onClick)
+                        .padding(vertical = 11.dp, horizontal = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Surface(
-                        shape = RoundedCornerShape(tokens.radius.smallChip),
-                        color = if (isSelected) tokens.primary.copy(alpha = 0.10f) else tokens.surface,
-                        border = BorderStroke(
-                            0.5.dp,
-                            if (isSelected) tokens.primary.copy(alpha = 0.35f) else tokens.onSurface.copy(alpha = 0.08f)
-                        ),
+                        modifier = Modifier.size(46.dp),
+                        shape = RoundedCornerShape(15.dp),
+                        color = item.tint.copy(alpha = if (tokens.isDark) 0.18f else 0.10f),
                     ) {
-                        Text(
-                            text = tag,
-                            style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.Medium),
-                            color = if (isSelected) tokens.primary else tokens.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(item.icon, contentDescription = null, tint = item.tint, modifier = Modifier.size(24.dp))
+                        }
                     }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(item.title, style = FinluxTextStyles.CardTitle, color = tokens.onSurface, fontWeight = FontWeight.SemiBold)
+                        item.subtitle?.let {
+                            Spacer(Modifier.height(2.dp))
+                            Text(it, style = FinluxTextStyles.Caption, color = tokens.onSurfaceVariant)
+                        }
+                    }
+                    item.badge?.let { badge ->
+                        Surface(shape = RoundedCornerShape(10.dp), color = item.tint.copy(alpha = 0.10f)) {
+                            Text(
+                                badge,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                style = FinluxTextStyles.MicroLabel,
+                                color = item.tint,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    if (item.trailing != null) item.trailing.invoke()
+                    else Icon(Icons.Default.ChevronRight, contentDescription = null, tint = tokens.onSurfaceVariant.copy(alpha = 0.72f))
+                }
+                if (index < items.lastIndex) {
+                    HorizontalDivider(modifier = Modifier.padding(start = 60.dp), color = tokens.onSurface.copy(alpha = 0.08f))
                 }
             }
         }
@@ -898,7 +603,76 @@ private fun PrismUiStyleOptionCard(
 }
 
 @Composable
-private fun ThemeOptionChip(
+private fun SettingsSectionLabel(text: String) {
+    val tokens = LocalFinluxTokens.current
+    Text(
+        text,
+        modifier = Modifier.padding(start = 8.dp),
+        style = FinluxTextStyles.Caption,
+        color = tokens.onSurfaceVariant,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 0.7.sp,
+    )
+}
+
+@Composable
+private fun AppearanceDialog(
+    selectedTheme: ThemePreference,
+    onThemeSelected: (ThemePreference) -> Unit,
+    selectedUiStyle: AppUiStyle,
+    onUiStyleSelected: (AppUiStyle) -> Unit,
+    uiPreferences: UiPreferences,
+    onUiPreferencesChanged: (UiPreferences) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Giao diện", style = FinluxTextStyles.SectionTitle, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text("CHỦ ĐỀ", style = FinluxTextStyles.MicroLabel, color = tokens.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ThemeChoice(Icons.Default.LightMode, "Sáng", selectedTheme == ThemePreference.LIGHT, Modifier.weight(1f)) {
+                        onThemeSelected(ThemePreference.LIGHT)
+                    }
+                    ThemeChoice(Icons.Default.DarkMode, "Tối", selectedTheme == ThemePreference.DARK, Modifier.weight(1f)) {
+                        onThemeSelected(ThemePreference.DARK)
+                    }
+                    ThemeChoice(Icons.Default.SettingsBrightness, "Hệ thống", selectedTheme == ThemePreference.SYSTEM, Modifier.weight(1f)) {
+                        onThemeSelected(ThemePreference.SYSTEM)
+                    }
+                }
+                Text("PHONG CÁCH", style = FinluxTextStyles.MicroLabel, color = tokens.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                StyleChoice("FinLux Prism", "Bố cục dữ liệu rõ ràng", selectedUiStyle == AppUiStyle.PRISM) {
+                    onUiStyleSelected(AppUiStyle.PRISM)
+                }
+                StyleChoice("Modern Luxury", "Liquid Glass nhiều lớp", selectedUiStyle == AppUiStyle.MODERN_LUXURY) {
+                    onUiStyleSelected(AppUiStyle.MODERN_LUXURY)
+                }
+                StyleChoice("Liquid Glass Classic", "Nhẹ và tương phản cao", selectedUiStyle == AppUiStyle.CLASSIC_LIQUID) {
+                    onUiStyleSelected(AppUiStyle.CLASSIC_LIQUID)
+                }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Hiệu ứng chuyển động", color = tokens.onSurface, fontWeight = FontWeight.SemiBold)
+                        Text("Spring, ripple và phản hồi khi chạm", style = FinluxTextStyles.Caption, color = tokens.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = uiPreferences.animationsEnabled,
+                        onCheckedChange = { onUiPreferencesChanged(uiPreferences.copy(animationsEnabled = it)) },
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Xong", fontWeight = FontWeight.Bold) } },
+        shape = RoundedCornerShape(tokens.radius.dialog),
+        containerColor = tokens.surface,
+    )
+}
+
+@Composable
+private fun ThemeChoice(
     icon: ImageVector,
     label: String,
     selected: Boolean,
@@ -906,96 +680,59 @@ private fun ThemeOptionChip(
     onClick: () -> Unit,
 ) {
     val tokens = LocalFinluxTokens.current
-
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(tokens.radius.input))
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(tokens.radius.input),
-        color = if (selected) tokens.primary else tokens.surfaceSoft,
-        border = BorderStroke(1.dp, if (selected) tokens.primary else Color.Transparent),
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) tokens.primary.copy(alpha = 0.14f) else tokens.surfaceSoft,
+        border = BorderStroke(1.dp, if (selected) tokens.primary else tokens.onSurface.copy(alpha = 0.08f)),
     ) {
-        val activeTextColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White
-        Row(
-            modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+        Column(
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (selected) activeTextColor else tokens.onSurfaceVariant,
-                modifier = Modifier.size(16.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = label,
-                style = FinluxTextStyles.Caption,
-                color = if (selected) activeTextColor else tokens.onSurface,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            )
+            Icon(icon, contentDescription = null, tint = if (selected) tokens.primary else tokens.onSurfaceVariant, modifier = Modifier.size(19.dp))
+            Text(label, style = FinluxTextStyles.MicroLabel, color = tokens.onSurface, fontWeight = FontWeight.SemiBold, maxLines = 1)
         }
     }
 }
 
 @Composable
-private fun PrismSettingsRow(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-) {
+private fun StyleChoice(title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
     val tokens = LocalFinluxTokens.current
-
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .clip(RoundedCornerShape(15.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(15.dp),
+        color = if (selected) tokens.primary.copy(alpha = 0.12f) else tokens.surfaceSoft,
+        border = BorderStroke(1.dp, if (selected) tokens.primary else Color.Transparent),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Surface(
-                shape = RoundedCornerShape(tokens.radius.smallChip),
-                color = tokens.primary.copy(alpha = 0.12f),
-                modifier = Modifier.size(38.dp),
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) tokens.primary else tokens.onSurface.copy(alpha = 0.08f)),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = tokens.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+                if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
             }
-            Text(
-                text = label,
-                style = FinluxTextStyles.CardTitle,
-                color = tokens.onSurface,
-                fontWeight = FontWeight.Medium,
-            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, color = tokens.onSurface, fontWeight = FontWeight.SemiBold)
+                Text(subtitle, style = FinluxTextStyles.Caption, color = tokens.onSurfaceVariant)
+            }
         }
-        Icon(
-            Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = tokens.onSurfaceVariant.copy(alpha = 0.6f),
-            modifier = Modifier.size(20.dp),
-        )
     }
 }
 
 @Composable
-private fun PrismAvatarSourceButton(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-) {
+private fun SettingsDialogAction(icon: ImageVector, label: String, onClick: () -> Unit) {
     val tokens = LocalFinluxTokens.current
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -1009,7 +746,7 @@ private fun PrismAvatarSourceButton(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(icon, contentDescription = null, tint = tokens.primary)
-            Text(label, fontWeight = FontWeight.SemiBold, style = FinluxTextStyles.Body)
+            Text(label, color = tokens.onSurface, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -1018,8 +755,4 @@ private fun createCameraUri(context: Context): Uri {
     val directory = File(context.cacheDir, "avatar-capture").apply { mkdirs() }
     val file = File.createTempFile("finlux-avatar-", ".jpg", directory)
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-}
-
-private fun Brush.copyAlpha(alpha: Float): Brush {
-    return this
 }

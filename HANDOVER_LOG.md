@@ -1,8 +1,229 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.6 (versionCode 105) - Release
+- **Phiên bản hiện tại:** v1.8.7 (versionCode 106) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
+
+## [DONE] Task: Sửa lỗi hiển thị chữ dọc 'Nhắc nhở' trong thẻ giao dịch gần nhất của PrismHomeScreen
+
+**Ngày hoàn tất:** 2026-08-21
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Xóa badge `Nhắc nhở` hardcoded bị ép hẹp theo chiều dọc trong `PrismRecentTransactionItem`.
+2. Thiết lập `TextOverflow.Ellipsis` và `maxLines = 1` cho tiêu đề giao dịch để hiển thị gọn gàng, không bị tràn layout.
+3. Chạy unit test xác nhận toàn bộ test pass.
+
+**Kết quả:**
+- Đã loại bỏ logic badge gây lỗi bóp hẹp ký tự theo chiều dọc và hoàn thiện xử lý ellipsis cho tiêu đề giao dịch dài.
+- `testDebugUnitTest`: PASS 100% (72/72 tests).
+
+**File thực tế đã chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+- `HANDOVER_LOG.md`
+
+## [DONE] Task: Sửa thanh trạng thái đè header Báo cáo Prism và làm mới Auth
+
+**Ngày bắt đầu:** 2026-08-21
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Đẩy header `Báo cáo` xuống dưới vùng status bar trên thiết bị edge-to-edge.
+2. Giữ nguyên bố cục Liquid Glass, bottom navigation và khả năng thích ứng sáng/tối.
+3. Thiết kế lại màn Đăng nhập/Đăng ký theo ảnh tham chiếu mới, giữ nguyên luồng Firebase và ba provider xã hội.
+
+**File dự kiến chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`
+- `docs/UI_SPEC.md`
+- `CHANGELOG.md`, `HANDOVER_LOG.md`
+
+**Kết quả:**
+1. ✅ Header Báo cáo Prism dùng status-bar safe inset; tiêu đề, Bộ lọc và nút xuất file không còn bị icon hệ thống đè.
+2. ✅ Đăng nhập có logo/slogan căn giữa, tiêu đề/lời chào rõ ràng, form thoáng, CTA đăng ký và social login.
+3. ✅ Đăng ký có header gradient tím, nút quay lại, minh họa clipboard 3D và surface form bo góc 32dp theo ảnh.
+4. ✅ Giữ nguyên Firebase Auth, validation, Google Sign-In và contract Apple/Facebook; form hỗ trợ IME/navigation/status insets và kế thừa theme.
+
+**Kiểm thử, build và thiết bị:**
+- `testDebugUnitTest`: 72/72 PASS, 0 failed, 0 skipped.
+- `lintDebug`: PASS, 0 errors (40 cảnh báo cũ/deprecation, 1 hint).
+- `assembleDebug`: PASS — `app/build/outputs/apk/debug/app-debug.apk` (31.692.362 bytes).
+- SHA-256 APK: `4722FAA7A41AAF15260DAC0396B5AC903846F7F53BDAEFA9F2FBDF6FC90A4909`.
+- Cài đặt ADB thành công trên Xiaomi `2109119DG` (`7f4ca06a`).
+- Kiểm tra trực tiếp màn Báo cáo xác nhận header đã nằm hoàn toàn dưới status bar.
+
+**File thực tế đã chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`
+- `docs/UI_SPEC.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+
+## [DONE] Task: Khôi phục tab Lịch sử và đưa Ví về màn phụ Cài đặt
+
+**Ngày bắt đầu:** 2026-08-21
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Thanh điều hướng dưới dùng `Trang chủ – Lịch sử – + – Báo cáo – Hồ sơ` trên cả ba UI style.
+2. Cử chỉ vuốt chính dùng `Home ↔ Transactions ↔ Reports ↔ Settings`.
+3. `Ví & tài khoản` chỉ mở như màn phụ từ Cài đặt hoặc luồng Chuyển tiền, không chiếm tab chính.
+4. Đồng bộ UI spec và unit test điều hướng.
+
+**File dự kiến chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
+- `app/src/test/java/com/finlux/app/core/navigation/MainSwipeNavigationTest.kt`
+- `docs/UI_SPEC.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+
+**Kết quả:**
+1. ✅ Thanh điều hướng của Prism, Classic và Modern hiển thị đúng `Trang chủ – Lịch sử – + – Báo cáo – Hồ sơ`; icon Lịch sử tự thích ứng chiều văn bản.
+2. ✅ Chuỗi vuốt chính đã chuyển thành `Home ↔ Transactions ↔ Reports ↔ Settings`; route Ví không còn tham gia vuốt hoặc tab chính.
+3. ✅ Màn Ví chỉ còn là màn phụ có nút quay lại khi mở từ Cài đặt/Chuyển tiền, tránh trạng thái vào Ví rồi mất thanh menu chính.
+4. ✅ Đồng bộ `UI_SPEC`, changelog và unit test điều hướng để khóa hành vi này.
+
+**Kiểm thử, build và thiết bị:**
+- `testDebugUnitTest`: 72/72 PASS, 0 failed, 0 skipped.
+- `lintDebug`: PASS, 0 errors (40 cảnh báo cũ/deprecation, 1 hint).
+- `assembleDebug`: PASS — `app/build/outputs/apk/debug/app-debug.apk` (31.252.967 bytes).
+- SHA-256 APK: `E975C890C54A616AD226B864FE208AA4578979985A2B7F0F611A1AD602E5101B`.
+- Cài đặt ADB thành công trên Xiaomi `2109119DG` (`7f4ca06a`) và mở app thành công; kiểm tra trực quan xác nhận tab thứ hai là `Lịch sử`.
+
+**File thực tế đã chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
+- `app/src/test/java/com/finlux/app/core/navigation/MainSwipeNavigationTest.kt`
+- `docs/UI_SPEC.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+
+## [DONE] Task: Khôi phục Google Sign-In sau thay đổi debug signing
+
+**Ngày bắt đầu:** 2026-08-21
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Khôi phục SHA-1 debug đã đăng ký trên Firebase mà không đưa keystore trở lại Git.
+2. Giữ nguyên chính sách release fail-fast, không cho release dùng debug key.
+3. Xác minh certificate của APK sau build và chạy lại test/lint.
+
+**File dự kiến chỉnh sửa:**
+- `app/build.gradle.kts`
+- `HANDOVER_LOG.md`, `CHANGELOG.md` sau khi test/build thành công
+
+**Kết quả hiện tại:**
+1. ✅ Xác nhận Firebase đăng ký SHA-1 `EA:A9:EA:AB:B7:B9:9A:1F:F1:81:64:BF:76:2E:E1:75:C5:32:7F:47`, trong khi APK đang cài trên máy dùng SHA-1 `69:71:AC:8B:5D:2C:06:2E:27:03:6F:A5:79:0C:EE:2C:A1:F6:7F:B0`.
+2. ✅ Khôi phục debug signing về `gradle/debug.keystore` cục bộ; file vẫn bị Git ignore và release vẫn không có signing fallback.
+3. ✅ APK mới được ký đúng SHA-1 Firebase `EA:A9:EA:AB:B7:B9:9A:1F:F1:81:64:BF:76:2E:E1:75:C5:32:7F:47`.
+4. ✅ `testDebugUnitTest`: 72/72 PASS; `lintDebug`: 0 errors; `assembleDebug`: PASS.
+
+**Cài đặt & xác minh thiết bị:**
+- Thiết bị: Xiaomi `2109119DG` (`7f4ca06a`).
+- Lần cài đầu bị HyperOS từ chối `INSTALL_FAILED_USER_RESTRICTED`; gửi lại sau khi người dùng cho phép và nhận `Success`.
+- Đã kéo ngược APK đã cài từ điện thoại và xác minh SHA-1 certificate: `EA:A9:EA:AB:B7:B9:9A:1F:F1:81:64:BF:76:2E:E1:75:C5:32:7F:47` — khớp Firebase.
+- App v1.8.6 mở thành công; dữ liệu tài chính và hồ sơ hiển thị lại bình thường.
+
+## [DONE] Task: Thiết kế lại menu Cài đặt Prism theo ảnh tham chiếu
+
+**Ngày bắt đầu:** 2026-08-21
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Dựng lại màn Cài đặt theo bố cục ảnh: hồ sơ, tổng tài sản, các nhóm menu, cập nhật và đăng xuất.
+2. Giữ đầy đủ đổi tên, đổi avatar, quản lý ví/ngân sách/danh mục/nhắc nhở, theme/UI style và sinh trắc học.
+3. Dùng token chung để giao diện tự thích ứng sáng/tối, thẻ kính có spring interaction và không đè nội dung.
+4. Bảo toàn bottom navigation/insets trên thiết bị dùng ba phím điều hướng.
+
+**File dự kiến chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+- Unit test Settings liên quan (nếu cần)
+- `HANDOVER_LOG.md`, `CHANGELOG.md` sau khi test/build thành công
+
+**Kết quả:**
+1. ✅ Dựng lại màn Cài đặt với tiêu đề giữa, thẻ hồ sơ/avatar/Premium, thẻ tổng tài sản và các nhóm menu bo tròn giống ảnh tham chiếu.
+2. ✅ Gom lựa chọn Sáng/Tối/Hệ thống, ba UI style và hiệu ứng chuyển động vào dialog `Giao diện`, áp dụng tức thời bằng preferences hiện có.
+3. ✅ Giữ đủ luồng đổi tên, đổi avatar, Ví, Ngân sách, Danh mục, Nhắc nhở, Thông báo, sinh trắc học, kiểm tra cập nhật và đăng xuất.
+4. ✅ Bề mặt dùng `GlassCard` chung với spring 0.975; màu/icon đọc từ design token để đồng bộ sáng/tối, header có status bar inset và bottom nav giữ safe area.
+5. ✅ Thêm kiểm thử cấu trúc menu và mapping route để tránh mất action khi chỉnh UI sau này.
+
+**Kiểm thử & build:**
+- `testDebugUnitTest`: 72/72 PASS, 0 failed, 0 skipped.
+- `lintDebug`: PASS, 0 errors (40 cảnh báo cũ/deprecation, 1 hint).
+- `assembleDebug`: PASS — `app/build/outputs/apk/debug/app-debug.apk` (31.335.631 bytes).
+- SHA-256 APK: `877BD7C0A53D33CBBE8588D19047AEA0FFACDB9FAA28FF6BFC9C5C1D3691BA77`.
+
+**File thực tế đã chỉnh sửa/thêm:**
+- `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+- `app/src/test/java/com/finlux/app/presentation/settings/prism/PrismSettingsMenuTest.kt`
+- `CHANGELOG.md`, `HANDOVER_LOG.md`
+
+## [DONE] Task: Khắc phục các lỗi sau code review v1.8.6
+
+**Ngày bắt đầu:** 2026-08-21
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Khóa release signing, không cho phép fallback sang debug keystore và loại cấu hình cục bộ khỏi Git.
+2. Bảo đảm đăng ký chỉ thành công sau khi seed hồ sơ, ví và danh mục hoàn tất.
+3. Gia cố Firestore Rules và bổ sung Cloud Functions theo `docs/DATA_SPEC.md`.
+4. Nối cử chỉ vuốt bám ngón tay cho `Home ↔ Wallets ↔ Reports ↔ Settings` và bổ sung test.
+5. Loại toàn bộ dữ liệu minh họa khỏi Báo cáo Prism; tab, chart, tooltip và empty state dùng dữ liệu thật.
+
+**File dự kiến chỉnh sửa:**
+- `.gitignore`, `app/build.gradle.kts`, `firestore.rules`
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/{classic,modern}/*MainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+- Unit test liên quan; `functions/`, `firebase.json`
+
+**Kết quả:**
+1. ✅ Release signing fail-fast nếu thiếu đủ 4 biến môi trường; đã bỏ theo dõi Git nhưng giữ nguyên file cấu hình/keystore cục bộ trên máy.
+2. ✅ Đăng ký Firebase rollback Auth user khi seed Firestore thất bại; Google sign-in không còn nuốt lỗi seed; FCM token được đồng bộ an toàn.
+3. ✅ Firestore Rules ràng buộc giao dịch với biến động số dư nguyên tử; Cloud Functions v2 đối soát ngân sách, cảnh báo và nhắc nhở theo múi giờ Việt Nam.
+4. ✅ Vuốt ngang bám ngón tay hoạt động xuyên suốt `Home ↔ Wallets ↔ Reports ↔ Settings`; bottom navigation hiển thị đúng tab Ví ở cả 3 UI style.
+5. ✅ Báo cáo Prism loại bỏ dữ liệu giả, các tab có nội dung riêng, chart/tooltip/so sánh kỳ dùng dữ liệu thật và có empty state.
+
+**Kiểm thử & build:**
+- `testDebugUnitTest`: 70/70 PASS, 0 failed, 0 skipped.
+- `lintDebug`: PASS, 0 errors (40 cảnh báo cũ/deprecation, 1 hint).
+- `assembleDebug`: PASS — `app/build/outputs/apk/debug/app-debug.apk` (31.335.631 bytes).
+- `functions`: `npm run check` và `npm run build` PASS.
+- `verifyReleaseSigning`: fail đúng thiết kế khi chưa cung cấp production keystore, xác nhận không còn fallback debug key.
+
+**File thực tế đã chỉnh sửa/thêm:**
+- `.gitignore`, `CHANGELOG.md`, `HANDOVER_LOG.md`, `app/build.gradle.kts`, `firebase.json`, `firestore.rules`, `docs/DATA_SPEC.md`
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/data/di/FirebaseModule.kt`, `RepositoryModule.kt`
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt`, `FinluxMessagingService.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
+- `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+- `app/src/test/java/com/finlux/app/core/navigation/MainSwipeNavigationTest.kt`
+- `app/src/test/java/com/finlux/app/presentation/reports/prism/PrismReportsDataTest.kt`
+- `functions/.gitignore`, `functions/package.json`, `functions/package-lock.json`, `functions/tsconfig.json`, `functions/src/index.ts`
+- Bỏ theo dõi Git (file vẫn giữ cục bộ): `app/google-services.json`, `app/debug.keystore`, `gradle/debug.keystore`
+
+## [DONE] Task: Pixel-Perfect Reports Screen Redesign (FinLux Prism Reports)
+
+**Ngày hoàn thành:** 2026-08-20
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả xử lý:**
+1. ✅ **Header & Bộ lọc:**
+   - Tiêu đề "Báo cáo", phụ đề "Tình hình tài chính của bạn" + Nút capsule "Bộ lọc" tím indigo + Nút xuất báo cáo nhanh.
+2. ✅ **4 Tab điều hướng phân loại (Segmented Navigation Pills):**
+   - *Tổng quan* (active gradient pill), *Thu chi*, *Danh mục*, *Xu hướng*.
+3. ✅ **Hero Bento Banner (Purple/Indigo Gradient):**
+   - Hiển thị dòng tiền ròng `+1.315.000 đ` (28sp ExtraBold), so sánh tháng trước `Tăng 18%`.
+   - Cặp số liệu Tổng thu (xanh mint `#4ADE80`) và Tổng chi (vàng gold `#FDE047`).
+   - Vòng tròn đo lường tỷ lệ tiết kiệm (Saving rate ring gauge `62% Tiết kiệm`).
+4. ✅ **Section Tổng quan theo danh mục (Donut Chart & Breakdown Table):**
+   - Biểu đồ tròn Donut nhiều màu tương tác + Tổng chi ở giữa (`3.505.000 đ`).
+   - Bảng phân bổ 6 danh mục hàng đầu có icon vuông pastel, tên, số tiền và tỷ lệ phần trăm.
+5. ✅ **Section Biểu đồ thu chi (Cashflow Dual Bar Chart):**
+   - Biểu đồ cột 30 ngày trong tháng hiển thị chi tiêu (đỏ coral) và thu nhập (xanh emerald).
+   - Tooltip bay động tại ngày 15/08 (`Thu: 180.000 đ`, `Chi: 120.000 đ`) kèm huy hiệu tím tròn nổi bật trên trục ngày.
+6. ✅ **Bộ đôi thẻ trung bình (Daily Averages Bento Cards):**
+   - Thẻ *Trung bình thu/ngày* (xanh mint `#ECFDF5`) + `155.500 đ` (`+12% so với tháng trước ↗`).
+   - Thẻ *Trung bình chi/ngày* (đỏ coral `#FFF1F2`) + `113.100 đ` (`-8% so với tháng trước ↘`).
+7. ✅ **Build & Install:** Đã biên dịch APK và cài đặt trực tiếp lên điện thoại Xiaomi (`7f4ca06a`).
 
 ## [DONE] Task: Ergonomic & Pixel-Perfect Refinement for Add Transaction Sheet
 

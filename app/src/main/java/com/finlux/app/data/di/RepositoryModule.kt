@@ -29,6 +29,7 @@ import com.finlux.app.domain.repository.ReceiptStorageRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import dagger.Binds
 import dagger.Module
@@ -69,9 +70,10 @@ object FinanceRepositoryModule {
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
         storage: FirebaseStorage?,
+        messaging: FirebaseMessaging?,
     ): AuthRepository =
         if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null && storage != null) {
-            FirebaseAuthRepository(auth, firestore, storage)
+            FirebaseAuthRepository(auth, firestore, storage, messaging)
         } else demo
 
     @Provides

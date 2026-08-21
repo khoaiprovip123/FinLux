@@ -13,6 +13,7 @@ users/{uid}
   ├─ displayName: string
   ├─ email: string
   ├─ photoUrl: string
+  ├─ fcmTokens: string[]             -- token thiết bị, cập nhật bằng arrayUnion khi đăng nhập/onNewToken
   ├─ themePref: "light" | "dark" | "system"
   ├─ createdAt: timestamp
   │
@@ -121,7 +122,7 @@ service cloud.firestore {
 
 | Function | Trigger | Mô tả |
 |----------|---------|-------|
-| `onTransactionWrite` | Firestore trigger: `users/{uid}/transactions/{id}` onCreate/onUpdate/onDelete | Cập nhật `wallets.balance` (double-check), cập nhật `budgets.spentAmount` theo tháng+danh mục |
+| `onTransactionWrite` | Firestore trigger: `users/{uid}/transactions/{id}` onCreate/onUpdate/onDelete | Đối soát `budgets.spentAmount` theo dữ liệu giao dịch thực tế và gửi cảnh báo 80%/100%; số dư ví đã được Security Rules bắt buộc ghi nguyên tử cùng transaction |
 | `checkBudgetThreshold` | Gọi từ `onTransactionWrite` sau khi update `spentAmount` | So sánh với `limitAmount`, nếu ≥80%/100% và chưa `notified80/100` → gửi FCM + tạo `notifications` doc, set flag true (BR-09) |
 | `monthlyBudgetReset` | Scheduled (Cloud Scheduler, 00:00 ngày 1 hàng tháng) | Tạo document `budgets` mới cho tháng mới dựa trên hạn mức tháng trước (giữ nguyên `limitAmount`, reset `spentAmount=0`) |
 | `sendReminderPush` | Scheduled (chạy mỗi giờ, kiểm tra `reminders.nextTriggerDate`) | Gửi FCM nhắc user nhập giao dịch bill định kỳ, cập nhật `nextTriggerDate` kế tiếp |

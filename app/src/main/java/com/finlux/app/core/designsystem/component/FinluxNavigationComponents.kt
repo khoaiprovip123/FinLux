@@ -21,11 +21,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -58,7 +58,7 @@ data class FinluxNavTab(
 
 val DefaultFinluxNavTabs = listOf(
     FinluxNavTab(Route.Home.value, "Trang chủ", Icons.Default.Home),
-    FinluxNavTab(Route.Transactions.value, "Lịch sử", Icons.Default.ReceiptLong),
+    FinluxNavTab(Route.Transactions.value, "Lịch sử", Icons.AutoMirrored.Filled.ReceiptLong),
     FinluxNavTab(Route.Reports.value, "Báo cáo", Icons.Default.BarChart),
     FinluxNavTab(Route.Settings.value, "Hồ sơ", Icons.Default.Person),
 )
