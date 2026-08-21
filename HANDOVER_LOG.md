@@ -1,7 +1,7 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.5 (versionCode 104) - Release
+- **Phiên bản hiện tại:** v1.8.6 (versionCode 105) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
 
 ## [DONE] Task: Ergonomic & Pixel-Perfect Refinement for Add Transaction Sheet
