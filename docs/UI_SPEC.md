@@ -93,19 +93,20 @@ LAYOUT:
 │  - Title + lời chào căn giữa            │
 │  - Field: Email hoặc số điện thoại      │
 │  - Field: Mật khẩu (ẩn/hiện)            │
-│  - Checkbox: "Ghi nhớ đăng nhập" | Link │
-│  - Button: "Đăng nhập" (Gradient + ->)  │
+│  - Link "Quên mật khẩu?" canh phải      │
+│  - Button: "Đăng nhập" (Gradient tím)   │
 │  - Divider: "hoặc đăng nhập với"        │
-│  - Social Cards: [Google] [Apple] [FB]  │
+│  - Social Cards ngang: [Google] [Facebook]│
 │  - Link "Chưa có tài khoản? Đăng ký ngay"│
-│  - Footer: "Bằng việc đăng nhập..."     │
+│  - Hai lớp sóng tím trang trí ở đáy      │
 └─────────────────────────────────────────┘
 
-VISUAL ALIGNMENT (21/08/2026):
+VISUAL ALIGNMENT (22/08/2026):
   - Header đăng nhập dùng nền thích ứng theme, logo/brand căn giữa và luôn nằm dưới status bar.
+  - Hai minh họa 3D mờ nằm ở hai mép dưới hero, không đè lên logo, slogan hoặc form.
   - Form là surface rõ nét, khoảng cách theo lưới 8pt và cuộn được khi bàn phím mở.
-  - Social Cards cao 76dp, icon thương hiệu ở trên và tên provider ở dưới, ba thẻ có cùng kích thước.
-  - Google/Apple/Facebook có contract callback riêng để kết nối provider SDK sau này; chưa tự chạy OAuth
+  - Social Cards cao 62dp, icon và tên nằm ngang, Google/Facebook có cùng kích thước như ảnh tham chiếu.
+  - Google/Facebook hiển thị trong UI; contract Apple vẫn được giữ trong code để tích hợp sau. Chưa tự chạy OAuth
     khi chưa có Client ID, redirect URI và cấu hình Firebase/Meta/Apple hợp lệ.
 
 VALIDATION:
@@ -120,8 +121,8 @@ LAYOUT:
 ┌─────────────────────────────────────────┐
 │ Header (Gradient tím):                  │
 │  - Button: Back (<)                      │
-│  - Title: "Tạo tài khoản mới"           │
-│  - Subtitle: "Bắt đầu hành trình..."   │
+│  - Title: "Tạo tài khoản"               │
+│  - Subtitle: "Tham gia FinLux..."       │
 │  - 3D Illustration: Clipboard + Shield │
 ├─────────────────────────────────────────┤
 │ Form Area (surface bo hai góc trên 32dp):│
@@ -133,7 +134,7 @@ LAYOUT:
 │  - Field: Xác nhận mật khẩu             │
 │  - Checkbox: Đồng ý điều khoản          │
 │  - Button: "Đăng ký" (Gradient)         │
-│  - Social Cards theo provider contract   │
+│  - Social Cards ngang: Google | Facebook │
 │  - Link Footer: "Đã có tài khoản?"      │
 └─────────────────────────────────────────┘
 VALIDATION: theo BR-01 (≥8 ký tự, có chữ+số), mật khẩu xác nhận phải khớp, bắt buộc tích chọn đồng ý điều khoản

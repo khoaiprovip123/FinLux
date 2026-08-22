@@ -4,6 +4,38 @@
 - **Phiên bản hiện tại:** v1.8.8 (versionCode 107) - Ready for Testing
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công trên máy cục bộ.
 
+## [DONE] Task: Căn chỉnh Auth pixel-accurate theo ảnh tham chiếu
+
+**Ngày bắt đầu:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Căn lại tỷ lệ hero, logo, minh họa, form và khoảng cách của Đăng nhập theo ảnh người dùng cung cấp.
+2. Căn lại header gradient và surface form Đăng ký, bảo đảm form vừa vặn và cuộn an toàn khi mở bàn phím.
+3. Social row hiển thị Google/Facebook như ảnh; giữ contract Apple trong code để tích hợp sau.
+4. Thêm phản hồi spring 0.975 và haptic cho CTA chính, đồng thời giữ theme sáng/tối và safe area.
+
+**File dự kiến chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`
+- `docs/UI_SPEC.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+
+**Kết quả:**
+1. ✅ Login có hero cao đúng tỷ lệ, logo/wordmark/slogan căn giữa, hai minh họa 3D ở hai mép và không che nội dung.
+2. ✅ Form Login bỏ hàng ghi nhớ theo ảnh, giữ Quên mật khẩu canh phải, CTA gradient tím, social Google/Facebook dạng ngang, link đăng ký và hai lớp sóng đáy.
+3. ✅ Register dùng header gradient tím, tiêu đề/subtitle mới, minh họa clipboard 3D và surface bo góc; giữ đầy đủ 5 trường, điều khoản, password strength và social row.
+4. ✅ CTA có spring scale 0.975 (stiffness 650, damping 0.72) và haptic; giao diện vẫn hỗ trợ theme, status bar, navigation bar và IME.
+5. ✅ Apple không hiển thị để khớp ảnh nhưng `SocialAuthProvider.APPLE` và tài nguyên vẫn được giữ cho tích hợp tương lai.
+
+**Kiểm thử, build và thiết bị:**
+- `testDebugUnitTest`: 72/72 PASS, 0 failed, 0 skipped.
+- `lintDebug`: PASS, 0 errors (40 cảnh báo cũ/deprecation, 1 hint).
+- `assembleDebug`: PASS — `app/build/outputs/apk/debug/app-debug.apk` (31.390.540 bytes).
+- SHA-256 APK: `E0A176EB2B5D47E05F0CAD4B585F7D3D8DFB70DCCE9BF4774123E525D8898926`.
+- Cài đặt ADB thành công trên Xiaomi `2109119DG` (`7f4ca06a`) và mở app thành công.
+
+**File thực tế đã chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`
+- `docs/UI_SPEC.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+
 ## [DONE] Task: Sửa lỗi cử chỉ vuốt chuyển trang làm lộ nền xanh splash screen và tối ưu chuyển động kéo trang liền mạch
 
 **Ngày hoàn tất:** 2026-08-22
