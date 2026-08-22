@@ -41,6 +41,7 @@ import com.finlux.app.presentation.category.CategoriesScreen
 import com.finlux.app.presentation.home.HomeScreen
 import com.finlux.app.presentation.expense.ExpenseScreen
 import com.finlux.app.presentation.income.IncomeScreen
+import com.finlux.app.presentation.debt.DebtDashboardScreen
 import com.finlux.app.presentation.goal.GoalsScreen
 import com.finlux.app.presentation.notifications.NotificationsScreen
 import com.finlux.app.presentation.reminders.RemindersScreen
@@ -299,6 +300,7 @@ fun FinluxNavHost(
             }
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
+            composable(Route.Debt.value) { DebtDashboardScreen(onBack = navController::popBackStack) }
         }
         if (showAddTransaction) {
             AddTransactionSheet(

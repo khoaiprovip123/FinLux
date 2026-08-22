@@ -1,8 +1,221 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.8 (versionCode 107) - Ready for Testing
+- **Phiên bản hiện tại:** v1.9.0 (versionCode 108) - Ready for Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công trên máy cục bộ.
+
+## [DONE] Task: Đổi Nút Clear [x] Ô Nhập Tiền & Lưu Vĩnh Viễn Cấu Hình Trả Thêm Mỗi Tháng (DataStore)
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+1. **Thay đổi nút Clear `[x]` để xóa ô nhập tiền tệ:**
+   - Trong [FinluxAmountInputCard.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt): Thay thế nút icon cũ bằng nút tròn `[x]` (`Icons.Default.Close`) hiển thị khi ô nhập có dữ liệu, nhấn vào sẽ clear ngay số tiền về trống.
+   - Trong [AddTransactionSheet.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt): Đổi nút Calculator thành nút tròn `[x]` (`Icons.Default.Close`) để xóa nhanh số tiền khi thêm giao dịch.
+2. **Lưu vĩnh viễn cấu hình "Trả thêm mỗi tháng (Extra)" và "Chiến lược thoát nợ" vào DataStore:**
+   - Tạo [DebtPreferenceRepository.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/domain/repository/DebtPreferenceRepository.kt) và triển khai [DataStoreDebtPreferenceRepository.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/data/local/datastore/DataStoreDebtPreferenceRepository.kt) lưu trữ vào DataStore (`finlux_debt_preferences`).
+   - Đăng ký DI trong [RepositoryModule.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt).
+   - Cập nhật [DebtViewModel.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtViewModel.kt) và [DebtViewModelTest.kt](file:///d:/Sources/FinLux/app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt): Tự động khôi phục và lưu ngay lập tức mỗi khi người dùng kéo thanh trượt "Trả thêm mỗi tháng" hoặc chọn chiến lược (*Snowball / Avalanche*), không bao giờ bị reset về 0 khi thoát màn hình.
+3. **Kiểm thử & Bàn giao:**
+   - `.\gradlew testDebugUnitTest`: **102/102 test cases PASS (100%)**.
+   - Build và nạp thành công APK Debug lên thiết bị Android qua ADB.
+
+**Danh sách file đã chỉnh sửa/tạo mới:**
+- `app/src/main/java/com/finlux/app/domain/repository/DebtPreferenceRepository.kt` [MỚI]
+- `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreDebtPreferenceRepository.kt` [MỚI]
+- `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtViewModel.kt`
+- `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+- `app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt`
+- `HANDOVER_LOG.md`
+
+## [DONE] Task: Đồng Bộ Theme Sáng/Tối Tự Động (Backdrop & Headers) & Tái Sử Dụng Hero Amount Input Card
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+1. **Khắc phục triệt để lỗi nền tối khi ở Theme Sáng (Light Mode):**
+   - Sửa [StyleBackdrop.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/StyleBackdrop.kt): Khi `!tokens.isDark`, tự động chuyển sang `LiquidAuraBackdrop` với dải màu gradient sáng (`#F2F7FF`, `#F9F5FF`, `#ECF9FF`) thay vì vẽ nền đen `ModernDarkBackdrop`.
+   - Cập nhật [DebtDashboardScreen.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt): Sử dụng [FinluxScreenHeader](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt) đồng bộ chuẩn Prism UI (`tokens.onSurface`, `tokens.onSurfaceVariant`, `tokens.primary`).
+2. **Chuẩn hóa & Tái sử dụng Component Nhập Tiền Tệ Hero ([FinluxAmountInputCard.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt)):**
+   - Tạo component dùng chung `FinluxAmountInputCard` hiển thị số tiền chữ to in đậm, ký hiệu `₫`, tự động định dạng phân tách hàng nghìn (`formatAmountDigitsWithDots`), tích hợp hàng Quick Chips (`+500k`, `+1tr`, `+2tr`, `+5tr`, `+10tr`, `+50tr`).
+   - Khắc phục triệt để lỗi dính số 0 ban đầu (`050000`) bằng cơ chế `trimStart('0')` và khởi tạo chuỗi rỗng khi thêm mới.
+   - Tích hợp đồng bộ vào modal "Thêm ví mới", "Chuyển tiền giữa các ví" trong [PrismWalletsScreen.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt), modal "Trả nợ" trong [DebtPaymentSheet.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt), và [AddEditDebtSheet.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt).
+3. **Kiểm thử & Bàn giao:**
+   - `.\gradlew testDebugUnitTest`: **102/102 test cases PASS (100%)**.
+   - Build và nạp thành công APK Debug lên thiết bị Android qua ADB.
+
+**Danh sách file đã chỉnh sửa/tạo mới:**
+- `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt` [MỚI]
+- `app/src/main/java/com/finlux/app/core/designsystem/StyleBackdrop.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt`
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+- `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt`
+- `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+- `HANDOVER_LOG.md`
+
+## [DONE] Task: Xử lý 4 Vấn Đề UI/UX Polish (TopBar Quản lý nợ, Money Preview, Badge Alignment & Tinh gọn Tab Thêm Giao Dịch)
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+1. **Fix Bug 1 (TopBar Quản lý nợ):** Tích hợp `GlassTopBar` đồng bộ theme Liquid Glass (Dark/Light) cho `DebtDashboardScreen.kt`, loại bỏ TopBar tự vẽ và padding insets thủ công. Nền kính đổi màu động theo theme.
+2. **Fix Bug 2 (Money Preview):** Bổ sung `supportingText` định dạng phân tách hàng nghìn VNĐ (`toVnd()` / `formatVndAmount()`) cho các ô nhập tiền trong `PrismWalletsScreen.kt` (Số dư ban đầu), `AddEditDebtSheet.kt` (Vay gốc, Dư nợ, Trả tối thiểu), `DebtPaymentSheet.kt` (Số tiền trả).
+3. **Fix Bug 3 (Badge & Chip Alignment):** Căn giữa hoàn hảo text (`Box(contentAlignment = Center)` + `TextAlign.Center`), chuẩn hóa chiều cao tiêu chuẩn và viền mảnh khi được chọn cho `WalletType` trong `PrismWalletsScreen.kt`, `DebtType` trong `AddEditDebtSheet.kt`, `FilterChipItem` trong `DebtDashboardScreen.kt`, `QuickChip` trong `DebtPaymentSheet.kt`.
+4. **Xử lý Vấn đề 4 (Hướng B):** Loại bỏ cụm tab phụ dummy trong `AddTransactionSheet.kt`, thay bằng bộ chuyển đổi 2 Tab tinh gọn `[Chi tiêu | Thu nhập]`, tập trung luồng phân loại vào Danh mục (Single Source of Truth).
+5. **Kiểm thử & Bàn giao:** Chạy 102/102 test cases PASS (100%), build và nạp APK thành công lên thiết bị test Android qua ADB.
+
+**Kết quả kiểm thử:**
+- `.\gradlew testDebugUnitTest`: **102/102 test cases PASS (100%)**.
+- Nạp APK thành công lên thiết bị Android qua ADB (`Performing Streamed Install -> Success`).
+
+**Danh sách file đã chỉnh sửa:**
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+- `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt`
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+- `HANDOVER_LOG.md`
+
+## [DONE] Task: Nâng cấp Khóa Sinh Trắc Học Tự Động & Xuất Báo Cáo Excel 2 Sheet (.xlsx) / PDF Trực Quan
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Nâng cấp bảo mật sinh trắc học toàn diện (Biometric Auto-Lock):
+   - Tạo `AppLockManager` lắng nghe vòng đời ứng dụng qua `ProcessLifecycleOwner` (Background / Foreground).
+   - Bổ sung cấu hình `BiometricLockTimeout (IMMEDIATE, ONE_MINUTE, FIVE_MINUTES)` trong `UiPreferences` và `DataStoreThemePreferenceRepository`.
+   - Bổ sung UI chọn thời gian khóa trong `PrismSettingsScreen.kt` và `SettingsScreen.kt`.
+   - Kết nối `FinluxRoot.kt` với `AppLockManager` để tự động khóa ứng dụng khi quay lại foreground sau thời gian chờ.
+2. Nâng cấp bộ xuất báo cáo tài chính (UC-17):
+   - Triển khai `XlsxReportWriter` xuất file Excel nhị phân `.xlsx` thực thụ với 2 Sheet độc lập (Sheet 1: Chi tiết giao dịch, Sheet 2: Tổng hợp danh mục).
+   - Nâng cấp `ReportExporter.kt` xuất file `.xlsx` 2 Sheet và `exportToPdf()` vẽ biểu đồ tỷ trọng (Donut/Progress Bar), bổ sung thông số Nợ/Tài sản lên bản in PDF.
+   - Cập nhật `ExportReportDialog.kt` hỗ trợ chuẩn định dạng `.xlsx` và `.pdf`.
+3. Viết Unit Tests kiểm thử toàn bộ logic mới, chạy test 100% PASS và build nạp APK lên thiết bị test Android qua ADB.
+
+**Kết quả kiểm thử:**
+- `.\gradlew testDebugUnitTest`: **102/102 test cases PASS (100%)** (bao gồm `AppLockManagerTest` và `XlsxReportWriterTest`).
+- Nạp APK thành công lên thiết bị Android qua script `.\scripts\build_and_install.ps1`.
+
+**Danh sách file đã thực sự chỉnh sửa / tạo mới:**
+- `gradle/libs.versions.toml` (Thêm `androidx-lifecycle-process`)
+- `app/build.gradle.kts` (Thêm dependency `libs.androidx.lifecycle.process`)
+- `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt` (Thêm enum `BiometricLockTimeout` và trường `biometricTimeout`)
+- `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt` (Lưu trữ và đọc `biometric_timeout`)
+- `app/src/main/java/com/finlux/app/core/security/AppLockManager.kt` (New - Quản lý vòng đời `ProcessLifecycleOwner` và tự động khóa sau timeout)
+- `app/src/main/java/com/finlux/app/presentation/FinluxRoot.kt` (Kết nối `AppLockManager.isLocked` và gọi `BiometricPrompt`)
+- `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt` (UI chọn thời gian khóa sinh trắc học)
+- `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt` (UI & Dialog chọn thời gian khóa sinh trắc học)
+- `app/src/main/java/com/finlux/app/core/export/XlsxReportWriter.kt` (New - Tạo file Excel `.xlsx` nhị phân 2 Sheet chuẩn OpenXML)
+- `app/src/main/java/com/finlux/app/core/export/ReportExporter.kt` (Xuất file `.xlsx` 2 Sheet và nâng cấp vẽ biểu đồ tỷ trọng trên Canvas PDF)
+- `app/src/main/java/com/finlux/app/presentation/reports/ExportReportDialog.kt` (Cập nhật định dạng xuất `Excel Workbook (.xlsx)`)
+- `app/src/test/java/com/finlux/app/core/security/AppLockManagerTest.kt` (New - Unit tests cho logic timeout)
+- `app/src/test/java/com/finlux/app/core/export/XlsxReportWriterTest.kt` (New - Unit tests kiểm tra cấu trúc ZIP/XML của 2 sheet `.xlsx`)
+- `HANDOVER_LOG.md` (Ghi log quy chuẩn SOP)
+
+## [DONE] Task: Khắc phục Google Sign-In Demo Fallback & Rà soát Đồng bộ UI Theme
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Khắc phục lỗi Google Sign-In bị fallback về dữ liệu mẫu (64.920.000đ): Khôi phục cấu hình chính thức `app/google-services.json` và `gradle/debug.keystore` (SHA-1 fingerprint `eaa9eaabb7b99a1ff18164bf762ee175c5327f47`), kích hoạt `FIREBASE_CONFIGURED = true`, nạp đúng `FirebaseAuthRepository` và toàn bộ Firebase repositories (`FirebaseWalletRepository`, `FirebaseTransactionRepository`, `FirebaseGoalRepository`, `FirebaseDebtRepository`).
+2. Tự động hóa việc kiểm tra/khôi phục Firebase config trong `scripts/build_and_install.ps1`.
+3. Rà soát và chuẩn hóa giao diện Liquid Glass / Dark / Light Mode trên toàn bộ các màn hình và modal mới: `DebtDashboardScreen` (bổ sung `FinluxStyleBackdrop` và `containerColor = Color.Transparent`), `DebtCard`, `StrategySelectorCard`, `DebtBurndownChart`, `AddEditDebtSheet`, `DebtPaymentSheet`, `GoalDepositWithdrawSheet`, `GoalsScreen`, `PrismHomeScreen`.
+4. Chạy toàn bộ Unit Tests 100% PASS và build nạp lại APK lên thiết bị test Android.
+
+**Kết quả kiểm thử:**
+- `.\gradlew testDebugUnitTest`: **95/95 test cases PASS (100%)**.
+- `processDebugGoogleServices`: Plugin Google Services kích hoạt thành công, tự động đọc `default_web_client_id` và khớp SHA-1 signature.
+- Nạp APK thành công lên thiết bị Android qua script `.\scripts\build_and_install.ps1`.
+
+**Danh sách file đã thực sự chỉnh sửa / tạo mới:**
+- `app/google-services.json` (Restored cấu hình Firebase chính thức `finlux-d0297`)
+- `gradle/debug.keystore` (Restored keystore khớp với Google SHA-1)
+- `scripts/build_and_install.ps1` (Tự động khôi phục `google-services.json` và `debug.keystore` khi build máy local)
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt` (Tích hợp `FinluxStyleBackdrop`, nền kính trong suốt Liquid Glass)
+- `HANDOVER_LOG.md` (Ghi log quy chuẩn SOP)
+
+## [DONE] Task: Triển khai Gói Ưu tiên P0 (Net Worth Chuẩn, Danh mục Trả nợ, Nạp/Rút Mục tiêu)
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Chuẩn hóa công thức Tài sản ròng trên Home: `Net Worth = Tổng ví - Tổng dư nợ` (Inject DebtRepository vào HomeViewModel, nâng cấp PrismHeroNetWorthCard, ClassicHomeScreen, ModernHomeScreen).
+2. Gán danh mục mặc định `debt_payment` (Trả nợ & Tín dụng) cho giao dịch trả nợ để liên kết mượt mà với Budget & Reports.
+3. Triển khai cơ chế Nạp/Rút tiền nguyên tử cho Mục tiêu tài chính (DepositToGoalUseCase, WithdrawFromGoalUseCase, Firestore Atomic Transactions, UI Nạp/Rút trên GoalsScreen).
+4. Viết Unit Tests 100% PASS (95/95 test cases pass), cập nhật tài liệu BA_SPEC & DATA_SPEC, build nạp APK lên thiết bị test thành công.
+
+**Kết quả kiểm thử:**
+- `.\gradlew testDebugUnitTest`: **95/95 test cases PASS (100%)**.
+- Nạp APK thành công lên thiết bị Android qua script `.\scripts\build_and_install.ps1`.
+
+**Danh sách file đã thực sự chỉnh sửa / tạo mới:**
+- `app/src/main/java/com/finlux/app/domain/repository/FinanceRepositories.kt` (Thêm `depositToGoal` & `withdrawFromGoal` vào `GoalRepository`)
+- `app/src/main/java/com/finlux/app/domain/usecase/DepositToGoalUseCase.kt` (New)
+- `app/src/main/java/com/finlux/app/domain/usecase/WithdrawFromGoalUseCase.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt` (Thêm seed categories `debt_payment` & `savings`)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt` (Gán category `debt_payment` trong atomic transaction trả nợ)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt` (Triển khai 2 atomic transactions `depositToGoal` & `withdrawFromGoal`)
+- `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (Triển khai Goal repo methods, gán `debt_payment`, seed goals & categories)
+- `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt` (Tính toán `grossAssets`, `totalDebt`, `netWorth`)
+- `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt` (Nâng cấp Hero Card hiển thị Net Worth + 2 chips Ví & Nợ)
+- `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt` & `ModernHomeScreen.kt` (Hiển thị `netWorth`)
+- `app/src/main/java/com/finlux/app/presentation/goal/GoalsViewModel.kt` (Xử lý state & logic modal Nạp/Rút mục tiêu)
+- `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt` (Nút [+ Nạp tiền], [- Rút tiền] và Bottom Sheet `GoalDepositWithdrawSheet`)
+- `app/src/test/java/com/finlux/app/domain/usecase/GoalUseCasesTest.kt` (Unit tests cho `DepositToGoalUseCase` & `WithdrawFromGoalUseCase`)
+- `app/src/test/java/com/finlux/app/presentation/goal/GoalsViewModelTest.kt` (New - 4 unit tests cho `GoalsViewModel`)
+- `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt` (New - 1 unit test kiểm thử Net Worth trên `HomeViewModel`)
+- `docs/BA_SPEC.md` (Cập nhật UC-25, BR-GOAL-01)
+- `HANDOVER_LOG.md` (Ghi nhận log hoàn thành)
+
+## [DONE] Task: Triển khai Module Quản lý & Thoát Nợ (Debt Freedom & Credit Hub)
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Khởi tạo mô hình dữ liệu Clean Architecture cho Nợ (DebtAccount, DebtType, PayoffStrategy, DebtPayoffPlan, DebtPaymentHistory).
+2. Xây dựng thuật toán tính toán kế hoạch trả nợ tự động (CalculatePayoffStrategyUseCase: Snowball vs Avalanche) kèm 100% unit tests.
+3. Triển khai Firestore Atomic Transactions cho quy trình thanh toán nợ nguyên tử (ProcessDebtPaymentUseCase, FirebaseDebtRepository, DemoFinluxRepository).
+4. Xây dựng giao diện Liquid Glass Prism UI: DebtDashboardScreen, Burndown Chart, Strategy Selector, AddEditDebtSheet, DebtPaymentSheet.
+5. Tích hợp Navigation Route.Debt và liên kết trong PrismSettingsScreen & SettingsScreen.
+6. Cập nhật đặc tả tài liệu docs/BA_SPEC.md (UC-26, BR-DEBT-01..03), docs/DATA_SPEC.md (subcollection debts & payments) và firestore.rules.
+
+**Danh sách file đã tạo mới / cập nhật:**
+- `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt` (New)
+- `app/src/main/java/com/finlux/app/domain/repository/DebtRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCase.kt` (New)
+- `app/src/main/java/com/finlux/app/domain/usecase/GetDebtsUseCase.kt` (New)
+- `app/src/main/java/com/finlux/app/domain/usecase/SaveDebtAccountUseCase.kt` (New)
+- `app/src/main/java/com/finlux/app/domain/usecase/DeleteDebtAccountUseCase.kt` (New)
+- `app/src/main/java/com/finlux/app/domain/usecase/ProcessDebtPaymentUseCase.kt` (New)
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt` (New)
+- `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (Update)
+- `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt` (Update)
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtUiState.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtViewModel.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/debt/components/DebtBurndownChart.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt` (New)
+- `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt` (New)
+- `app/src/main/java/com/finlux/app/core/navigation/Routes.kt` (Update)
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt` (Update)
+- `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt` (Update)
+- `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt` (Update)
+- `app/src/test/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCaseTest.kt` (New)
+- `app/src/test/java/com/finlux/app/domain/usecase/ProcessDebtPaymentUseCaseTest.kt` (New)
+- `app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt` (New)
+- `app/src/test/java/com/finlux/app/presentation/settings/prism/PrismSettingsMenuTest.kt` (Update)
+- `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `firestore.rules` (Update)
+
+**Kết quả kiểm thử & nạp APK thiết bị:**
+- **Unit Tests:** `.\gradlew testDebugUnitTest` $\rightarrow$ **100% PASS (86/86 test cases, 0 errors, 0 failures)**.
+- **Build APK:** `.\gradlew assembleDebug` $\rightarrow$ **BUILD SUCCESSFUL**.
+- **Nạp thiết bị:** Đã nạp thành công APK Debug trực tiếp lên thiết bị Android qua ADB (`adb-LVCUYTUWRW6PQ8DI-uomDUi._adb-tls-connect._tcp`).
+
 
 ## [DONE] Task: Căn chỉnh Auth pixel-accurate theo ảnh tham chiếu
 

@@ -73,6 +73,29 @@ users/{uid}
   │    ├─ imageUri: string          -- optional
   │    └─ createdAt: timestamp
   │
+  ├─ debts/{debtId}                 -- quản lý công nợ & tín dụng (UC-26, BR-DEBT-01..03)
+  │    ├─ name: string              -- "Thẻ VCB Signature", "Vay VPBank", ...
+  │    ├─ type: "CREDIT_CARD" | "BANK_LOAN" | "PERSONAL_LOAN" | "INSTALLMENT"
+  │    ├─ totalAmount: number       -- hạn mức / khoản vay gốc
+  │    ├─ remainingBalance: number  -- dư nợ hiện tại (cập nhật qua Transaction)
+  │    ├─ interestRateApr: number   -- lãi suất %/năm (vd: 18.5)
+  │    ├─ minimumPayment: number    -- trả tối thiểu/tháng
+  │    ├─ dueDate: number           -- ngày đến hạn (1..31)
+  │    ├─ statementDate: number?    -- ngày chốt sao kê thẻ tín dụng
+  │    ├─ colorHex: string
+  │    ├─ isSettled: boolean
+  │    ├─ createdAt: timestamp
+  │    ├─ updatedAt: timestamp
+  │    │
+  │    └─ payments/{paymentId}      -- lịch sử thanh toán nợ
+  │         ├─ debtId: string
+  │         ├─ walletId: string
+  │         ├─ amount: number
+  │         ├─ principalPaid: number
+  │         ├─ interestPaid: number
+  │         ├─ paymentDate: timestamp
+  │         └─ note: string
+  │
   └─ notifications/{notificationId}
        ├─ title: string
        ├─ body: string

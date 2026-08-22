@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.CreditScore
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HeadsetMic
@@ -95,12 +97,14 @@ import com.finlux.app.domain.model.UiPreferences
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.settings.SettingsViewModel
 import java.io.File
+import com.finlux.app.domain.model.BiometricLockTimeout
 import kotlinx.coroutines.delay
 
 internal enum class PrismSettingsAction(val route: String? = null) {
     ACCOUNT,
     WALLETS("wallets"),
     BUDGET("budget"),
+    DEBT("debt"),
     APPEARANCE,
     CATEGORIES("categories"),
     REMINDERS("reminders"),
@@ -141,6 +145,7 @@ fun PrismSettingsScreen(
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var showNameEditor by remember { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
+    var showBiometricTimeoutDialog by remember { mutableStateOf(false) }
     var infoDialog by remember { mutableStateOf<InfoDialogContent?>(null) }
     var amountVisible by remember { mutableStateOf(true) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
@@ -267,6 +272,17 @@ fun PrismSettingsScreen(
         )
     }
 
+    if (showBiometricTimeoutDialog) {
+        BiometricTimeoutDialog(
+            currentTimeout = uiPreferences.biometricTimeout,
+            onSelect = { timeout ->
+                onUiPreferencesChanged(uiPreferences.copy(biometricTimeout = timeout))
+                showBiometricTimeoutDialog = false
+            },
+            onDismiss = { showBiometricTimeoutDialog = false },
+        )
+    }
+
     LaunchedEffect(nameState.message, nameState.isError) {
         if (nameState.message != null && !nameState.isError) {
             delay(650)
@@ -332,6 +348,13 @@ fun PrismSettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 SettingsGroupCard(
                     listOf(
+                        SettingsMenuItem(
+                            Icons.Default.CreditCard,
+                            "Quản lý nợ & Tín dụng",
+                            Color(0xFFE11D48),
+                            subtitle = "Kế hoạch thoát nợ Snowball & Avalanche",
+                            onClick = { navigateTo(PrismSettingsAction.DEBT) },
+                        ),
                         SettingsMenuItem(Icons.Default.Category, "Danh mục thu chi", Color(0xFF8B5CF6), onClick = { navigateTo(PrismSettingsAction.CATEGORIES) }),
                         SettingsMenuItem(Icons.Default.Alarm, "Nhắc nhở thanh toán", Color(0xFFF59E0B), onClick = { navigateTo(PrismSettingsAction.REMINDERS) }),
                     ),
@@ -364,16 +387,48 @@ fun PrismSettingsScreen(
                             trailing = {
                                 Switch(
                                     checked = uiPreferences.biometricEnabled,
-                                    onCheckedChange = { onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = it)) },
+                                    onCheckedChange = { isEnabled ->
+                                        if (isEnabled) {
+                                            if (com.finlux.app.core.security.BiometricHelper.canAuthenticate(context)) {
+                                                onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = true))
+                                            } else {
+                                                android.widget.Toast.makeText(context, "Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                        } else {
+                                            onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = false))
+                                        }
+                                    },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
                                         checkedTrackColor = tokens.primary,
                                     ),
                                 )
                             },
-                            onClick = { onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = !uiPreferences.biometricEnabled)) },
+                            onClick = {
+                                if (!uiPreferences.biometricEnabled) {
+                                    if (com.finlux.app.core.security.BiometricHelper.canAuthenticate(context)) {
+                                        onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = true))
+                                    } else {
+                                        android.widget.Toast.makeText(context, "Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = false))
+                                }
+                            },
                         ),
-                    ),
+                    ).let { items ->
+                        if (uiPreferences.biometricEnabled) {
+                            items + SettingsMenuItem(
+                                Icons.Default.Alarm,
+                                "Thời gian tự động khóa",
+                                Color(0xFF0284C7),
+                                subtitle = uiPreferences.biometricTimeout.label,
+                                onClick = { showBiometricTimeoutDialog = true },
+                            )
+                        } else {
+                            items
+                        }
+                    },
                 )
             }
 
@@ -756,3 +811,56 @@ private fun createCameraUri(context: Context): Uri {
     val file = File.createTempFile("finlux-avatar-", ".jpg", directory)
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 }
+
+@Composable
+private fun BiometricTimeoutDialog(
+    currentTimeout: BiometricLockTimeout,
+    onSelect: (BiometricLockTimeout) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Alarm, contentDescription = null, tint = tokens.primary) },
+        title = { Text("Thời gian tự động khóa", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                BiometricLockTimeout.entries.forEach { timeout ->
+                    val isSelected = timeout == currentTimeout
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) tokens.primary.copy(alpha = 0.12f) else tokens.surfaceSoft,
+                        border = if (isSelected) BorderStroke(1.5.dp, tokens.primary) else null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSelect(timeout) },
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = timeout.label,
+                                style = FinluxTextStyles.Body.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
+                                color = if (isSelected) tokens.primary else tokens.onSurface,
+                            )
+                            if (isSelected) {
+                                Icon(Icons.Default.Check, contentDescription = null, tint = tokens.primary, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Đóng") }
+        },
+        shape = RoundedCornerShape(tokens.radius.dialog),
+        containerColor = tokens.surface,
+    )
+}
+

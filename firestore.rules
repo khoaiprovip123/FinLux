@@ -148,6 +148,19 @@ service cloud.firestore {
         allow create, update: if isOwner(uid)
           && request.resource.data.title is string;
       }
+
+      // Subcollection: Debts & Debt Payments
+      match /debts/{docId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0;
+
+        match /payments/{paymentId} {
+          allow read, delete: if isOwner(uid);
+          allow create, update: if isOwner(uid);
+        }
+      }
     }
   }
 }

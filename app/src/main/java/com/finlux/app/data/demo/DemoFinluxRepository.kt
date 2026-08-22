@@ -18,6 +18,10 @@ import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.model.AppNotification
+import com.finlux.app.domain.model.DebtAccount
+import com.finlux.app.domain.model.DebtPaymentHistory
+import com.finlux.app.domain.model.DebtType
+import com.finlux.app.domain.repository.DebtRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
@@ -59,7 +63,8 @@ class DemoFinluxRepository @Inject constructor(
     GoalRepository,
     ReceiptStorageRepository,
     DashboardRepository,
-    NotificationRepository {
+    NotificationRepository,
+    DebtRepository {
 
     private val mutationMutex = Mutex()
     private val profilePreferences = context.getSharedPreferences("finlux_demo_profile", Context.MODE_PRIVATE)
@@ -69,8 +74,10 @@ class DemoFinluxRepository @Inject constructor(
     private val transactionState = MutableStateFlow(seedTransactions())
     private val budgetState = MutableStateFlow(seedBudgets())
     private val reminderState = MutableStateFlow(seedReminders())
-    private val goalState = MutableStateFlow<List<FinancialGoal>>(emptyList())
+    private val goalState = MutableStateFlow(seedGoals())
     private val notificationState = MutableStateFlow(seedNotifications())
+    private val debtState = MutableStateFlow(seedDebts())
+    private val paymentHistoryState = MutableStateFlow<List<DebtPaymentHistory>>(emptyList())
 
     override val currentUser: Flow<UserProfile?> = userState
 
@@ -217,6 +224,166 @@ class DemoFinluxRepository @Inject constructor(
 
     override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = mutationMutex.withLock {
         goalState.value = goalState.value.filterNot { it.id == goal.id }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun depositToGoal(
+        goalId: String,
+        walletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+    ): AppResult<Unit> = mutationMutex.withLock {
+        val targetGoal = goalState.value.find { it.id == goalId }
+            ?: return@withLock AppResult.Error("Không tìm thấy mục tiêu tài chính")
+        val targetWallet = walletState.value.find { it.id == walletId }
+            ?: return@withLock AppResult.Error("Không tìm thấy ví nguồn")
+
+        if (targetWallet.type != WalletType.CARD && targetWallet.balance.value < amount) {
+            return@withLock AppResult.Error("Số dư ví không đủ để nạp vào mục tiêu")
+        }
+
+        if (!changeWalletBalance(walletId, -amount)) {
+            return@withLock AppResult.Error("Lỗi cập nhật số dư ví")
+        }
+
+        val newSaved = targetGoal.savedAmount.value + amount
+        goalState.value = goalState.value.map {
+            if (it.id == goalId) it.copy(savedAmount = Money(newSaved)) else it
+        }
+
+        val tx = FinanceTransaction(
+            id = UUID.randomUUID().toString(),
+            type = TransactionType.EXPENSE,
+            amount = Money(amount),
+            categoryId = "savings",
+            walletId = walletId,
+            note = if (note.isNotBlank()) note else "Nạp tích lũy: ${targetGoal.name}",
+            date = date,
+            createdAt = date,
+            updatedAt = date,
+        )
+        transactionState.value = transactionState.value + tx
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun withdrawFromGoal(
+        goalId: String,
+        walletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+    ): AppResult<Unit> = mutationMutex.withLock {
+        val targetGoal = goalState.value.find { it.id == goalId }
+            ?: return@withLock AppResult.Error("Không tìm thấy mục tiêu tài chính")
+        if (targetGoal.savedAmount.value < amount) {
+            return@withLock AppResult.Error("Số tiền tích lũy hiện tại nhỏ hơn số tiền muốn rút")
+        }
+        if (walletState.value.none { it.id == walletId }) {
+            return@withLock AppResult.Error("Không tìm thấy ví nhận tiền")
+        }
+
+        if (!changeWalletBalance(walletId, amount)) {
+            return@withLock AppResult.Error("Lỗi cập nhật số dư ví")
+        }
+
+        val newSaved = targetGoal.savedAmount.value - amount
+        goalState.value = goalState.value.map {
+            if (it.id == goalId) it.copy(savedAmount = Money(newSaved)) else it
+        }
+
+        val tx = FinanceTransaction(
+            id = UUID.randomUUID().toString(),
+            type = TransactionType.INCOME,
+            amount = Money(amount),
+            categoryId = "savings",
+            walletId = walletId,
+            note = if (note.isNotBlank()) note else "Rút tích lũy: ${targetGoal.name}",
+            date = date,
+            createdAt = date,
+            updatedAt = date,
+        )
+        transactionState.value = transactionState.value + tx
+        AppResult.Success(Unit)
+    }
+
+    override fun observeDebts(): Flow<List<DebtAccount>> = debtState
+
+    override fun observePaymentHistory(debtId: String): Flow<List<DebtPaymentHistory>> =
+        paymentHistoryState.map { list -> list.filter { it.debtId == debtId } }
+
+    override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = mutationMutex.withLock {
+        val id = debt.id.ifBlank { UUID.randomUUID().toString() }
+        val stored = debt.copy(id = id)
+        debtState.value = if (debtState.value.any { it.id == id }) {
+            debtState.value.map { if (it.id == id) stored else it }
+        } else debtState.value + stored
+        AppResult.Success(id)
+    }
+
+    override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = mutationMutex.withLock {
+        debtState.value = debtState.value.filterNot { it.id == debt.id }
+        paymentHistoryState.value = paymentHistoryState.value.filterNot { it.debtId == debt.id }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun processPayment(
+        debtId: String,
+        walletId: String,
+        amount: Long,
+        principalPaid: Long,
+        interestPaid: Long,
+        note: String,
+        paymentDate: Instant,
+    ): AppResult<Unit> = mutationMutex.withLock {
+        val targetDebt = debtState.value.find { it.id == debtId }
+            ?: return@withLock AppResult.Error("Không tìm thấy khoản nợ")
+        val targetWallet = walletState.value.find { it.id == walletId }
+            ?: return@withLock AppResult.Error("Không tìm thấy ví thanh toán")
+
+        if (targetWallet.type != WalletType.CARD && targetWallet.balance.value < amount) {
+            return@withLock AppResult.Error("Số dư ví không đủ để thanh toán nợ")
+        }
+
+        if (!changeWalletBalance(walletId, -amount)) {
+            return@withLock AppResult.Error("Lỗi cập nhật số dư ví")
+        }
+
+        val newRemaining = (targetDebt.remainingBalance.value - principalPaid).coerceAtLeast(0L)
+        val isSettled = newRemaining <= 0L
+        debtState.value = debtState.value.map {
+            if (it.id == debtId) it.copy(
+                remainingBalance = Money(newRemaining),
+                isSettled = isSettled,
+                updatedAt = paymentDate,
+            ) else it
+        }
+
+        val paymentHistory = DebtPaymentHistory(
+            id = UUID.randomUUID().toString(),
+            debtId = debtId,
+            walletId = walletId,
+            amount = Money(amount),
+            principalPaid = Money(principalPaid),
+            interestPaid = Money(interestPaid),
+            paymentDate = paymentDate,
+            note = note,
+        )
+        paymentHistoryState.value = listOf(paymentHistory) + paymentHistoryState.value
+
+        val tx = FinanceTransaction(
+            id = UUID.randomUUID().toString(),
+            type = TransactionType.EXPENSE,
+            amount = Money(amount),
+            categoryId = "debt_payment",
+            walletId = walletId,
+            note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
+            date = paymentDate,
+            createdAt = paymentDate,
+            updatedAt = paymentDate,
+        )
+        transactionState.value = transactionState.value + tx
+
         AppResult.Success(Unit)
     }
 
@@ -437,6 +604,8 @@ class DemoFinluxRepository @Inject constructor(
             Category("home", "Nhà ở", CategoryType.EXPENSE, "home", "#14B8A6", true, Instant.now()),
             Category("health", "Sức khỏe", CategoryType.EXPENSE, "health", "#EC4899", true, Instant.now()),
             Category("travel", "Du lịch", CategoryType.EXPENSE, "flight", "#47C8FF", true, Instant.now()),
+            Category("debt_payment", "Trả nợ & Tín dụng", CategoryType.EXPENSE, "credit_card", "#E11D48", true, Instant.now()),
+            Category("savings", "Tích lũy & Mục tiêu", CategoryType.EXPENSE, "savings", "#8B5CF6", true, Instant.now()),
             Category("salary", "Lương", CategoryType.INCOME, "payments", "#168A62", true, Instant.now()),
             Category("bonus", "Thưởng", CategoryType.INCOME, "workspace_premium", "#47C8FF", true, Instant.now()),
             Category("freelance", "Freelance", CategoryType.INCOME, "work", "#7758F6", true, Instant.now()),
@@ -542,6 +711,72 @@ class DemoFinluxRepository @Inject constructor(
                 amount = Money(0L),
                 timestamp = Instant.now().minus(10, ChronoUnit.DAYS),
                 isRead = true,
+            ),
+        )
+
+        fun seedDebts() = listOf(
+            DebtAccount(
+                id = "debt-vcb-credit",
+                userId = "demo-user",
+                name = "Thẻ tín dụng VCB Signature",
+                type = DebtType.CREDIT_CARD,
+                totalAmount = Money(50_000_000L),
+                remainingBalance = Money(18_500_000L),
+                interestRateApr = 24.0,
+                minimumPayment = Money(1_200_000L),
+                dueDate = 25,
+                statementDate = 10,
+                colorHex = "#E11D48",
+                isSettled = false,
+            ),
+            DebtAccount(
+                id = "debt-vpbank-auto",
+                userId = "demo-user",
+                name = "Vay mua ô tô VPBank",
+                type = DebtType.BANK_LOAN,
+                totalAmount = Money(120_000_000L),
+                remainingBalance = Money(65_000_000L),
+                interestRateApr = 11.5,
+                minimumPayment = Money(3_800_000L),
+                dueDate = 15,
+                statementDate = null,
+                colorHex = "#2563EB",
+                isSettled = false,
+            ),
+            DebtAccount(
+                id = "debt-iphone-installment",
+                userId = "demo-user",
+                name = "Trả góp iPhone 16 Pro Max",
+                type = DebtType.INSTALLMENT,
+                totalAmount = Money(34_000_000L),
+                remainingBalance = Money(14_000_000L),
+                interestRateApr = 0.0,
+                minimumPayment = Money(2_833_000L),
+                dueDate = 5,
+                statementDate = null,
+                colorHex = "#7C3AED",
+                isSettled = false,
+            ),
+        )
+
+        fun seedGoals() = listOf(
+            FinancialGoal(
+                id = "goal-emergency-fund",
+                name = "Quỹ khẩn cấp 6 tháng",
+                targetAmount = Money(30_000_000L),
+                savedAmount = Money(15_000_000L),
+                deadline = Instant.now().plus(180, ChronoUnit.DAYS),
+                category = "An toàn",
+                monthlyContribution = Money(2_500_000L),
+            ),
+            FinancialGoal(
+                id = "goal-macbook-m4",
+                name = "Macbook Pro M4 Pro",
+                targetAmount = Money(45_000_000L),
+                savedAmount = Money(18_000_000L),
+                deadline = Instant.now().plus(90, ChronoUnit.DAYS),
+                category = "Công nghệ",
+                monthlyContribution = Money(4_500_000L),
             ),
         )
     }

@@ -39,6 +39,7 @@ Không có vai trò Admin/Manager trong V1 (app cá nhân, không multi-user).
 | UC-21 | Tùy biến giao diện Liquid Glass | User |
 | UC-24 | Quét/chọn ảnh hóa đơn khi thêm Chi | User |
 | UC-25 | Quản lý mục tiêu tài chính | User |
+| UC-26 | Quản lý và thoát nợ (Debt Freedom & Credit Hub) | User |
 
 ---
 
@@ -258,14 +259,32 @@ Main flow:
 Business rule: Ảnh hóa đơn không tự tạo giao dịch; user luôn xác nhận dữ liệu trước khi lưu.
 ```
 
-### UC-25: Quản lý mục tiêu tài chính
+### UC-25: Quản lý mục tiêu tài chính & Nạp/Rút tích lũy
 ```
 Actor: User
 Main flow:
-  1. Nhấn FAB "+" → Thêm mục tiêu hoặc mở Mục tiêu từ Hồ sơ
+  1. Nhấn FAB "+" → Thêm mục tiêu hoặc mở Mục tiêu từ Trang chủ / Hồ sơ
   2. Nhập tên, số tiền cần đạt, hạn hoàn thành, danh mục, khoản tích lũy mỗi tháng và ảnh tùy chọn
   3. Lưu mục tiêu; danh sách cập nhật realtime và đồng bộ đa thiết bị khi dùng Firebase
-Business rule: Mục tiêu không tự trừ/cộng số dư ví và không được tính là giao dịch Thu/Chi.
+  4. Người dùng có thể nhấn [Nạp tiền] trên thẻ Mục tiêu: Chọn ví nguồn, nhập số tiền nạp -> Hệ thống trừ tiền ví nguồn, tăng savedAmount của Mục tiêu và ghi giao dịch EXPENSE (danh mục "savings") vào Sổ cái nguyên tử (Firestore Transaction).
+  5. Người dùng có thể nhấn [Rút tiền] trên thẻ Mục tiêu: Chọn ví đích, nhập số tiền rút -> Hệ thống giảm savedAmount của Mục tiêu, cộng tiền vào ví đích và ghi giao dịch INCOME (danh mục "savings") vào Sổ cái nguyên tử.
+Business rule:
+  BR-GOAL-01: Thao tác nạp/rút tiền mục tiêu tài chính bắt buộc thực thi qua Firestore Atomic Transaction, đảm bảo tính toàn vẹn giữa số dư ví nguồn/đích, số tiền tích lũy của mục tiêu và sổ cái dòng tiền.
+```
+
+### UC-26: Quản lý và thoát nợ (Debt Freedom & Credit Hub)
+```
+Actor: User
+Main flow:
+  1. Người dùng mở mục "Quản lý nợ & Tín dụng" từ Cài đặt hoặc Quick Action
+  2. Xem tổng quan dư nợ hiện tại, tiến độ thanh toán, và biểu đồ Burndown Chart mô phỏng lộ trình giảm nợ
+  3. Chọn chiến lược trả nợ tối ưu (Debt Snowball hoặc Debt Avalanche), kéo thanh trượt điều chỉnh tiền trả thêm (Extra Monthly Payment) để xem ngày sạch nợ và tiền lãi tiết kiệm được cập nhật realtime
+  4. Tạo/Sửa các khoản nợ (Thẻ tín dụng, Vay ngân hàng, Vay cá nhân, Trả góp/BNPL)
+  5. Nhấn [Trả nợ] trên từng khoản nợ: Chọn ví nguồn, nhập số tiền trả gốc và lãi, hệ thống thực hiện trừ số dư ví và giảm dư nợ nguyên tử (Firestore Atomic Transaction) với danh mục mặc định "debt_payment"
+Business rule:
+  BR-DEBT-01: Phân loại khoản nợ theo Thẻ tín dụng (hạn mức, sao kê, đến hạn, APR), Vay ngân hàng/cá nhân, và Trả góp.
+  BR-DEBT-02: Mô phỏng Snowball (ưu tiên nợ nhỏ nhất trước) và Avalanche (ưu tiên APR cao nhất trước) kèm tính toán tiền lãi tiết kiệm và ngày sạch nợ.
+  BR-DEBT-03: Mọi giao dịch trả nợ bắt buộc chạy qua Firestore Transaction (Trừ số dư ví -> Giảm dư nợ khoản vay -> Tạo giao dịch chi tiêu category "debt_payment" -> Ghi lịch sử trả nợ).
 ```
 
 ---
@@ -288,6 +307,10 @@ Business rule: Mục tiêu không tự trừ/cộng số dư ví và không đư
 | BR-12 | Nhắc bill là local notification, cấu hình sync cloud |
 | BR-13 | Conflict resolution: last-write-wins (Firestore default) |
 | BR-14 | Cập nhật số dư ví bắt buộc qua Firestore Transaction |
+| BR-DEBT-01 | Phân loại công nợ: Thẻ tín dụng, Vay ngân hàng/cá nhân, Trả góp/BNPL |
+| BR-DEBT-02 | Thuật toán mô phỏng thoát nợ Snowball (nợ nhỏ trước) & Avalanche (lãi cao trước) |
+| BR-DEBT-03 | Thanh toán nợ nguyên tử qua Firestore Transaction (trừ ví, giảm nợ, ghi sổ cái) |
+| BR-GOAL-01 | Nạp/Rút tích lũy mục tiêu tài chính nguyên tử qua Firestore Transaction (trừ/cộng ví, cập nhật mục tiêu, ghi sổ cái) |
 
 ---
 

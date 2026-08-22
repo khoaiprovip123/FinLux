@@ -69,6 +69,20 @@ interface GoalRepository {
     fun observeGoals(): Flow<List<FinancialGoal>>
     suspend fun upsertGoal(goal: FinancialGoal): AppResult<String>
     suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit>
+    suspend fun depositToGoal(
+        goalId: String,
+        walletId: String,
+        amount: Long,
+        note: String = "",
+        date: Instant = Instant.now(),
+    ): AppResult<Unit>
+    suspend fun withdrawFromGoal(
+        goalId: String,
+        walletId: String,
+        amount: Long,
+        note: String = "",
+        date: Instant = Instant.now(),
+    ): AppResult<Unit>
 }
 
 interface ReceiptStorageRepository {

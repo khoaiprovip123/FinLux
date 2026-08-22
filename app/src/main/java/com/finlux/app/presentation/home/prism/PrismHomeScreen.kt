@@ -147,12 +147,16 @@ fun PrismHomeScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            // 1. Main Hero Card (Tổng tài sản - 6.110.000 đ - Tài sản ròng + 3D Wallet illustration)
+            // 1. Main Hero Card (Tài sản ròng = Tổng tài sản - Tổng dư nợ + 3D Wallet illustration)
             item {
                 PrismHeroNetWorthCard(
-                    totalBalance = totalBalance,
+                    netWorth = state.netWorth,
+                    grossAssets = state.grossAssets,
+                    totalDebt = state.totalDebt,
                     showBalance = showBalance,
                     onToggleShowBalance = { showBalance = !showBalance },
+                    onDebtsClick = { onNavigate(Route.Debt.value) },
+                    onWalletsClick = { onNavigate(Route.Wallets.value) },
                 )
             }
 
@@ -402,9 +406,13 @@ private fun PrismHomeTopHeader(
  */
 @Composable
 private fun PrismHeroNetWorthCard(
-    totalBalance: Long,
+    netWorth: Long,
+    grossAssets: Long,
+    totalDebt: Long,
     showBalance: Boolean,
     onToggleShowBalance: () -> Unit,
+    onDebtsClick: () -> Unit = {},
+    onWalletsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(24.dp)
@@ -519,7 +527,7 @@ private fun PrismHeroNetWorthCard(
                     ),
                 ) {
                     Text(
-                        text = "Tổng tài sản",
+                        text = "Tài sản ròng (Net Worth)",
                         style = FinluxTextStyles.Caption.copy(fontSize = 13.sp),
                         color = Color.White.copy(alpha = 0.90f),
                         fontWeight = FontWeight.Medium,
@@ -534,11 +542,11 @@ private fun PrismHeroNetWorthCard(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Display Amount
+                // Display Amount (Net Worth)
                 Text(
-                    text = if (showBalance) formatVndAmount(totalBalance) else "••••••••",
+                    text = if (showBalance) formatVndAmount(netWorth) else "••••••••",
                     style = FinluxTextStyles.DisplayAmount.copy(
-                        fontSize = 34.sp,
+                        fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.5).sp,
                     ),
@@ -546,24 +554,26 @@ private fun PrismHeroNetWorthCard(
                 )
 
                 Text(
-                    text = "Tài sản ròng",
+                    text = if (totalDebt > 0L) "Tổng ví trừ tổng dư nợ" else "Không có khoản nợ",
                     style = FinluxTextStyles.Caption.copy(
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
                     ),
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = Color.White.copy(alpha = 0.80f),
                 )
 
                 Spacer(Modifier.height(14.dp))
 
-                // Comparison badge
+                // Breakdown pills: Gross Assets & Total Debt
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // Gross Assets Chip
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = Color.White.copy(alpha = 0.22f),
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onWalletsClick() },
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -571,7 +581,7 @@ private fun PrismHeroNetWorthCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
-                                text = "↑ +2,4%",
+                                text = "Ví: " + if (showBalance) formatVndAmount(grossAssets) else "•••",
                                 style = FinluxTextStyles.MicroLabel.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
@@ -581,11 +591,29 @@ private fun PrismHeroNetWorthCard(
                         }
                     }
 
-                    Text(
-                        text = "so với tháng trước",
-                        style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
-                        color = Color.White.copy(alpha = 0.85f),
-                    )
+                    // Total Debt Chip
+                    if (totalDebt > 0L) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFE11D48).copy(alpha = 0.35f),
+                            modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDebtsClick() },
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Text(
+                                    text = "Nợ: " + if (showBalance) formatVndAmount(totalDebt) else "•••",
+                                    style = FinluxTextStyles.MicroLabel.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                    ),
+                                    color = Color(0xFFFCA5A5),
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

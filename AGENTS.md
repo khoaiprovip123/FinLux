@@ -4,7 +4,23 @@
 Đây là project Android **Finlux** — quản lý thu chi cá nhân, Kotlin + Jetpack Compose + Firebase,
 giao diện Liquid Glass. Đọc `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md` trước khi code.
 
-## Nguyên tắc bắt buộc
+## 🎯 3 NGUYÊN TẮC CỐT LÕI BẮT BUỘC (MANDATORY CORE DIRECTIVES)
+
+1. **ĐỒNG BỘ THEME & MÀU ĐỘNG (THEME CONSISTENCY):**
+   - TUYỆT ĐỐI KHÔNG hardcode mã màu tĩnh (Color.Black, Color.White, #000000, #FFFFFF).
+   - BẮT BUỘC sử dụng 100% hệ thống màu động từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`.
+   - BẮT BUỘC sử dụng `FinluxStyleBackdrop` và `containerColor = Color.Transparent` ở các màn hình có nền kính Liquid Glass.
+   - Luôn tự kiểm tra độ tương phản và chuyển đổi mượt mà giữa các Theme (Dark Mode, Light Mode, Prism, Classic, Modern).
+
+2. **TÁI SỬ DỤNG & TRÁNH PHÂN MẢNH CODE (REUSABILITY FIRST):**
+   - Trước khi tạo component, formatter hay logic mới: BẮT BUỘC phải tìm kiếm trong codebase xem hệ thống ĐÃ CÓ component/tiện ích tương tự hay chưa (`GlassTopBar`, `formatVndAmount`, `toVnd`, `FinluxTokens`, `BiometricHelper`, dialog dùng chung...).
+   - ƯU TIÊN tái sử dụng và mở rộng các component dùng chung hiện có thay vì tự vẽ lại từ đầu.
+
+3. **CẬP NHẬT TÀI LIỆU QUY CHUẨN (SOP & DOCUMENTATION COMPLIANCE):**
+   - Sau khi hoàn thành bất kỳ tính năng, fix bug hay nâng cấp kiến trúc nào: BẮT BUỘC phải rà soát và cập nhật đồng bộ các file tài liệu đặc tả liên quan (`BA_SPEC.md`, `DATA_SPEC.md`, `CONTEXT.md`, `PLAN.md`, `BACKLOG.md`, `UI_SPEC.md`).
+   - BẮT BUỘC ghi log chi tiết các file đã sửa đổi, kết quả test và cập nhật trạng thái `[DONE]` trong `HANDOVER_LOG.md`.
+
+## Nguyên tắc bắt buộc kỹ thuật
 1. **Không bịa nghiệp vụ.** Nếu yêu cầu chưa có trong `docs/BA_SPEC.md`/`docs/UI_SPEC.md`, dừng lại hỏi hoặc
    ghi `// TODO: [Cần xác nhận] ...` thay vì tự suy diễn.
 2. **Tuân thủ Clean Architecture** đã định nghĩa trong `docs/CONTEXT.md` — không viết logic nghiệp vụ

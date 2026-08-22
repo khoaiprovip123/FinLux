@@ -97,7 +97,7 @@ fun ClassicHomeScreen(
 ) {
     NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
-    val totalBalance = state.wallets.sumOf { it.balance.value }
+    val totalBalance = state.netWorth
     val categories = state.categories.associateBy(Category::id)
     var showBalance by remember { mutableStateOf(true) }
     val visualStyle = LocalUiPreferences.current.visualStyle
