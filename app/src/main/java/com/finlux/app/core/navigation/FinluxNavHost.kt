@@ -2,40 +2,28 @@ package com.finlux.app.core.navigation
 
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -74,7 +62,6 @@ import com.finlux.app.presentation.receipt.ReceiptCaptureScreen
 import com.finlux.app.presentation.updater.AppUpdateDialog
 import com.finlux.app.presentation.updater.AppUpdateViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
@@ -111,8 +98,6 @@ fun FinluxNavHost(
     var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val swipeOffset = remember { Animatable(0f) }
-    val swipeAnimationScope = rememberCoroutineScope()
     val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
 
     val destination = destinationFlow?.collectAsState()?.value
@@ -139,9 +124,6 @@ fun FinluxNavHost(
                 restoreState = true
             }
         }
-    }
-    LaunchedEffect(currentRoute) {
-        swipeOffset.snapTo(0f)
     }
 
     val mainSwipeModifier = if (currentRoute in MainSwipeRoutes) {
@@ -170,12 +152,6 @@ fun FinluxNavHost(
 
                     if (gestureLocked) {
                         change.consume()
-                        val atFirstEdge = currentRoute == MainSwipeRoutes.first() && horizontalTravel > 0f
-                        val atLastEdge = currentRoute == MainSwipeRoutes.last() && horizontalTravel < 0f
-                        val resistance = if (atFirstEdge || atLastEdge) 0.22f else 0.72f
-                        swipeAnimationScope.launch {
-                            swipeOffset.snapTo(horizontalTravel * resistance)
-                        }
                     }
                 } while (change.pressed)
 
@@ -188,34 +164,27 @@ fun FinluxNavHost(
                         elapsedMillis = lastUptimeMillis - down.uptimeMillis,
                     )
                     if (target != null) navigateMain(target)
-                    if (uiPreferences.animationsEnabled) {
-                        swipeAnimationScope.launch {
-                            swipeOffset.animateTo(
-                                targetValue = 0f,
-                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 650f),
-                            )
-                        }
-                    } else {
-                        swipeAnimationScope.launch { swipeOffset.snapTo(0f) }
-                    }
                 }
             }
         }
     } else Modifier
 
-    Box(Modifier.fillMaxSize().then(mainSwipeModifier)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .then(mainSwipeModifier)
+    ) {
         NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
-            modifier = Modifier.graphicsLayer { translationX = swipeOffset.value },
             enterTransition = {
                 val from = MainSwipeRoutes.indexOf(initialState.destination.route)
                 val to = MainSwipeRoutes.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0) {
                     slideInHorizontally(
-                        spring(dampingRatio = 0.86f, stiffness = 390f),
-                    ) { width -> if (to > from) width else -width } +
-                        fadeIn(tween(210)) + scaleIn(tween(250), initialScale = 0.985f)
+                        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+                    ) { width -> if (to > from) width else -width }
                 } else fadeIn(tween(180))
             },
             exitTransition = {
@@ -223,9 +192,8 @@ fun FinluxNavHost(
                 val to = MainSwipeRoutes.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0) {
                     slideOutHorizontally(
-                        spring(dampingRatio = 0.90f, stiffness = 430f),
-                    ) { width -> if (to > from) -width else width } +
-                        fadeOut(tween(180)) + scaleOut(tween(210), targetScale = 0.985f)
+                        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+                    ) { width -> if (to > from) -width else width }
                 } else fadeOut(tween(140))
             },
         ) {

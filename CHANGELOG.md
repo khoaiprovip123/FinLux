@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.8] - 2026-08-22
+### Changed
+- Cải tiến chuyển động vuốt chuyển tab (`Trang chủ ↔ Lịch sử ↔ Báo cáo ↔ Cài đặt`) sang slide ngang 100% full-width liên tục và mượt mà, đồng bộ giữa trang hiện tại và trang kế tiếp.
+
+### Fixed
+- Sửa triệt để lỗi cử chỉ vuốt làm lộ nền xanh đậm với logo splash screen (`finlux_launch_background`): loại bỏ `translationX` kéo lệch đơn lẻ trên `NavHost` và cố định `Surface` nền theme tại root.
+- Sửa an toàn gọi `MainBottomBar` trong `PrismTransactionsScreen` tránh crash khi null.
+
 ## [1.8.7] - 2026-08-21
 ### Added
 - Bổ sung Firebase Cloud Functions thế hệ 2 cho đối soát ngân sách, cảnh báo ngưỡng 80%/100%, reset hạn mức tháng và gửi nhắc nhở định kỳ qua FCM.
