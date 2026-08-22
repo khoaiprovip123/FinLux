@@ -23,7 +23,7 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
 - Card nội dung dùng bo góc 18-22dp, shadow mềm và border mảnh; không dùng blur dày làm giảm độ đọc.
 - Giao dịch hiển thị icon nền màu theo loại, tên/ghi chú ở giữa và số tiền canh phải.
 - Báo cáo donut và bar chart chỉ render từ dữ liệu repository thật, không dùng số minh họa hard-code.
-- Bottom navigation giữ đúng 5 action của V1: Trang chủ, Ví, Thêm, Báo cáo, Hồ sơ.
+- Bottom navigation giữ đúng 5 action: Trang chủ, Lịch sử, Thêm, Báo cáo, Hồ sơ. Quản lý Ví nằm trong Cài đặt.
 
 ### Interaction & customization refresh (12/08/2026)
 - Mọi `GlassCard` tương tác dùng phản hồi co nhẹ khi nhấn; có thể tắt trong Cài đặt.
@@ -44,7 +44,7 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
   và có phản hồi rung. Touch target của capsule tối thiểu 44dp.
 - Ba phong cách `Tối giản hiện đại`, `Glassmorphism`, `Gradient năng động` dùng cùng cấu trúc kính
   nhưng có bộ color/backdrop token riêng; lựa chọn Sáng/Tối/Hệ thống luôn áp dụng đồng nhất toàn app.
-- Bốn màn hình chính hỗ trợ vuốt bám ngón tay theo thứ tự Trang chủ ↔ Ví ↔ Báo cáo ↔ Hồ sơ;
+- Bốn màn hình chính hỗ trợ vuốt bám ngón tay theo thứ tự Trang chủ ↔ Lịch sử ↔ Báo cáo ↔ Hồ sơ;
   mép đầu/cuối có resistance, thả tay trả lò xo và vẫn giữ điều hướng bằng icon đáy.
 
 ### Home Liquid Glass refresh (12/08/2026)
@@ -84,26 +84,26 @@ STATES:
 Route: /login
 LAYOUT:
 ┌─────────────────────────────────────────┐
-│ Header (Top Gradient):                  │
-│  - Logo: "FinLux" (Fin đen, Lux xanh)   │
-│  - Title: "Chào mừng trở lại! 👋"        │
-│  - Subtitle: "Đăng nhập để tiếp tục..." │
-│  - 3D Illustration: Glass Wallet + Shield│
+│ Brand Header (nền sáng):                │
+│  - Logo biểu tượng + chữ "FinLux" giữa  │
+│  - Slogan "Quản lý tài chính thông minh"│
+│  - Minh họa ví 3D đặt ngoài vùng chữ    │
 ├─────────────────────────────────────────┤
-│ Form Card (Bottom White Container):     │
-│  - Tab Switcher: [Đăng nhập] | Đăng ký  │
+│ Form đăng nhập:                         │
+│  - Title + lời chào căn giữa            │
 │  - Field: Email hoặc số điện thoại      │
 │  - Field: Mật khẩu (ẩn/hiện)            │
 │  - Checkbox: "Ghi nhớ đăng nhập" | Link │
 │  - Button: "Đăng nhập" (Gradient + ->)  │
 │  - Divider: "hoặc đăng nhập với"        │
 │  - Social Cards: [Google] [Apple] [FB]  │
+│  - Link "Chưa có tài khoản? Đăng ký ngay"│
 │  - Footer: "Bằng việc đăng nhập..."     │
 └─────────────────────────────────────────┘
 
-VISUAL ALIGNMENT (12/08/2026):
-  - Header dùng nền trắng-xanh rất nhạt, logo chữ FinLux bên trái và minh họa ví 3D bên phải.
-  - Form đăng nhập là surface trắng bo riêng hai góc trên 32dp; tab trải đều toàn chiều rộng.
+VISUAL ALIGNMENT (21/08/2026):
+  - Header đăng nhập dùng nền thích ứng theme, logo/brand căn giữa và luôn nằm dưới status bar.
+  - Form là surface rõ nét, khoảng cách theo lưới 8pt và cuộn được khi bàn phím mở.
   - Social Cards cao 76dp, icon thương hiệu ở trên và tên provider ở dưới, ba thẻ có cùng kích thước.
   - Google/Apple/Facebook có contract callback riêng để kết nối provider SDK sau này; chưa tự chạy OAuth
     khi chưa có Client ID, redirect URI và cấu hình Firebase/Meta/Apple hợp lệ.
@@ -118,22 +118,22 @@ VALIDATION:
 Route: /register
 LAYOUT:
 ┌─────────────────────────────────────────┐
-│ Header (Top Gradient):                  │
+│ Header (Gradient tím):                  │
 │  - Button: Back (<)                      │
-│  - Logo: "FinLux"                       │
 │  - Title: "Tạo tài khoản mới"           │
 │  - Subtitle: "Bắt đầu hành trình..."   │
 │  - 3D Illustration: Clipboard + Shield │
 ├─────────────────────────────────────────┤
-│ Form Area (liền với nền sáng):          │
+│ Form Area (surface bo hai góc trên 32dp):│
 │  - Field: Họ và tên                     │
-│  - Field: Email                         │
 │  - Field: Số điện thoại                 │
+│  - Field: Email                         │
 │  - Field: Mật khẩu                      │
 │  - Progress Bar: Độ mạnh mật khẩu       │
 │  - Field: Xác nhận mật khẩu             │
 │  - Checkbox: Đồng ý điều khoản          │
-│  - Button: "Tạo tài khoản" (Gradient)   │
+│  - Button: "Đăng ký" (Gradient)         │
+│  - Social Cards theo provider contract   │
 │  - Link Footer: "Đã có tài khoản?"      │
 └─────────────────────────────────────────┘
 VALIDATION: theo BR-01 (≥8 ký tự, có chữ+số), mật khẩu xác nhận phải khớp, bắt buộc tích chọn đồng ý điều khoản
@@ -156,7 +156,7 @@ LAYOUT:
 │ Danh sách giao dịch gần đây                 │
 │   - Row: [icon danh mục] Tên danh mục | ghi chú | số tiền (+/- màu xanh/đỏ) │
 ├───────────────────────────────────────────┤
-│ GlassBottomNav: Trang chủ | Ví | [FAB +] | Báo cáo | Hồ sơ │
+│ GlassBottomNav: Trang chủ | Lịch sử | [FAB +] | Báo cáo | Hồ sơ │
 └───────────────────────────────────────────┘
 
 STATES:
@@ -203,6 +203,7 @@ LAYOUT:
 │ GlassTopBar: "Giao dịch" + icon Lọc + icon Tìm kiếm │
 │ Filter chip row: Tất cả | Thu | Chi | [Danh mục ▾] | [Ví ▾] | [Khoảng thời gian ▾] │
 │ Danh sách nhóm theo ngày (giống Home nhưng đầy đủ, có phân trang) │
+│ GlassBottomNav: tab Lịch sử đang được chọn │
 └───────────────────────────────────────────┘
 STATES: Empty (không có kết quả lọc) | Loading (paging) | Error
 ACTIONS: Tap item → sửa; Filter chip → mở GlassBottomSheet chọn điều kiện
@@ -232,7 +233,7 @@ LAYOUT:
 │ Filter: Tất cả | Tiền mặt | Ngân hàng | Ví điện tử | Thẻ | Đầu tư │
 │ Danh sách GlassCard: icon, tên, loại, số dư, tỷ trọng % │
 │ CTA "Thêm ví mới" ở cuối danh sách    │
-│ GlassBottomNav giống Dashboard          │
+│ Màn phụ mở từ Cài đặt/Chuyển tiền; dùng nút quay lại, không chiếm tab chính │
 └─────────────────────────────────────┘
 ACTIONS: Tap hoặc vuốt phải → sửa; vuốt trái → xác nhận xóa; icon chuyển tiền → UC-13.
 Xóa vẫn chặn với ví mặc định hoặc ví đã có giao dịch để bảo toàn lịch sử.
@@ -364,7 +365,8 @@ Form thêm: Tên bill, Số tiền, Danh mục, Ví, Chu kỳ (ngày/tuần/thá
 
 ### Điều hướng màn hình chính
 
-- Bốn màn hình chính `Home ↔ Wallets ↔ Reports ↔ Settings` hỗ trợ vuốt ngang hai chiều và bấm bottom navigation.
+- Bốn màn hình chính `Home ↔ Transactions ↔ Reports ↔ Settings` hỗ trợ vuốt ngang hai chiều và bấm bottom navigation.
+- `Wallets` là màn quản lý phụ mở từ Cài đặt hoặc luồng Chuyển tiền, không nằm trong chuỗi vuốt chính.
 - Vuốt sang trái mở màn hình kế tiếp; vuốt sang phải quay về màn hình trước. Nội dung bám nhẹ theo ngón tay,
   xuất hiện ánh sáng cạnh và spring khi thả; chỉ đổi trang sau khi vượt ngưỡng để không xung đột cuộn dọc.
 - Mỗi phong cách dùng hình thức icon riêng: Tối giản hiện đại dùng viền xanh, Glassmorphism dùng orb kính và Gradient năng động dùng ô gradient.

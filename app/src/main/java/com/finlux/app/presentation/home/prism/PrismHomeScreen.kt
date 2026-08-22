@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -1649,31 +1650,14 @@ private fun PrismRecentTransactionItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = title,
-                        style = FinluxTextStyles.CardTitle.copy(fontSize = 15.sp),
-                        color = tokens.onSurface,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                    )
-                    if (transaction.note.contains("nhắc", ignoreCase = true) || transaction.note.contains("trọ", ignoreCase = true)) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = tokens.background,
-                        ) {
-                            Text(
-                                text = "Nhắc nhở",
-                                style = FinluxTextStyles.MicroLabel.copy(fontSize = 10.sp),
-                                color = tokens.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = title,
+                    style = FinluxTextStyles.CardTitle.copy(fontSize = 15.sp),
+                    color = tokens.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Text(
                     text = dateText,
                     style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),

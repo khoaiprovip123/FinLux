@@ -13,6 +13,17 @@ if (hasFirebaseConfig) {
     apply(plugin = "com.google.gms.google-services")
 }
 
+val releaseKeystorePath = System.getenv("FINLUX_KEYSTORE_PATH")
+val releaseKeystorePassword = System.getenv("FINLUX_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("FINLUX_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("FINLUX_KEY_PASSWORD")
+val hasReleaseSigningConfig = !releaseKeystorePath.isNullOrBlank() &&
+    file(releaseKeystorePath).exists() &&
+    !releaseKeystorePassword.isNullOrBlank() &&
+    !releaseKeyAlias.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
+val firebaseDebugKeystore = rootProject.file("gradle/debug.keystore")
+
 android {
     // TODO: [Cần xác nhận] Replace this provisional namespace/applicationId before Firebase setup.
     namespace = "com.finlux.app"
@@ -22,8 +33,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 105
-        versionName = "1.8.6"
+        versionCode = 106
+        versionName = "1.8.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -32,23 +43,22 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            storeFile = rootProject.file("gradle/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
-        create("release") {
-            val keystorePath = System.getenv("FINLUX_KEYSTORE_PATH")
-            if (!keystorePath.isNullOrBlank() && file(keystorePath).exists()) {
-                storeFile = file(keystorePath)
-                storePassword = System.getenv("FINLUX_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("FINLUX_KEY_ALIAS")
-                keyPassword = System.getenv("FINLUX_KEY_PASSWORD")
-            } else {
-                storeFile = rootProject.file("gradle/debug.keystore")
+            if (hasFirebaseConfig) {
+                check(firebaseDebugKeystore.exists()) {
+                    "Có google-services.json nhưng thiếu gradle/debug.keystore đã đăng ký SHA-1 trên Firebase."
+                }
+                storeFile = firebaseDebugKeystore
                 storePassword = "android"
                 keyAlias = "androiddebugkey"
                 keyPassword = "android"
+            }
+        }
+        if (hasReleaseSigningConfig) {
+            create("release") {
+                storeFile = file(requireNotNull(releaseKeystorePath))
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
@@ -60,7 +70,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseSigningConfig) signingConfigs.getByName("release") else null
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -83,6 +93,23 @@ android {
         unitTests.all {
             it.useJUnitPlatform()
         }
+    }
+}
+
+val verifyReleaseSigning by tasks.registering {
+    group = "verification"
+    description = "Fails release packaging when the production signing configuration is incomplete."
+    doLast {
+        check(hasReleaseSigningConfig) {
+            "Thiếu cấu hình ký release. Hãy đặt FINLUX_KEYSTORE_PATH, " +
+                "FINLUX_KEYSTORE_PASSWORD, FINLUX_KEY_ALIAS và FINLUX_KEY_PASSWORD."
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name == "assembleRelease" || name == "bundleRelease" || name == "packageRelease") {
+        dependsOn(verifyReleaseSigning)
     }
 }
 

@@ -15,6 +15,37 @@ service cloud.firestore {
       return value is int && value >= 0;
     }
 
+    function walletPath(uid, walletId) {
+      return /databases/$(database)/documents/users/$(uid)/wallets/$(walletId);
+    }
+
+    function transactionDelta(data) {
+      return data.type in ['income', 'transfer_in', 'INCOME', 'TRANSFER_IN']
+        ? data.amount
+        : 0 - data.amount;
+    }
+
+    function walletMovesBy(uid, walletId, delta) {
+      return exists(walletPath(uid, walletId))
+        && getAfter(walletPath(uid, walletId)).data.balance
+          == get(walletPath(uid, walletId)).data.balance + delta;
+    }
+
+    function validTransaction(data) {
+      return data.keys().hasOnly([
+          'type', 'amount', 'categoryId', 'walletId', 'relatedWalletId',
+          'note', 'receiptImageUrl', 'date', 'createdAt', 'updatedAt'
+        ])
+        && data.type in [
+          'income', 'expense', 'transfer_out', 'transfer_in',
+          'INCOME', 'EXPENSE', 'TRANSFER_OUT', 'TRANSFER_IN'
+        ]
+        && isPositiveMoney(data.amount)
+        && data.walletId is string
+        && data.walletId.size() > 0
+        && data.date is timestamp;
+    }
+
     // Root user profile document
     match /users/{uid} {
       allow read: if isOwner(uid);
@@ -23,15 +54,33 @@ service cloud.firestore {
       // Subcollection: Transactions
       match /transactions/{docId} {
         allow read: if isOwner(uid);
-        allow delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
-          && request.resource.data.type in [
-            'income', 'expense', 'transfer_out', 'transfer_in',
-            'INCOME', 'EXPENSE', 'TRANSFER_OUT', 'TRANSFER_IN'
-          ]
-          && isPositiveMoney(request.resource.data.amount)
-          && request.resource.data.walletId is string
-          && request.resource.data.walletId.size() > 0;
+        allow create: if isOwner(uid)
+          && validTransaction(request.resource.data)
+          && walletMovesBy(
+            uid,
+            request.resource.data.walletId,
+            transactionDelta(request.resource.data)
+          );
+        allow update: if isOwner(uid)
+          && validTransaction(request.resource.data)
+          && (
+            (resource.data.walletId == request.resource.data.walletId
+              && walletMovesBy(
+                uid,
+                request.resource.data.walletId,
+                transactionDelta(request.resource.data) - transactionDelta(resource.data)
+              ))
+            ||
+            (resource.data.walletId != request.resource.data.walletId
+              && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
+              && walletMovesBy(
+                uid,
+                request.resource.data.walletId,
+                transactionDelta(request.resource.data)
+              ))
+          );
+        allow delete: if isOwner(uid)
+          && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data));
       }
 
       // Subcollection: Wallets
@@ -39,9 +88,13 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow delete: if isOwner(uid);
         allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'name', 'type', 'balance', 'color', 'isDefault', 'createdAt'
+          ])
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0
-          && request.resource.data.balance is int;
+          && request.resource.data.balance is int
+          && request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other'];
       }
 
       // Subcollection: Budgets
@@ -49,9 +102,15 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow delete: if isOwner(uid);
         allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
+          ])
           && request.resource.data.categoryId is string
           && request.resource.data.categoryId.size() > 0
+          && request.resource.data.month is string
           && request.resource.data.spentAmount is int
+          && request.resource.data.notified80 is bool
+          && request.resource.data.notified100 is bool
           && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
       }
 

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -167,18 +168,18 @@ fun AuthScreen(
                 onBack = { onNavigate(AuthMode.LOGIN) }
             )
 
-            Spacer(Modifier.height(if (mode == AuthMode.LOGIN) 2.dp else 8.dp))
+            Spacer(Modifier.height(if (mode == AuthMode.LOGIN) 2.dp else 0.dp))
 
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(
-                        elevation = if (mode == AuthMode.LOGIN) 16.dp else 0.dp,
-                        shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) else RoundedCornerShape(0.dp),
+                        elevation = if (mode == AuthMode.LOGIN) 0.dp else 16.dp,
+                        shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                         ambientColor = Color(0x203B82F6),
                         spotColor = Color(0x304F46E5)
                     ),
-                shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) else RoundedCornerShape(0.dp),
+                shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                 color = MaterialTheme.colorScheme.surface,
             ) {
                 Column(
@@ -186,21 +187,13 @@ fun AuthScreen(
                         .fillMaxWidth()
                         .padding(
                             horizontal = 26.dp,
-                            vertical = if (mode == AuthMode.LOGIN) 26.dp else 12.dp,
+                            vertical = if (mode == AuthMode.LOGIN) 18.dp else 26.dp,
                         )
                 ) {
-                    if (mode == AuthMode.LOGIN) {
-                        AuthModeTabs(
-                            currentMode = mode,
-                            onTabSelected = onNavigate
-                        )
-                        Spacer(Modifier.height(24.dp))
-                    }
-
                     // Form Fields according to Mode
                     when (mode) {
                         AuthMode.LOGIN -> LoginFormContent(state, viewModel, onNavigate, handleSocialClick)
-                        AuthMode.REGISTER -> RegisterFormContent(state, viewModel, onNavigate)
+                        AuthMode.REGISTER -> RegisterFormContent(state, viewModel, onNavigate, handleSocialClick)
                         AuthMode.FORGOT -> ForgotFormContent(state, viewModel, onNavigate)
                     }
                 }
@@ -226,128 +219,97 @@ private fun AuthHeaderSection(
     mode: AuthMode,
     onBack: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 28.dp, end = 22.dp, top = 46.dp, bottom = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    if (mode == AuthMode.LOGIN) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(top = 22.dp, bottom = 8.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                if (mode == AuthMode.REGISTER || mode == AuthMode.FORGOT) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surface)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                            .clickable(onClick = onBack),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Quay lại",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Spacer(Modifier.height(18.dp))
-                }
-
-                FinluxLogoHeader(fontSize = 27.sp, isDark = false)
-                Spacer(Modifier.height(12.dp))
-
+            Image(
+                painter = painterResource(R.drawable.auth_wallet_3d_v2),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 10.dp, top = 34.dp)
+                    .size(86.dp)
+                    .alpha(0.78f),
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 26.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                FinluxBrandMark(size = 76.dp, framed = true)
+                Spacer(Modifier.height(10.dp))
+                FinluxLogoHeader(fontSize = 39.sp, isDark = false)
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = mode.heading,
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    lineHeight = 25.sp,
-                    maxLines = 1,
-                )
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = mode.description,
-                    fontSize = 13.sp,
+                    text = "Quản lý tài chính thông minh",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 19.sp
+                    fontSize = 14.sp,
                 )
             }
-
-            Spacer(Modifier.width(4.dp))
-
-            Image(
-                painter = painterResource(
-                    if (mode == AuthMode.REGISTER) R.drawable.auth_clipboard_3d_v2 else R.drawable.auth_wallet_3d_v2
-                ),
-                contentDescription = null,
-                modifier = Modifier.size(if (mode == AuthMode.LOGIN) 146.dp else 142.dp),
-            )
         }
+        return
     }
-}
 
-@Composable
-private fun AuthModeTabs(
-    currentMode: AuthMode,
-    onTabSelected: (AuthMode) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF312E81), Color(0xFF5B21B6), Color(0xFF7C3AED)),
+                ),
+            )
+            .statusBarsPadding()
+            .height(238.dp),
     ) {
-        val loginSelected = currentMode == AuthMode.LOGIN
-        val registerSelected = currentMode == AuthMode.REGISTER
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        IconButton(
+            onClick = onBack,
             modifier = Modifier
-                .weight(1f)
-                .clickable { onTabSelected(AuthMode.LOGIN) }
-                .padding(bottom = 6.dp)
+                .padding(start = 14.dp, top = 8.dp)
+                .align(Alignment.TopStart),
         ) {
-            Text(
-                text = "Đăng nhập",
-                fontSize = 16.sp,
-                fontWeight = if (loginSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (loginSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(6.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(if (loginSelected) Color(0xFF4F46E5) else Color.Transparent)
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Quay lại",
+                tint = Color.White,
             )
         }
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .weight(1f)
-                .clickable { onTabSelected(AuthMode.REGISTER) }
-                .padding(bottom = 6.dp)
+                .align(Alignment.BottomStart)
+                .padding(start = 26.dp, end = 150.dp, bottom = 28.dp),
         ) {
             Text(
-                text = "Đăng ký",
-                fontSize = 16.sp,
-                fontWeight = if (registerSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (registerSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                text = mode.heading,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                lineHeight = 36.sp,
             )
-            Spacer(Modifier.height(6.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(if (registerSelected) Color(0xFF4F46E5) else Color.Transparent)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = mode.description,
+                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.88f),
+                lineHeight = 20.sp,
             )
         }
+
+        Image(
+            painter = painterResource(
+                if (mode == AuthMode.REGISTER) R.drawable.auth_clipboard_3d_v2 else R.drawable.auth_wallet_3d_v2,
+            ),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 10.dp, top = 24.dp)
+                .size(146.dp),
+        )
     }
 }
 
@@ -359,6 +321,27 @@ private fun LoginFormContent(
     onSocialSignIn: (SocialAuthProvider) -> Unit,
 ) {
     Column {
+        Text(
+            text = "Đăng nhập",
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Chào mừng bạn trở lại! Vui lòng đăng nhập để tiếp tục.",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(26.dp))
+
         FinluxInput(
             value = state.email,
             onValueChange = viewModel::updateEmail,
@@ -447,7 +430,24 @@ private fun LoginFormContent(
         // Social Login Cards Row
         SocialLoginRow(onSocialClick = onSocialSignIn)
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Chưa có tài khoản? ", fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = "Đăng ký ngay",
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF5B21B6),
+                modifier = Modifier.clickable { onNavigate(AuthMode.REGISTER) },
+            )
+        }
+
+        Spacer(Modifier.height(22.dp))
 
         // Terms Notice
         Text(
@@ -475,6 +475,7 @@ private fun RegisterFormContent(
     state: AuthUiState,
     viewModel: AuthViewModel,
     onNavigate: (AuthMode) -> Unit,
+    onSocialSignIn: (SocialAuthProvider) -> Unit,
 ) {
     Column {
         FinluxInput(
@@ -487,21 +488,21 @@ private fun RegisterFormContent(
         Spacer(Modifier.height(14.dp))
 
         FinluxInput(
-            value = state.email,
-            onValueChange = viewModel::updateEmail,
-            placeholder = "Email",
-            leadingIcon = Icons.Default.Email,
-            keyboardType = KeyboardType.Email
-        )
-
-        Spacer(Modifier.height(14.dp))
-
-        FinluxInput(
             value = state.phone,
             onValueChange = viewModel::updatePhone,
             placeholder = "Số điện thoại",
             leadingIcon = Icons.Default.Phone,
             keyboardType = KeyboardType.Phone
+        )
+
+        Spacer(Modifier.height(14.dp))
+
+        FinluxInput(
+            value = state.email,
+            onValueChange = viewModel::updateEmail,
+            placeholder = "Email",
+            leadingIcon = Icons.Default.Email,
+            keyboardType = KeyboardType.Email
         )
 
         Spacer(Modifier.height(14.dp))
@@ -583,10 +584,18 @@ private fun RegisterFormContent(
 
         // Primary Register Button
         GradientButton(
-            text = "Tạo tài khoản",
+            text = "Đăng ký",
             isLoading = state.isLoading,
             onClick = viewModel::register
         )
+
+        Spacer(Modifier.height(22.dp))
+
+        SocialDivider(text = "Hoặc đăng ký với")
+
+        Spacer(Modifier.height(16.dp))
+
+        SocialLoginRow(onSocialClick = onSocialSignIn)
 
         Spacer(Modifier.height(22.dp))
 

@@ -7,6 +7,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import android.net.Uri
 import kotlinx.coroutines.channels.awaitClose
@@ -21,6 +23,7 @@ class FirebaseAuthRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage,
+    private val messaging: FirebaseMessaging? = null,
 ) : AuthRepository {
     private val profileUpdates = MutableSharedFlow<UserProfile?>(extraBufferCapacity = 1)
     private val authState: Flow<UserProfile?> = callbackFlow {
@@ -35,6 +38,7 @@ class FirebaseAuthRepository(
     override suspend fun signIn(email: String, password: String): AppResult<UserProfile> = runCatching {
         val user = auth.signInWithEmailAndPassword(email.trim(), password).await().user
             ?: error("Firebase không trả về người dùng")
+        syncFcmToken(user.uid)
         user.toDomain()
     }.fold(
         onSuccess = { AppResult.Success(it) },
@@ -51,11 +55,14 @@ class FirebaseAuthRepository(
         user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(displayName.trim()).build()).await()
         try {
             seedNewUser(user.uid, displayName.trim(), email.trim())
-        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
-            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
         } catch (e: Exception) {
-            android.util.Log.w("Firestore", "Không thể seed dữ liệu Firestore: ${e.message}", e)
+            // UC-01 requires Auth + profile + default wallet/categories to succeed as one
+            // logical registration. Roll back the Auth account so the email can be retried.
+            runCatching { user.delete().await() }
+                .onFailure { rollbackError -> e.addSuppressed(rollbackError) }
+            throw IllegalStateException("Không thể khởi tạo dữ liệu tài chính. Vui lòng thử lại.", e)
         }
+        syncFcmToken(user.uid)
         user.toDomain().copy(displayName = displayName.trim())
     }.fold(
         onSuccess = { AppResult.Success(it) },
@@ -69,11 +76,11 @@ class FirebaseAuthRepository(
         val domainUser = user.toDomain()
         try {
             seedNewUser(user.uid, domainUser.displayName, domainUser.email)
-        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
-            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
         } catch (e: Exception) {
-            android.util.Log.w("Firestore", "Khởi tạo Firestore user profile thất bại: ${e.message}", e)
+            auth.signOut()
+            throw IllegalStateException("Không thể khởi tạo dữ liệu tài chính. Vui lòng thử lại.", e)
         }
+        syncFcmToken(user.uid)
         domainUser
     }.fold(
         onSuccess = { AppResult.Success(it) },
@@ -130,67 +137,73 @@ class FirebaseAuthRepository(
 
     /** BR-02: profile, default wallet and categories are committed together ONLY for new users. */
     private suspend fun seedNewUser(uid: String, displayName: String, email: String) {
-        try {
-            val user = firestore.collection("users").document(uid)
-            val userDoc = user.get().await()
-            val walletsSnapshot = user.collection("wallets").limit(1).get().await()
-            val categoriesSnapshot = user.collection("categories").limit(1).get().await()
+        val user = firestore.collection("users").document(uid)
+        val userDoc = user.get().await()
+        val walletsSnapshot = user.collection("wallets").limit(1).get().await()
+        val categoriesSnapshot = user.collection("categories").limit(1).get().await()
 
-            val batch = firestore.batch()
+        val batch = firestore.batch()
 
-            // 1. Update/Merge profile safely without overwriting user data
-            if (!userDoc.exists()) {
+        // 1. Update/Merge profile safely without overwriting user data
+        if (!userDoc.exists()) {
+            batch.set(
+                user,
+                mapOf(
+                    "displayName" to displayName,
+                    "email" to email,
+                    "photoUrl" to "",
+                    "createdAt" to FieldValue.serverTimestamp(),
+                ),
+                SetOptions.merge(),
+            )
+        } else {
+            batch.set(
+                user,
+                mapOf(
+                    "displayName" to displayName,
+                    "email" to email,
+                ),
+                SetOptions.merge(),
+            )
+        }
+
+        // 2. Wallets: ONLY seed if user has 0 wallets in Firestore (PREVENT OVERWRITING USER BALANCE)
+        if (walletsSnapshot.isEmpty) {
+            batch.set(
+                user.collection("wallets").document("cash"),
+                mapOf(
+                    "name" to "Tiền mặt",
+                    "type" to "cash",
+                    "balance" to 0L,
+                    "color" to "#1F6FBF",
+                    "isDefault" to true,
+                    "createdAt" to FieldValue.serverTimestamp(),
+                ),
+            )
+        }
+
+        // 3. Categories: ONLY seed if user has 0 categories in Firestore
+        if (categoriesSnapshot.isEmpty) {
+            defaultCategories.forEach { (id, values) ->
                 batch.set(
-                    user,
-                    mapOf(
-                        "displayName" to displayName,
-                        "email" to email,
-                        "photoUrl" to "",
-                        "createdAt" to FieldValue.serverTimestamp(),
-                    ),
-                    com.google.firebase.firestore.SetOptions.merge()
-                )
-            } else {
-                batch.set(
-                    user,
-                    mapOf(
-                        "displayName" to displayName,
-                        "email" to email,
-                    ),
-                    com.google.firebase.firestore.SetOptions.merge()
+                    user.collection("categories").document(id),
+                    values + ("createdAt" to FieldValue.serverTimestamp()),
                 )
             }
+        }
 
-            // 2. Wallets: ONLY seed if user has 0 wallets in Firestore (PREVENT OVERWRITING USER BALANCE)
-            if (walletsSnapshot.isEmpty) {
-                batch.set(
-                    user.collection("wallets").document("cash"),
-                    mapOf(
-                        "name" to "Tiền mặt",
-                        "type" to "cash",
-                        "balance" to 0L,
-                        "color" to "#1F6FBF",
-                        "isDefault" to true,
-                        "createdAt" to FieldValue.serverTimestamp(),
-                    )
-                )
-            }
+        batch.commit().await()
+    }
 
-            // 3. Categories: ONLY seed if user has 0 categories in Firestore
-            if (categoriesSnapshot.isEmpty) {
-                defaultCategories.forEach { (id, values) ->
-                    batch.set(
-                        user.collection("categories").document(id),
-                        values + ("createdAt" to FieldValue.serverTimestamp())
-                    )
-                }
-            }
-
-            batch.commit().await()
-        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
-            android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
-        } catch (e: Exception) {
-            android.util.Log.w("Firestore", "Khởi tạo Firestore user profile thất bại: ${e.message}", e)
+    private suspend fun syncFcmToken(uid: String) {
+        runCatching {
+            val token = messaging?.token?.await()?.takeIf(String::isNotBlank) ?: return
+            firestore.collection("users").document(uid).set(
+                mapOf("fcmTokens" to FieldValue.arrayUnion(token)),
+                SetOptions.merge(),
+            ).await()
+        }.onFailure { error ->
+            android.util.Log.w("FirebaseMessaging", "Không thể đồng bộ FCM token: ${error.message}", error)
         }
     }
 

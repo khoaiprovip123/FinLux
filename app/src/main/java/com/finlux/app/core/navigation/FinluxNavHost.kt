@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -74,6 +75,7 @@ import com.finlux.app.presentation.updater.AppUpdateDialog
 import com.finlux.app.presentation.updater.AppUpdateViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun FinluxNavHost(
@@ -109,6 +111,9 @@ fun FinluxNavHost(
     var showReceiptCapture by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val swipeOffset = remember { Animatable(0f) }
+    val swipeAnimationScope = rememberCoroutineScope()
+    val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
 
     val destination = destinationFlow?.collectAsState()?.value
     LaunchedEffect(destination) {
@@ -135,10 +140,74 @@ fun FinluxNavHost(
             }
         }
     }
-    Box(Modifier.fillMaxSize()) {
+    LaunchedEffect(currentRoute) {
+        swipeOffset.snapTo(0f)
+    }
+
+    val mainSwipeModifier = if (currentRoute in MainSwipeRoutes) {
+        Modifier.pointerInput(currentRoute, uiPreferences.animationsEnabled) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                var horizontalTravel = 0f
+                var verticalTravel = 0f
+                var gestureLocked = false
+                var lastUptimeMillis = down.uptimeMillis
+
+                do {
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    val delta = change.positionChange()
+                    horizontalTravel += delta.x
+                    verticalTravel += delta.y
+                    lastUptimeMillis = change.uptimeMillis
+
+                    if (!gestureLocked &&
+                        abs(horizontalTravel) >= viewConfiguration.touchSlop &&
+                        abs(horizontalTravel) >= abs(verticalTravel) * 1.20f
+                    ) {
+                        gestureLocked = true
+                    }
+
+                    if (gestureLocked) {
+                        change.consume()
+                        val atFirstEdge = currentRoute == MainSwipeRoutes.first() && horizontalTravel > 0f
+                        val atLastEdge = currentRoute == MainSwipeRoutes.last() && horizontalTravel < 0f
+                        val resistance = if (atFirstEdge || atLastEdge) 0.22f else 0.72f
+                        swipeAnimationScope.launch {
+                            swipeOffset.snapTo(horizontalTravel * resistance)
+                        }
+                    }
+                } while (change.pressed)
+
+                if (gestureLocked) {
+                    val target = mainRouteAfterSwipe(
+                        currentRoute = currentRoute,
+                        horizontalTravel = horizontalTravel,
+                        verticalTravel = verticalTravel,
+                        threshold = swipeThresholdPx,
+                        elapsedMillis = lastUptimeMillis - down.uptimeMillis,
+                    )
+                    if (target != null) navigateMain(target)
+                    if (uiPreferences.animationsEnabled) {
+                        swipeAnimationScope.launch {
+                            swipeOffset.animateTo(
+                                targetValue = 0f,
+                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 650f),
+                            )
+                        }
+                    } else {
+                        swipeAnimationScope.launch { swipeOffset.snapTo(0f) }
+                    }
+                }
+            }
+        }
+    } else Modifier
+
+    Box(Modifier.fillMaxSize().then(mainSwipeModifier)) {
         NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
+            modifier = Modifier.graphicsLayer { translationX = swipeOffset.value },
             enterTransition = {
                 val from = MainSwipeRoutes.indexOf(initialState.destination.route)
                 val to = MainSwipeRoutes.indexOf(targetState.destination.route)
@@ -223,8 +292,6 @@ fun FinluxNavHost(
             composable(Route.Categories.value) { CategoriesScreen(onBack = navController::popBackStack) }
             composable(Route.Wallets.value) {
                 WalletsScreen(
-                    onNavigate = navigateMain,
-                    onAdd = { showQuickAdd = true },
                     onBack = navController::popBackStack,
                     transferRequestKey = walletTransferRequest,
                 )

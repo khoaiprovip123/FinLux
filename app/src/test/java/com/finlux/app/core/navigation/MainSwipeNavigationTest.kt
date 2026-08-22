@@ -23,6 +23,7 @@ class MainSwipeNavigationTest {
         assertNull(mainRouteAfterSwipe(Route.Home.value, -50f, 72f))
         assertNull(mainRouteAfterSwipe(Route.Home.value, 90f, 72f))
         assertNull(mainRouteAfterSwipe(Route.Settings.value, -90f, 72f))
+        assertNull(mainRouteAfterSwipe(Route.Wallets.value, -90f, 72f))
         assertNull(mainRouteAfterSwipe(Route.Login.value, -90f, 72f))
     }
 
