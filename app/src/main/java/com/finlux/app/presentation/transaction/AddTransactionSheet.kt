@@ -59,6 +59,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,6 +100,7 @@ import java.text.DecimalFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
@@ -134,11 +136,16 @@ fun AddTransactionSheet(
     var categoryToEdit by remember { mutableStateOf<Category?>(null) }
     var categoryToDelete by remember { mutableStateOf<Category?>(null) }
 
-    LaunchedEffect(initialTransaction) {
+    LaunchedEffect(initialTransaction, initialType) {
         if (initialTransaction != null) {
             viewModel.setEditingTransaction(initialTransaction)
         } else {
-            initialType?.let(viewModel::setType)
+            viewModel.resetForNewTransaction(initialType)
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetForNewTransaction()
         }
     }
     LaunchedEffect(initialReceiptUri) {
@@ -572,21 +579,46 @@ fun AddTransactionSheet(
         }
     }
 
-    // Date Picker Dialog
+    // Date & Time Picker Dialog
     if (showDatePicker) {
+        val currentZoned = remember(state.date) { state.date.atZone(ZoneId.systemDefault()) }
+        val initialDateUtcMillis = remember(currentZoned) {
+            currentZoned.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        }
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.date.toEpochMilli(),
+            initialSelectedDateMillis = initialDateUtcMillis,
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        viewModel.setDate(Instant.ofEpochMilli(it))
-                    }
+                    val selectedMillis = datePickerState.selectedDateMillis
                     showDatePicker = false
+                    if (selectedMillis != null) {
+                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
+                            .atZone(ZoneOffset.UTC)
+                            .toLocalDate()
+
+                        val timePickerDialog = android.app.TimePickerDialog(
+                            context,
+                            { _, hourOfDay, minute ->
+                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
+                                val newInstant = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                                viewModel.setDate(newInstant)
+                            },
+                            currentZoned.hour,
+                            currentZoned.minute,
+                            true, // 24-hour format
+                        )
+                        timePickerDialog.setOnCancelListener {
+                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
+                            val newInstant = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                            viewModel.setDate(newInstant)
+                        }
+                        timePickerDialog.show()
+                    }
                 }) {
-                    Text("Xác nhận")
+                    Text("Tiếp tục (Chọn giờ)")
                 }
             },
             dismissButton = {

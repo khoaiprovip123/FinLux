@@ -4,6 +4,50 @@
 - **Phiên bản hiện tại:** v1.9.0 (versionCode 108) - Ready for Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công trên máy cục bộ.
 
+## [DONE] Task: Tích Hợp Bộ Chọn Giờ (TimePickerDialog) Khi Sửa Thời Gian Giao Dịch
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Nguyên nhân:** Khi nhấn vào ô "THỜI GIAN GIAO DỊCH", form trước đây chỉ mở `DatePickerDialog` (Chọn ngày) và tự gán thời gian về 00:00 UTC (tương đương 07:00 giờ Việt Nam), người dùng hoàn toàn không có giao diện chọn giờ/phút.
+- **Giải pháp:**
+  - Trong [AddTransactionSheet.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt): Tích hợp luồng chọn ngày ➔ chọn giờ mượt mà.
+  - Khi người dùng chọn ngày xong, hệ thống tự động mở `TimePickerDialog` (định dạng 24h) với giờ/phút hiện tại của giao dịch được điền sẵn.
+  - Người dùng có thể tùy chỉnh chính xác giờ và phút (ví dụ: `11:48`, `15:30`) rồi xác nhận.
+- **Kiểm thử:** `.\gradlew testDebugUnitTest`: **103/103 test cases PASS (100%)**.
+
+## [DONE] Task: Fix Lỗi Mở Form Thêm Thu/Chi Bị Dính Trạng Thái "Sửa Giao Dịch" Và Dữ Liệu Cũ
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Nguyên nhân:** `AddTransactionViewModel` được chia sẻ qua ViewModel Store. Khi người dùng bấm tạo giao dịch mới (`initialTransaction = null`), ViewModel không được reset mà vẫn lưu `editingTransaction` từ lần sửa/xem trước đó, dẫn đến form hiển thị tiêu đề "Sửa giao dịch" và giữ nguyên số tiền, danh mục, thời gian cũ.
+- **Giải pháp:**
+  - Bổ sung hàm `resetForNewTransaction(type)` trong [AddTransactionViewModel.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionViewModel.kt) để xóa sạch `editingTransaction`, `amountInput`, `note`, `receiptUri` và khởi tạo lại thời gian hiện tại `Instant.now()`.
+  - Cập nhật [AddTransactionSheet.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt): Luôn gọi `resetForNewTransaction(initialType)` khi mở tạo mới và `DisposableEffect` dọn dẹp state khi đóng sheet.
+  - Bổ sung Unit Test `resetForNewTransaction clears previous editing state and resets fields` trong [AddTransactionViewModelTest.kt](file:///d:/Sources/FinLux/app/src/test/java/com/finlux/app/presentation/transaction/AddTransactionViewModelTest.kt).
+- **Kiểm thử:** `.\gradlew testDebugUnitTest`: **103/103 test cases PASS (100%)**.
+
+## [DONE] Task: Chuẩn Hóa Dữ Liệu Chi Tiêu Theo Danh Mục Mặc Định 0đ Cho Tài Khoản Mới
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- Trong [PrismHomeScreen.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt): Loại bỏ toàn bộ các giá trị mẫu giả lập hardcoded (2,5 tr, Tiền trọ 2,2 tr, Ăn uống 205k, v.v.).
+- Với tài khoản mới (hoặc chưa có phát sinh giao dịch trong kỳ): Toàn bộ các thẻ thống kê phân bổ (`allExpenseShares`, `incomeShares`, `budgetShares`, `walletShares`) tự động hiển thị số tiền `0 đ` và tỷ lệ `0%`.
+- Vòng tròn Donut Chart khi 0% chuyển sang vẽ viền mờ mềm mại (`alpha = 0.2f`).
+- `.\gradlew testDebugUnitTest`: **102/102 test cases PASS (100%)**.
+
+## [DONE] Task: Ẩn Dòng Chữ Giải Thích Nợ Khi Không Có Khoản Nợ Trên Hero Card Trang Chủ
+
+**Ngày hoàn thành:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- Trong [PrismHomeScreen.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt): Bọc điều kiện `if (totalDebt > 0L)` cho dòng text phụ dưới số dư Net Worth.
+- Khi người dùng không có khoản nợ nào (`totalDebt = 0`), thẻ Hero Card sẽ hoàn toàn thoáng đãng, không hiển thị dòng chữ thừa "Không có khoản nợ".
+- `.\gradlew testDebugUnitTest`: **102/102 test cases PASS (100%)**.
+- Đã build và nạp APK lên thiết bị test qua ADB.
+
 ## [DONE] Task: Đổi Nút Clear [x] Ô Nhập Tiền & Lưu Vĩnh Viễn Cấu Hình Trả Thêm Mỗi Tháng (DataStore)
 
 **Ngày hoàn thành:** 2026-08-22

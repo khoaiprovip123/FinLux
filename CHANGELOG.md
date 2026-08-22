@@ -26,6 +26,10 @@
 ### Fixed
 - Khắc phục lỗi Google Sign-In bị fallback sang dữ liệu Demo khi đăng nhập lần đầu.
 - Sửa triệt để lỗi nền tối màn hình Quản lý nợ khi ở Theme Sáng (Light Mode).
+- Ẩn dòng chữ thừa "Không có khoản nợ" trên thẻ Hero Card Trang chủ khi dư nợ bằng 0.
+- Chuẩn hóa biểu đồ Donut Chart phân bổ danh mục hiển thị mặc định 0 đ và 0% cho tài khoản mới.
+- Sửa lỗi giữ lại trạng thái cũ ("Sửa giao dịch") khi mở form Thêm thu / Thêm chi mới.
+- Tích hợp bộ chọn giờ (`TimePickerDialog`) kết hợp với chọn ngày, cho phép tùy chỉnh chính xác giờ/phút giao dịch.
 
 ## [1.8.8] - 2026-08-22
 ### Changed

@@ -553,14 +553,16 @@ private fun PrismHeroNetWorthCard(
                     color = Color.White,
                 )
 
-                Text(
-                    text = if (totalDebt > 0L) "Tổng ví trừ tổng dư nợ" else "Không có khoản nợ",
-                    style = FinluxTextStyles.Caption.copy(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
-                    color = Color.White.copy(alpha = 0.80f),
-                )
+                if (totalDebt > 0L) {
+                    Text(
+                        text = "Tổng ví trừ tổng dư nợ",
+                        style = FinluxTextStyles.Caption.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                        ),
+                        color = Color.White.copy(alpha = 0.80f),
+                    )
+                }
 
                 Spacer(Modifier.height(14.dp))
 
@@ -1209,14 +1211,16 @@ private fun PrismCategoryExpenseBreakdownCard(
                 Triple(cat, sum, percent)
             }.sortedByDescending { it.second }
         } else {
-            listOf(
-                Triple(Category("1", "Tiền Trọ", CategoryType.EXPENSE, "Home", "#6366F1", true, Instant.now()), 2_200_000L, 87),
-                Triple(Category("2", "Ăn uống", CategoryType.EXPENSE, "Restaurant", "#EC4899", true, Instant.now()), 205_000L, 8),
-                Triple(Category("3", "Tiền Mạng", CategoryType.EXPENSE, "Wifi", "#F97316", true, Instant.now()), 100_000L, 3),
-                Triple(Category("4", "Đi lại", CategoryType.EXPENSE, "DirectionsCar", "#14B8A6", true, Instant.now()), 0L, 0),
-                Triple(Category("5", "Mua sắm", CategoryType.EXPENSE, "ShoppingBag", "#06B6D4", true, Instant.now()), 0L, 0),
-                Triple(Category("6", "Giải trí", CategoryType.EXPENSE, "SportsEsports", "#8B5CF6", true, Instant.now()), 0L, 0),
-            )
+            val expenseCats = categories.filter { it.type == CategoryType.EXPENSE }
+            if (expenseCats.isNotEmpty()) {
+                expenseCats.take(6).map { Triple(it, 0L, 0) }
+            } else {
+                listOf(
+                    Triple(Category("1", "Ăn uống", CategoryType.EXPENSE, "Restaurant", "#EC4899", true, Instant.now()), 0L, 0),
+                    Triple(Category("2", "Tiền nhà", CategoryType.EXPENSE, "Home", "#6366F1", true, Instant.now()), 0L, 0),
+                    Triple(Category("3", "Mua sắm", CategoryType.EXPENSE, "ShoppingBag", "#06B6D4", true, Instant.now()), 0L, 0),
+                )
+            }
         }
     }
 
@@ -1254,17 +1258,22 @@ private fun PrismCategoryExpenseBreakdownCard(
                 Triple(cat, sum, percent)
             }.sortedByDescending { it.second }.take(3)
         } else {
-            listOf(
-                Triple(Category("101", "Lương chính", CategoryType.INCOME, "Work", "#10B981", true, Instant.now()), 0L, 0),
-                Triple(Category("102", "Thưởng", CategoryType.INCOME, "CardGiftcard", "#06B6D4", true, Instant.now()), 0L, 0),
-                Triple(Category("103", "Đầu tư", CategoryType.INCOME, "TrendingUp", "#3B82F6", true, Instant.now()), 0L, 0),
-            )
+            val incomeCats = categories.filter { it.type == CategoryType.INCOME }
+            if (incomeCats.isNotEmpty()) {
+                incomeCats.take(3).map { Triple(it, 0L, 0) }
+            } else {
+                listOf(
+                    Triple(Category("101", "Lương chính", CategoryType.INCOME, "Work", "#10B981", true, Instant.now()), 0L, 0),
+                    Triple(Category("102", "Thưởng", CategoryType.INCOME, "CardGiftcard", "#06B6D4", true, Instant.now()), 0L, 0),
+                    Triple(Category("103", "Đầu tư", CategoryType.INCOME, "TrendingUp", "#3B82F6", true, Instant.now()), 0L, 0),
+                )
+            }
         }
     }
 
     // Page 3: Budget shares
     val budgetShares = listOf(
-        Triple(Category("201", "Thiết yếu (50%)", CategoryType.EXPENSE, "Shield", "#8B5CF6", true, Instant.now()), 2_505_000L, 65),
+        Triple(Category("201", "Thiết yếu (50%)", CategoryType.EXPENSE, "Shield", "#8B5CF6", true, Instant.now()), 0L, 0),
         Triple(Category("202", "Mong muốn (30%)", CategoryType.EXPENSE, "Favorite", "#EC4899", true, Instant.now()), 0L, 0),
         Triple(Category("203", "Tiết kiệm (20%)", CategoryType.EXPENSE, "Savings", "#F59E0B", true, Instant.now()), 0L, 0),
     )
@@ -1272,9 +1281,9 @@ private fun PrismCategoryExpenseBreakdownCard(
     // Page 4: Wallets asset distribution
     val totalWalletBalance = wallets.sumOf { it.balance.value }
     val walletShares = remember(wallets, totalWalletBalance) {
-        if (wallets.isNotEmpty() && totalWalletBalance > 0L) {
+        if (wallets.isNotEmpty()) {
             wallets.map { w ->
-                val pct = ((w.balance.value * 100.0) / totalWalletBalance).toInt()
+                val pct = if (totalWalletBalance > 0L) ((w.balance.value * 100.0) / totalWalletBalance).toInt() else 0
                 Triple(
                     Category(id = w.id, name = w.name, type = CategoryType.EXPENSE, icon = "AccountBalanceWallet", colorHex = "#3B82F6", isDefault = false, createdAt = Instant.now()),
                     w.balance.value,
@@ -1282,11 +1291,7 @@ private fun PrismCategoryExpenseBreakdownCard(
                 )
             }.sortedByDescending { it.second }.take(3)
         } else {
-            listOf(
-                Triple(Category("301", "Ví chính", CategoryType.EXPENSE, "AccountBalanceWallet", "#3B82F6", true, Instant.now()), 6_110_000L, 100),
-                Triple(Category("302", "Tiền mặt", CategoryType.EXPENSE, "Payments", "#10B981", true, Instant.now()), 0L, 0),
-                Triple(Category("303", "Ngân hàng", CategoryType.EXPENSE, "AccountBalance", "#F97316", true, Instant.now()), 0L, 0),
-            )
+            emptyList()
         }
     }
 
@@ -1356,35 +1361,35 @@ private fun PrismCategoryExpenseBreakdownCard(
                         0 -> PrismBreakdownPageContent(
                             shares = page0Shares,
                             colors = expensePalette1,
-                            centerAmount = if (totalExpense > 0L) formatVndAmount(totalExpense, isCompact = true) else "2,5 tr",
+                            centerAmount = formatVndAmount(totalExpense, isCompact = true),
                             centerLabel = "Tổng chi",
                             showBalance = showBalance,
                         )
                         1 -> PrismBreakdownPageContent(
                             shares = page1Shares,
                             colors = expensePalette2,
-                            centerAmount = if (totalExpense > 0L) formatVndAmount(totalExpense, isCompact = true) else "2,5 tr",
+                            centerAmount = formatVndAmount(totalExpense, isCompact = true),
                             centerLabel = "Nhóm 2",
                             showBalance = showBalance,
                         )
                         2 -> PrismBreakdownPageContent(
                             shares = incomeShares,
                             colors = incomePalette,
-                            centerAmount = if (totalIncome > 0L) formatVndAmount(totalIncome, isCompact = true) else "0 đ",
+                            centerAmount = formatVndAmount(totalIncome, isCompact = true),
                             centerLabel = "Tổng thu",
                             showBalance = showBalance,
                         )
                         3 -> PrismBreakdownPageContent(
                             shares = budgetShares,
                             colors = budgetPalette,
-                            centerAmount = "65%",
+                            centerAmount = "0%",
                             centerLabel = "Đã chi tiêu",
                             showBalance = showBalance,
                         )
                         4 -> PrismBreakdownPageContent(
                             shares = walletShares,
                             colors = walletPalette,
-                            centerAmount = if (totalWalletBalance > 0L) formatVndAmount(totalWalletBalance, isCompact = true) else "6,1 tr",
+                            centerAmount = formatVndAmount(totalWalletBalance, isCompact = true),
                             centerLabel = "Tài sản ví",
                             showBalance = showBalance,
                         )
@@ -1597,7 +1602,7 @@ private fun PrismDonutChart(
         // If all 0%, draw a soft default ring
         if (percentages.all { it == 0 }) {
             drawArc(
-                color = Color(0xFF6366F1),
+                color = Color(0xFF6366F1).copy(alpha = 0.2f),
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
