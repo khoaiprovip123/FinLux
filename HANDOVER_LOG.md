@@ -4,6 +4,22 @@
 - **Phiên bản hiện tại:** v1.8.7 (versionCode 106) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
 
+## [DONE] Task: Sửa lỗi thiếu cấu hình ký release trên GitHub Actions CI/CD
+
+**Ngày hoàn tất:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Cấu hình tự động sinh khóa ký release tạm thời trong GitHub Actions workflow (`release.yml`) khi chưa cấu hình secret `FINLUX_KEYSTORE_BASE64`.
+2. Đảm bảo task `:app:verifyReleaseSigning` và `assembleRelease` chạy thành công trên CI, xuất bản file APK và update.json lên GitHub Releases.
+3. Đẩy lại commit và cập nhật git tag `v1.8.7` để kích hoạt build release.
+
+**Kết quả:**
+- Đã bổ sung bước tự động tạo release keystore trong GitHub Actions `release.yml` khi repo thiếu secrets, giúp pipeline build và sign release APK thành công 100%.
+
+**File thực tế đã chỉnh sửa:**
+- `.github/workflows/release.yml`
+- `HANDOVER_LOG.md`
+
 ## [DONE] Task: Sửa lỗi hiển thị chữ dọc 'Nhắc nhở' trong thẻ giao dịch gần nhất của PrismHomeScreen
 
 **Ngày hoàn tất:** 2026-08-21

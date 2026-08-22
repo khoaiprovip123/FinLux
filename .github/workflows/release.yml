@@ -75,8 +75,13 @@ jobs:
             echo "FINLUX_KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
             echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
           else
-            echo "No private release keystore secret configured. Using fallback signing."
-            echo "HAS_RELEASE_KEY=false" >> $GITHUB_ENV
+            echo "No private release keystore secret configured. Generating automated CI release signing key..."
+            keytool -genkeypair -v -keystore /tmp/release.keystore -alias finlux_release -keyalg RSA -keysize 2048 -validity 10000 -storepass finlux_ci_pass -keypass finlux_ci_pass -dname "CN=FinLux Release, OU=CI, O=FinLux, L=Hanoi, ST=Hanoi, C=VN"
+            echo "FINLUX_KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
+            echo "FINLUX_KEYSTORE_PASSWORD=finlux_ci_pass" >> $GITHUB_ENV
+            echo "FINLUX_KEY_ALIAS=finlux_release" >> $GITHUB_ENV
+            echo "FINLUX_KEY_PASSWORD=finlux_ci_pass" >> $GITHUB_ENV
+            echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
           fi
 
       - name: Build Release APK
