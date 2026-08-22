@@ -9,6 +9,7 @@ import com.finlux.app.data.remote.firebase.FirebaseBudgetRepository
 import com.finlux.app.data.remote.firebase.FirebaseCategoryRepository
 import com.finlux.app.data.remote.firebase.FirebaseDashboardRepository
 import com.finlux.app.data.remote.firebase.FirebaseGoalRepository
+import com.finlux.app.data.remote.firebase.FirebaseDebtRepository
 import com.finlux.app.data.remote.firebase.FirebaseNotificationRepository
 import com.finlux.app.data.remote.firebase.FirebaseReceiptStorageRepository
 import com.finlux.app.data.remote.firebase.FirebaseReminderRepository
@@ -18,6 +19,7 @@ import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
+import com.finlux.app.domain.repository.DebtRepository
 import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.ThemePreferenceRepository
 import com.finlux.app.domain.repository.UiPreferencesRepository
@@ -58,6 +60,12 @@ abstract class LocalRepositoryModule {
     abstract fun bindReminderScheduler(
         implementation: AlarmReminderScheduler,
     ): ReminderScheduler
+
+    @Binds
+    @Singleton
+    abstract fun bindDebtPreferenceRepository(
+        implementation: com.finlux.app.data.local.datastore.DataStoreDebtPreferenceRepository,
+    ): com.finlux.app.domain.repository.DebtPreferenceRepository
 }
 
 @Module
@@ -173,5 +181,16 @@ object FinanceRepositoryModule {
     ): NotificationRepository =
         if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
             FirebaseNotificationRepository(auth, firestore)
+        } else demo
+
+    @Provides
+    @Singleton
+    fun provideDebtRepository(
+        demo: DemoFinluxRepository,
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): DebtRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseDebtRepository(auth, firestore)
         } else demo
 }

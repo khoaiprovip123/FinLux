@@ -26,6 +26,7 @@ private val GlassIntensityKey = stringPreferencesKey("glass_intensity")
 private val CardDensityKey = stringPreferencesKey("card_density")
 private val AnimationsKey = booleanPreferencesKey("animations_enabled")
 private val BiometricKey = booleanPreferencesKey("biometric_enabled")
+private val BiometricTimeoutKey = stringPreferencesKey("biometric_timeout")
 private val VisualStyleKey = stringPreferencesKey("visual_style")
 
 @Singleton
@@ -65,6 +66,9 @@ class DataStoreThemePreferenceRepository @Inject constructor(
                 ?: CardDensity.COMFORTABLE,
             animationsEnabled = stored[AnimationsKey] ?: true,
             biometricEnabled = stored[BiometricKey] ?: false,
+            biometricTimeout = stored[BiometricTimeoutKey]
+                ?.let { value -> com.finlux.app.domain.model.BiometricLockTimeout.entries.firstOrNull { it.name == value } }
+                ?: com.finlux.app.domain.model.BiometricLockTimeout.IMMEDIATE,
         )
     }
 
@@ -75,6 +79,7 @@ class DataStoreThemePreferenceRepository @Inject constructor(
             it[CardDensityKey] = preferences.cardDensity.name
             it[AnimationsKey] = preferences.animationsEnabled
             it[BiometricKey] = preferences.biometricEnabled
+            it[BiometricTimeoutKey] = preferences.biometricTimeout.name
         }
     }
 }

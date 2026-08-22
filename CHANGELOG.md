@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.9.0] - 2026-08-22
+### Added
+- **Module Quản Lý & Thoát Nợ (Debt Freedom & Credit Hub - UC-26)**:
+  - Quản lý 4 loại công nợ: Thẻ tín dụng (Credit Card), Vay ngân hàng (Bank Loan), Vay cá nhân (Personal Loan), Mua trả góp (Installment).
+  - Thuật toán mô phỏng thoát nợ tự động theo 2 chiến lược kinh điển: **Debt Snowball** (Cầu tuyết - nợ nhỏ trước) và **Debt Avalanche** (Lở tuyết - lãi cao trước).
+  - Biểu đồ mô phỏng lộ trình giảm dư nợ theo thời gian (Burndown Chart) và tính toán số tháng dự kiến sạch nợ cùng số tiền lãi tiết kiệm được.
+  - Thanh toán nợ nguyên tử (Firestore Atomic Transaction) trừ tiền ví nguồn, giảm dư nợ và tự động gán danh mục "Trả nợ & Tín dụng" cho sổ cái.
+  - Lưu vĩnh viễn chiến lược thoát nợ và số tiền trả thêm mỗi tháng vào DataStore (`DebtPreferenceRepository`).
+- **Khóa Ứng Dụng Bằng Sinh Trắc Học Tự Động (Biometric Auto-Lock)**:
+  - Tích hợp `AppLockManager` với `ProcessLifecycleOwner` tự động hiển thị BiometricPrompt khi quay lại ứng dụng.
+  - Tùy chọn cấu hình thời gian khóa: *Ngay lập tức*, *1 phút*, *5 phút*.
+- **Xuất Báo Cáo Tài Chính Chuẩn XLSX 2 Sheet & PDF Trực Quan (UC-17)**:
+  - Bộ xuất Excel `.xlsx` thực thụ với 2 Sheet độc lập (*Sheet 1: Bảng kê chi tiết giao dịch*, *Sheet 2: Tổng hợp theo danh mục*).
+  - Xuất PDF vẽ biểu đồ tỷ trọng (Donut chart / Progress bar) kèm thống kê Tổng tài sản và Tổng dư nợ.
+- **Component Nhập Tiền Tệ Dùng Chung (FinluxAmountInputCard)**:
+  - Hiển thị số tiền chữ to in đậm (30sp), tự động định dạng phân tách hàng nghìn VNĐ (`50.000 ₫`), khử lỗi số 0 ban đầu, dải chip cộng tiền nhanh và nút Clear `[x]` tiện lợi.
+
+### Changed
+- **Chuẩn Hóa Công Thức Tài Sản Ròng (Net Worth)**:
+  - Thẻ Hero trên Trang chủ hiển thị trực quan: `Tài sản ròng = Tổng tài sản khả dụng (Gross Assets) - Tổng dư nợ chưa trả (Liabilities)`.
+- **Tinh Gọn Form Thêm Giao Dịch**:
+  - Chuyển dải tab phụ sang bộ chuyển đổi 2 Tab chuẩn `[Chi tiêu | Thu nhập]`, đưa toàn bộ phân loại chi tiết về Grid Danh mục.
+
+### Fixed
+- Khắc phục lỗi Google Sign-In bị fallback sang dữ liệu Demo khi đăng nhập lần đầu.
+- Sửa triệt để lỗi nền tối màn hình Quản lý nợ khi ở Theme Sáng (Light Mode).
+
 ## [1.8.8] - 2026-08-22
 ### Changed
 - Căn chỉnh lại Đăng nhập/Đăng ký theo ảnh tham chiếu: hero thương hiệu và minh họa 3D đúng tỷ lệ, form trắng thoáng, CTA gradient tím, social Google/Facebook dạng ngang và sóng trang trí ở đáy.

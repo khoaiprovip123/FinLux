@@ -243,28 +243,27 @@ fun AddTransactionSheet(
                 }
             }
 
-            // 2. Segmented Transaction Type Tabs (Pill Style)
+            // 2. Segmented Transaction Type Tabs (Clean 2-Tab Switch)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (isExpense) {
-                    TransactionTypePill("Chi tiêu", isSelected = true, activeBg = Color(0xFFFFE4E6), activeText = Color(0xFFE11D48), modifier = Modifier.weight(1f)) {}
-                    TransactionTypePill("Trả nợ", isSelected = false, activeBg = Color.Transparent, activeText = tokens.onSurface, modifier = Modifier.weight(1f)) {
-                        viewModel.setType(TransactionType.EXPENSE)
-                    }
-                    TransactionTypePill("Đầu tư", isSelected = false, activeBg = Color.Transparent, activeText = tokens.onSurface, modifier = Modifier.weight(1f)) {
-                        viewModel.setType(TransactionType.EXPENSE)
-                    }
-                } else {
-                    TransactionTypePill("Thu nhập", isSelected = true, activeBg = Color(0xFFDCFCE7), activeText = Color(0xFF16A34A), modifier = Modifier.weight(1f)) {}
-                    TransactionTypePill("Thu nợ", isSelected = false, activeBg = Color.Transparent, activeText = tokens.onSurface, modifier = Modifier.weight(1f)) {
-                        viewModel.setType(TransactionType.INCOME)
-                    }
-                    TransactionTypePill("Thưởng", isSelected = false, activeBg = Color.Transparent, activeText = tokens.onSurface, modifier = Modifier.weight(1f)) {
-                        viewModel.setType(TransactionType.INCOME)
-                    }
-                }
+                TransactionTypePill(
+                    label = "Chi tiêu",
+                    isSelected = isExpense,
+                    activeBg = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
+                    activeText = Color(0xFFE11D48),
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.setType(TransactionType.EXPENSE) },
+                )
+                TransactionTypePill(
+                    label = "Thu nhập",
+                    isSelected = !isExpense,
+                    activeBg = if (tokens.isDark) Color(0xFF1E3A2B) else Color(0xFFDCFCE7),
+                    activeText = Color(0xFF16A34A),
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.setType(TransactionType.INCOME) },
+                )
             }
 
             // 3. Amount Display & Quick Chips Box (Pixel-Perfect Typography & Alignment)
@@ -343,19 +342,28 @@ fun AddTransactionSheet(
                             )
                         }
 
-                        // Calculator Trigger Icon Button
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = tokens.surfaceSoft,
-                            modifier = Modifier.size(40.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Calculate,
-                                    contentDescription = "Máy tính",
-                                    tint = Color(0xFF6B7280),
-                                    modifier = Modifier.size(22.dp),
-                                )
+                        // Clear Textbox Button [x]
+                        if (state.amountInput.isNotEmpty() && state.amountInput != "0") {
+                            Surface(
+                                shape = CircleShape,
+                                color = tokens.surfaceSoft,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = ripple(bounded = true),
+                                        onClick = { viewModel.setAmount("") },
+                                    ),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Xóa số tiền",
+                                        tint = tokens.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -649,7 +657,9 @@ private fun TransactionTypePill(
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = if (isSelected) activeBg else if (tokens.isDark) Color(0xFF1E1E2D) else Color(0xFFF3F4F6),
+        border = if (isSelected) BorderStroke(1.dp, activeText.copy(alpha = 0.3f)) else null,
         modifier = modifier
+            .heightIn(min = 42.dp)
             .clip(RoundedCornerShape(14.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -657,16 +667,22 @@ private fun TransactionTypePill(
                 onClick = onClick,
             ),
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 13.5.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            ),
-            color = if (isSelected) activeText else Color(0xFF6B7280),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(vertical = 10.dp),
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 6.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 13.5.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                ),
+                color = if (isSelected) activeText else Color(0xFF6B7280),
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-﻿package com.finlux.app.core.designsystem
+package com.finlux.app.core.designsystem
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -11,15 +11,22 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.finlux.app.domain.model.VisualStyle
 
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+
 @Composable
 fun FinluxStyleBackdrop(
     modifier: Modifier = Modifier,
     auth: Boolean = false,
 ) {
-    when (LocalUiPreferences.current.visualStyle) {
-        VisualStyle.MODERN_DARK -> ModernDarkBackdrop(modifier)
-        VisualStyle.GLASSMORPHISM -> LiquidAuraBackdrop(modifier)
-        VisualStyle.DYNAMIC_GRADIENT -> DynamicGradientBackdrop(modifier, auth)
+    val tokens = LocalFinluxTokens.current
+    if (!tokens.isDark) {
+        LiquidAuraBackdrop(modifier = modifier)
+    } else {
+        when (LocalUiPreferences.current.visualStyle) {
+            VisualStyle.MODERN_DARK -> ModernDarkBackdrop(modifier)
+            VisualStyle.GLASSMORPHISM -> LiquidAuraBackdrop(modifier)
+            VisualStyle.DYNAMIC_GRADIENT -> DynamicGradientBackdrop(modifier, auth)
+        }
     }
 }
 

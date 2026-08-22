@@ -39,8 +39,16 @@ import com.finlux.app.core.export.ReportExporter
 import java.time.format.DateTimeFormatter
 
 enum class ExportFormat(val label: String, val extension: String, val mimeType: String) {
-    EXCEL("Excel / CSV (.csv)", ".csv", "text/csv"),
-    PDF("Tài liệu PDF (.pdf)", ".pdf", "application/pdf")
+    EXCEL(
+        label = "Excel Workbook (.xlsx)",
+        extension = ".xlsx",
+        mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ),
+    PDF(
+        label = "Tài liệu PDF (.pdf)",
+        extension = ".pdf",
+        mimeType = "application/pdf",
+    ),
 }
 
 @Composable
@@ -76,7 +84,7 @@ fun ExportReportDialog(
                         format = ExportFormat.EXCEL,
                         selected = selectedFormat == ExportFormat.EXCEL,
                         icon = Icons.Default.TableChart,
-                        description = "Bảng dữ liệu Excel đầy đủ, phân tích danh mục & chi tiết",
+                        description = "Sổ cái Excel 2 Sheet chuẩn (Sheet 1: Chi tiết giao dịch, Sheet 2: Tổng hợp danh mục & KPI)",
                         onSelect = { selectedFormat = ExportFormat.EXCEL },
                     )
 
@@ -97,7 +105,7 @@ fun ExportReportDialog(
                     try {
                         when (selectedFormat) {
                             ExportFormat.EXCEL -> {
-                                val uri = ReportExporter.exportToCsv(
+                                val uri = ReportExporter.exportToXlsx(
                                     context = context,
                                     range = state.range,
                                     summary = state.summary,
@@ -110,7 +118,7 @@ fun ExportReportDialog(
                                     context = context,
                                     fileUri = uri,
                                     mimeType = ExportFormat.EXCEL.mimeType,
-                                    title = "Báo cáo tài chính FinLux",
+                                    title = "Báo cáo tài chính FinLux (Excel)",
                                 )
                             }
                             ExportFormat.PDF -> {
@@ -127,7 +135,7 @@ fun ExportReportDialog(
                                     context = context,
                                     fileUri = uri,
                                     mimeType = ExportFormat.PDF.mimeType,
-                                    title = "Báo cáo tài chính FinLux",
+                                    title = "Báo cáo tài chính FinLux (PDF)",
                                 )
                             }
                         }

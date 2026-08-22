@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -285,7 +286,7 @@ fun PrismWalletsScreen(
     if (isCreatingWallet || editingWallet != null) {
         val target = editingWallet
         var name by remember(target) { mutableStateOf(target?.name ?: "") }
-        var initialAmount by remember(target) { mutableStateOf(target?.balance?.value?.toString() ?: "0") }
+        var initialAmount by remember(target) { mutableStateOf(if (target != null && target.balance.value > 0L) target.balance.value.toString() else "") }
         var type by remember(target) { mutableStateOf(target?.type ?: WalletType.BANK) }
 
         FinluxBottomSheet(
@@ -311,12 +312,12 @@ fun PrismWalletsScreen(
                 )
 
                 if (target == null) {
-                    OutlinedTextField(
-                        value = initialAmount,
-                        onValueChange = { initialAmount = it.filter(Char::isDigit) },
-                        label = { Text("Số dư ban đầu (VNĐ)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(tokens.radius.input),
+                    com.finlux.app.core.designsystem.component.FinluxAmountInputCard(
+                        label = "Số dư ban đầu",
+                        amountDigits = initialAmount,
+                        onAmountChange = { initialAmount = it },
+                        quickAmounts = listOf(500_000L, 1_000_000L, 2_000_000L, 5_000_000L, 10_000_000L, 50_000_000L),
+                        primaryColor = tokens.primary,
                     )
                 }
 
@@ -331,22 +332,32 @@ fun PrismWalletsScreen(
                         WalletType.EWALLET to "Ví điện tử",
                         WalletType.CASH to "Tiền mặt",
                     ).forEach { (t, l) ->
+                        val isSelected = type == t
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
+                                .heightIn(min = 42.dp)
                                 .clip(RoundedCornerShape(tokens.radius.smallChip))
                                 .clickable { type = t },
-                            color = if (type == t) tokens.primary.copy(alpha = 0.15f) else tokens.surfaceSoft,
+                            color = if (isSelected) tokens.primary.copy(alpha = 0.15f) else tokens.surfaceSoft,
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, tokens.primary) else null,
                             shape = RoundedCornerShape(tokens.radius.smallChip),
                         ) {
-                            Text(
-                                text = l,
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
-                                style = FinluxTextStyles.Caption.copy(
-                                    fontWeight = if (type == t) FontWeight.Bold else FontWeight.Medium,
-                                ),
-                                color = if (type == t) tokens.primary else tokens.onSurface,
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 6.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = l,
+                                    style = FinluxTextStyles.Caption.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    ),
+                                    color = if (isSelected) tokens.primary else tokens.onSurface,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                )
+                            }
                         }
                     }
                 }
@@ -400,12 +411,12 @@ fun PrismWalletsScreen(
                     .padding(horizontal = tokens.spacing.lg, vertical = tokens.spacing.sm),
                 verticalArrangement = Arrangement.spacedBy(tokens.spacing.md),
             ) {
-                OutlinedTextField(
-                    value = transferAmount,
-                    onValueChange = { transferAmount = it.filter(Char::isDigit) },
-                    label = { Text("Số tiền chuyển (VNĐ)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(tokens.radius.input),
+                com.finlux.app.core.designsystem.component.FinluxAmountInputCard(
+                    label = "Số tiền chuyển",
+                    amountDigits = transferAmount,
+                    onAmountChange = { transferAmount = it },
+                    quickAmounts = listOf(100_000L, 500_000L, 1_000_000L, 2_000_000L, 5_000_000L),
+                    primaryColor = tokens.primary,
                 )
 
                 OutlinedTextField(

@@ -36,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.FinluxTheme
 import com.finlux.app.core.navigation.FinluxNavHost
+import com.finlux.app.core.security.AppLockManager
 import com.finlux.app.core.security.BiometricHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -50,14 +51,24 @@ fun FinluxRoot(
     val theme = viewModel.theme.collectAsStateWithLifecycle().value
     val uiStyle = viewModel.uiStyle.collectAsStateWithLifecycle().value
     val uiPreferences = viewModel.uiPreferences.collectAsStateWithLifecycle().value
+    val isLocked by AppLockManager.isLocked.collectAsStateWithLifecycle()
 
-    var isUnlocked by rememberSaveable { mutableStateOf(false) }
+    var hasInitializedLock by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(uiPreferences.biometricEnabled) {
-        if (uiPreferences.biometricEnabled && !isUnlocked && activity != null) {
+    LaunchedEffect(uiPreferences.biometricEnabled, uiPreferences.biometricTimeout) {
+        if (!hasInitializedLock) {
+            hasInitializedLock = true
+            AppLockManager.init(uiPreferences.biometricEnabled, uiPreferences.biometricTimeout)
+        } else {
+            AppLockManager.updatePreferences(uiPreferences.biometricEnabled, uiPreferences.biometricTimeout)
+        }
+    }
+
+    LaunchedEffect(isLocked, uiPreferences.biometricEnabled) {
+        if (uiPreferences.biometricEnabled && isLocked && activity != null) {
             BiometricHelper.showPrompt(
                 activity = activity,
-                onSuccess = { isUnlocked = true },
+                onSuccess = { AppLockManager.unlock() },
             )
         }
     }
@@ -71,13 +82,13 @@ fun FinluxRoot(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
-            if (uiPreferences.biometricEnabled && !isUnlocked) {
+            if (uiPreferences.biometricEnabled && isLocked) {
                 BiometricLockScreen(
                     onUnlockClick = {
                         activity?.let {
                             BiometricHelper.showPrompt(
                                 activity = it,
-                                onSuccess = { isUnlocked = true },
+                                onSuccess = { AppLockManager.unlock() },
                             )
                         }
                     }

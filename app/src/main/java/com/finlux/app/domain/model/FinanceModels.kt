@@ -96,6 +96,12 @@ data class FinancialGoal(
     val createdAt: Instant = Instant.now(),
 )
 
+enum class BiometricLockTimeout(val minutes: Int, val label: String) {
+    IMMEDIATE(0, "Ngay lập tức"),
+    ONE_MINUTE(1, "Sau 1 phút"),
+    FIVE_MINUTES(5, "Sau 5 phút"),
+}
+
 /** Local-only visual preferences. Financial data remains unaffected. */
 data class UiPreferences(
     val visualStyle: VisualStyle = VisualStyle.DYNAMIC_GRADIENT,
@@ -103,6 +109,7 @@ data class UiPreferences(
     val cardDensity: CardDensity = CardDensity.COMFORTABLE,
     val animationsEnabled: Boolean = true,
     val biometricEnabled: Boolean = false,
+    val biometricTimeout: BiometricLockTimeout = BiometricLockTimeout.IMMEDIATE,
 )
 
 data class DashboardSummary(

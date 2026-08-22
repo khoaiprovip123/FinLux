@@ -111,6 +111,7 @@ data class FinluxDesignTokens(
 ) {
     val heroBrush: Brush get() = Brush.linearGradient(heroGradient)
     val primaryBrush: Brush get() = Brush.linearGradient(primaryGradient)
+    val border: Color get() = if (isDark) FinluxColors.BorderSoftDark else FinluxColors.BorderSoftLight
 }
 
 // Prism Tokens (Soft Surface + Data-First + Minimal Glass)

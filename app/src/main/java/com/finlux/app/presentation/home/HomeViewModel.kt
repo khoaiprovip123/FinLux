@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
+import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
@@ -11,6 +12,7 @@ import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
+import com.finlux.app.domain.repository.DebtRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.repository.BudgetRepository
@@ -26,6 +28,10 @@ data class HomeUiState(
     val user: UserProfile? = null,
     val summary: DashboardSummary = DashboardSummary(),
     val wallets: List<Wallet> = emptyList(),
+    val debts: List<DebtAccount> = emptyList(),
+    val grossAssets: Long = 0L,
+    val totalDebt: Long = 0L,
+    val netWorth: Long = 0L,
     val transactions: List<FinanceTransaction> = emptyList(),
     val monthTransactions: List<FinanceTransaction> = emptyList(),
     val categories: List<Category> = emptyList(),
@@ -51,6 +57,7 @@ class HomeViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     budgetRepository: BudgetRepository,
     notificationRepository: NotificationRepository,
+    debtRepository: DebtRepository,
 ) : ViewModel() {
     private val currentMonth = YearMonth.now()
 
@@ -79,17 +86,34 @@ class HomeViewModel @Inject constructor(
         )
     }
 
+    private val assetsAndDebtsFlow = combine(
+        walletRepository.observeWallets(),
+        debtRepository.observeDebts(),
+    ) { wallets, debts ->
+        val gross = wallets.sumOf { it.balance.value }
+        val totalDebt = debts.filterNot { it.isSettled }.sumOf { it.remainingBalance.value }
+        val netWorth = gross - totalDebt
+        Triple(wallets, debts, Triple(gross, totalDebt, netWorth))
+    }
+
     val state = combine(
         authRepository.currentUser,
         financialOverviewFlow,
-        walletRepository.observeWallets(),
+        assetsAndDebtsFlow,
         transactionRepository.observeRecent(),
         categoryRepository.observeCategories(),
-    ) { user, overview, wallets, transactions, categories ->
+    ) { user, overview, assetsAndDebts, transactions, categories ->
+        val (wallets, debts, balances) = assetsAndDebts
+        val (gross, totalDebt, netWorth) = balances
+
         HomeUiState(
             user = user,
             summary = overview.summary,
             wallets = wallets,
+            debts = debts,
+            grossAssets = gross,
+            totalDebt = totalDebt,
+            netWorth = netWorth,
             transactions = transactions,
             monthTransactions = overview.monthTransactions,
             categories = categories,
