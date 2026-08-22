@@ -34,6 +34,16 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Restore Firebase Configuration
+        run: |
+          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
+            echo "Restoring google-services.json from GitHub secret..."
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > app/google-services.json
+          else
+            echo "Decoding embedded project google-services.json configuration..."
+            echo "ewogICJwcm9qZWN0X2luZm8iOiB7CiAgICAicHJvamVjdF9udW1iZXIiOiAiOTI3NzUxNzUzOTYyIiwKICAgICJmaXJlYmFzZV91cmwiOiAiaHR0cHM6Ly9maW5sdXgtZDAyOTctZGVmYXVsdC1ydGRiLmZpcmViYXNlaW8uY29tIiwKICAgICJwcm9qZWN0X2lkIjogImZpbmx1eC1kMDI5NyIsCiAgICAic3RvcmFnZV9idWNrZXQiOiAiZmlubHV4LWQwMjk3LmZpcmViYXNlc3RvcmFnZS5hcHAiCiAgfSwKICAiY2xpZW50IjogWwogICAgewogICAgICAiY2xpZW50X2luZm8iOiB7CiAgICAgICAgIm1vYmlsZXNka19hcHBfaWQiOiAiMTo5Mjc3NTE3NTM5NjI6YW5kcm9pZDpmY2NiMTE4NDhmNDFlZWM1ZmM4NzkzIiwKICAgICAgICAiYW5kcm9pZF9jbGllbnRfaW5mbyI6IHsKICAgICAgICAgICJwYWNrYWdlX25hbWUiOiAiY29tLmZpbmx1eC5hcHAiCiAgICAgICAgfQogICAgICB9LAogICAgICAib2F1dGhfY2xpZW50IjogWwogICAgICAgIHsKICAgICAgICAgICJjbGllbnRfaWQiOiAiOTI3NzUxNzUzOTYyLXQ4amVkOXRmbjBtOGtqZzE5djc1ZzdiZjY4ZjNkNmg2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwKICAgICAgICAgICJjbGllbnRfdHlwZSI6IDEsCiAgICAgICAgICAiYW5kcm9pZF9pbmZvIjogewogICAgICAgICAgICAicGFja2FnZV9uYW1lIjogImNvbS5maW5sdXguYXBwIiwKICAgICAgICAgICAgImNlcnRpZmljYXRlX2hhc2giOiAiZWFhOWVhYWJiN2I5OWExZmYxODE2NGJmNzYyZWUxNzVjNTMyN2Y0NyIKICAgICAgICAgIH0KICAgICAgICB9LAogICAgICAgIHsKICAgICAgICAgICJjbGllbnRfaWQiOiAiOTI3NzUxNzUzOTYyLTA0cGFvbjJ0ZXJta2JlYW5ic3Y3bTh0OWE4bTZ0azVoLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwKICAgICAgICAgICJjbGllbnRfdHlwZSI6IDMKICAgICAgICB9CiAgICAgIF0sCiAgICAgICJhcGlfa2V5IjogWwogICAgICAgIHsKICAgICAgICAgICJjdXJyZW50X2tleSI6ICJBSXphU3lBeUpGOUhPelp3SVo2X01hRk40SVNlV0lTRlVSdWlKSkUiCiAgICAgICAgfQogICAgICBdLAogICAgICAic2VydmljZXMiOiB7CiAgICAgICAgImFwcGludml0ZV9zZXJ2aWNlIjogewogICAgICAgICAgIm90aGVyX3BsYXRmb3JtX29hdXRoX2NsaWVudCI6IFsKICAgICAgICAgICAgewogICAgICAgICAgICAgICJjbGllbnRfaWQiOiAiOTI3NzUxNzUzOTYyLTA0cGFvbjJ0ZXJta2JlYW5ic3Y3bTh0OWE4bTZ0azVoLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwKICAgICAgICAgICAgICAiY2xpZW50X3R5cGUiOiAzCiAgICAgICAgICAgIH0KICAgICAgICAgIF0KICAgICAgICB9CiAgICAgIH0KICAgIH0KICBdLAogICJjb25maWd1cmF0aW9uX3ZlcnNpb24iOiAiMSIKfQo=" | base64 -d > app/google-services.json
+          fi
+
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --no-daemon
 

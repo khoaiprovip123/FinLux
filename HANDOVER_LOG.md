@@ -4,6 +4,23 @@
 - **Phiên bản hiện tại:** v1.8.7 (versionCode 106) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
 
+## [DONE] Task: Khôi phục cấu hình Firebase (google-services.json) trong CI để kết nối Firebase Auth và Firestore
+
+**Ngày hoàn tất:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Cấu hình tự động nạp `app/google-services.json` trong workflow GitHub Actions (`release.yml` và `ci.yml`).
+2. Kích hoạt `FIREBASE_CONFIGURED = true` khi build APK release trên CI, cho phép app kết nối trực tiếp với Firestore (dữ liệu thật) và Firebase Auth (Google Sign-In).
+3. Đẩy commit và cập nhật lại Git tag `v1.8.7`.
+
+**Kết quả:**
+- Đã tự động nạp file `app/google-services.json` của dự án `finlux-d0297` khi build trên GitHub Actions, kích hoạt chế độ Firebase sản phẩm thật và kết nối Google Sign-In / Firestore đồng bộ dữ liệu người dùng.
+
+**File thực tế đã chỉnh sửa:**
+- `.github/workflows/release.yml`
+- `.github/workflows/ci.yml`
+- `HANDOVER_LOG.md`
+
 ## [DONE] Task: Đồng bộ chữ ký bảo mật keystore cho bản build release trên GitHub Actions
 
 **Ngày hoàn tất:** 2026-08-22
