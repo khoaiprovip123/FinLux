@@ -163,4 +163,31 @@ class AddTransactionViewModelTest {
         assertEquals("", state.amountInput)
         assertEquals("", state.note)
     }
+
+    @Test
+    fun `resetForNewTransaction clears previous editing state and resets fields`() = runTest(testDispatcher) {
+        val existingTx = FinanceTransaction(
+            id = "tx_999",
+            type = TransactionType.INCOME,
+            amount = Money(150_000),
+            categoryId = "c_salary",
+            walletId = "w1",
+            note = "Lương",
+            date = Instant.now(),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.setEditingTransaction(existingTx)
+        assertEquals(existingTx, viewModel.state.value.editingTransaction)
+
+        // Reset for new transaction with type EXPENSE
+        viewModel.resetForNewTransaction(TransactionType.EXPENSE)
+        val state = viewModel.state.value
+        assertNull(state.editingTransaction)
+        assertEquals("", state.amountInput)
+        assertEquals("", state.note)
+        assertEquals(TransactionType.EXPENSE, state.type)
+        assertEquals("c_food", state.categoryId)
+    }
 }
