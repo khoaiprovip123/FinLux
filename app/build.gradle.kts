@@ -43,10 +43,7 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            if (hasFirebaseConfig) {
-                check(firebaseDebugKeystore.exists()) {
-                    "Có google-services.json nhưng thiếu gradle/debug.keystore đã đăng ký SHA-1 trên Firebase."
-                }
+            if (hasFirebaseConfig && firebaseDebugKeystore.exists()) {
                 storeFile = firebaseDebugKeystore
                 storePassword = "android"
                 keyAlias = "androiddebugkey"
