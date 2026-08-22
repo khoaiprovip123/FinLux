@@ -1,9 +1,13 @@
 package com.finlux.app.presentation.auth
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -56,9 +59,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -66,7 +73,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -187,7 +193,7 @@ fun AuthScreen(
                         .fillMaxWidth()
                         .padding(
                             horizontal = 26.dp,
-                            vertical = if (mode == AuthMode.LOGIN) 18.dp else 26.dp,
+                            vertical = if (mode == AuthMode.LOGIN) 14.dp else 22.dp,
                         )
                 ) {
                     // Form Fields according to Mode
@@ -223,27 +229,44 @@ private fun AuthHeaderSection(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.045f),
+                        ),
+                    ),
+                )
                 .statusBarsPadding()
-                .padding(top = 22.dp, bottom = 8.dp),
+                .height(270.dp),
         ) {
+            Image(
+                painter = painterResource(R.drawable.auth_clipboard_3d_v2),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 2.dp, bottom = 2.dp)
+                    .size(94.dp)
+                    .alpha(0.5f),
+            )
             Image(
                 painter = painterResource(R.drawable.auth_wallet_3d_v2),
                 contentDescription = null,
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 10.dp, top = 34.dp)
-                    .size(86.dp)
-                    .alpha(0.78f),
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 4.dp)
+                    .size(112.dp)
+                    .alpha(0.84f),
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 26.dp),
+                    .padding(horizontal = 26.dp, vertical = 22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                FinluxBrandMark(size = 76.dp, framed = true)
-                Spacer(Modifier.height(10.dp))
-                FinluxLogoHeader(fontSize = 39.sp, isDark = false)
+                FinluxBrandMark(size = 74.dp, framed = true)
+                Spacer(Modifier.height(9.dp))
+                FinluxLogoHeader(fontSize = 38.sp, isDark = false)
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Quản lý tài chính thông minh",
@@ -264,7 +287,7 @@ private fun AuthHeaderSection(
                 ),
             )
             .statusBarsPadding()
-            .height(238.dp),
+            .height(244.dp),
     ) {
         IconButton(
             onClick = onBack,
@@ -362,36 +385,15 @@ private fun LoginFormContent(
 
         Spacer(Modifier.height(10.dp))
 
-        // Remember Me & Forgot Password Row
+        // The reference keeps this row deliberately minimal: only the recovery action.
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { viewModel.toggleRememberMe(!state.rememberMe) }
-            ) {
-                Checkbox(
-                    checked = state.rememberMe,
-                    onCheckedChange = viewModel::toggleRememberMe,
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = Color(0xFF4F46E5),
-                        uncheckedColor = Color(0xFFCBD5E1)
-                    ),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Ghi nhớ đăng nhập",
-                    fontSize = 13.sp,
-                    color = Color(0xFF475569)
-                )
-            }
-
             TextButton(
                 onClick = { onNavigate(AuthMode.FORGOT) },
-                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF4F46E5))
+                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF5B21B6)),
             ) {
                 Text(
                     text = "Quên mật khẩu?",
@@ -447,26 +449,8 @@ private fun LoginFormContent(
             )
         }
 
-        Spacer(Modifier.height(22.dp))
-
-        // Terms Notice
-        Text(
-            text = buildAnnotatedString {
-                append("Bằng việc đăng nhập, bạn đồng ý với ")
-                withStyle(SpanStyle(color = Color(0xFF4F46E5), fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)) {
-                    append("Điều khoản sử dụng")
-                }
-                append(" và ")
-                withStyle(SpanStyle(color = Color(0xFF4F46E5), fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)) {
-                    append("Chính sách bảo mật")
-                }
-            },
-            fontSize = 12.sp,
-            color = Color(0xFF94A3B8),
-            lineHeight = 17.sp,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
+        Spacer(Modifier.height(18.dp))
+        LoginBottomWave()
     }
 }
 
@@ -739,7 +723,7 @@ private fun FinluxInput(
         onValueChange = onValueChange,
         modifier = Modifier
             .fillMaxWidth()
-            .height(58.dp),
+            .height(60.dp),
         placeholder = {
             Text(
                 text = placeholder,
@@ -788,16 +772,33 @@ private fun GradientButton(
     isLoading: Boolean,
     onClick: () -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val buttonScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.975f else 1f,
+        animationSpec = spring(stiffness = 650f, dampingRatio = 0.72f),
+        label = "authPrimaryButtonScale",
+    )
+
     Button(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        },
+        interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
+            .graphicsLayer {
+                scaleX = buttonScale
+                scaleY = buttonScale
+            }
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(14.dp),
-                ambientColor = Color(0x304F46E5),
-                spotColor = Color(0x403B82F6)
+                ambientColor = Color(0x307C3AED),
+                spotColor = Color(0x405B21B6),
             ),
         enabled = !isLoading,
         shape = RoundedCornerShape(15.dp),
@@ -809,7 +810,7 @@ private fun GradientButton(
                 .fillMaxSize()
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color(0xFF4F46E5), Color(0xFF3B82F6))
+                        listOf(Color(0xFF5B2BFF), Color(0xFF7C2CFF)),
                     )
                 ),
             contentAlignment = Alignment.Center
@@ -821,22 +822,43 @@ private fun GradientButton(
                     strokeWidth = 2.5.dp
                 )
             } else {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = text,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 18.dp).size(20.dp)
-                    )
-                }
+                Text(
+                    text = text,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun LoginBottomWave() {
+    val waveColor = MaterialTheme.colorScheme.primary
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp),
+    ) {
+        val backWave = Path().apply {
+            moveTo(0f, size.height * 0.38f)
+            quadraticTo(size.width * 0.22f, size.height * 0.92f, size.width * 0.52f, size.height * 0.58f)
+            quadraticTo(size.width * 0.78f, size.height * 0.28f, size.width, size.height * 0.72f)
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        val frontWave = Path().apply {
+            moveTo(0f, size.height * 0.64f)
+            quadraticTo(size.width * 0.32f, size.height * 1.04f, size.width * 0.62f, size.height * 0.72f)
+            quadraticTo(size.width * 0.84f, size.height * 0.48f, size.width, size.height * 0.82f)
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        drawPath(backWave, waveColor.copy(alpha = 0.07f))
+        drawPath(frontWave, waveColor.copy(alpha = 0.045f))
     }
 }
 
@@ -866,21 +888,12 @@ private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
         SocialCard(
             title = "Google",
             iconRes = R.drawable.ic_google_g,
-            enabled = true,
             onClick = { onSocialClick(SocialAuthProvider.GOOGLE) },
-            modifier = Modifier.weight(1f)
-        )
-        SocialCard(
-            title = "Apple",
-            iconRes = R.drawable.ic_apple,
-            enabled = false,
-            onClick = { onSocialClick(SocialAuthProvider.APPLE) },
             modifier = Modifier.weight(1f)
         )
         SocialCard(
             title = "Facebook",
             iconRes = R.drawable.ic_facebook,
-            enabled = false,
             onClick = { onSocialClick(SocialAuthProvider.FACEBOOK) },
             modifier = Modifier.weight(1f)
         )
@@ -891,35 +904,36 @@ private fun SocialLoginRow(onSocialClick: (SocialAuthProvider) -> Unit) {
 private fun SocialCard(
     title: String,
     iconRes: Int,
-    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier
-            .height(76.dp)
+            .height(62.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(15.dp),
-        color = if (enabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-        shadowElevation = if (enabled) 1.dp else 0.dp
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp,
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
                 painter = painterResource(iconRes),
                 contentDescription = "Đăng nhập bằng $title",
-                modifier = Modifier.size(24.dp).alpha(if (enabled) 1f else 0.45f),
+                modifier = Modifier.size(24.dp),
             )
-            Spacer(Modifier.height(7.dp))
+            Spacer(Modifier.width(10.dp))
             Text(
-                text = if (enabled) title else "$title (Sắp có)",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -948,7 +962,7 @@ fun FinluxLogoHeader(
 
 enum class AuthMode(val title: String, val action: String, val heading: String, val description: String) {
     LOGIN("Đăng nhập", "Đăng nhập", "Chào mừng trở lại! 👋", "Đăng nhập để tiếp tục quản lý tài chính của bạn"),
-    REGISTER("Tạo tài khoản", "Tạo tài khoản", "Tạo tài khoản mới", "Bắt đầu hành trình quản lý tài chính thông minh"),
+    REGISTER("Tạo tài khoản", "Tạo tài khoản", "Tạo tài khoản", "Tham gia FinLux để quản lý tài chính của bạn hiệu quả hơn"),
     FORGOT("Quên mật khẩu", "Gửi email khôi phục", "Khôi phục mật khẩu", "Nhập email để nhận liên kết đặt lại mật khẩu"),
 }
 

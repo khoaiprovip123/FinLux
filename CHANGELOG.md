@@ -2,6 +2,8 @@
 
 ## [1.8.8] - 2026-08-22
 ### Changed
+- Căn chỉnh lại Đăng nhập/Đăng ký theo ảnh tham chiếu: hero thương hiệu và minh họa 3D đúng tỷ lệ, form trắng thoáng, CTA gradient tím, social Google/Facebook dạng ngang và sóng trang trí ở đáy.
+- CTA xác thực có phản hồi Liquid Glass spring 0.975 kèm haptic; contract Apple vẫn được giữ để tích hợp sau nhưng không hiển thị lệch mẫu.
 - Cải tiến chuyển động vuốt chuyển tab (`Trang chủ ↔ Lịch sử ↔ Báo cáo ↔ Cài đặt`) sang slide ngang 100% full-width liên tục và mượt mà, đồng bộ giữa trang hiện tại và trang kế tiếp.
 
 ### Fixed
