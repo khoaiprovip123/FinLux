@@ -146,8 +146,8 @@ fun PrismTransactionsScreen(
             }
         },
         bottomBar = {
-            if (isRootTab) {
-                MainBottomBar(Route.Transactions.value, onNavigate!!, onAdd!!)
+            if (isRootTab && onNavigate != null && onAdd != null) {
+                MainBottomBar(Route.Transactions.value, onNavigate, onAdd)
             }
         },
         containerColor = tokens.background,

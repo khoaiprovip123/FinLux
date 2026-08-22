@@ -67,28 +67,33 @@ fun FinluxRoot(
         uiStyle = uiStyle,
         uiPreferences = uiPreferences,
     ) {
-        if (uiPreferences.biometricEnabled && !isUnlocked) {
-            BiometricLockScreen(
-                onUnlockClick = {
-                    activity?.let {
-                        BiometricHelper.showPrompt(
-                            activity = it,
-                            onSuccess = { isUnlocked = true },
-                        )
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            if (uiPreferences.biometricEnabled && !isUnlocked) {
+                BiometricLockScreen(
+                    onUnlockClick = {
+                        activity?.let {
+                            BiometricHelper.showPrompt(
+                                activity = it,
+                                onSuccess = { isUnlocked = true },
+                            )
+                        }
                     }
-                }
-            )
-        } else {
-            FinluxNavHost(
-                selectedTheme = theme,
-                onThemeSelected = viewModel::setTheme,
-                selectedUiStyle = uiStyle,
-                onUiStyleSelected = viewModel::setUiStyle,
-                uiPreferences = uiPreferences,
-                onUiPreferencesChanged = viewModel::setUiPreferences,
-                destinationFlow = destinationFlow,
-                payNotificationIdFlow = payNotificationIdFlow,
-            )
+                )
+            } else {
+                FinluxNavHost(
+                    selectedTheme = theme,
+                    onThemeSelected = viewModel::setTheme,
+                    selectedUiStyle = uiStyle,
+                    onUiStyleSelected = viewModel::setUiStyle,
+                    uiPreferences = uiPreferences,
+                    onUiPreferencesChanged = viewModel::setUiPreferences,
+                    destinationFlow = destinationFlow,
+                    payNotificationIdFlow = payNotificationIdFlow,
+                )
+            }
         }
     }
 }

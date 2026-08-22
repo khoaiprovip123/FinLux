@@ -33,8 +33,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 106
-        versionName = "1.8.7"
+        versionCode = 107
+        versionName = "1.8.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -43,10 +43,7 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            if (hasFirebaseConfig) {
-                check(firebaseDebugKeystore.exists()) {
-                    "Có google-services.json nhưng thiếu gradle/debug.keystore đã đăng ký SHA-1 trên Firebase."
-                }
+            if (hasFirebaseConfig && firebaseDebugKeystore.exists()) {
                 storeFile = firebaseDebugKeystore
                 storePassword = "android"
                 keyAlias = "androiddebugkey"

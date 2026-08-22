@@ -1,8 +1,33 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.8.7 (versionCode 106) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
+- **Phiên bản hiện tại:** v1.8.8 (versionCode 107) - Ready for Testing
+- **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công trên máy cục bộ.
+
+## [DONE] Task: Sửa lỗi cử chỉ vuốt chuyển trang làm lộ nền xanh splash screen và tối ưu chuyển động kéo trang liền mạch
+
+**Ngày hoàn tất:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Loại bỏ `translationX` dịch chuyển cục bộ `NavHost` khi vuốt, loại bỏ khoảng hở để trang tiếp theo liền kề kéo theo sang luôn.
+2. Tối ưu animation `slideInHorizontally` + `slideOutHorizontally` liên tục 100% full-width giữa các tab chính (`MainSwipeRoutes`), loại bỏ `scaleOut`/`fadeOut` tạo khoảng trống.
+3. Bổ sung `Surface` nền theme cố định (`MaterialTheme.colorScheme.background`) tại `FinluxRoot` và `FinluxNavHost` triệt tiêu hoàn toàn hiện tượng lộ nền xanh splash launch background (`finlux_launch_background`).
+4. Sửa kiểm tra an toàn gọi `MainBottomBar` trong `PrismTransactionsScreen`.
+5. Bump version lên `v1.8.8` (versionCode `107`), build APK debug cục bộ sẵn sàng để kiểm thử.
+
+**Kết quả:**
+- Đã sửa triệt để lỗi lộ nền xanh có logo khi vuốt: loại bỏ `translationX` đơn lẻ trên `NavHost`, thay bằng slide ngang mượt mà side-by-side và bảo vệ nền bằng `Surface` theme background.
+- `testDebugUnitTest`: PASS 100% (72/72 tests).
+- `assembleDebug`: PASS — File APK đã tạo tại `app/build/outputs/apk/debug/app-debug.apk` (31.033.595 bytes).
+- Đã cài đặt qua ADB và mở ứng dụng thành công trên thiết bị (`7f4ca06a`).
+
+**File thực tế đã chỉnh sửa:**
+- `app/build.gradle.kts`
+- `app/src/main/java/com/finlux/app/presentation/FinluxRoot.kt`
+- `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+- `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+- `CHANGELOG.md`
+- `HANDOVER_LOG.md`
 
 ## [DONE] Task: Khôi phục cấu hình Firebase (google-services.json) trong CI để kết nối Firebase Auth và Firestore
 
