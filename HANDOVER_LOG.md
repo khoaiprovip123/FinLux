@@ -4,6 +4,22 @@
 - **Phiên bản hiện tại:** v1.8.7 (versionCode 106) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công.
 
+## [DONE] Task: Đồng bộ chữ ký bảo mật keystore cho bản build release trên GitHub Actions
+
+**Ngày hoàn tất:** 2026-08-22
+**Nhánh git:** `main`
+**Mục tiêu:**
+1. Cấu hình fallback keystore cố định trong `release.yml` khớp 100% với chữ ký `gradle/debug.keystore` (SHA-256: `4C:A0:DA:B2:...`) đã cài đặt trên thiết bị người dùng.
+2. Đảm bảo tính năng cập nhật OTA trong ứng dụng (`AppUpdateManager`) xác thực chữ ký thành công và cho phép cài đặt trực tiếp.
+3. Đẩy commit và cập nhật lại Git tag `v1.8.7`.
+
+**Kết quả:**
+- Đã đồng bộ chứng chỉ ký fallback trong CI khớp tuyệt đối với chữ ký ứng dụng hiện tại trên thiết bị (`SHA-256: 4C:A0:DA:B2:...`), loại bỏ lỗi "Chữ ký bảo mật của bản cập nhật không khớp".
+
+**File thực tế đã chỉnh sửa:**
+- `.github/workflows/release.yml`
+- `HANDOVER_LOG.md`
+
 ## [DONE] Task: Sửa lỗi thiếu cấu hình ký release trên GitHub Actions CI/CD
 
 **Ngày hoàn tất:** 2026-08-22
