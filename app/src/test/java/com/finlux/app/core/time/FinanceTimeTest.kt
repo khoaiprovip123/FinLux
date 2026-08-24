@@ -10,15 +10,25 @@ class FinanceTimeTest {
     private val vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh")
 
     @Test
+    fun `default finance zone is stable Vietnam timezone`() {
+        assertEquals(vietnamZone, FinanceTime.defaultZone)
+    }
+
+    @Test
+    fun `zoneOf returns requested valid zone and falls back to Vietnam for invalid id`() {
+        assertEquals(ZoneId.of("Asia/Tokyo"), FinanceTime.zoneOf("Asia/Tokyo"))
+        assertEquals(vietnamZone, FinanceTime.zoneOf("Not/A_Zone"))
+        assertEquals(vietnamZone, FinanceTime.zoneOf(""))
+    }
+
+    @Test
     fun `financialMonth maps boundary dates correctly in Asia_Ho_Chi_Minh`() {
-        // 2026-09-01 00:30 in Vietnam -> September 2026
         val sepInstant = LocalDateTime.of(2026, 9, 1, 0, 30, 0)
             .atZone(vietnamZone)
             .toInstant()
         val sepMonth = FinanceTime.financialMonth(sepInstant, vietnamZone)
         assertEquals(YearMonth.of(2026, 9), sepMonth)
 
-        // 2026-08-31 23:30 in Vietnam -> August 2026
         val augInstant = LocalDateTime.of(2026, 8, 31, 23, 30, 0)
             .atZone(vietnamZone)
             .toInstant()
