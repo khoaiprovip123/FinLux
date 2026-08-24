@@ -72,21 +72,29 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
 
+    fun resetForNewTransaction(type: TransactionType? = null) {
+        mutableState.update { current ->
+            val targetType = type ?: current.type
+            val categoryType = targetType.toCategoryType()
+            current.copy(
+                editingTransaction = null,
+                type = targetType,
+                amountInput = "",
+                note = "",
+                receiptUri = null,
+                date = Instant.now(),
+                walletId = current.wallets.firstOrNull { it.isDefault }?.id ?: current.wallets.firstOrNull()?.id,
+                categoryId = current.categories.firstOrNull { it.type == categoryType }?.id,
+                error = null,
+                isSaving = false,
+                saved = false,
+            )
+        }
+    }
+
     fun setEditingTransaction(tx: FinanceTransaction?) {
         if (tx == null) {
-            mutableState.update { current ->
-                val categoryType = current.type.toCategoryType()
-                current.copy(
-                    editingTransaction = null,
-                    amountInput = "",
-                    note = "",
-                    receiptUri = null,
-                    date = Instant.now(),
-                    walletId = current.wallets.firstOrNull()?.id,
-                    categoryId = current.categories.firstOrNull { it.type == categoryType }?.id,
-                    error = null,
-                )
-            }
+            resetForNewTransaction()
             return
         }
         mutableState.update { current ->
@@ -100,6 +108,8 @@ class AddTransactionViewModel @Inject constructor(
                 date = tx.date,
                 receiptUri = tx.receiptImageUrl,
                 error = null,
+                isSaving = false,
+                saved = false,
             )
         }
     }
@@ -158,15 +168,8 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
 
-    fun consumeSaved() = mutableState.update {
-        it.copy(
-            saved = false,
-            editingTransaction = null,
-            amountInput = "",
-            note = "",
-            receiptUri = null,
-            date = Instant.now(),
-        )
+    fun consumeSaved() {
+        resetForNewTransaction()
     }
 
     fun createCategory(name: String, iconKey: String, colorHex: String, onCreated: (String) -> Unit) {
