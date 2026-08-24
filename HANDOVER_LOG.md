@@ -1,8 +1,60 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.9.2 (versionCode 110) - Release
+- **Phiên bản hiện tại:** v1.9.3 (versionCode 111) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công trên máy cục bộ.
+
+## [DONE] Task: Fix Triệt Để Lỗi Ghost Alarm / Nhắc Nhở Đã Xóa Vẫn Tự Bắn Thông Báo
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  1. Fix lỗi `ReminderReceiver` tự động bắn thông báo và tự động lên lịch lặp lại cho các nhắc nhở đã bị xóa hoặc đã tắt trong database.
+  2. Bổ sung validation guard truy vấn `ReminderRepository` trước khi kích hoạt notification/lên lịch `nextTrigger`.
+  3. Cập nhật `AlarmReminderScheduler.cancel()` đảm bảo hủy sạch `PendingIntent` và notification trên Android OS.
+- **Danh sách file đã chỉnh sửa & tạo mới:**
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt` (Inject ReminderRepository, validate active reminder, dọn dẹp orphan alarms)
+  - `app/src/test/java/com/finlux/app/domain/usecase/ReminderUseCasesTest.kt` (Bổ sung unit tests cho SaveReminderUseCase & DeleteReminderUseCase)
+- **Kết quả kiểm thử:**
+  - `.\gradlew testDebugUnitTest`: **100% PASS** (34 tasks executed, 0 fail).
+  - `.\gradlew assembleDebug`: **BUILD SUCCESSFUL** (`app-debug.apk` ~31.7MB).
+- **Trạng thái:** `[DONE]`
+
+## [DONE] Task: Xử Lý Nhóm Nghiệp Vụ Cốt Lõi & Bug Critical (Chặn Chi Vượt Số Dư Ví, Lịch Sử Trả Nợ & Nhắc Nợ Đến Hạn)
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  1. [BUG CRITICAL] Chặn tạo chi tiêu khi số dư ví thanh toán <= 0 hoặc không đủ tiền (áp dụng cho ví không phải Thẻ tín dụng) cả ở tầng Domain (`AddTransactionUseCase`, `EditTransactionUseCase`) lẫn UI (`AddTransactionSheet`).
+  2. [FEATURE] Xây dựng `DebtPaymentHistorySheet` xem lịch sử trả nợ (thống kê tổng tiền, gốc, lãi, lọc theo từng khoản nợ hoặc xem tất cả).
+  3. [FEATURE] Tích hợp cài đặt nhắc nợ đến hạn (`isReminderEnabled`, `reminderDaysBefore`) trong `AddEditDebtSheet`, gắn icon Lịch sử lên TopBar và DebtCard.
+- **Danh sách file đã chỉnh sửa & tạo mới:**
+  - `app/src/main/java/com/finlux/app/domain/usecase/AddTransactionUseCase.kt` (Inject WalletRepository, kiểm tra số dư ví khả dụng)
+  - `app/src/main/java/com/finlux/app/domain/usecase/EditTransactionUseCase.kt` (Kiểm tra số dư khả dụng có tính khoản hoàn trả giao dịch cũ)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt` (Banner cảnh báo đỏ số dư ví không đủ + khóa nút Lưu)
+  - `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt` (Thêm isReminderEnabled, reminderDaysBefore vào DebtAccount)
+  - `app/src/main/java/com/finlux/app/domain/model/NotificationType.kt` (Thêm DEBT_DUE_ALERT)
+  - `app/src/main/java/com/finlux/app/domain/repository/DebtRepository.kt` (Thêm observeAllPaymentHistory)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt` (Triển khai observeAllPaymentHistory, map reminder fields)
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (Triển khai observeAllPaymentHistory, seedPaymentHistory)
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetDebtPaymentHistoryUseCase.kt` (UseCase lấy lịch sử trả nợ linh hoạt)
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtPaymentHistorySheet.kt` (UI Liquid Glass xem lịch sử trả nợ, thống kê gốc/lãi, filter chips)
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt` (Cài đặt switch nhắc nợ đến hạn + chọn số ngày nhắc trước)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt` (Nút Lịch sử trên TopBar, kết nối DebtPaymentHistorySheet)
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt` (Nút Lịch sử trả nợ nhanh trên từng thẻ nợ)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtViewModel.kt` & `DebtUiState.kt` (Cung cấp paymentHistory flow)
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt` (Xử lý icon/màu cho DEBT_DUE_ALERT)
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt` (Bổ sung test chặn chi vượt số dư ví)
+  - `app/src/test/java/com/finlux/app/domain/usecase/GetDebtPaymentHistoryUseCaseTest.kt` (Unit test cho GetDebtPaymentHistoryUseCase)
+  - `app/src/test/java/com/finlux/app/domain/usecase/ProcessDebtPaymentUseCaseTest.kt` (Cập nhật mock repo)
+  - `app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt` (Cập nhật mock repo & usecase)
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt` (Cập nhật mock repo)
+- **Kết quả kiểm thử:**
+  - `.\gradlew testDebugUnitTest`: **100% PASS** (34 tasks, 0 fail).
+  - `.\gradlew assembleDebug`: **BUILD SUCCESSFUL** (`app-debug.apk` ~31.7MB).
+- **Trạng thái:** `[DONE]`
 
 ## [DONE] Task: Đồng Bộ Giao Diện Thêm/Sửa Ví Của Phong Cách Prism Giống Chuẩn Liquid Glass Cổ Điển
 

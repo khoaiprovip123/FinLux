@@ -2,6 +2,7 @@ package com.finlux.app.presentation.debt
 
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtCashflowAnalysis
+import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtPayoffPlan
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.PayoffStrategy
@@ -10,6 +11,7 @@ import com.finlux.app.domain.model.Wallet
 data class DebtUiState(
     val debts: List<DebtAccount> = emptyList(),
     val wallets: List<Wallet> = emptyList(),
+    val paymentHistory: List<DebtPaymentHistory> = emptyList(),
     val strategy: PayoffStrategy = PayoffStrategy.SNOWBALL,
     val extraMonthlyPayment: Long = 0L,
     val payoffPlan: DebtPayoffPlan? = null,

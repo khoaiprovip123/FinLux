@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CreditScore
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -63,6 +64,7 @@ import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.presentation.debt.components.DebtBurndownChart
 import com.finlux.app.presentation.debt.components.DebtCard
+import com.finlux.app.presentation.debt.components.DebtPaymentHistorySheet
 import com.finlux.app.presentation.debt.components.StrategySelectorCard
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
@@ -81,6 +83,8 @@ fun DebtDashboardScreen(
     val context = LocalContext.current
 
     var showAddEditSheet by remember { mutableStateOf(false) }
+    var showPaymentHistorySheet by remember { mutableStateOf(false) }
+    var historyDebtId by remember { mutableStateOf<String?>(null) }
     var editingDebt by remember { mutableStateOf<DebtAccount?>(null) }
     var payingDebt by remember { mutableStateOf<DebtAccount?>(null) }
     var selectedFilterType by remember { mutableStateOf<DebtType?>(null) }
@@ -111,34 +115,60 @@ fun DebtDashboardScreen(
                     subtitle = if (uiState.activeDebtsCount > 0) "${uiState.activeDebtsCount} khoản nợ đang hoạt động" else "Chưa có khoản nợ",
                     onBack = onBack,
                     actions = {
-                        Surface(
-                            shape = CircleShape,
-                            color = tokens.primary.copy(alpha = 0.12f),
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable {
-                                    editingDebt = null
-                                    showAddEditSheet = true
-                                },
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                            Surface(
+                                shape = CircleShape,
+                                color = tokens.surfaceSoft,
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        historyDebtId = null
+                                        showPaymentHistorySheet = true
+                                    },
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null,
-                                    tint = tokens.primary,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = "Thêm",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = tokens.primary,
-                                    ),
-                                )
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.History,
+                                        contentDescription = "Lịch sử thanh toán",
+                                        tint = tokens.onSurface,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = CircleShape,
+                                color = tokens.primary.copy(alpha = 0.12f),
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        editingDebt = null
+                                        showAddEditSheet = true
+                                    },
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = tokens.primary,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = "Thêm",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = tokens.primary,
+                                        ),
+                                    )
+                                }
                             }
                         }
                     },
@@ -249,6 +279,10 @@ fun DebtDashboardScreen(
                                 showAddEditSheet = true
                             },
                             onDeleteClick = { viewModel.deleteDebt(debt) },
+                            onHistoryClick = {
+                                historyDebtId = debt.id
+                                showPaymentHistorySheet = true
+                            },
                         )
                     }
                 }
@@ -314,6 +348,20 @@ fun DebtDashboardScreen(
                 }
             },
             isSubmitting = uiState.isSubmitting,
+        )
+    }
+
+    // Payment History Sheet
+    if (showPaymentHistorySheet) {
+        DebtPaymentHistorySheet(
+            debts = uiState.debts,
+            wallets = uiState.wallets,
+            paymentHistory = uiState.paymentHistory,
+            initialDebtId = historyDebtId,
+            onDismiss = {
+                showPaymentHistorySheet = false
+                historyDebtId = null
+            },
         )
     }
 }

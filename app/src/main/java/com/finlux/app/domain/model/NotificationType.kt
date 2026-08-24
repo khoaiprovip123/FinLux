@@ -5,5 +5,6 @@ enum class NotificationType {
     BUDGET_ALERT,        // Cảnh báo chạm ngưỡng ngân sách (80%, 100%)
     GOAL_MILESTONE,      // Cột mốc mục tiêu tiết kiệm (25%, 50%, 75%, 100%)
     TRANSACTION_SUMMARY, // Tóm tắt biến động tài chính tuần/tháng
+    DEBT_DUE_ALERT,      // Cảnh báo nợ / sao kê thẻ tín dụng đến hạn
     SYSTEM               // Thông báo hệ thống, mẹo tài chính, cập nhật app
 }

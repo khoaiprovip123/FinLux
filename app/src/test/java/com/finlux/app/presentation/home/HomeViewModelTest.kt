@@ -162,6 +162,7 @@ private class FakeHomeNotificationRepository : NotificationRepository {
 private class FakeHomeDebtRepository(private val list: List<DebtAccount>) : DebtRepository {
     override fun observeDebts(): Flow<List<DebtAccount>> = flowOf(list)
     override fun observePaymentHistory(debtId: String): Flow<List<DebtPaymentHistory>> = flowOf(emptyList())
+    override fun observeAllPaymentHistory(): Flow<List<DebtPaymentHistory>> = flowOf(emptyList())
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = AppResult.Success(debt.id)
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun processPayment(debtId: String, walletId: String, amount: Long, principalPaid: Long, interestPaid: Long, note: String, paymentDate: Instant): AppResult<Unit> = AppResult.Success(Unit)

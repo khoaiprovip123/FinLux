@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +34,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -48,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.FinanceAccentHexes
@@ -81,6 +85,8 @@ fun AddEditDebtSheet(
     var minimumPaymentText by remember(debt) { mutableStateOf(debt?.minimumPayment?.value?.toString().orEmpty()) }
     var dueDateText by remember(debt) { mutableStateOf((debt?.dueDate ?: 15).toString()) }
     var selectedColor by remember(debt) { mutableStateOf(debt?.colorHex ?: FinanceAccentHexes.first()) }
+    var isReminderEnabled by remember(debt) { mutableStateOf(debt?.isReminderEnabled ?: true) }
+    var reminderDaysBefore by remember(debt) { mutableIntStateOf(debt?.reminderDaysBefore ?: 3) }
     var validationError by remember { mutableStateOf<String?>(null) }
 
     ModalBottomSheet(
@@ -294,6 +300,101 @@ fun AddEditDebtSheet(
                 }
             }
 
+            Spacer(Modifier.height(18.dp))
+
+            // Due Date Reminder Section
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = if (isReminderEnabled) FinluxBlue.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.NotificationsActive,
+                                        contentDescription = null,
+                                        tint = if (isReminderEnabled) FinluxBlue else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                            Column {
+                                Text(
+                                    text = "Nhắc nhở thanh toán khi đến hạn",
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = if (isReminderEnabled) "Gửi thông báo trước ngày đến hạn $reminderDaysBefore ngày" else "Đang tắt thông báo cho khoản nợ này",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+
+                        Switch(
+                            checked = isReminderEnabled,
+                            onCheckedChange = { isReminderEnabled = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = FinluxBlue,
+                            ),
+                        )
+                    }
+
+                    if (isReminderEnabled) {
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf(1 to "Trước 1 ngày", 2 to "Trước 2 ngày", 3 to "Trước 3 ngày", 5 to "Trước 5 ngày").forEach { (days, label) ->
+                                val isSelected = reminderDaysBefore == days
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isSelected) FinluxBlue else MaterialTheme.colorScheme.surface,
+                                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { reminderDaysBefore = days },
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 11.5.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        ),
+                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (validationError != null) {
                 Spacer(Modifier.height(12.dp))
                 Text(
@@ -336,6 +437,8 @@ fun AddEditDebtSheet(
                         minimumPayment = Money(minPay),
                         dueDate = due,
                         colorHex = selectedColor,
+                        isReminderEnabled = isReminderEnabled,
+                        reminderDaysBefore = reminderDaysBefore,
                         isSettled = remaining <= 0L,
                         createdAt = debt?.createdAt ?: Instant.now(),
                         updatedAt = Instant.now(),
