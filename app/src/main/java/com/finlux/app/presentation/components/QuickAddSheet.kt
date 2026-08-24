@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.components
 
+import com.finlux.app.core.designsystem.theme.FinluxColors
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -439,15 +441,27 @@ private fun QuickAddRecentTransactionRow(
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
+    val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
     val isIncome = transaction.type == TransactionType.INCOME
-    val accentColor = category?.let { colorFromHex(it.colorHex) } ?: if (isIncome) Color(0xFF10B981) else Color(0xFFF43F5E)
-    val title = transaction.note.ifBlank { category?.name ?: if (isIncome) "Thu nhập" else "Chi tiêu" }
+    val accentColor = when (transaction.type) {
+        TransactionType.INCOME -> category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.IncomeGreen
+        TransactionType.EXPENSE -> category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.ExpenseRed
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+    }
+    val title = transaction.note.ifBlank {
+        when (transaction.type) {
+            TransactionType.INCOME -> category?.name ?: "Thu nhập"
+            TransactionType.EXPENSE -> category?.name ?: "Chi tiêu"
+            TransactionType.TRANSFER_OUT -> "Chuyển tiền đi"
+            TransactionType.TRANSFER_IN -> "Nhận tiền chuyển"
+        }
+    }
 
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     val timeText = remember(transaction.date) {
         timeFormatter.format(transaction.date.atZone(ZoneId.systemDefault()))
     }
-    val subtitleText = "$timeText • ${category?.name ?: "Khác"}"
+    val subtitleText = "$timeText • ${if (isTransfer) "Chuyển ví" else (category?.name ?: "Khác")}"
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -462,7 +476,7 @@ private fun QuickAddRecentTransactionRow(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Category Icon
+            // Category / Transfer Icon
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
@@ -470,7 +484,7 @@ private fun QuickAddRecentTransactionRow(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = category?.let { categoryIcon(it.icon) } ?: Icons.Default.Info,
+                        imageVector = if (isTransfer) Icons.Default.SwapHoriz else (category?.let { categoryIcon(it.icon) } ?: Icons.Default.Info),
                         contentDescription = null,
                         tint = accentColor,
                         modifier = Modifier.size(18.dp),
@@ -497,7 +511,7 @@ private fun QuickAddRecentTransactionRow(
                 Text(
                     text = subtitleText,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
-                    color = Color(0xFF9CA3AF),
+                    color = tokens.onSurfaceVariant,
                 )
             }
 
@@ -508,13 +522,17 @@ private fun QuickAddRecentTransactionRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
+                val amountPrefix = when (transaction.type) {
+                    TransactionType.INCOME, TransactionType.TRANSFER_IN -> "+"
+                    TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> "-"
+                }
                 Text(
-                    text = (if (isIncome) "+" else "-") + formatVndAmount(transaction.amount.value),
+                    text = amountPrefix + formatVndAmount(transaction.amount.value),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold,
                     ),
-                    color = if (isIncome) Color(0xFF16A34A) else Color(0xFFEF4444),
+                    color = accentColor,
                 )
 
                 Icon(

@@ -103,6 +103,26 @@ Trong khi đó toàn bộ tính năng + polish gần đây (v1.8.5–1.8.8) đ�
 
 **Đánh giá:** Chấp nhận được cho V1 (chỉ tiếng Việt theo NFR). Nhưng BA_SPEC còn để ngỏ `[Cần xác nhận]` thêm English — nếu có khả năng đó, tách string resource càng sớm càng rẻ (làm kết hợp khi chạm vào file ở P0.1/P0.2 để đỡ tốn công riêng).
 
+### P1.4 — Đồng bộ đầy đủ tính năng form Chuyển tiền ví trên giao diện Prism (`PrismWalletsScreen.kt`) `[DONE 2026-08-24]`
+
+**Hiện trạng & Kết quả:** Đã bổ sung dải chip chọn Ví nguồn (`LazyRow`), dải chip chọn Ví nhận, nút Swap đảo chiều `Icons.Default.SwapHoriz` ⇄, component `FinluxAmountInputCard` và validation kiểm tra số dư ví nguồn không đủ, đồng bộ hoàn toàn với trải nghiệm giao diện Cổ điển. Xem chi tiết tại [docs/BACKLOG.md](file:///d:/Sources/FinLux/docs/BACKLOG.md).
+
+### P1.5 — Chuẩn hóa hiển thị giao dịch Chuyển tiền giữa các ví (Double-entry Transfer) `[DONE 2026-08-24]`
+
+**Hiện trạng & Kết quả:** Sửa lỗi giao dịch kép `TRANSFER_OUT` và `TRANSFER_IN` bị nhận diện nhầm thành "Chi tiêu" với icon nhãn màu đỏ `-5.250.000 đ`. Đã chuẩn hóa hiển thị icon `SwapHoriz`, màu xanh `FinluxColors.TransferBlue`, tiêu đề rõ ràng `"Chuyển tiền đến [Ví B]"` / `"Nhận tiền từ [Ví A]"`, và định tuyến ví `[Ví A] ➔ [Ví B]`. Xem chi tiết tại [docs/BACKLOG.md](file:///d:/Sources/FinLux/docs/BACKLOG.md).
+
+### P1.6 — Chặn tạo giao dịch chi tiêu khi nguồn tiền ví thanh toán <= 0 hoặc không đủ `[TODO]`
+
+**Mô tả:** Thêm cảnh báo màu đỏ và vô hiệu hóa nút Lưu trong `AddTransactionSheet.kt` & `QuickAddSheet.kt` khi số dư ví thanh toán `<= 0` hoặc `< số tiền chi tiêu` (áp dụng với ví không phải Thẻ tín dụng `WalletType.CARD`). Bổ sung validation tại tầng Domain `AddTransactionUseCase`. Xem chi tiết tại [docs/BACKLOG.md](file:///d:/Sources/FinLux/docs/BACKLOG.md).
+
+### P1.7 — Nâng cấp Quản lý Nợ: Lịch sử thanh toán & Nhắc nợ đến hạn `[TODO]`
+
+**Mô tả:** Triển khai BottomSheet xem lịch sử thanh toán nợ (`DebtPaymentHistorySheet`) có bộ lọc theo từng khoản nợ và thống kê tổng hợp; bổ sung toggle bật/tắt nhắc nợ kèm chọn số ngày nhắc trước trong `AddEditDebtSheet` và tự động phát thông báo khi đến hạn. Xem chi tiết tại [docs/BACKLOG.md](file:///d:/Sources/FinLux/docs/BACKLOG.md).
+
+### P1.8 — Trợ lý Phân bổ Dòng tiền Thoát nợ Tự động (Debt Cashflow Advisor) `[DONE 2026-08-24]`
+
+**Hiện trạng & Kết quả:** Đã triển khai `AnalyzeDebtCashflowUseCase` tự động phân tích lịch sử thu chi trượt 3 tháng, bóc tách chi phí thiết yếu (`isEssential`), tính Dòng tiền tự do (FCF), tính Lãi suất trung bình có trọng số (Weighted APR), và tạo thẻ kính `CashflowAdvisorCard` với 3 kịch bản thông minh (Thư thái 30% / Cân bằng 60% / Thần tốc 85%) tích hợp tương tác 1-Touch Apply lên `StrategySelectorCard`. Đã kiểm thử 100% PASS và nạp thành công lên máy.
+
 ---
 
 ## 🟢 P2 — Dọn dẹp & chốt quyết định sản phẩm

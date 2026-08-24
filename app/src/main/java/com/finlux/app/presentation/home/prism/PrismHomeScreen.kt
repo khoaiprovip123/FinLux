@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -250,11 +251,13 @@ fun PrismHomeScreen(
                 ) { tx ->
                     val category = tx.categoryId?.let { categoriesMap[it] }
                     val wallet = tx.walletId.let { walletsMap[it] }
+                    val relatedWallet = tx.relatedWalletId?.let { walletsMap[it] }
 
                     PrismRecentTransactionItem(
                         transaction = tx,
                         category = category,
                         wallet = wallet,
+                        relatedWallet = relatedWallet,
                         showBalance = showBalance,
                         onClick = { onSelectTransaction?.invoke(tx) },
                         onLongClick = onActionTransaction?.let { { it(tx) } },
@@ -416,6 +419,8 @@ private fun PrismHeroNetWorthCard(
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(24.dp)
+    val pageCount = if (totalDebt > 0L) 2 else 1
+    val pagerState = rememberPagerState(pageCount = { pageCount })
 
     Box(
         modifier = modifier
@@ -507,124 +512,254 @@ private fun PrismHeroNetWorthCard(
             }
         }
 
-        // ── Content ──────────────────────────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(22.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                // Top label + eye icon
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onToggleShowBalance,
+        // ── Pager Content ────────────────────────────────────────────
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+        ) { page ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = 22.dp,
+                        top = 22.dp,
+                        end = 22.dp,
+                        bottom = if (pageCount > 1) 28.dp else 22.dp,
                     ),
-                ) {
-                    Text(
-                        text = "Tài sản ròng (Net Worth)",
-                        style = FinluxTextStyles.Caption.copy(fontSize = 13.sp),
-                        color = Color.White.copy(alpha = 0.90f),
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Icon(
-                        imageVector = if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = "Ẩn/Hiện số dư",
-                        tint = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Display Amount (Net Worth)
-                Text(
-                    text = if (showBalance) formatVndAmount(netWorth) else "••••••••",
-                    style = FinluxTextStyles.DisplayAmount.copy(
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp,
-                    ),
-                    color = Color.White,
-                )
-
-                if (totalDebt > 0L) {
-                    Text(
-                        text = "Tổng ví trừ tổng dư nợ",
-                        style = FinluxTextStyles.Caption.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Normal,
-                        ),
-                        color = Color.White.copy(alpha = 0.80f),
-                    )
-                }
-
-                Spacer(Modifier.height(14.dp))
-
-                // Breakdown pills: Gross Assets & Total Debt
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    // Gross Assets Chip
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color.White.copy(alpha = 0.22f),
-                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onWalletsClick() },
-                    ) {
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    if (page == 0) {
+                        // ── Page 0: Số dư hiện có (Tổng tiền các ví) ─────────────
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onToggleShowBalance,
+                            ),
                         ) {
                             Text(
-                                text = "Ví: " + if (showBalance) formatVndAmount(grossAssets) else "•••",
-                                style = FinluxTextStyles.MicroLabel.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                ),
-                                color = Color(0xFF4ADE80),
+                                text = "Số dư hiện có",
+                                style = FinluxTextStyles.Caption.copy(fontSize = 13.sp),
+                                color = Color.White.copy(alpha = 0.90f),
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Icon(
+                                imageVector = if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = "Ẩn/Hiện số dư",
+                                tint = Color.White.copy(alpha = 0.85f),
+                                modifier = Modifier.size(16.dp),
                             )
                         }
-                    }
 
-                    // Total Debt Chip
-                    if (totalDebt > 0L) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFE11D48).copy(alpha = 0.35f),
-                            modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDebtsClick() },
+                        Spacer(Modifier.height(8.dp))
+
+                        // Display Amount (Gross Assets)
+                        Text(
+                            text = if (showBalance) formatVndAmount(grossAssets) else "••••••••",
+                            style = FinluxTextStyles.DisplayAmount.copy(
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-0.5).sp,
+                            ),
+                            color = Color.White,
+                        )
+
+                        Text(
+                            text = "Tổng số dư từ tất cả các ví",
+                            style = FinluxTextStyles.Caption.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                            ),
+                            color = Color.White.copy(alpha = 0.80f),
+                        )
+
+                        Spacer(Modifier.height(14.dp))
+
+                        // Breakdown pills
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            // Gross Assets Chip
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White.copy(alpha = 0.22f),
+                                modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onWalletsClick() },
                             ) {
-                                Text(
-                                    text = "Nợ: " + if (showBalance) formatVndAmount(totalDebt) else "•••",
-                                    style = FinluxTextStyles.MicroLabel.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                    ),
-                                    color = Color(0xFFFCA5A5),
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Text(
+                                        text = "Ví: " + if (showBalance) formatVndAmount(grossAssets) else "•••",
+                                        style = FinluxTextStyles.MicroLabel.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                        ),
+                                        color = Color(0xFF4ADE80),
+                                    )
+                                }
+                            }
+
+                            // Total Debt Chip
+                            if (totalDebt > 0L) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFE11D48).copy(alpha = 0.35f),
+                                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDebtsClick() },
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Text(
+                                            text = "Nợ: " + if (showBalance) formatVndAmount(totalDebt) else "•••",
+                                            style = FinluxTextStyles.MicroLabel.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp,
+                                            ),
+                                            color = Color(0xFFFCA5A5),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // ── Page 1: Tài sản ròng (Net Worth = Ví - Nợ) ───────────
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onToggleShowBalance,
+                            ),
+                        ) {
+                            Text(
+                                text = "Tài sản ròng (Net Worth)",
+                                style = FinluxTextStyles.Caption.copy(fontSize = 13.sp),
+                                color = Color.White.copy(alpha = 0.90f),
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Icon(
+                                imageVector = if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = "Ẩn/Hiện số dư",
+                                tint = Color.White.copy(alpha = 0.85f),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // Display Amount (Net Worth)
+                        Text(
+                            text = if (showBalance) formatVndAmount(netWorth) else "••••••••",
+                            style = FinluxTextStyles.DisplayAmount.copy(
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-0.5).sp,
+                            ),
+                            color = Color.White,
+                        )
+
+                        Text(
+                            text = "Tổng ví trừ tổng dư nợ",
+                            style = FinluxTextStyles.Caption.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                            ),
+                            color = Color.White.copy(alpha = 0.80f),
+                        )
+
+                        Spacer(Modifier.height(14.dp))
+
+                        // Breakdown pills
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White.copy(alpha = 0.22f),
+                                modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onWalletsClick() },
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Text(
+                                        text = "Ví: " + if (showBalance) formatVndAmount(grossAssets) else "•••",
+                                        style = FinluxTextStyles.MicroLabel.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                        ),
+                                        color = Color(0xFF4ADE80),
+                                    )
+                                }
+                            }
+
+                            if (totalDebt > 0L) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFE11D48).copy(alpha = 0.35f),
+                                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDebtsClick() },
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Text(
+                                            text = "Nợ: " + if (showBalance) formatVndAmount(totalDebt) else "•••",
+                                            style = FinluxTextStyles.MicroLabel.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp,
+                                            ),
+                                            color = Color(0xFFFCA5A5),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // 3D Glowing Wallet Graphic Composition
-            PrismWallet3DIllustration(
+                // 3D Glowing Wallet Graphic Composition
+                PrismWallet3DIllustration(
+                    modifier = Modifier
+                        .size(105.dp)
+                        .padding(start = 6.dp),
+                )
+            }
+        }
+
+        // ── Page Indicator Dots ──────────────────────────────────────
+        if (pageCount > 1) {
+            Row(
                 modifier = Modifier
-                    .size(105.dp)
-                    .padding(start = 6.dp),
-            )
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                repeat(pageCount) { index ->
+                    val isSelected = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .height(4.dp)
+                            .width(if (isSelected) 14.dp else 4.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) Color.White else Color.White.copy(alpha = 0.35f)),
+                    )
+                }
+            }
         }
     }
 }
@@ -880,9 +1015,9 @@ private fun PrismSummaryTrioCard(
             accentColor = Color(0xFF10B981),
             title = "Thu tháng này",
             value = if (showBalance) formatVndAmount(income) else "••••",
-            trendText = "— 0%",
+            trendText = if (income == 0L) "— 0%" else "▲ Thu nhập",
             trendSubtext = "so với trước",
-            isTrendPositive = null,
+            isTrendPositive = if (income == 0L) null else true,
             onClick = onIncomeClick,
             modifier = Modifier.weight(1f),
         )
@@ -893,9 +1028,9 @@ private fun PrismSummaryTrioCard(
             accentColor = Color(0xFFF43F5E),
             title = "Chi tháng này",
             value = if (showBalance) formatVndAmount(expense) else "••••",
-            trendText = "▲ 18,7%",
+            trendText = if (expense == 0L) "— 0%" else "▼ Chi tiêu",
             trendSubtext = "so với trước",
-            isTrendPositive = false,
+            isTrendPositive = if (expense == 0L) null else false,
             onClick = onExpenseClick,
             modifier = Modifier.weight(1f),
         )
@@ -906,9 +1041,9 @@ private fun PrismSummaryTrioCard(
             accentColor = if (net < 0) Color(0xFFF43F5E) else Color(0xFF6366F1),
             title = "Dòng tiền (ròng)",
             value = if (showBalance) (if (net < 0) "-${formatVndAmount(-net)}" else "+${formatVndAmount(net)}") else "••••",
-            trendText = if (net < 0) "▼ 18,7%" else "▲ 0%",
+            trendText = if (net == 0L) "— 0%" else (if (net < 0) "▼ Âm ví" else "▲ Dương"),
             trendSubtext = "so với trước",
-            isTrendPositive = net >= 0,
+            isTrendPositive = if (net == 0L) null else (net >= 0),
             onClick = onNetClick,
             modifier = Modifier.weight(1f),
         )
@@ -1624,25 +1759,47 @@ private fun PrismRecentTransactionItem(
     transaction: FinanceTransaction,
     category: Category?,
     wallet: Wallet?,
+    relatedWallet: Wallet? = null,
     showBalance: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
+    val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
     val isIncome = transaction.type == TransactionType.INCOME
-    val accentColor = category?.let { colorFromHex(it.colorHex) } ?: if (isIncome) FinluxColors.IncomeGreen else tokens.primary
-    val icon = category?.let { categoryIcon(it.icon) } ?: if (isIncome) Icons.Default.ArrowDownward else Icons.Default.LocalOffer
+
+    val accentColor = when (transaction.type) {
+        TransactionType.INCOME -> category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.IncomeGreen
+        TransactionType.EXPENSE -> category?.let { colorFromHex(it.colorHex) } ?: tokens.primary
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+    }
+
+    val icon = when (transaction.type) {
+        TransactionType.INCOME -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward
+        TransactionType.EXPENSE -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.LocalOffer
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
+    }
 
     val title = transaction.note.ifBlank {
-        category?.name ?: if (isIncome) "Thu nhập" else "Chi tiêu"
+        when (transaction.type) {
+            TransactionType.INCOME -> category?.name ?: "Thu nhập"
+            TransactionType.EXPENSE -> category?.name ?: "Chi tiêu"
+            TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "Chuyển tiền đến ${relatedWallet.name}" else "Chuyển tiền đi"
+            TransactionType.TRANSFER_IN -> if (relatedWallet != null) "Nhận tiền từ ${relatedWallet.name}" else "Nhận tiền chuyển"
+        }
     }
 
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm") }
     val dateText = remember(transaction.date) {
         dateFormatter.format(transaction.date.atZone(ZoneId.systemDefault()))
     }
-    val walletName = wallet?.name ?: "Ví chính"
+
+    val walletDisplayName = when (transaction.type) {
+        TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "${wallet?.name ?: "Ví"} ➔ ${relatedWallet.name}" else wallet?.name ?: "Ví chính"
+        TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví"}" else wallet?.name ?: "Ví chính"
+        else -> wallet?.name ?: "Ví chính"
+    }
 
     FinluxSoftCard(
         modifier = modifier
@@ -1660,7 +1817,7 @@ private fun PrismRecentTransactionItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // Category Icon
+            // Category / Transfer Icon
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
@@ -1706,26 +1863,38 @@ private fun PrismRecentTransactionItem(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                val amountFormatted = if (isIncome) "+${formatVndAmount(transaction.amount.value)}" else "-${formatVndAmount(transaction.amount.value)}"
+                val amountFormatted = when (transaction.type) {
+                    TransactionType.INCOME -> "+${formatVndAmount(transaction.amount.value)}"
+                    TransactionType.EXPENSE -> "-${formatVndAmount(transaction.amount.value)}"
+                    TransactionType.TRANSFER_OUT -> "-${formatVndAmount(transaction.amount.value)}"
+                    TransactionType.TRANSFER_IN -> "+${formatVndAmount(transaction.amount.value)}"
+                }
+                val amountColor = when (transaction.type) {
+                    TransactionType.INCOME -> FinluxColors.IncomeGreen
+                    TransactionType.EXPENSE -> FinluxColors.ExpenseRed
+                    TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+                }
+
                 Text(
                     text = if (showBalance) amountFormatted else "••••",
                     style = FinluxTextStyles.CardTitle.copy(
                         fontSize = 16.5.sp,
                         fontWeight = FontWeight.ExtraBold,
                     ),
-                    color = if (isIncome) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
+                    color = amountColor,
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(3.dp),
                 ) {
                     Text(
-                        text = walletName,
+                        text = walletDisplayName,
                         style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
                         color = tokens.onSurfaceVariant,
+                        maxLines = 1,
                     )
                     Icon(
-                        imageVector = Icons.Default.AccountBalanceWallet,
+                        imageVector = if (isTransfer) Icons.Default.SwapHoriz else Icons.Default.AccountBalanceWallet,
                         contentDescription = null,
                         tint = tokens.onSurfaceVariant,
                         modifier = Modifier.size(12.dp),

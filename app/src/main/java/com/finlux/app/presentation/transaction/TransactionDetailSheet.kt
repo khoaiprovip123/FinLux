@@ -17,17 +17,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -75,6 +79,7 @@ fun TransactionDetailSheet(
     transaction: FinanceTransaction,
     category: Category? = null,
     wallet: Wallet? = null,
+    relatedWallet: Wallet? = null,
     onDismiss: () -> Unit,
     onEdit: (FinanceTransaction) -> Unit = {},
     onDelete: (FinanceTransaction) -> Unit = {},
@@ -82,8 +87,33 @@ fun TransactionDetailSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
+    val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
     val isIncome = transaction.type == TransactionType.INCOME
-    val accentColor = category?.let { colorFromHex(it.colorHex) } ?: if (isIncome) IncomeGreen else ExpenseRed
+
+    val accentColor = when (transaction.type) {
+        TransactionType.INCOME -> category?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
+        TransactionType.EXPENSE -> category?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+    }
+
+    val headerIcon = when (transaction.type) {
+        TransactionType.INCOME -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward
+        TransactionType.EXPENSE -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.LocalOffer
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
+    }
+
+    val badgeLabel = when (transaction.type) {
+        TransactionType.INCOME -> "Khoản thu nhập"
+        TransactionType.EXPENSE -> "Khoản chi tiêu"
+        TransactionType.TRANSFER_OUT -> "Chuyển tiền đi"
+        TransactionType.TRANSFER_IN -> "Nhận tiền chuyển"
+    }
+
+    val amountPrefix = when (transaction.type) {
+        TransactionType.INCOME, TransactionType.TRANSFER_IN -> "+"
+        TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> "-"
+    }
+
     val formattedDate = transaction.date.atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("HH:mm · dd/MM/yyyy"))
 
@@ -126,7 +156,7 @@ fun TransactionDetailSheet(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = category?.let { categoryIcon(it.icon) } ?: Icons.Default.Info,
+                                imageVector = headerIcon,
                                 contentDescription = null,
                                 tint = accentColor,
                                 modifier = Modifier.size(22.dp),
@@ -196,7 +226,7 @@ fun TransactionDetailSheet(
                                     .background(accentColor),
                             )
                             Text(
-                                text = if (isIncome) "Khoản thu nhập" else "Khoản chi tiêu",
+                                text = badgeLabel,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = accentColor,
@@ -207,7 +237,7 @@ fun TransactionDetailSheet(
 
                     // Display Amount
                     Text(
-                        text = (if (isIncome) "+" else "-") + formatVndAmount(transaction.amount.value),
+                        text = "$amountPrefix${formatVndAmount(transaction.amount.value)}",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
                         color = accentColor,
@@ -224,26 +254,32 @@ fun TransactionDetailSheet(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    // Danh mục
+                    // Danh mục / Loại giao dịch
                     DetailItemRow(
-                        icon = category?.let { categoryIcon(it.icon) } ?: Icons.Default.Info,
+                        icon = headerIcon,
                         iconTint = accentColor,
                         iconBg = accentColor.copy(alpha = 0.12f),
-                        label = "Danh mục",
-                        value = category?.name ?: if (isIncome) "Thu nhập" else "Chi tiêu",
+                        label = if (isTransfer) "Loại giao dịch" else "Danh mục",
+                        value = if (isTransfer) "Chuyển tiền giữa các ví" else (category?.name ?: if (isIncome) "Thu nhập" else "Chi tiêu"),
                     )
 
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
                     )
 
-                    // Ví thanh toán
+                    // Ví thanh toán / Định tuyến ví
+                    val walletLabel = if (isTransfer) "Định tuyến ví" else "Ví thanh toán"
+                    val walletValue = when (transaction.type) {
+                        TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "${wallet?.name ?: "Ví nguồn"} ➔ ${relatedWallet.name}" else wallet?.name ?: "Ví nguồn"
+                        TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví nhận"}" else wallet?.name ?: "Ví nhận"
+                        else -> wallet?.name ?: "Ví tiền mặt"
+                    }
                     DetailItemRow(
-                        icon = Icons.Default.AccountBalanceWallet,
+                        icon = if (isTransfer) Icons.Default.SwapHoriz else Icons.Default.AccountBalanceWallet,
                         iconTint = Color(0xFF2563EB),
                         iconBg = Color(0xFF2563EB).copy(alpha = 0.12f),
-                        label = "Ví thanh toán",
-                        value = wallet?.name ?: "Ví tiền mặt",
+                        label = walletLabel,
+                        value = walletValue,
                     )
 
                     HorizontalDivider(
@@ -513,6 +549,8 @@ private fun DetailItemRow(
 fun TransactionActionDialog(
     transaction: FinanceTransaction,
     category: Category? = null,
+    wallet: Wallet? = null,
+    relatedWallet: Wallet? = null,
     onDismiss: () -> Unit,
     onViewDetails: ((FinanceTransaction) -> Unit)? = null,
     onEdit: (FinanceTransaction) -> Unit,
@@ -521,6 +559,8 @@ fun TransactionActionDialog(
     TransactionDetailSheet(
         transaction = transaction,
         category = category,
+        wallet = wallet,
+        relatedWallet = relatedWallet,
         onDismiss = onDismiss,
         onEdit = onEdit,
         onDelete = onDelete,

@@ -45,6 +45,7 @@ data class Category(
     val colorHex: String,
     val isDefault: Boolean,
     val createdAt: Instant,
+    val isEssential: Boolean = true,
 )
 
 data class FinanceTransaction(

@@ -130,15 +130,19 @@ fun FinluxNavHost(
     val mainSwipeModifier = if (currentRoute in MainSwipeRoutes) {
         Modifier.pointerInput(currentRoute, uiPreferences.animationsEnabled) {
             awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                val down = awaitFirstDown(requireUnconsumed = true, pass = PointerEventPass.Main)
                 var horizontalTravel = 0f
                 var verticalTravel = 0f
                 var gestureLocked = false
                 var lastUptimeMillis = down.uptimeMillis
 
                 do {
-                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val event = awaitPointerEvent(PointerEventPass.Main)
                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (change.isConsumed) {
+                        // Cử chỉ đang được xử lý bởi component con (như HorizontalPager, Slider, Chart...)
+                        break
+                    }
                     val delta = change.positionChange()
                     horizontalTravel += delta.x
                     verticalTravel += delta.y
@@ -146,7 +150,7 @@ fun FinluxNavHost(
 
                     if (!gestureLocked &&
                         abs(horizontalTravel) >= viewConfiguration.touchSlop &&
-                        abs(horizontalTravel) >= abs(verticalTravel) * 1.20f
+                        abs(horizontalTravel) >= abs(verticalTravel) * 1.50f
                     ) {
                         gestureLocked = true
                     }
@@ -326,6 +330,7 @@ fun FinluxNavHost(
                 transaction = tx,
                 category = allCategories[tx.categoryId],
                 wallet = allWallets[tx.walletId],
+                relatedWallet = allWallets[tx.relatedWalletId],
                 onDismiss = { viewingTransaction = null },
                 onEdit = {
                     viewingTransaction = null
@@ -341,6 +346,8 @@ fun FinluxNavHost(
             TransactionActionDialog(
                 transaction = tx,
                 category = allCategories[tx.categoryId],
+                wallet = allWallets[tx.walletId],
+                relatedWallet = allWallets[tx.relatedWalletId],
                 onDismiss = { actionTransaction = null },
                 onViewDetails = {
                     actionTransaction = null

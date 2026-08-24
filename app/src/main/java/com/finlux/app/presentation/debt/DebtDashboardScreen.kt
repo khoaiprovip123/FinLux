@@ -144,19 +144,6 @@ fun DebtDashboardScreen(
                     },
                 )
             },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {
-                        editingDebt = null
-                        showAddEditSheet = true
-                    },
-                    containerColor = tokens.primary,
-                    contentColor = Color.White,
-                    shape = CircleShape,
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Thêm khoản nợ")
-                }
-            },
         ) { paddingValues ->
             Box(
                 modifier = Modifier
@@ -166,29 +153,23 @@ fun DebtDashboardScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                 // Overview Hero Card
                 item {
                     DebtOverviewHeroCard(uiState = uiState)
                 }
 
-                // Strategy Selector Card (Snowball vs Avalanche)
+                // Unified Bento Container: Strategy + AI Cashflow Advisor + Slider + Burndown Chart
                 item {
                     StrategySelectorCard(
                         currentStrategy = uiState.strategy,
                         extraMonthlyPayment = uiState.extraMonthlyPayment,
                         payoffPlan = uiState.payoffPlan,
+                        initialDebtAmount = uiState.totalRemainingDebt.value,
+                        cashflowAnalysis = uiState.cashflowAnalysis,
                         onStrategySelected = viewModel::setStrategy,
                         onExtraPaymentChanged = viewModel::setExtraMonthlyPayment,
-                    )
-                }
-
-                // Burndown Chart Card
-                item {
-                    DebtBurndownChart(
-                        payoffPlan = uiState.payoffPlan,
-                        initialDebtAmount = uiState.totalRemainingDebt.value,
                     )
                 }
 

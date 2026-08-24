@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.PayoffStrategy
+import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DebtPreferenceRepository
+import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.usecase.AnalyzeDebtCashflowUseCase
 import com.finlux.app.domain.usecase.CalculatePayoffStrategyUseCase
 import com.finlux.app.domain.usecase.DeleteDebtAccountUseCase
 import com.finlux.app.domain.usecase.GetDebtsUseCase
@@ -27,6 +30,9 @@ import javax.inject.Inject
 class DebtViewModel @Inject constructor(
     getDebtsUseCase: GetDebtsUseCase,
     walletRepository: WalletRepository,
+    transactionRepository: TransactionRepository,
+    categoryRepository: CategoryRepository,
+    private val analyzeDebtCashflowUseCase: AnalyzeDebtCashflowUseCase,
     private val calculatePayoffStrategyUseCase: CalculatePayoffStrategyUseCase,
     private val saveDebtAccountUseCase: SaveDebtAccountUseCase,
     private val deleteDebtAccountUseCase: DeleteDebtAccountUseCase,
@@ -42,13 +48,32 @@ class DebtViewModel @Inject constructor(
 
     private val _formState = MutableStateFlow(FormState())
 
-    val uiState: StateFlow<DebtUiState> = combine(
+    private val cashflowFlow = combine(
+        transactionRepository.observeRecent(5_000),
+        categoryRepository.observeCategories(),
         getDebtsUseCase(),
-        walletRepository.observeWallets(),
+    ) { transactions, categories, debts ->
+        analyzeDebtCashflowUseCase(
+            transactions = transactions,
+            categories = categories,
+            debts = debts,
+        )
+    }
+
+    private val preferencesFlow = combine(
         debtPreferenceRepository.observePayoffStrategy(),
         debtPreferenceRepository.observeExtraMonthlyPayment(),
         _formState,
-    ) { debts, wallets, strategy, extraPayment, formState ->
+    ) { strategy, extraPayment, formState ->
+        Triple(strategy, extraPayment, formState)
+    }
+
+    val uiState: StateFlow<DebtUiState> = combine(
+        getDebtsUseCase(),
+        walletRepository.observeWallets(),
+        cashflowFlow,
+        preferencesFlow,
+    ) { debts, wallets, cashflow, (strategy, extraPayment, formState) ->
         val plan = calculatePayoffStrategyUseCase(
             debts = debts,
             strategy = strategy,
@@ -60,6 +85,7 @@ class DebtViewModel @Inject constructor(
             strategy = strategy,
             extraMonthlyPayment = extraPayment,
             payoffPlan = plan,
+            cashflowAnalysis = cashflow,
             isLoading = false,
             isSubmitting = formState.isSubmitting,
             errorMessage = formState.errorMessage,

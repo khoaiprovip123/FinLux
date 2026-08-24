@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -142,9 +145,33 @@ fun ModernTransactionsScreen(
                         }
                     }
                     items(transactions, key = { it.id }) { transaction ->
+                        val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
                         val isIncome = transaction.type == TransactionType.INCOME
                         val cat = categories[transaction.categoryId]
-                        val rowAccent = cat?.let { colorFromHex(it.colorHex) } ?: if (isIncome) IncomeGreen else ExpenseRed
+                        val relWallet = wallets[transaction.relatedWalletId]
+                        val curWallet = wallets[transaction.walletId]
+                        val rowAccent = when (transaction.type) {
+                            TransactionType.INCOME -> cat?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
+                            TransactionType.EXPENSE -> cat?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
+                            TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+                        }
+                        val rowIcon = when (transaction.type) {
+                            TransactionType.INCOME -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward
+                            TransactionType.EXPENSE -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
+                            TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
+                        }
+                        val title = transaction.note.ifBlank {
+                            when (transaction.type) {
+                                TransactionType.INCOME -> cat?.name ?: "Thu nhập"
+                                TransactionType.EXPENSE -> cat?.name ?: "Chi tiêu"
+                                TransactionType.TRANSFER_OUT -> if (relWallet != null) "Chuyển đến ${relWallet.name}" else "Chuyển tiền đi"
+                                TransactionType.TRANSFER_IN -> if (relWallet != null) "Nhận từ ${relWallet.name}" else "Nhận tiền chuyển"
+                            }
+                        }
+                        val amountPrefix = when (transaction.type) {
+                            TransactionType.INCOME, TransactionType.TRANSFER_IN -> "+"
+                            TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> "-"
+                        }
 
                         GlassCard(
                             modifier = Modifier.fillMaxWidth(),
@@ -154,14 +181,14 @@ fun ModernTransactionsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.background(rowAccent.copy(alpha = .14f), RoundedCornerShape(14.dp))) {
                                     Icon(
-                                        cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments,
+                                        rowIcon,
                                         null,
                                         Modifier.padding(10.dp).size(22.dp),
                                         tint = rowAccent,
                                     )
                                 }
                                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                                    Text(transaction.note.ifBlank { cat?.name ?: if (isIncome) "Thu nhập" else "Chi tiêu" }, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                    Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                                     Text(
                                         DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm").format(transaction.date.atZone(ZoneId.systemDefault())),
                                         style = MaterialTheme.typography.bodySmall,
@@ -169,7 +196,7 @@ fun ModernTransactionsScreen(
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text((if (isIncome) "+" else "-") + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                    Text(amountPrefix + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         IconButton(onClick = { onEditTransaction?.invoke(transaction) }) {
                                             Icon(Icons.Default.Edit, "Sửa giao dịch", tint = MaterialTheme.colorScheme.primary)
@@ -192,6 +219,7 @@ fun ModernTransactionsScreen(
             transaction = tx,
             category = categories[tx.categoryId],
             wallet = wallets[tx.walletId],
+            relatedWallet = wallets[tx.relatedWalletId],
             onDismiss = { viewingTransaction = null },
             onEdit = { onEditTransaction?.invoke(it) },
             onDelete = { pendingDelete = it },
@@ -202,6 +230,8 @@ fun ModernTransactionsScreen(
         TransactionActionDialog(
             transaction = tx,
             category = categories[tx.categoryId],
+            wallet = wallets[tx.walletId],
+            relatedWallet = wallets[tx.relatedWalletId],
             onDismiss = { actionTransaction = null },
             onViewDetails = { viewingTransaction = it },
             onEdit = { onEditTransaction?.invoke(it) },

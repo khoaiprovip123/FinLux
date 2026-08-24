@@ -61,6 +61,7 @@ internal fun Category.toCategoryMap(): Map<String, Any?> = mapOf(
     "icon" to icon,
     "color" to colorHex,
     "isDefault" to isDefault,
+    "isEssential" to isEssential,
     "createdAt" to Timestamp(Date.from(createdAt)),
 )
 
@@ -72,6 +73,7 @@ internal fun DocumentSnapshot.toCategory(): Category? = runCatching {
         icon = getString("icon").orEmpty(),
         colorHex = getString("color") ?: "#1F6FBF",
         isDefault = getBoolean("isDefault") ?: false,
+        isEssential = getBoolean("isEssential") ?: true,
         createdAt = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now(),
     )
 }.getOrNull()
