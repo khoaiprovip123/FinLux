@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.3] - 2026-08-24
+### Added
+- Đóng gói và phát hành bản Release v1.9.3 chuẩn hóa với Proguard/R8 shrinking.
+
+### Changed
+- Nâng cấp `versionCode = 111` và `versionName = "1.9.3"`.
+- Cập nhật tối ưu toàn diện các pipeline phát hành và nạp tự động.
+
+### Fixed
+- Đảm bảo 100% Unit Test suites vượt qua kiểm thử trước khi đóng gói Release.
+
 ## [1.9.2] - 2026-08-24
 ### Added
 - **Trợ Lý Phân Bổ Dòng Tiền Thoát Nợ Tự Động (Debt Cashflow Advisor & Smart Allocation)**:
