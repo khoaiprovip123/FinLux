@@ -30,7 +30,9 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
+import com.finlux.app.presentation.settings.salary.SalaryCycleSettingsSheet
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
@@ -146,6 +148,7 @@ fun PrismSettingsScreen(
     var showNameEditor by remember { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
     var showBiometricTimeoutDialog by remember { mutableStateOf(false) }
+    var showSalaryCycleSheet by remember { mutableStateOf(false) }
     var infoDialog by remember { mutableStateOf<InfoDialogContent?>(null) }
     var amountVisible by remember { mutableStateOf(true) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
@@ -283,6 +286,12 @@ fun PrismSettingsScreen(
         )
     }
 
+    if (showSalaryCycleSheet) {
+        SalaryCycleSettingsSheet(
+            onDismiss = { showSalaryCycleSheet = false },
+        )
+    }
+
     LaunchedEffect(nameState.message, nameState.isError) {
         if (nameState.message != null && !nameState.isError) {
             delay(650)
@@ -354,6 +363,14 @@ fun PrismSettingsScreen(
                             Color(0xFFE11D48),
                             subtitle = "Kế hoạch thoát nợ Snowball & Avalanche",
                             onClick = { navigateTo(PrismSettingsAction.DEBT) },
+                        ),
+                        SettingsMenuItem(
+                            Icons.Default.CalendarMonth,
+                            "Tháng tài chính & Chu kỳ lương",
+                            Color(0xFF10B981),
+                            subtitle = "Tính toán thu chi theo ngày nhận lương",
+                            badge = "Mới",
+                            onClick = { showSalaryCycleSheet = true },
                         ),
                         SettingsMenuItem(Icons.Default.Category, "Danh mục thu chi", Color(0xFF8B5CF6), onClick = { navigateTo(PrismSettingsAction.CATEGORIES) }),
                         SettingsMenuItem(Icons.Default.Alarm, "Nhắc nhở thanh toán", Color(0xFFF59E0B), onClick = { navigateTo(PrismSettingsAction.REMINDERS) }),

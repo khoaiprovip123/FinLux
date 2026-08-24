@@ -211,6 +211,7 @@ fun PrismReportsScreen(
     if (showPeriodPickerSheet) {
         PrismPeriodPickerBottomSheet(
             currentPeriod = state.period,
+            availablePeriods = state.availablePeriods,
             onSelectPeriod = { period ->
                 viewModel.selectPeriod(period)
                 showPeriodPickerSheet = false
@@ -1171,6 +1172,7 @@ private fun PrismDailyAveragesRow(state: ReportsUiState) {
 @Composable
 private fun PrismPeriodPickerBottomSheet(
     currentPeriod: ReportPeriod,
+    availablePeriods: List<ReportPeriod>,
     onSelectPeriod: (ReportPeriod) -> Unit,
     onDismiss: () -> Unit,
     onExportClick: () -> Unit,
@@ -1197,7 +1199,7 @@ private fun PrismPeriodPickerBottomSheet(
                 ),
             )
 
-            ReportPeriod.entries.forEach { option ->
+            availablePeriods.forEach { option ->
                 val isSelected = currentPeriod == option
                 Surface(
                     shape = RoundedCornerShape(14.dp),

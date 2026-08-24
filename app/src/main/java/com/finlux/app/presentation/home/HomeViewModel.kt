@@ -2,6 +2,8 @@ package com.finlux.app.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.finlux.app.core.time.FinanceClock
+import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.DebtAccount
@@ -10,19 +12,22 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.repository.AuthRepository
+import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
 import com.finlux.app.domain.repository.DebtRepository
+import com.finlux.app.domain.repository.NotificationRepository
+import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
-import com.finlux.app.domain.repository.BudgetRepository
-import com.finlux.app.domain.repository.NotificationRepository
+import com.finlux.app.domain.usecase.SalaryCycleCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 data class HomeUiState(
     val user: UserProfile? = null,
@@ -38,6 +43,7 @@ data class HomeUiState(
     val budgetRemaining: Long = 0L,
     val budgetRemainingPercent: Int = 0,
     val unreadNotificationsCount: Int = 0,
+    val salaryCycleLabel: String? = null,
 )
 
 private data class FinancialOverview(
@@ -46,6 +52,7 @@ private data class FinancialOverview(
     val budgetRemainingPercent: Int,
     val monthTransactions: List<FinanceTransaction>,
     val unreadCount: Int,
+    val salaryCycleLabel: String?,
 )
 
 @HiltViewModel
@@ -58,6 +65,9 @@ class HomeViewModel @Inject constructor(
     budgetRepository: BudgetRepository,
     notificationRepository: NotificationRepository,
     debtRepository: DebtRepository,
+    salaryCycleRepository: SalaryCycleRepository,
+    calculator: SalaryCycleCalculator,
+    clock: FinanceClock,
 ) : ViewModel() {
     private val currentMonth = YearMonth.now()
 
@@ -66,7 +76,8 @@ class HomeViewModel @Inject constructor(
         budgetRepository.observeBudgets(currentMonth),
         transactionRepository.observeMonth(currentMonth),
         notificationRepository.observeNotifications(),
-    ) { summary, budgets, monthTransactions, notifications ->
+        salaryCycleRepository.observeConfig(),
+    ) { summary, budgets, monthTransactions, notifications, cycleConfig ->
         val spentByCategory = monthTransactions
             .filter { it.type == TransactionType.EXPENSE && it.categoryId != null }
             .groupBy { it.categoryId!! }
@@ -77,12 +88,20 @@ class HomeViewModel @Inject constructor(
         val percent = if (limit <= 0L) 0 else ((remaining.coerceAtLeast(0L) * 100L) / limit).toInt()
         val unread = notifications.count { !it.isRead }
 
+        val cycleLabel = if (cycleConfig.enabled) {
+            val zone = FinanceTime.zoneOf(cycleConfig.financeTimeZone)
+            val cycle = calculator.cycleContaining(clock.now(), cycleConfig, zone)
+            val fmt = DateTimeFormatter.ofPattern("dd/MM")
+            "${cycle.start.atZone(zone).format(fmt)} - ${cycle.endExclusive.atZone(zone).minusDays(1).format(fmt)}"
+        } else null
+
         FinancialOverview(
             summary = summary,
             budgetRemaining = remaining,
             budgetRemainingPercent = percent,
             monthTransactions = monthTransactions,
             unreadCount = unread,
+            salaryCycleLabel = cycleLabel,
         )
     }
 
@@ -120,6 +139,7 @@ class HomeViewModel @Inject constructor(
             budgetRemaining = overview.budgetRemaining,
             budgetRemainingPercent = overview.budgetRemainingPercent,
             unreadNotificationsCount = overview.unreadCount,
+            salaryCycleLabel = overview.salaryCycleLabel,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 }

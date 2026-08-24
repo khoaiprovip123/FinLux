@@ -96,6 +96,18 @@ users/{uid}
   │         ├─ paymentDate: timestamp
   │         └─ note: string
   │
+  ├─ financialPreferences/salaryCycle -- cấu hình chu kỳ lương & tháng tài chính (UC-27, BR-SALARY-01..03)
+  │    ├─ enabled: boolean
+  │    ├─ paydayRuleType: "DAY_OF_MONTH" | "FIRST_DAY_OF_MONTH" | "LAST_DAY_OF_MONTH"
+  │    ├─ paydayDay: number         -- 1..31 (mặc định 25)
+  │    ├─ salaryWalletId: string?
+  │    ├─ savingsWalletId: string?
+  │    ├─ expectedSalary: number?
+  │    ├─ rolloverRule: "KEEP_IN_WALLET" | "ASK_EACH_CYCLE" | "MOVE_TO_SAVINGS"
+  │    ├─ budgetPeriodBasis: "CALENDAR_MONTH" | "SALARY_CYCLE"
+  │    ├─ financeTimeZone: string   -- "Asia/Ho_Chi_Minh"
+  │    └─ updatedAt: timestamp
+  │
   └─ notifications/{notificationId}
        ├─ title: string
        ├─ body: string

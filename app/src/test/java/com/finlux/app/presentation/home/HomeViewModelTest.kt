@@ -94,6 +94,9 @@ class HomeViewModelTest {
             budgetRepository = FakeHomeBudgetRepository(),
             notificationRepository = FakeHomeNotificationRepository(),
             debtRepository = FakeHomeDebtRepository(debts),
+            salaryCycleRepository = FakeHomeSalaryCycleRepository(),
+            calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator(),
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
         )
 
         viewModel.state.test {
@@ -165,4 +168,9 @@ private class FakeHomeDebtRepository(private val list: List<DebtAccount>) : Debt
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = AppResult.Success(debt.id)
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun processPayment(debtId: String, walletId: String, amount: Long, principalPaid: Long, interestPaid: Long, note: String, paymentDate: Instant): AppResult<Unit> = AppResult.Success(Unit)
+}
+
+private class FakeHomeSalaryCycleRepository : com.finlux.app.domain.repository.SalaryCycleRepository {
+    override fun observeConfig(): Flow<com.finlux.app.domain.model.SalaryCycleConfig> = flowOf(com.finlux.app.domain.model.SalaryCycleConfig())
+    override suspend fun saveConfig(config: com.finlux.app.domain.model.SalaryCycleConfig): AppResult<Unit> = AppResult.Success(Unit)
 }

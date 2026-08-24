@@ -40,6 +40,7 @@ Không có vai trò Admin/Manager trong V1 (app cá nhân, không multi-user).
 | UC-24 | Quét/chọn ảnh hóa đơn khi thêm Chi | User |
 | UC-25 | Quản lý mục tiêu tài chính | User |
 | UC-26 | Quản lý và thoát nợ (Debt Freedom & Credit Hub) | User |
+| UC-27 | Cấu hình và theo dõi Tháng tài chính / Chu kỳ lương | User |
 
 ---
 
@@ -287,6 +288,28 @@ Business rule:
   BR-DEBT-03: Mọi giao dịch trả nợ bắt buộc chạy qua Firestore Transaction (Trừ số dư ví -> Giảm dư nợ khoản vay -> Tạo giao dịch chi tiêu category "debt_payment" -> Ghi lịch sử trả nợ).
 ```
 
+### UC-27: Cấu hình và theo dõi Tháng tài chính / Chu kỳ lương (Salary Cycle & Financial Month)
+```
+Actor: User
+Precondition: Đã đăng nhập
+Trigger: User vào Cài đặt -> "Tháng tài chính & Chu kỳ lương" hoặc bấm vào thẻ kỳ lương trên Trang chủ.
+Main flow:
+  1. App hiển thị màn hình cài đặt:
+     - Bật/Tắt chu kỳ lương
+     - Live preview dải ngày kỳ hiện tại và kỳ tiếp theo
+     - Quy tắc ngày nhận lương (Cố định ngày 1-31, Đầu tháng ngày 1, Cuối tháng)
+     - Lựa chọn ví nhận lương chính
+     - Mức lương dự kiến mỗi kỳ (tùy chọn)
+     - Xử lý tiền dư cuối kỳ (Giữ nguyên trong ví, Hỏi khi hết kỳ, Đề xuất chuyển vào ví tiết kiệm)
+     - Căn cứ kỳ ngân sách (Tháng dương lịch hoặc Theo chu kỳ lương)
+  2. User điều chỉnh các thông số và bấm "Lưu cấu hình".
+  3. Hệ thống validate logic, lưu cấu hình vào Firestore và áp dụng ngay vào Home/Reports.
+Business rule:
+  BR-SALARY-01: Chu kỳ tính từ [00:00:00 ngày nhận lương của tháng này] đến [23:59:59.999 của ngày trước ngày nhận lương tháng sau].
+  BR-SALARY-02: Nếu tháng sau có số ngày ít hơn ngày nhận lương đã chọn (ví dụ chọn ngày 31 mà tháng sau chỉ có 28 hoặc 30 ngày), ngày nhận lương tự động điều chỉnh về ngày cuối cùng của tháng đó.
+  BR-SALARY-03: Báo cáo tài chính (Reports) hỗ trợ chế độ xem `SALARY_CYCLE` truy vấn chính xác dải giao dịch `[start, endExclusive)`.
+```
+
 ---
 
 ## 4. Ma trận Business Rule tổng hợp
@@ -311,6 +334,9 @@ Business rule:
 | BR-DEBT-02 | Thuật toán mô phỏng thoát nợ Snowball (nợ nhỏ trước) & Avalanche (lãi cao trước) |
 | BR-DEBT-03 | Thanh toán nợ nguyên tử qua Firestore Transaction (trừ ví, giảm nợ, ghi sổ cái) |
 | BR-GOAL-01 | Nạp/Rút tích lũy mục tiêu tài chính nguyên tử qua Firestore Transaction (trừ/cộng ví, cập nhật mục tiêu, ghi sổ cái) |
+| BR-SALARY-01 | Dải chu kỳ lương tính chính xác [start, endExclusive) theo múi giờ tài chính |
+| BR-SALARY-02 | Tự động xử lý ngày cuối tháng ngắn hơn (leap year, 28/30/31 ngày) |
+| BR-SALARY-03 | Báo cáo và trang chủ tự động tính toán tổng thu, chi, dòng tiền theo chu kỳ khi bật |
 
 ---
 

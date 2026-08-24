@@ -1,4 +1,4 @@
-﻿package com.finlux.app.presentation.reports.modern
+package com.finlux.app.presentation.reports.modern
 
 import com.finlux.app.presentation.reports.*
 import com.finlux.app.core.designsystem.modern.*
@@ -244,6 +244,7 @@ private fun ReportAmount(label: String, amount: Long, previous: Long, color: Col
 }
 
 private fun reportRangeLabel(state: ReportsUiState): String = when (state.period) {
+    ReportPeriod.SALARY_CYCLE -> "kỳ ${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))}–${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
     ReportPeriod.MONTH -> state.range.start.format(DateTimeFormatter.ofPattern("'tháng' M, yyyy", Locale.forLanguageTag("vi-VN")))
     ReportPeriod.QUARTER -> "quý ${(state.range.start.monthValue - 1) / 3 + 1}, ${state.range.start.year}"
     ReportPeriod.YEAR -> "năm ${state.range.start.year}"

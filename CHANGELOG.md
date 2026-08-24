@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.10.0] - 2026-08-24
+### Added
+- **Tính năng Tháng Tài Chính & Chu Kỳ Lương (Salary Cycle & Financial Month)**:
+  - Tùy biến chu kỳ tài chính theo ngày nhận lương thực tế (ví dụ: ngày 25 hàng tháng) thay vì tháng dương lịch cố định.
+  - Thuật toán `SalaryCycleCalculator` tính dải ngày chính xác `[start, endExclusive)` và tự động xử lý các tháng ngắn ngày (28, 29, 30 ngày) cùng năm nhuận.
+  - Giao diện `SalaryCycleSettingsSheet` chuẩn Liquid Glass & Prism với Live Preview dải ngày chu kỳ hiện tại / kế tiếp, bộ chọn ngày nhanh & Slider, chọn ví nhận lương, mức lương dự kiến, quy tắc tiền dư cuối kỳ và căn cứ kỳ ngân sách.
+  - Tích hợp Trang chủ (`PrismHomeScreen`): Thẻ Hero hiển thị badge dải ngày chu kỳ tài chính trực quan.
+  - Tích hợp Báo cáo (`ReportsViewModel`, `PrismReportsScreen`): Bổ sung `ReportPeriod.SALARY_CYCLE` truy vấn theo dải giao dịch thực tế `TransactionRangeRepository`.
+  - Tầng dữ liệu Firestore: Subcollection `users/{uid}/financialPreferences/salaryCycle` kèm bảo mật Firestore Rules.
+
+### Changed
+- Nâng cấp `versionCode = 112` và `versionName = "1.10.0"`.
+- Cập nhật toàn bộ các tài liệu đặc tả hệ thống: `BA_SPEC.md` (`UC-27`, `BR-SALARY-01..03`), `DATA_SPEC.md`, `UI_SPEC.md`, `HANDOVER_LOG.md`.
+
+### Fixed
+- Đảm bảo 100% Unit Tests (136/136 tests) vượt qua kiểm thử thành công trước khi đóng gói Release.
+
 ## [1.9.3] - 2026-08-24
 ### Added
 - Đóng gói và phát hành bản Release v1.9.3 chuẩn hóa với Proguard/R8 shrinking.

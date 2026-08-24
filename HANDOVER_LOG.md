@@ -1,8 +1,56 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.9.3 (versionCode 111) - Release
-- **Trạng thái Build:** 🟢 Đã hoàn tất đóng gói Release v1.9.3, kiểm thử 100% PASS và nạp thành công lên thiết bị.
+- **Phiên bản hiện tại:** v1.10.0 (versionCode 112)
+- **Trạng thái Build:** 🟢 100% tests PASS (136/136 tests). Tính năng Tháng tài chính / Chu kỳ lương đã hoàn tất và đóng gói bản Release.
+
+## [DONE] Task: Triển Khai Tính Năng Tháng Tài Chính / Chu Kỳ Lương (Salary Cycle & Financial Month)
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Xây dựng tầng Domain: `SalaryCycleModels`, `SalaryCycleCalculator`, `ValidateSalaryCycleConfigUseCase`, `SalaryCycleUseCases`.
+  - Xây dựng tầng Data: `SalaryCycleRepository`, `FirebaseSalaryCycleRepository`, `DemoSalaryCycleRepository`, `TransactionRangeRepository`, Firestore rules.
+  - Xây dựng tầng UI: `SalaryCycleSettingsSheet`, `SalaryCycleViewModel`, Live Preview dải chu kỳ, Tích hợp Trang chủ (`PrismHomeScreen`), Báo cáo (`ReportsViewModel`, `PrismReportsScreen`, `ClassicReportsScreen`, `ModernReportsScreen`).
+  - Kiểm thử unit test tự động và đóng gói nạp máy.
+- **Kết quả kiểm thử:**
+  - `gradlew testDebugUnitTest`: **136/136 tests PASS** (100% thành công).
+  - `gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+- **Danh sách file đã tạo và chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/core/time/FinanceTime.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SalaryCycleCalculator.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/ValidateSalaryCycleConfigUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SalaryCycleUseCases.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/TransactionRangeRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapper.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRangeRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoTransactionRangeRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportQueryWindowResolver.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/SalaryCycleCalculatorTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportQueryWindowResolverTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `firestore.rules`
+  - `docs/BA_SPEC.md`
+  - `docs/DATA_SPEC.md`
+  - `docs/UI_SPEC.md`
+- **Trạng thái:** `[DONE]`
 
 ## [DONE] Task: Đóng Gói & Phát Hành Phiên Bản Release v1.9.3 (versionCode 111)
 

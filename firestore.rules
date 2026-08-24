@@ -46,6 +46,28 @@ service cloud.firestore {
         && data.date is timestamp;
     }
 
+    function validSalaryCyclePreference(data) {
+      return data.keys().hasOnly([
+          'enabled', 'paydayRuleType', 'paydayDay', 'salaryWalletId',
+          'savingsWalletId', 'expectedSalary', 'rolloverRule',
+          'budgetPeriodBasis', 'financeTimeZone', 'updatedAt'
+        ])
+        && data.enabled is bool
+        && data.paydayRuleType in ['DAY_OF_MONTH', 'FIRST_DAY_OF_MONTH', 'LAST_DAY_OF_MONTH']
+        && data.paydayDay is int
+        && data.paydayDay >= 1
+        && data.paydayDay <= 31
+        && data.rolloverRule in ['KEEP_IN_WALLET', 'MOVE_TO_SAVINGS', 'ASK_EACH_CYCLE']
+        && data.budgetPeriodBasis in ['CALENDAR_MONTH', 'SALARY_CYCLE']
+        && data.financeTimeZone is string
+        && data.financeTimeZone.size() > 0
+        && data.financeTimeZone.size() <= 64
+        && (!('salaryWalletId' in data) || data.salaryWalletId == null || data.salaryWalletId is string)
+        && (!('savingsWalletId' in data) || data.savingsWalletId == null || data.savingsWalletId is string)
+        && (!('expectedSalary' in data) || data.expectedSalary == null || isPositiveMoney(data.expectedSalary))
+        && (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
     // Root user profile document
     match /users/{uid} {
       allow read: if isOwner(uid);
@@ -147,6 +169,15 @@ service cloud.firestore {
         allow delete: if isOwner(uid);
         allow create, update: if isOwner(uid)
           && request.resource.data.title is string;
+      }
+
+      // User financial preferences
+      match /financialPreferences/{preferenceId} {
+        allow read: if isOwner(uid) && preferenceId == 'salaryCycle';
+        allow create, update: if isOwner(uid)
+          && preferenceId == 'salaryCycle'
+          && validSalaryCyclePreference(request.resource.data);
+        allow delete: if isOwner(uid) && preferenceId == 'salaryCycle';
       }
 
       // Subcollection: Debts & Debt Payments
