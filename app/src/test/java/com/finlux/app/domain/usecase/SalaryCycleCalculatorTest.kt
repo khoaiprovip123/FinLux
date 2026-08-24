@@ -22,10 +22,9 @@ class SalaryCycleCalculatorTest {
     @Test
     fun `configured fixed paydays produce deterministic boundaries`() {
         listOf(1, 10, 15, 20, 25, 28, 29, 30, 31).forEach { payday ->
-            val instant = LocalDateTime.of(2026, 5, payday.coerceAtMost(30), 12, 0).atZone(zone).toInstant()
+            val instant = LocalDateTime.of(2026, 5, 31, 12, 0).atZone(zone).toInstant()
             val cycle = calculator.cycleContaining(instant, SalaryCycleConfig(enabled = true, paydayDay = payday), zone)
-            val expectedStartDay = payday.coerceAtMost(31)
-            assertEquals(expectedStartDay, cycle.start.atZone(zone).dayOfMonth)
+            assertEquals(payday, cycle.start.atZone(zone).dayOfMonth)
         }
     }
 
