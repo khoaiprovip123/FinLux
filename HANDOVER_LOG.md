@@ -1,7 +1,7 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.9.0 (versionCode 108) - Ready for Release
+- **Phiên bản hiện tại:** v1.9.1 (versionCode 109) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công trên máy cục bộ.
 
 ## [DONE] Task: Tích Hợp Bộ Chọn Giờ (TimePickerDialog) Khi Sửa Thời Gian Giao Dịch

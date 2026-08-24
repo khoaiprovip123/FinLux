@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.1] - 2026-08-24
+### Added
+- Thêm bộ chọn giờ (TimePicker) song song với bộ chọn ngày khi thêm/sửa giao dịch, cho phép ghi nhận chính xác mốc thời gian phát sinh giao dịch.
+
+### Changed
+- Tự động reset trạng thái form tạo giao dịch mới (`AddTransactionSheet`), ngăn chặn lưu vết dữ liệu từ giao dịch trước đó.
+- Tối ưu hóa biểu đồ phân bổ chi tiêu và tỷ trọng thu chi trên Trang chủ Prism.
+
+### Fixed
+- Sửa lỗi giữ nguyên dữ liệu giao dịch cũ khi mở form thêm giao dịch mới.
+
 ## [1.9.0] - 2026-08-22
 ### Added
 - **Module Quản Lý & Thoát Nợ (Debt Freedom & Credit Hub - UC-26)**:
