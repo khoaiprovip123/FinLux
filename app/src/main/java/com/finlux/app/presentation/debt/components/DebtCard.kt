@@ -1,5 +1,8 @@
 package com.finlux.app.presentation.debt.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,14 +26,13 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,9 +41,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.LiquidGlassSurface
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.presentation.home.toVnd
@@ -55,27 +58,35 @@ fun DebtCard(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val themeColor = colorFromHex(debt.colorHex, FinluxBlue)
+    val tokens = LocalFinluxTokens.current
+    val themeColor = colorFromHex(debt.colorHex, tokens.primary)
     val isSettled = debt.isSettled || debt.remainingBalance.value <= 0L
     val today = LocalDate.now().dayOfMonth
     val isDueSoon = !isSettled && (debt.dueDate - today) in 0..5
+    val isOverdue = !isSettled && today > debt.dueDate && (today - debt.dueDate) <= 15
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = debt.progress,
+        animationSpec = tween(800),
+        label = "debt_progress",
+    )
 
     LiquidGlassSurface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(20.dp))
             .combinedClickable(
                 onClick = onEditClick,
                 onLongClick = onDeleteClick,
             ),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
+                .padding(16.dp),
         ) {
-            // Header: Icon + Name + APR / Settled Badge
+            // Header: Icon + Name & Subtitle + Glass Action Button [Trả nợ]
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -87,46 +98,48 @@ fun DebtCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(themeColor.copy(alpha = 0.15f))
-                            .border(1.dp, themeColor.copy(alpha = 0.3f), RoundedCornerShape(14.dp)),
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(themeColor.copy(alpha = 0.14f))
+                            .border(1.dp, themeColor.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = debtTypeIcon(debt.type),
                             contentDescription = null,
                             tint = themeColor,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
 
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(10.dp))
 
                     Column {
                         Text(
                             text = debt.name,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                             ),
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = tokens.onSurface,
                             maxLines = 1,
                         )
-                        Spacer(Modifier.height(2.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
                             Text(
                                 text = debtTypeName(debt.type),
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                color = tokens.onSurfaceVariant,
                             )
                             if (debt.interestRateApr > 0) {
                                 Text(
-                                    text = " • APR ${debt.interestRateApr}%",
+                                    text = "• ${debt.interestRateApr}% APR",
                                     style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 11.5.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFFEF4444),
+                                        color = FinluxColors.WarningAmber,
                                     ),
                                 )
                             }
@@ -134,10 +147,14 @@ fun DebtCard(
                     }
                 }
 
+                Spacer(Modifier.width(8.dp))
+
+                // Right Action Header: Status Badge or Compact Glass [Trả nợ] Button
                 if (isSettled) {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF10B981).copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(8.dp),
+                        color = FinluxColors.IncomeGreen.copy(alpha = 0.15f),
+                        border = BorderStroke(0.8.dp, FinluxColors.IncomeGreen.copy(alpha = 0.35f)),
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -146,39 +163,57 @@ fun DebtCard(
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = Color(0xFF10B981),
-                                modifier = Modifier.size(14.dp),
+                                tint = FinluxColors.IncomeGreen,
+                                modifier = Modifier.size(13.dp),
                             )
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(3.dp))
                             Text(
                                 text = "Đã tất toán",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF10B981),
+                                    fontSize = 11.sp,
+                                    color = FinluxColors.IncomeGreen,
                                 ),
                             )
                         }
                     }
-                } else if (isDueSoon) {
+                } else {
+                    // Refined Glass Button [Trả nợ]
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFEF4444).copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(10.dp),
+                        color = tokens.primary.copy(alpha = 0.12f),
+                        border = BorderStroke(0.8.dp, tokens.primary.copy(alpha = 0.35f)),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable(onClick = onPayClick),
                     ) {
-                        Text(
-                            text = "Hạn ngày ${debt.dueDate}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFEF4444),
-                            ),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Payments,
+                                contentDescription = null,
+                                tint = tokens.primary,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "Trả nợ",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = tokens.primary,
+                                ),
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
 
-            // Balances: Remaining / Total
+            // Body: Remaining Balance & Original Amount
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -187,91 +222,111 @@ fun DebtCard(
                 Column {
                     Text(
                         text = "Dư nợ hiện tại",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        color = tokens.onSurfaceVariant,
                     )
                     Text(
                         text = debt.remainingBalance.value.toVnd(),
-                        style = MaterialTheme.typography.titleLarge.copy(
+                        style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            fontSize = 20.sp,
-                            color = if (isSettled) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurface,
+                            fontSize = 18.sp,
+                            color = if (isSettled) FinluxColors.IncomeGreen else tokens.onSurface,
                         ),
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "Tổng khoản vay",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = "Gốc ban đầu",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        color = tokens.onSurfaceVariant,
                     )
                     Text(
                         text = debt.totalAmount.value.toVnd(),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            color = tokens.onSurfaceVariant,
                         ),
                     )
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // Progress Bar
+            // Progress Bar (Thin & Smooth)
             LinearProgressIndicator(
-                progress = { debt.progress },
+                progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp)
+                    .height(4.5.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = if (isSettled) Color(0xFF10B981) else themeColor,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                color = if (isSettled) FinluxColors.IncomeGreen else themeColor,
+                trackColor = tokens.surfaceSoft,
             )
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
+            // Footer: Progress % + Minimum Monthly + Due Date Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "Đã trả ${(debt.progress * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (debt.minimumPayment.value > 0L) {
-                    Text(
-                        text = "Tối thiểu: ${debt.minimumPayment.value.toVnd()}/tháng",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            if (!isSettled) {
-                Spacer(Modifier.height(14.dp))
-                Button(
-                    onClick = onPayClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(40.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = themeColor,
-                        contentColor = Color.White,
-                    ),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Payments,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Thanh toán nợ",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        text = "Đã trả ${(debt.progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.sp,
+                            color = if (isSettled) FinluxColors.IncomeGreen else themeColor,
+                        ),
                     )
+
+                    if (!isSettled && debt.minimumPayment.value > 0L) {
+                        Text(
+                            text = "• Tối thiểu: ${debt.minimumPayment.value.toVnd()}",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            color = tokens.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                // Due Date Badge
+                if (!isSettled) {
+                    val badgeColor = when {
+                        isOverdue -> FinluxColors.ExpenseRed
+                        isDueSoon -> FinluxColors.WarningAmber
+                        else -> tokens.onSurfaceVariant
+                    }
+                    val badgeBg = when {
+                        isOverdue -> FinluxColors.ExpenseRed.copy(alpha = 0.12f)
+                        isDueSoon -> FinluxColors.WarningAmber.copy(alpha = 0.12f)
+                        else -> tokens.surfaceSoft
+                    }
+                    val label = when {
+                        isOverdue -> "Quá hạn (hạn ngày ${debt.dueDate})"
+                        isDueSoon -> "Sắp đến hạn (${debt.dueDate})"
+                        else -> "Hạn ngày ${debt.dueDate}"
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = badgeBg,
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 10.5.sp,
+                                color = badgeColor,
+                            ),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
                 }
             }
         }

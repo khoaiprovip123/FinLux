@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.graphicsLayer
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -33,6 +34,8 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -230,11 +233,13 @@ fun PrismTransactionsScreen(
                     ) { tx ->
                         val category = tx.categoryId?.let { categories[it] }
                         val wallet = tx.walletId.let { wallets[it] }
+                        val relatedWallet = tx.relatedWalletId?.let { wallets[it] }
 
                         PrismTransactionCardItem(
                             transaction = tx,
                             category = category,
                             wallet = wallet,
+                            relatedWallet = relatedWallet,
                             onClick = { viewingTransaction = tx },
                             onLongClick = { actionTransaction = tx },
                         )
@@ -248,11 +253,13 @@ fun PrismTransactionsScreen(
     viewingTransaction?.let { tx ->
         val category = tx.categoryId?.let { categories[it] }
         val wallet = tx.walletId.let { wallets[it] }
+        val relatedWallet = tx.relatedWalletId?.let { wallets[it] }
 
         TransactionDetailSheet(
             transaction = tx,
             category = category,
             wallet = wallet,
+            relatedWallet = relatedWallet,
             onDismiss = { viewingTransaction = null },
             onEdit = {
                 viewingTransaction = null
@@ -268,10 +275,14 @@ fun PrismTransactionsScreen(
     // Action Menu Dialog (Edit / Delete)
     actionTransaction?.let { tx ->
         val category = tx.categoryId?.let { categories[it] }
+        val wallet = tx.walletId.let { wallets[it] }
+        val relatedWallet = tx.relatedWalletId?.let { wallets[it] }
 
         TransactionActionDialog(
             transaction = tx,
             category = category,
+            wallet = wallet,
+            relatedWallet = relatedWallet,
             onDismiss = { actionTransaction = null },
             onEdit = {
                 actionTransaction = null
@@ -699,23 +710,58 @@ private fun PrismTransactionCardItem(
     transaction: FinanceTransaction,
     category: Category?,
     wallet: Wallet?,
+    relatedWallet: Wallet? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
+    val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
     val isIncome = transaction.type == TransactionType.INCOME
-    val accentColor = category?.let { colorFromHex(it.colorHex) } ?: if (isIncome) IncomeGreen else ExpenseRed
+
+    val accentColor = when (transaction.type) {
+        TransactionType.INCOME -> category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.IncomeGreen
+        TransactionType.EXPENSE -> category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.ExpenseRed
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+    }
+
+    val icon = when (transaction.type) {
+        TransactionType.INCOME -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward
+        TransactionType.EXPENSE -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.LocalOffer
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
+    }
 
     val title = transaction.note.ifBlank {
-        category?.name ?: if (isIncome) "Thu nhập" else "Chi tiêu"
+        when (transaction.type) {
+            TransactionType.INCOME -> category?.name ?: "Thu nhập"
+            TransactionType.EXPENSE -> category?.name ?: "Chi tiêu"
+            TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "Chuyển tiền đến ${relatedWallet.name}" else "Chuyển tiền đi"
+            TransactionType.TRANSFER_IN -> if (relatedWallet != null) "Nhận tiền từ ${relatedWallet.name}" else "Nhận tiền chuyển"
+        }
     }
 
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
     val dateText = remember(transaction.date) {
         dateFormatter.format(transaction.date.atZone(ZoneId.systemDefault()))
     }
-    val walletName = wallet?.name ?: "Ví chính"
+
+    val walletDisplayName = when (transaction.type) {
+        TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "${wallet?.name ?: "Ví"} ➔ ${relatedWallet.name}" else wallet?.name ?: "Ví chính"
+        TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví"}" else wallet?.name ?: "Ví chính"
+        else -> wallet?.name ?: "Ví chính"
+    }
+
+    val amountFormatted = when (transaction.type) {
+        TransactionType.INCOME -> "+${formatVndAmount(transaction.amount.value)}"
+        TransactionType.EXPENSE -> "-${formatVndAmount(transaction.amount.value)}"
+        TransactionType.TRANSFER_OUT -> "-${formatVndAmount(transaction.amount.value)}"
+        TransactionType.TRANSFER_IN -> "+${formatVndAmount(transaction.amount.value)}"
+    }
+    val amountColor = when (transaction.type) {
+        TransactionType.INCOME -> FinluxColors.IncomeGreen
+        TransactionType.EXPENSE -> FinluxColors.ExpenseRed
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+    }
 
     Surface(
         shape = RoundedCornerShape(22.dp),
@@ -738,7 +784,7 @@ private fun PrismTransactionCardItem(
                 .padding(horizontal = 16.dp, vertical = 15.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Category Icon (rounded square with soft tint)
+            // Category / Transfer Icon
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
@@ -746,7 +792,7 @@ private fun PrismTransactionCardItem(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = category?.let { categoryIcon(it.icon) } ?: Icons.Default.Info,
+                        imageVector = icon,
                         contentDescription = null,
                         tint = accentColor,
                         modifier = Modifier.size(22.dp),
@@ -775,7 +821,7 @@ private fun PrismTransactionCardItem(
                     text = dateText,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 12.sp,
-                        color = Color(0xFF9CA3AF),
+                        color = tokens.onSurfaceVariant,
                     ),
                 )
             }
@@ -788,12 +834,12 @@ private fun PrismTransactionCardItem(
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = (if (isIncome) "+" else "-") + formatVndAmount(transaction.amount.value),
+                    text = amountFormatted,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                     ),
-                    color = if (isIncome) Color(0xFF16A34A) else Color(0xFFEF4444),
+                    color = amountColor,
                 )
 
                 Row(
@@ -801,16 +847,16 @@ private fun PrismTransactionCardItem(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.AccountBalanceWallet,
+                        imageVector = if (isTransfer) Icons.Default.SwapHoriz else Icons.Default.AccountBalanceWallet,
                         contentDescription = null,
-                        tint = Color(0xFF9CA3AF),
+                        tint = tokens.onSurfaceVariant,
                         modifier = Modifier.size(13.dp),
                     )
                     Text(
-                        text = walletName,
+                        text = walletDisplayName,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 12.sp,
-                            color = Color(0xFF9CA3AF),
+                            color = tokens.onSurfaceVariant,
                         ),
                         maxLines = 1,
                     )

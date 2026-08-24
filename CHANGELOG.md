@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.9.2] - 2026-08-24
+### Added
+- **Trợ Lý Phân Bổ Dòng Tiền Thoát Nợ Tự Động (Debt Cashflow Advisor & Smart Allocation)**:
+  - Tích hợp `AnalyzeDebtCashflowUseCase`: Tự động phân tích lịch sử thu chi 3 tháng trượt, tính toán Dòng tiền tự do (Free Cash Flow - FCF) và lãi suất bình quân gia quyền (Weighted APR).
+  - Tự động sinh 3 kịch bản phân bổ dòng tiền trả nợ thông minh (*Thư thái 30% FCF*, *Cân bằng 60% FCF*, *Thần tốc 85% FCF*) kèm tính năng 1-Touch Apply áp dụng tức thì.
+  - Phân loại danh mục thiết yếu (`isEssential: Boolean` - Needs vs Wants) hỗ trợ phân tích sức khỏe tài chính.
+- **Thẻ Hero Trang Chủ Dạng Carousel (HorizontalPager)**:
+  - Mặc định hiển thị "Số dư hiện có" theo tổng tiền các ví khả dụng thực tế, không trừ nợ làm âm số dư tài khoản.
+  - Hỗ trợ vuốt sang trái xem "Tài sản ròng (Net Worth)" và nợ kèm 2 dots Page Indicator tinh tế.
+- **Đồng Bộ Giao Diện Thêm/Sửa Ví Chuẩn Liquid Glass Cổ Điển**:
+  - Nâng cấp `PrismWalletEditor` với đầy đủ tính năng: Header icon động theo loại ví và màu thẻ, dải chọn đầy đủ loại ví, live format VND, dải chip cộng tiền nhanh, chọn 8 màu thẻ, switch Đặt làm ví mặc định và quản lý xóa ví an toàn.
+
+### Changed
+- **Tái Cấu Trúc UI/UX Bento Grid Cho Module Quản Lý Nợ**:
+  - Hợp nhất Tab Chiến lược, Trợ lý AI, Slider trả thêm và Biểu đồ Burndown Chart vào 1 khối Bento Payoff Container liền mạch, giảm triệt để tình trạng scroll fatigue.
+  - Thiết kế lại `DebtCard` chuẩn Fintech hiện đại: Chuyển nút `[Trả nợ]` thành Glass Action Button nhỏ gọn ở góc phải Header, thanh tiến độ mỏng 4.5dp animated, loại bỏ FAB (+) che khuất danh sách.
+
+### Fixed
+- Sửa lỗi ép rớt dòng chữ dọc trên nhãn APR bằng Horizontal Badge gọn gàng.
+- Sửa nhãn trend % của Chi tháng này, Thu tháng này và Dòng tiền hiển thị trung tính `— 0%` khi chưa phát sinh giao dịch.
+- Sửa triệt để lỗi cướp cử chỉ vuốt trong `FinluxNavHost` (chuyển sang `PointerEventPass.Main` và kiểm tra `isConsumed`), giúp vuốt thẻ Hero và các chart không bị nhảy sang màn hình Lịch sử thu chi.
+
 ## [1.9.1] - 2026-08-24
 ### Added
 - Thêm bộ chọn giờ (TimePicker) song song với bộ chọn ngày khi thêm/sửa giao dịch, cho phép ghi nhận chính xác mốc thời gian phát sinh giao dịch.

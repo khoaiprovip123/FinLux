@@ -597,21 +597,21 @@ class DemoFinluxRepository @Inject constructor(
         )
 
         fun seedCategories() = listOf(
-            Category("food", "Ăn uống", CategoryType.EXPENSE, "restaurant", "#D94B5B", true, Instant.now()),
-            Category("transport", "Di chuyển", CategoryType.EXPENSE, "directions_car", "#E6A23C", true, Instant.now()),
-            Category("shopping", "Mua sắm", CategoryType.EXPENSE, "shopping_bag", "#7758F6", true, Instant.now()),
-            Category("bills", "Hóa đơn", CategoryType.EXPENSE, "receipt_long", "#3478F6", true, Instant.now()),
-            Category("home", "Nhà ở", CategoryType.EXPENSE, "home", "#14B8A6", true, Instant.now()),
-            Category("health", "Sức khỏe", CategoryType.EXPENSE, "health", "#EC4899", true, Instant.now()),
-            Category("travel", "Du lịch", CategoryType.EXPENSE, "flight", "#47C8FF", true, Instant.now()),
-            Category("debt_payment", "Trả nợ & Tín dụng", CategoryType.EXPENSE, "credit_card", "#E11D48", true, Instant.now()),
-            Category("savings", "Tích lũy & Mục tiêu", CategoryType.EXPENSE, "savings", "#8B5CF6", true, Instant.now()),
-            Category("salary", "Lương", CategoryType.INCOME, "payments", "#168A62", true, Instant.now()),
-            Category("bonus", "Thưởng", CategoryType.INCOME, "workspace_premium", "#47C8FF", true, Instant.now()),
-            Category("freelance", "Freelance", CategoryType.INCOME, "work", "#7758F6", true, Instant.now()),
-            Category("interest", "Lãi ngân hàng", CategoryType.INCOME, "account_balance", "#3478F6", true, Instant.now()),
-            Category("refund", "Hoàn tiền", CategoryType.INCOME, "payments", "#E6A23C", true, Instant.now()),
-            Category("investment-income", "Đầu tư", CategoryType.INCOME, "show_chart", "#14B8A6", true, Instant.now()),
+            Category("food", "Ăn uống", CategoryType.EXPENSE, "restaurant", "#D94B5B", true, Instant.now(), isEssential = true),
+            Category("transport", "Di chuyển", CategoryType.EXPENSE, "directions_car", "#E6A23C", true, Instant.now(), isEssential = true),
+            Category("shopping", "Mua sắm", CategoryType.EXPENSE, "shopping_bag", "#7758F6", true, Instant.now(), isEssential = false),
+            Category("bills", "Hóa đơn", CategoryType.EXPENSE, "receipt_long", "#3478F6", true, Instant.now(), isEssential = true),
+            Category("home", "Nhà ở", CategoryType.EXPENSE, "home", "#14B8A6", true, Instant.now(), isEssential = true),
+            Category("health", "Sức khỏe", CategoryType.EXPENSE, "health", "#EC4899", true, Instant.now(), isEssential = true),
+            Category("travel", "Du lịch", CategoryType.EXPENSE, "flight", "#47C8FF", true, Instant.now(), isEssential = false),
+            Category("debt_payment", "Trả nợ & Tín dụng", CategoryType.EXPENSE, "credit_card", "#E11D48", true, Instant.now(), isEssential = true),
+            Category("savings", "Tích lũy & Mục tiêu", CategoryType.EXPENSE, "savings", "#8B5CF6", true, Instant.now(), isEssential = true),
+            Category("salary", "Lương", CategoryType.INCOME, "payments", "#168A62", true, Instant.now(), isEssential = true),
+            Category("bonus", "Thưởng", CategoryType.INCOME, "workspace_premium", "#47C8FF", true, Instant.now(), isEssential = true),
+            Category("freelance", "Freelance", CategoryType.INCOME, "work", "#7758F6", true, Instant.now(), isEssential = true),
+            Category("interest", "Lãi ngân hàng", CategoryType.INCOME, "account_balance", "#3478F6", true, Instant.now(), isEssential = true),
+            Category("refund", "Hoàn tiền", CategoryType.INCOME, "payments", "#E6A23C", true, Instant.now(), isEssential = true),
+            Category("investment-income", "Đầu tư", CategoryType.INCOME, "show_chart", "#14B8A6", true, Instant.now(), isEssential = true),
         )
 
         fun seedTransactions() = listOf(

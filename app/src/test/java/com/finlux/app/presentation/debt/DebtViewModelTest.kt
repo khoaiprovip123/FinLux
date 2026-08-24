@@ -36,9 +36,12 @@ class DebtViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val fakeDebtRepository = FakeDebtRepo()
     private val fakeWalletRepository = FakeWalletRepo()
+    private val fakeTransactionRepository = FakeTransactionRepo()
+    private val fakeCategoryRepository = FakeCategoryRepo()
     private val fakeDebtPreferenceRepository = FakeDebtPreferenceRepo()
 
     private val getDebtsUseCase = GetDebtsUseCase(fakeDebtRepository)
+    private val analyzeDebtCashflowUseCase = com.finlux.app.domain.usecase.AnalyzeDebtCashflowUseCase()
     private val calculatePayoffStrategyUseCase = CalculatePayoffStrategyUseCase()
     private val saveDebtAccountUseCase = SaveDebtAccountUseCase(fakeDebtRepository)
     private val deleteDebtAccountUseCase = DeleteDebtAccountUseCase(fakeDebtRepository)
@@ -52,6 +55,9 @@ class DebtViewModelTest {
         viewModel = DebtViewModel(
             getDebtsUseCase = getDebtsUseCase,
             walletRepository = fakeWalletRepository,
+            transactionRepository = fakeTransactionRepository,
+            categoryRepository = fakeCategoryRepository,
+            analyzeDebtCashflowUseCase = analyzeDebtCashflowUseCase,
             calculatePayoffStrategyUseCase = calculatePayoffStrategyUseCase,
             saveDebtAccountUseCase = saveDebtAccountUseCase,
             deleteDebtAccountUseCase = deleteDebtAccountUseCase,
@@ -235,4 +241,19 @@ private class FakeDebtPreferenceRepo : com.finlux.app.domain.repository.DebtPref
     override suspend fun saveExtraMonthlyPayment(amount: Long) {
         extraPaymentFlow.value = amount
     }
+}
+
+private class FakeTransactionRepo : com.finlux.app.domain.repository.TransactionRepository {
+    override fun observeRecent(limit: Int): Flow<List<com.finlux.app.domain.model.FinanceTransaction>> = flowOf(emptyList())
+    override fun observeMonth(month: java.time.YearMonth): Flow<List<com.finlux.app.domain.model.FinanceTransaction>> = flowOf(emptyList())
+    override suspend fun addWithBalanceUpdate(transaction: com.finlux.app.domain.model.FinanceTransaction): AppResult<String> = AppResult.Success("tx-1")
+    override suspend fun editWithBalanceUpdate(original: com.finlux.app.domain.model.FinanceTransaction, updated: com.finlux.app.domain.model.FinanceTransaction): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun deleteWithBalanceUpdate(transaction: com.finlux.app.domain.model.FinanceTransaction): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun transferBetweenWallets(sourceWalletId: String, destinationWalletId: String, amount: Long, note: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
+}
+
+private class FakeCategoryRepo : com.finlux.app.domain.repository.CategoryRepository {
+    override fun observeCategories(): Flow<List<com.finlux.app.domain.model.Category>> = flowOf(emptyList())
+    override suspend fun upsertCategory(category: com.finlux.app.domain.model.Category): AppResult<String> = AppResult.Success(category.id)
+    override suspend fun deleteCategory(category: com.finlux.app.domain.model.Category): AppResult<Unit> = AppResult.Success(Unit)
 }

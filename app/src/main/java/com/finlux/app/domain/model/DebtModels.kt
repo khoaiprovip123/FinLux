@@ -76,3 +76,21 @@ data class DebtPaymentHistory(
     val paymentDate: Instant = Instant.now(),
     val note: String = "",
 )
+
+data class PayoffScenario(
+    val name: String,
+    val description: String,
+    val percentageOfFcf: Double,
+    val extraMonthlyAmount: Money,
+    val isRecommended: Boolean = false,
+)
+
+data class DebtCashflowAnalysis(
+    val averageMonthlyIncome: Money,
+    val averageEssentialExpense: Money,
+    val totalMonthlyMinimumDebt: Money,
+    val freeCashFlow: Money,
+    val isDeficit: Boolean,
+    val weightedApr: Double,
+    val scenarios: List<PayoffScenario>,
+)

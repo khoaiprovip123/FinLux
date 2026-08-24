@@ -1,8 +1,177 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.9.1 (versionCode 109) - Release
+- **Phiên bản hiện tại:** v1.9.2 (versionCode 110) - Release
 - **Trạng thái Build:** 🟢 Đã hoàn tất và kiểm thử thành công trên máy cục bộ.
+
+## [DONE] Task: Đồng Bộ Giao Diện Thêm/Sửa Ví Của Phong Cách Prism Giống Chuẩn Liquid Glass Cổ Điển
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Nâng cấp BottomSheet Thêm ví mới / Chỉnh sửa ví trong `PrismWalletsScreen.kt` để đồng bộ 100% đầy đủ tính năng và thẩm mỹ giống với Liquid Glass Cổ điển:
+    1. Header: Tiêu đề + Subtitle "Quản lý tài khoản và dòng tiền tập trung" + Icon ví tròn linh động màu sắc bên phải.
+    2. Ô nhập Tên ví / ngân hàng.
+    3. Bộ chọn Loại tài khoản đầy đủ các loại ví (`WalletType.entries`).
+    4. Ô nhập Số dư ban đầu / Số dư hiện tại với live format VND + Dải chip cộng tiền nhanh (+500K, +1tr, +2tr, +5tr, +10tr).
+    5. Bộ chọn Màu thẻ (8 màu sắc trong `FinanceAccentHexes`).
+    6. Switch Đặt làm ví mặc định với icon ngôi sao.
+    7. Nút Tạo ví mới / Lưu thay đổi full-width 52dp và tùy chọn xóa ví khi chỉnh sửa.
+- **Kết quả thực hiện:**
+  - Đã triển khai `PrismWalletEditor` chuẩn `GlassBottomSheet` và đồng bộ hoàn toàn với giao diện Liquid Glass Cổ điển.
+  - Tích hợp đầy đủ các tính năng: live format tiền tệ, quick chips cộng tiền, chọn màu thẻ, đặt ví mặc định, kiểm soát xóa ví an toàn.
+  - **Kiểm thử & Nạp máy:**
+    - Chạy `gradlew testDebugUnitTest`: **100% tests PASS**.
+    - Đóng gói `gradlew assembleDebug` và nạp thành công lên thiết bị Android qua ADB (`Performing Streamed Install -> Success`).
+- **Danh sách file đã chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `HANDOVER_LOG.md`
+- **Trạng thái:** `[DONE]`
+
+## [DONE] Task: Tối Ưu Thẻ Hero Trang Chủ (Hiển Thị Số Dư Ví Mặc Định + Vuốt Sang Tài Sản Ròng/Nợ) & Chuẩn Hóa Trend Chi Tháng Này
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  1. Tối ưu thẻ Hero trang chủ (`PrismHeroNetWorthCard`): Mặc định hiển thị "Số dư hiện có" (Tổng số dư các ví khả dụng) thay vì trừ nợ trực tiếp ra số âm; hỗ trợ thao tác vuốt sang trái (HorizontalPager) với 2 dots indicator để xem chi tiết "Tài sản ròng (Net Worth)" và nợ.
+  2. Sửa lỗi nhãn trend "%" trong `PrismSummaryTrioCard`: Khi không có phát sinh chi (chi tháng này = 0), hiển thị `— 0%` thay vì hiển thị số cứng `▲ 18,7%`. Đồng bộ trạng thái trung tính khi thu/chi/dòng tiền bằng 0.
+- **Kết quả thực hiện:**
+  - **PrismHeroNetWorthCard:** Chuyển đổi thành `HorizontalPager` 2 trang mượt mà kèm Page Indicator dots:
+    - **Trang 0 (Mặc định khi vào app):** Hiển thị "Số dư hiện có" với tổng tiền các ví khả dụng (`grossAssets`), không trừ nợ làm âm số dư; phụ đề sạch gọn `"Tổng số dư từ tất cả các ví"` (đã bỏ dòng chữ gợi ý thừa).
+    - **Trang 1 (Khi vuốt sang trái):** Hiển thị "Tài sản ròng (Net Worth)" (`netWorth` = Tổng ví - Tổng nợ) kèm các chip định tuyến nhanh sang Ví và Nợ.
+  - **FinluxNavHost.kt (Fix cướp cử chỉ vuốt):**
+    - Sửa `mainSwipeModifier`: chuyển sang `pass = PointerEventPass.Main` và kiểm tra `if (change.isConsumed) break`. Nhờ đó, các thao tác vuốt ngang trên `HorizontalPager` (thẻ Hero, biểu đồ tròn...) được xử lý trơn tru, không còn bị cướp touch nhảy nhầm sang màn hình Lịch sử thu chi.
+  - **PrismSummaryTrioCard:**
+    - Cập nhật logic trend text động: Khi Chi tháng này = 0 đ, hiển thị `— 0%` với màu trung tính, không còn hiển thị cứng `▲ 18,7%`.
+    - Đồng bộ logic hiển thị cho Thu tháng này (`— 0%` khi = 0) và Dòng tiền (ròng) (`— 0%` khi = 0).
+  - **Kiểm thử & Nạp máy:**
+    - Chạy `gradlew testDebugUnitTest`: **100% tests PASS**.
+    - Đóng gói `gradlew assembleDebug` và nạp thành công lên thiết bị Android qua ADB (`Performing Streamed Install -> Success`).
+- **Danh sách file đã chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `HANDOVER_LOG.md`
+- **Trạng thái:** `[DONE]`
+
+## [DONE] Task: Tái Cấu Trúc UI/UX Bento Grid & Liquid Glass Cho Module Quản Lý Nợ
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:** Tái cấu trúc giao diện Quản lý Nợ & Tín dụng theo phong cách Bento Grid & Liquid Glass cao cấp: fix lỗi ép chữ dọc trên nhãn APR, hợp nhất khối Chiến lược + Trợ lý AI + Slider + Burndown Chart thành khối Bento liền mạch, thiết kế lại `DebtCard` chuẩn Fintech hiện đại (Glass Action Button góc phải) và loại bỏ nút FAB (+) che khuất màn hình.
+- **Kết quả thực hiện:**
+  1. **CashflowAdvisorCard.kt:**
+     - Tái cấu trúc Header: di chuyển nhãn `APR TB: XX%` thành Horizontal Badge đặt ngay cạnh tiêu đề "Trợ Lý Dòng Tiền AI" với `softWrap = false` và `maxLines = 1`, loại bỏ triệt để lỗi ép chữ rớt dòng theo chiều dọc.
+     - Tối ưu kích thước 3 Metric Pills (Thu nhập TB, Chi thiết yếu, Dòng tiền FCF) và 3 chip kịch bản trả nợ 1-Touch.
+  2. **StrategySelectorCard.kt & DebtBurndownChart.kt:**
+     - Hợp nhất toàn bộ khối Chiến lược thoát nợ, Trợ lý dòng tiền AI, Thanh trượt trả thêm và Biểu đồ Burndown Chart (`EmbeddedDebtBurndownChart`) thành một Khối Bento Payoff Container liền mạch, giảm thiểu tối đa độ dài cuộn trang (scroll fatigue).
+  3. **DebtCard.kt:**
+     - Loại bỏ khối nút bấm full-width to bản màu sắc chói mắt ở đáy thẻ.
+     - Thiết kế lại thẻ chuẩn Fintech gọn gàng: Header gồm Icon loại nợ + Tên khoản vay + APR% + Glass Action Button `[💳 Trả nợ]` bo tròn nhỏ gọn ở góc phải; Body hiển thị Dư nợ to rõ / Gốc ban đầu + Thanh tiến độ mỏng 4.5dp; Footer hiển thị % đã trả, mức trả tối thiểu và badge hạn ngày / quá hạn.
+  4. **DebtDashboardScreen.kt:**
+     - Xóa bỏ nút FAB (+) ở góc dưới màn hình để danh sách nợ thoáng đãng, sử dụng duy nhất nút `+ Thêm` trên TopBar.
+  5. **Kiểm thử & Nạp máy:**
+     - Chạy `gradlew testDebugUnitTest`: **100% tests PASS**.
+     - Đóng gói `gradlew assembleDebug` và nạp thành công lên thiết bị Android qua ADB (`Performing Streamed Install -> Success`).
+- **Danh sách file đã chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/CashflowAdvisorCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtBurndownChart.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+  - `HANDOVER_LOG.md`
+- **Trạng thái:** `[DONE]`
+
+## [DONE] Task: Triển Khai Trợ Lý Phân Bổ Dòng Tiền Thoát Nợ Tự Động (Debt Cashflow Advisor & Smart Allocation)
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:** Tự động phân tích lịch sử thu chi thực tế từ sổ cái, bóc tách chi phí thiết yếu (Needs vs Wants), tính toán Dòng tiền tự do (Free Cash Flow - FCF), tính Lãi suất trung bình có trọng số (Weighted APR) và đề xuất 3 kịch bản trả nợ tối ưu (Thư thái 30% / Cân bằng 60% / Thần tốc 85%) kèm tính năng 1-Touch Apply trên `StrategySelectorCard`.
+- **Kết quả thực hiện:**
+  1. **Domain Layer:**
+     - Mở rộng `Category` với metadata `isEssential: Boolean = true`.
+     - Định nghĩa `PayoffScenario` và `DebtCashflowAnalysis` trong `DebtModels.kt`.
+     - Triển khai `AnalyzeDebtCashflowUseCase.kt` với thuật toán phân tích trượt 3 tháng, tính toán FCF, tính Weighted APR và sinh 3 kịch bản phân bổ dòng tiền.
+  2. **Data Layer:**
+     - Cập nhật mapper `FirebaseCategoryRepository.kt`, seed categories trong `FirebaseAuthRepository.kt` và `DemoFinluxRepository.kt` hỗ trợ `isEssential`.
+  3. **Presentation Layer:**
+     - Nâng cấp `DebtUiState.kt` và `DebtViewModel.kt` kết hợp reactive flows từ giao dịch, danh mục và nợ.
+     - Tạo component `CashflowAdvisorCard.kt` chuẩn Token Liquid Glass với 3 chỉ số chính, cảnh báo thâm hụt Amber và 3 chip kịch bản trả nợ.
+     - Tích hợp `CashflowAdvisorCard` vào `StrategySelectorCard.kt` và `DebtDashboardScreen.kt`, cho phép người dùng chạm 1 lần để áp dụng ngay mức trả thêm vào Slider và cập nhật đồ thị Burndown theo thời gian thực.
+  4. **Kiểm thử & Nạp máy:**
+     - Viết mới `AnalyzeDebtCashflowUseCaseTest.kt` và cập nhật `DebtViewModelTest.kt`.
+     - Chạy `gradlew testDebugUnitTest`: **100% tests PASS**.
+     - Đóng gói `gradlew assembleDebug` và nạp thành công lên thiết bị Android qua ADB (`Performing Streamed Install -> Success`).
+- **Danh sách file đã chỉnh sửa & tạo mới:**
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AnalyzeDebtCashflowUseCase.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/AnalyzeDebtCashflowUseCaseTest.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseCategoryRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtViewModel.kt`
+  - `app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/CashflowAdvisorCard.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+  - `HANDOVER_LOG.md`
+- **Trạng thái:** `[DONE]`
+
+## [DONE] Task: Chuẩn Hóa Hiển Thị Giao Dịch Chuyển Tiền Ví (TRANSFER_OUT & TRANSFER_IN) Trên Giao Diện Prism & Chi Tiết Giao Dịch
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Nguyên nhân:** Khi chuyển tiền giữa 2 ví, hệ thống tạo 2 bản ghi kép (Double-entry) gồm `TRANSFER_OUT` (trừ ví nguồn) và `TRANSFER_IN` (cộng ví đích). Tuy nhiên trên UI (`PrismHomeScreen`, `PrismTransactionsScreen`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`, `TransactionDetailSheet`, `QuickAddSheet`), do chỉ kiểm tra `isIncome = (type == INCOME)`, cả hai giao dịch đều bị fallback vào nhánh Chi tiêu (`EXPENSE`), dẫn đến hiển thị 2 dòng màu đỏ với dấu trừ và icon nhãn, làm người dùng tưởng bị trừ tiền 2 lần.
+- **Giải pháp:**
+  - **PrismHomeScreen & PrismTransactionsScreen**:
+    - Phân tách tường minh 4 loại: `INCOME`, `EXPENSE`, `TRANSFER_OUT`, `TRANSFER_IN`.
+    - Với `TRANSFER_OUT`: Tiêu đề tự động `"Chuyển tiền đến [Tên ví nhận]"`, icon `SwapHoriz`, màu xanh `FinluxColors.TransferBlue`, định tuyến ví `Momo ➔ Vietcombank`, số tiền `-${amount}`.
+    - Với `TRANSFER_IN`: Tiêu đề tự động `"Nhận tiền từ [Tên ví nguồn]"`, icon `SwapHoriz`, màu xanh `FinluxColors.TransferBlue`, định tuyến ví `Momo ➔ Vietcombank`, số tiền `+${amount}`.
+  - **TransactionDetailSheet**:
+    - Nhận diện đúng badge: `"Chuyển tiền đi"` / `"Nhận tiền chuyển"`.
+    - Hàng Danh mục chuyển thành `"Loại giao dịch: Chuyển tiền giữa các ví"`.
+    - Hàng Ví hiển thị rõ ràng định tuyến `"Định tuyến ví: Ví nguồn ➔ Ví nhận"`.
+  - **ModernTransactionsScreen, ClassicTransactionsScreen & QuickAddSheet**: Đồng bộ toàn diện xử lý `TRANSFER_OUT` và `TRANSFER_IN`.
+- **Kiểm thử & Đóng gói:**
+  - Unit Test: `.\gradlew testDebugUnitTest` đạt **103/103 tests PASS 100%**.
+  - Build APK: `.\gradlew assembleDebug` đạt **BUILD SUCCESSFUL**.
+  - Đã nạp thành công lên máy Android thật qua ADB (`Performing Streamed Install -> Success`).
+- **Danh sách file đã chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/components/QuickAddSheet.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+
+## [DONE] Task: Đồng Bộ Đầy Đủ Bộ Chọn Ví Nguồn, Ví Nhận, Nút Swap & Validation Số Dư Form Chuyển Tiền Giao Diện Prism
+
+**Ngày hoàn thành:** 2026-08-24
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Nguyên nhân:** Form BottomSheet *"Chuyển tiền giữa các ví"* trên giao diện FinLux Prism (`PrismWalletsScreen.kt`) trước đây bị thiếu toàn bộ UI chọn ví nguồn và ví nhận (bị gán cứng ngầm vào ví 0 và ví 1), không có nút đảo chiều và không có cảnh báo số dư không đủ.
+- **Giải pháp:**
+  - Trong [PrismWalletsScreen.kt](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt):
+    - Thêm dải chọn **Ví nguồn (Chuyển đi)** với `LazyRow` & `FilterChip` hiển thị tên ví và số dư khả dụng (`Vietcombank (0 đ)`, `Momo (5,3 tr)...`).
+    - Thêm dải chọn **Ví nhận (Chuyển đến)** tự động loại trừ ví nguồn đang chọn.
+    - Thêm nút **Hoán đổi chiều chuyển tiền (Swap ⇄)** (`Icons.Default.SwapHoriz`) trên header để đảo nhanh Ví nguồn ↔ Ví nhận chỉ với 1 chạm.
+    - Tích hợp ô nhập số tiền `FinluxAmountInputCard` kèm nút `[x]` clear nhanh và dải chip cộng tiền nhanh.
+    - Bổ sung **Validation kiểm tra số dư ví nguồn**: Cảnh báo màu đỏ `⚠️ Số dư ví nguồn không đủ (Khả dụng: X đ)` và vô hiệu hóa nút chuyển khi số tiền vượt quá số dư (với ví không phải thẻ tín dụng).
+- **Kiểm thử & Đóng gói:**
+  - Unit Test: `.\gradlew testDebugUnitTest` đạt **103/103 tests PASS 100%**.
+  - Build APK: `.\gradlew assembleDebug` đạt **BUILD SUCCESSFUL**.
+- **Danh sách file chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `docs/BACKLOG.md`
+  - `docs/FIX_PLAN.md`
+  - `HANDOVER_LOG.md`
 
 ## [DONE] Task: Tích Hợp Bộ Chọn Giờ (TimePickerDialog) Khi Sửa Thời Gian Giao Dịch
 
