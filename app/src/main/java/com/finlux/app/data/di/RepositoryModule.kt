@@ -2,17 +2,19 @@ package com.finlux.app.data.di
 
 import com.finlux.app.BuildConfig
 import com.finlux.app.data.demo.DemoFinluxRepository
+import com.finlux.app.data.demo.DemoSalaryCycleRepository
 import com.finlux.app.data.local.datastore.DataStoreThemePreferenceRepository
 import com.finlux.app.data.local.reminder.AlarmReminderScheduler
 import com.finlux.app.data.remote.firebase.FirebaseAuthRepository
 import com.finlux.app.data.remote.firebase.FirebaseBudgetRepository
 import com.finlux.app.data.remote.firebase.FirebaseCategoryRepository
 import com.finlux.app.data.remote.firebase.FirebaseDashboardRepository
-import com.finlux.app.data.remote.firebase.FirebaseGoalRepository
 import com.finlux.app.data.remote.firebase.FirebaseDebtRepository
+import com.finlux.app.data.remote.firebase.FirebaseGoalRepository
 import com.finlux.app.data.remote.firebase.FirebaseNotificationRepository
 import com.finlux.app.data.remote.firebase.FirebaseReceiptStorageRepository
 import com.finlux.app.data.remote.firebase.FirebaseReminderRepository
+import com.finlux.app.data.remote.firebase.FirebaseSalaryCycleRepository
 import com.finlux.app.data.remote.firebase.FirebaseTransactionRepository
 import com.finlux.app.data.remote.firebase.FirebaseWalletRepository
 import com.finlux.app.domain.repository.AuthRepository
@@ -21,14 +23,15 @@ import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
 import com.finlux.app.domain.repository.DebtRepository
 import com.finlux.app.domain.repository.GoalRepository
-import com.finlux.app.domain.repository.ThemePreferenceRepository
-import com.finlux.app.domain.repository.UiPreferencesRepository
-import com.finlux.app.domain.repository.TransactionRepository
-import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.repository.NotificationRepository
+import com.finlux.app.domain.repository.ReceiptStorageRepository
 import com.finlux.app.domain.repository.ReminderRepository
 import com.finlux.app.domain.repository.ReminderScheduler
-import com.finlux.app.domain.repository.ReceiptStorageRepository
-import com.finlux.app.domain.repository.NotificationRepository
+import com.finlux.app.domain.repository.SalaryCycleRepository
+import com.finlux.app.domain.repository.ThemePreferenceRepository
+import com.finlux.app.domain.repository.TransactionRepository
+import com.finlux.app.domain.repository.UiPreferencesRepository
+import com.finlux.app.domain.repository.WalletRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
@@ -192,5 +195,16 @@ object FinanceRepositoryModule {
     ): DebtRepository =
         if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
             FirebaseDebtRepository(auth, firestore)
+        } else demo
+
+    @Provides
+    @Singleton
+    fun provideSalaryCycleRepository(
+        demo: DemoSalaryCycleRepository,
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): SalaryCycleRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseSalaryCycleRepository(auth, firestore)
         } else demo
 }
