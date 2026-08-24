@@ -25,13 +25,19 @@ class SystemFinanceClock @Inject constructor() : FinanceClock {
 /**
  * Standardized Financial Timezone and Month conversion for FinLux.
  * Ensures consistent YearMonth and boundary computation across transactions,
- * budgets, reports, and dashboards.
+ * budgets, reports, dashboards, and salary cycles.
  */
 object FinanceTime {
     val VIETNAM_ZONE: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
 
+    /** Stable default used by all financial calculations unless an explicit user zone is supplied. */
     val defaultZone: ZoneId
-        get() = runCatching { ZoneId.systemDefault() }.getOrDefault(VIETNAM_ZONE)
+        get() = VIETNAM_ZONE
+
+    fun zoneOf(id: String): ZoneId = runCatching {
+        if (id.isBlank()) error("Blank timezone")
+        ZoneId.of(id)
+    }.getOrDefault(VIETNAM_ZONE)
 
     fun financialMonth(instant: Instant, zone: ZoneId = defaultZone): YearMonth {
         return YearMonth.from(instant.atZone(zone))
