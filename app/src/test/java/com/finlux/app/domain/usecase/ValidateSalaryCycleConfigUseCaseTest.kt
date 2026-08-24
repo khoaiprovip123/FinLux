@@ -14,7 +14,7 @@ class ValidateSalaryCycleConfigUseCaseTest {
 
     @Test
     fun `disabled config is accepted with defaults`() {
-        assertTrue(validate(SalaryCycleConfig()) is AppResult.Success)
+        assertTrue(validate(SalaryCycleConfig()) is AppResult.Success<*>)
     }
 
     @Test
@@ -25,15 +25,15 @@ class ValidateSalaryCycleConfigUseCaseTest {
 
     @Test
     fun `first and last day rules ignore paydayDay validation`() {
-        assertTrue(validate(SalaryCycleConfig(enabled = true, paydayRuleType = PaydayRuleType.FIRST_DAY_OF_MONTH, paydayDay = 0)) is AppResult.Success)
-        assertTrue(validate(SalaryCycleConfig(enabled = true, paydayRuleType = PaydayRuleType.LAST_DAY_OF_MONTH, paydayDay = 32)) is AppResult.Success)
+        assertTrue(validate(SalaryCycleConfig(enabled = true, paydayRuleType = PaydayRuleType.FIRST_DAY_OF_MONTH, paydayDay = 0)) is AppResult.Success<*>)
+        assertTrue(validate(SalaryCycleConfig(enabled = true, paydayRuleType = PaydayRuleType.LAST_DAY_OF_MONTH, paydayDay = 32)) is AppResult.Success<*>)
     }
 
     @Test
     fun `expected salary must be positive when provided`() {
         assertTrue(validate(SalaryCycleConfig(enabled = true, expectedSalary = Money(0))) is AppResult.Error)
         assertTrue(validate(SalaryCycleConfig(enabled = true, expectedSalary = Money(-1))) is AppResult.Error)
-        assertTrue(validate(SalaryCycleConfig(enabled = true, expectedSalary = Money(1))) is AppResult.Success)
+        assertTrue(validate(SalaryCycleConfig(enabled = true, expectedSalary = Money(1))) is AppResult.Success<*>)
     }
 
     @Test
@@ -57,12 +57,12 @@ class ValidateSalaryCycleConfigUseCaseTest {
                 budgetPeriodBasis = BudgetPeriodBasis.SALARY_CYCLE,
             )
         )
-        assertTrue(result is AppResult.Success)
+        assertTrue(result is AppResult.Success<*>)
     }
 
     @Test
     fun `finance timezone must resolve to a valid zone`() {
-        assertTrue(validate(SalaryCycleConfig(enabled = true, financeTimeZone = "Asia/Ho_Chi_Minh")) is AppResult.Success)
+        assertTrue(validate(SalaryCycleConfig(enabled = true, financeTimeZone = "Asia/Ho_Chi_Minh")) is AppResult.Success<*>)
         assertTrue(validate(SalaryCycleConfig(enabled = true, financeTimeZone = "Not/A_Zone")) is AppResult.Error)
     }
 }
