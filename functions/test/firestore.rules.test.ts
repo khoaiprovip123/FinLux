@@ -1,4 +1,5 @@
-import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from "@firebase/rules-unit-testing";
+import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
+import type { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import * as fs from "fs";
 
 let testEnv: RulesTestEnvironment;

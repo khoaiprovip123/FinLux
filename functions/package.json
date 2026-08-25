@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "mocha -r ts-node/register 'test/**/*.ts'"
+    "test": "mocha -r ts-node/register \"test/**/*.ts\""
   },
   "dependencies": {
     "firebase-admin": "14.3.0",
