@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.10.2] - 2026-08-25
+### Added
+- **Hardening Sprint P0 (Bảo Mật & Tính Toàn Vẹn Dữ Liệu Tài Chính)**:
+  - `AdjustWalletBalanceUseCase`: Chuyển toàn bộ thao tác điều chỉnh số dư thành giao dịch ghi Sổ Cái (Ledger transaction) kèm audit trail.
+  - `FinancialPeriodResolver`: Động cơ giải quyết kỳ tài chính thống nhất (`CALENDAR_MONTH` & `SALARY_CYCLE`) bao phủ toàn diện các boundary payday (28..31, năm nhuận).
+  - `ExecuteSalaryRolloverUseCase`: Thực thi chuyển tiền tích lũy cuối kỳ lương (`MOVE_TO_SAVINGS`) với cơ chế Idempotent chống duplicate transaction.
+  - `ReminderTriggerDeduplicator`: Chống trùng lặp notification nhắc nhở trong các cửa sổ thời gian ngắn.
+
+### Changed
+- Nâng cấp `versionCode = 114` và `versionName = "1.10.2"`.
+- Chuyển thao tác xóa ví có lịch sử giao dịch sang Soft Delete (Lưu trữ / Archived) để bảo toàn dữ liệu lịch sử.
+- Tách biệt hoàn toàn metadata ví khỏi state số dư tài chính, ngăn chặn ghi đè trực tiếp.
+
+### Fixed
+- **Chặn ví âm ở cấp độ Atomic Transaction**: Thực thi kiểm tra bất biến số dư non-CARD `>= 0` ngay trong `runTransaction` Firestore và Repository Mutex.
+- **Fail-Closed Release Signing & OTA Updater**: Loại bỏ hoàn toàn keystore base64 / fallback password khỏi CI/CD pipeline, tăng cường bảo mật xác minh chứng chỉ OTA.
+- **Action "Đã thanh toán" trên Notification**: Bắt buộc kiểm tra `AppResult.Success` từ `addTransactionUseCase` trước khi cập nhật trạng thái đã thanh toán.
+- Đạt 100% PASS cho toàn bộ 170 Unit Test suites.
+
 ## [1.10.1] - 2026-08-25
 ### Added
 - **Hợp Nhất Bản Phát Hành Hoàn Chỉnh Release v1.10.1**:
