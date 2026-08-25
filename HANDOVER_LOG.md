@@ -2,7 +2,16 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.10.4 (versionCode 116)
-- **Trạng thái Build:** 🟢 100% tests & lint PASS.
+- **Trạng thái Build:** 🟢 100% tests & lint PASS. Đã fix lỗi Firebase Emulator CI (JDK 21) và cấu hình Emulator port.
+
+### [Task-HOTFIX-CI] - Fix GitHub Actions CI & Chuẩn Bị Build Release
+- **Status**: `[DONE]`
+- **Goal**: Resolve CI failures caused by JDK version mismatch in `firebase-tools` and prepare release build.
+- **Files Modified**:
+  - `.github/workflows/firebase-ci.yml`: Updated `java-version` from `17` to `21`.
+  - `firebase.json`: Thêm cấu hình `emulators` block để Firebase Emulator có thể khởi chạy `firestore` ở port 8080.
+- **Result**: CI đã sẵn sàng chạy. Bản release sẽ tự động build trên GitHub Actions khi release keystore secrets được cấu hình.
+
 
 ### [Task-HOTFIX-BudgetViewModel] - Fix Unit Tests and Upgrade Version
 - **Status**: `[DONE]`
