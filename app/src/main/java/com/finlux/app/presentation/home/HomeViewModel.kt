@@ -73,7 +73,7 @@ class HomeViewModel @Inject constructor(
 
     private val financialOverviewFlow = combine(
         dashboardRepository.observeCurrentMonthSummary(),
-        budgetRepository.observeBudgets(currentMonth),
+        budgetRepository.observeBudgets("MONTHLY_${currentMonth}"),
         transactionRepository.observeMonth(currentMonth),
         notificationRepository.observeNotifications(),
         salaryCycleRepository.observeConfig(),

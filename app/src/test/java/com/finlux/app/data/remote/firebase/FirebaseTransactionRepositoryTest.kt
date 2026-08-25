@@ -129,7 +129,7 @@ class FirebaseTransactionRepositoryTest {
         assertInstanceOf(AppResult.Success::class.java, result)
         assertEquals("new_tx_id", (result as AppResult.Success).value)
         // Verify balance deducted: 1_000_000 - 200_000 = 800_000
-        verify { atomicTx.update(walletDocRef, "balance", 800_000L) }
+        verify { atomicTx.update(walletDocRef, match<Map<String, Any>> { it["balance"] == 800_000L }) }
     }
 
     @Test
@@ -214,7 +214,7 @@ class FirebaseTransactionRepositoryTest {
         val result = repository.addWithBalanceUpdate(sampleTx)
 
         assertInstanceOf(AppResult.Success::class.java, result)
-        verify { atomicTx.update(walletDocRef, "balance", -500_000L) }
+        verify { atomicTx.update(walletDocRef, match<Map<String, Any>> { it["balance"] == -500_000L }) }
     }
 
     @Test
@@ -254,7 +254,7 @@ class FirebaseTransactionRepositoryTest {
 
         assertInstanceOf(AppResult.Success::class.java, result)
         // Verify balance added: 500_000 + 300_000 = 800_000
-        verify { atomicTx.update(walletDocRef, "balance", 800_000L) }
+        verify { atomicTx.update(walletDocRef, match<Map<String, Any>> { it["balance"] == 800_000L }) }
     }
 
     // ==========================================
@@ -336,9 +336,9 @@ class FirebaseTransactionRepositoryTest {
         assertInstanceOf(AppResult.Success::class.java, result)
 
         // Verify old wallet reversed with stored amount 1_000_000 -> 2_000_000 + 1_000_000 = 3_000_000
-        verify { atomicTx.update(oldWalletDocRef, "balance", 3_000_000L) }
+        verify { atomicTx.update(oldWalletDocRef, match<Map<String, Any>> { it["balance"] == 3_000_000L }) }
         // Verify new wallet deducted 300_000 -> 500_000 - 300_000 = 200_000
-        verify { atomicTx.update(newWalletDocRef, "balance", 200_000L) }
+        verify { atomicTx.update(newWalletDocRef, match<Map<String, Any>> { it["balance"] == 200_000L }) }
         // Verify budget updated with net delta
         verify { atomicTx.update(oldBudgetDocRef, "spentAmount", any<FieldValue>()) }
     }
@@ -441,7 +441,7 @@ class FirebaseTransactionRepositoryTest {
         assertInstanceOf(AppResult.Success::class.java, result)
 
         // Verify balance refunded with stored amount: 1_000_000 + 500_000 = 1_500_000
-        verify { atomicTx.update(walletDocRef, "balance", 1_500_000L) }
+        verify { atomicTx.update(walletDocRef, match<Map<String, Any>> { it["balance"] == 1_500_000L }) }
         // Verify budget reversed with stored amount: -500_000
         verify { atomicTx.update(budgetDocRef, "spentAmount", any<FieldValue>()) }
         // Verify document deleted
@@ -500,8 +500,8 @@ class FirebaseTransactionRepositoryTest {
         assertInstanceOf(AppResult.Success::class.java, result)
 
         // Verify source deducted 200_000 -> 300_000, dest added 200_000 -> 300_000
-        verify { atomicTx.update(sourceWalletRef, "balance", 300_000L) }
-        verify { atomicTx.update(destWalletRef, "balance", 300_000L) }
+        verify { atomicTx.update(sourceWalletRef, match<Map<String, Any>> { it["balance"] == 300_000L }) }
+        verify { atomicTx.update(destWalletRef, match<Map<String, Any>> { it["balance"] == 300_000L }) }
     }
 
     @Test

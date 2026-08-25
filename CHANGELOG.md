@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.10.4] - 2026-08-25
+### Changed
+- **Nâng cấp `versionCode = 116` và `versionName = "1.10.4"`.
+- Sửa lỗi mapping ngân sách trong `BudgetViewModel` và đồng bộ unit test `testDebugUnitTest` 100% PASS.
+- Cập nhật cách mock `FinancialPeriodResolver` và xử lý state loading cho `BudgetUiState`.
+
 ## [1.10.3] - 2026-08-25
 ### Added
 - **Hardening CI/CD & Firebase Rules**: Tích hợp Firebase Emulator Tests kiểm thử Firestore rules tự động trên GitHub Actions (bảo vệ ghi balance & salaryRollovers).

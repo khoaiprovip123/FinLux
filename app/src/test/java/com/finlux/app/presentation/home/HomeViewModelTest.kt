@@ -134,6 +134,8 @@ private class FakeHomeWalletRepository(private val list: List<Wallet>) : WalletR
 private class FakeHomeTransactionRepository : TransactionRepository {
     override fun observeRecent(limit: Int): Flow<List<FinanceTransaction>> = flowOf(emptyList())
     override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> = flowOf(emptyList())
+    override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>> = flowOf(emptyList())
+    override suspend fun executeSalaryRolloverAtomic(cycleKey: String, sourceWalletId: String, destinationWalletId: String, amount: Long, note: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction) = AppResult.Success("tx-1")
     override suspend fun editWithBalanceUpdate(original: FinanceTransaction, updated: FinanceTransaction) = AppResult.Success(Unit)
     override suspend fun deleteWithBalanceUpdate(transaction: FinanceTransaction) = AppResult.Success(Unit)
@@ -147,7 +149,7 @@ private class FakeHomeCategoryRepository : CategoryRepository {
 }
 
 private class FakeHomeBudgetRepository : BudgetRepository {
-    override fun observeBudgets(month: YearMonth): Flow<List<Budget>> = flowOf(emptyList())
+    override fun observeBudgets(periodKey: String): Flow<List<Budget>> = flowOf(emptyList())
     override suspend fun upsertBudget(budget: Budget) = AppResult.Success(budget.id)
     override suspend fun deleteBudget(budget: Budget) = AppResult.Success(Unit)
 }

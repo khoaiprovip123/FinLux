@@ -15,7 +15,7 @@ import com.finlux.app.domain.usecase.BudgetLevel
 import com.finlux.app.domain.usecase.DeleteBudgetUseCase
 import com.finlux.app.domain.usecase.GetBudgetStatusUseCase
 import com.finlux.app.domain.usecase.SaveBudgetUseCase
-import io.mockk.mockk
+import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -62,7 +64,7 @@ class BudgetViewModelTest {
 
     private val budgetFlow = MutableStateFlow<List<Budget>>(emptyList())
     private val fakeBudgetRepo: BudgetRepository = object : BudgetRepository {
-        override fun observeBudgets(month: YearMonth) = budgetFlow.asStateFlow()
+        override fun observeBudgets(periodKey: String) = budgetFlow.asStateFlow()
         override suspend fun upsertBudget(b: Budget): AppResult<String> = AppResult.Success(b.id)
         override suspend fun deleteBudget(b: Budget): AppResult<Unit> = AppResult.Success(Unit)
     }
@@ -79,6 +81,7 @@ class BudgetViewModelTest {
     private val fakeTransactionRepo: TransactionRepository = object : TransactionRepository {
         override fun observeRecent(limit: Int): Flow<List<FinanceTransaction>> = transactionFlow.asStateFlow()
         override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> = transactionFlow.asStateFlow()
+        override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>> = transactionFlow.asStateFlow()
         override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String> =
             AppResult.Success(transaction.id)
         override suspend fun editWithBalanceUpdate(
@@ -94,25 +97,53 @@ class BudgetViewModelTest {
             note: String,
             date: Instant,
         ): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun executeSalaryRolloverAtomic(
+            cycleKey: String,
+            sourceWalletId: String,
+            destinationWalletId: String,
+            amount: Long,
+            note: String,
+            date: Instant,
+        ): AppResult<Unit> = AppResult.Success(Unit)
     }
-
     private val saveBudget: SaveBudgetUseCase = mockk()
     private val deleteBudget: DeleteBudgetUseCase = mockk()
     private lateinit var viewModel: BudgetViewModel
 
+    private val dummyConfig = com.finlux.app.domain.model.SalaryCycleConfig()
+    private val dummyPeriod = com.finlux.app.domain.model.FinancialPeriod(
+        key = "MONTHLY_$currentMonth",
+        start = currentMonth.atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
+        endExclusive = currentMonth.plusMonths(1).atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
+        displayLabel = "Tháng",
+        basis = com.finlux.app.domain.model.BudgetPeriodBasis.CALENDAR_MONTH
+    )
+    private val salaryCycleRepository: com.finlux.app.domain.repository.SalaryCycleRepository = mockk(relaxed = true)
+    private val financialPeriodResolver: com.finlux.app.domain.usecase.FinancialPeriodResolver = mockk(relaxed = true)
+
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every { salaryCycleRepository.observeConfig() } returns kotlinx.coroutines.flow.flowOf(dummyConfig)
+        every { financialPeriodResolver.resolvePeriodContaining(any(), any()) } returns dummyPeriod
+        every { financialPeriodResolver.resolvePreviousPeriod(any(), any()) } returns dummyPeriod
         transactionFlow.value = emptyList()
         budgetFlow.value = emptyList()
         viewModel = BudgetViewModel(
             budgetRepository = fakeBudgetRepo,
             categoryRepository = fakeCategoryRepo,
             transactionRepository = fakeTransactionRepo,
+            salaryCycleRepository = salaryCycleRepository,
+            financialPeriodResolver = financialPeriodResolver,
             getBudgetStatus = GetBudgetStatusUseCase(),
             saveBudget = saveBudget,
             deleteBudget = deleteBudget,
         )
+        // Keep state active so it settles
+        kotlinx.coroutines.CoroutineScope(testDispatcher).launch {
+            viewModel.state.collect { }
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
     }
 
     @AfterEach
@@ -125,7 +156,7 @@ class BudgetViewModelTest {
     private fun buildBudget(limitAmount: Long, spentAmount: Long = 0L) = Budget(
         id = "${categoryId}_${currentMonth}",
         categoryId = categoryId,
-        month = currentMonth,
+        periodKey = "MONTHLY_$currentMonth",
         limitAmount = Money(limitAmount),
         spentAmount = Money(spentAmount),
         notified80 = false,
@@ -165,7 +196,7 @@ class BudgetViewModelTest {
             advanceUntilIdle()
             val state = awaitItem()
             val item = state.items.firstOrNull()
-            assertTrue(item != null, "Phai co it nhat 1 budget item")
+            assertTrue(item != null, "Phai co it nhat 1 budget item. State: $state")
             assertEquals(BudgetLevel.SAFE, item!!.status.level)
             assertEquals(0f, item.status.progress)
             cancelAndIgnoreRemainingEvents()

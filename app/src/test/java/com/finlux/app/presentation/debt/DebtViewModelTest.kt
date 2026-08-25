@@ -249,6 +249,8 @@ private class FakeDebtPreferenceRepo : com.finlux.app.domain.repository.DebtPref
 private class FakeTransactionRepo : com.finlux.app.domain.repository.TransactionRepository {
     override fun observeRecent(limit: Int): Flow<List<com.finlux.app.domain.model.FinanceTransaction>> = flowOf(emptyList())
     override fun observeMonth(month: java.time.YearMonth): Flow<List<com.finlux.app.domain.model.FinanceTransaction>> = flowOf(emptyList())
+    override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<com.finlux.app.domain.model.FinanceTransaction>> = flowOf(emptyList())
+    override suspend fun executeSalaryRolloverAtomic(cycleKey: String, sourceWalletId: String, destinationWalletId: String, amount: Long, note: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun addWithBalanceUpdate(transaction: com.finlux.app.domain.model.FinanceTransaction): AppResult<String> = AppResult.Success("tx-1")
     override suspend fun editWithBalanceUpdate(original: com.finlux.app.domain.model.FinanceTransaction, updated: com.finlux.app.domain.model.FinanceTransaction): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun deleteWithBalanceUpdate(transaction: com.finlux.app.domain.model.FinanceTransaction): AppResult<Unit> = AppResult.Success(Unit)

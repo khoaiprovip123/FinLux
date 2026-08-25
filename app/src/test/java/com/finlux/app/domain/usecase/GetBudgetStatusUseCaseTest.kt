@@ -28,6 +28,7 @@ class GetBudgetStatusUseCaseTest {
         id = "food_202608",
         categoryId = "food",
         month = YearMonth.of(2026, 8),
+        periodKey = "2026-08",
         limitAmount = Money(1_000),
         spentAmount = Money(spent),
         notified80 = false,

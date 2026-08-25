@@ -145,6 +145,17 @@ private class RecordingTransactionRepository : TransactionRepository {
 
     override fun observeMonth(month: java.time.YearMonth): Flow<List<FinanceTransaction>> = flowOf(emptyList())
 
+    override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>> = flowOf(emptyList())
+
+    override suspend fun executeSalaryRolloverAtomic(
+        cycleKey: String,
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant
+    ): AppResult<Unit> = AppResult.Success(Unit)
+
     override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String> {
         addCalls++
         return AppResult.Success("generated-id")

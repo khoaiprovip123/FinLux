@@ -143,14 +143,16 @@ class DemoFinluxRepository @Inject constructor(
             items.filter { it.date >= start && it.date < end }
         }
     }
+    override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>> =
+        transactionState.map { items -> items.filter { it.date >= start && it.date < endExclusive } }
 
 
     override fun observeWallets(): Flow<List<Wallet>> = walletState
 
     override fun observeCategories(): Flow<List<Category>> = categoryState
 
-    override fun observeBudgets(month: YearMonth): Flow<List<Budget>> =
-        budgetState.map { budgets -> budgets.filter { it.month == month } }
+    override fun observeBudgets(periodKey: String): Flow<List<Budget>> =
+        budgetState.map { budgets -> budgets.filter { it.periodKey == periodKey } }
 
     override fun observeReminders(): Flow<List<Reminder>> = reminderState
 
@@ -573,6 +575,14 @@ class DemoFinluxRepository @Inject constructor(
         )
         AppResult.Success(Unit)
     }
+    override suspend fun executeSalaryRolloverAtomic(
+        cycleKey: String,
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+    ): AppResult<Unit> = transferBetweenWallets(sourceWalletId, destinationWalletId, amount, note, date)
 
     private fun changeWalletBalance(walletId: String, delta: Long): Boolean {
         val target = walletState.value.find { it.id == walletId } ?: return false
@@ -657,13 +667,13 @@ class DemoFinluxRepository @Inject constructor(
         )
 
         fun seedBudgets() = listOf(
-            Budget("food_${YearMonth.now()}", "food", YearMonth.now(), Money(3_000_000), Money(1_850_000), false, false),
-            Budget("shopping_${YearMonth.now()}", "shopping", YearMonth.now(), Money(4_000_000), Money(2_000_000), false, false),
-            Budget("transport_${YearMonth.now()}", "transport", YearMonth.now(), Money(1_500_000), Money(240_000), false, false),
-            Budget("bills_${YearMonth.now()}", "bills", YearMonth.now(), Money(1_200_000), Money(820_000), false, false),
-            Budget("food_${YearMonth.now().minusMonths(1)}", "food", YearMonth.now().minusMonths(1), Money(2_800_000), Money(2_450_000), true, false),
-            Budget("shopping_${YearMonth.now().minusMonths(1)}", "shopping", YearMonth.now().minusMonths(1), Money(3_500_000), Money(3_120_000), true, false),
-            Budget("food_${YearMonth.now().minusMonths(2)}", "food", YearMonth.now().minusMonths(2), Money(2_500_000), Money(2_680_000), true, true),
+            Budget(id = "food_MONTHLY_${YearMonth.now()}", categoryId = "food", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(3_000_000), spentAmount = Money(1_850_000), notified80 = false, notified100 = false),
+            Budget(id = "shopping_MONTHLY_${YearMonth.now()}", categoryId = "shopping", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(4_000_000), spentAmount = Money(2_000_000), notified80 = false, notified100 = false),
+            Budget(id = "transport_MONTHLY_${YearMonth.now()}", categoryId = "transport", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(1_500_000), spentAmount = Money(240_000), notified80 = false, notified100 = false),
+            Budget(id = "bills_MONTHLY_${YearMonth.now()}", categoryId = "bills", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(1_200_000), spentAmount = Money(820_000), notified80 = false, notified100 = false),
+            Budget(id = "food_MONTHLY_${YearMonth.now().minusMonths(1)}", categoryId = "food", periodKey = "MONTHLY_${YearMonth.now().minusMonths(1)}", limitAmount = Money(2_800_000), spentAmount = Money(2_450_000), notified80 = true, notified100 = false),
+            Budget(id = "shopping_MONTHLY_${YearMonth.now().minusMonths(1)}", categoryId = "shopping", periodKey = "MONTHLY_${YearMonth.now().minusMonths(1)}", limitAmount = Money(3_500_000), spentAmount = Money(3_120_000), notified80 = true, notified100 = false),
+            Budget(id = "food_MONTHLY_${YearMonth.now().minusMonths(2)}", categoryId = "food", periodKey = "MONTHLY_${YearMonth.now().minusMonths(2)}", limitAmount = Money(2_500_000), spentAmount = Money(2_680_000), notified80 = true, notified100 = true),
         )
 
         fun seedReminders() = listOf(

@@ -1,8 +1,17 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.2 (versionCode 114)
+- **Phiên bản hiện tại:** v1.10.4 (versionCode 116)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-HOTFIX-BudgetViewModel] - Fix Unit Tests and Upgrade Version
+- **Status**: `[DONE]`
+- **Goal**: Resolve test failures in `BudgetViewModelTest` and bump version for release.
+- **Files Modified**:
+  - `app/src/test/java/com/finlux/app/presentation/budget/BudgetViewModelTest.kt`: Fixed mocked methods, setup test dispatcher properly to resolve state issues.
+  - `app/build.gradle.kts`: Bumped version to 1.10.4.
+  - `CHANGELOG.md`: Added release notes.
+- **Result**: All tests pass. Version updated.
 
 ### [Task-HOTFIX-P0] - Hardening Sprint Phase 2 (HOTFIX-04 -> 06)
 - **Status**: `[DONE]`

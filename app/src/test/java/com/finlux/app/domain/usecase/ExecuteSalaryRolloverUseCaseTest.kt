@@ -64,11 +64,9 @@ class ExecuteSalaryRolloverUseCaseTest {
 
     @Test
     fun `MOVE_TO_SAVINGS executes transfer and marks cycle as processed`() = runTest {
-        coEvery { salaryCycleRepository.isRolloverProcessed("salary:2026-07-10") } returns false
         coEvery {
-            transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any())
+            transactionRepository.executeSalaryRolloverAtomic(any(), any(), any(), any(), any(), any())
         } returns AppResult.Success(Unit)
-        coEvery { salaryCycleRepository.markRolloverProcessed("salary:2026-07-10") } returns AppResult.Success(Unit)
 
         val result = useCase(validConfig, wallets, now)
 
@@ -82,7 +80,8 @@ class ExecuteSalaryRolloverUseCaseTest {
         assertEquals("savings-w", transferred.toWalletId)
 
         coVerify(exactly = 1) {
-            transactionRepository.transferBetweenWallets(
+            transactionRepository.executeSalaryRolloverAtomic(
+                cycleKey = "salary:2026-07-10",
                 sourceWalletId = "salary-w",
                 destinationWalletId = "savings-w",
                 amount = 2_500_000L,
@@ -90,12 +89,13 @@ class ExecuteSalaryRolloverUseCaseTest {
                 date = now,
             )
         }
-        coVerify(exactly = 1) { salaryCycleRepository.markRolloverProcessed("salary:2026-07-10") }
     }
 
     @Test
     fun `idempotency - already processed cycle does not trigger transfer again`() = runTest {
-        coEvery { salaryCycleRepository.isRolloverProcessed("salary:2026-07-10") } returns true
+        coEvery {
+            transactionRepository.executeSalaryRolloverAtomic(any(), any(), any(), any(), any(), any())
+        } returns AppResult.Error("Chu kỳ lương này đã được kết chuyển")
 
         val result = useCase(validConfig, wallets, now)
 
@@ -103,15 +103,14 @@ class ExecuteSalaryRolloverUseCaseTest {
         val data = (result as AppResult.Success).value
         assertInstanceOf(SalaryRolloverResult.AlreadyProcessed::class.java, data)
         assertEquals("salary:2026-07-10", (data as SalaryRolloverResult.AlreadyProcessed).cycleKey)
-
-        coVerify(exactly = 0) {
-            transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any())
-        }
     }
 
     @Test
     fun `salary wallet with zero balance marks processed without creating transfer`() = runTest {
-        coEvery { salaryCycleRepository.isRolloverProcessed("salary:2026-07-10") } returns false
+        coEvery {
+            transactionRepository.executeSalaryRolloverAtomic(any(), any(), any(), any(), any(), any())
+        } returns AppResult.Success(Unit)
+
         val zeroBalanceWallets = listOf(
             Wallet("salary-w", "Ví Lương", WalletType.BANK, Money(0), "#3B82F6", true, Instant.now()),
             Wallet("savings-w", "Ví Tiết Kiệm", WalletType.INVESTMENT, Money(10_000_000), "#10B981", false, Instant.now()),
@@ -124,10 +123,16 @@ class ExecuteSalaryRolloverUseCaseTest {
         assertInstanceOf(SalaryRolloverResult.ZeroBalance::class.java, data)
         assertEquals("salary:2026-07-10", (data as SalaryRolloverResult.ZeroBalance).cycleKey)
 
-        coVerify(exactly = 0) {
-            transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any())
+        coVerify(exactly = 1) {
+            transactionRepository.executeSalaryRolloverAtomic(
+                cycleKey = "salary:2026-07-10",
+                sourceWalletId = "salary-w",
+                destinationWalletId = "savings-w",
+                amount = 0L,
+                note = "Tích lũy kết chuyển chu kỳ lương (salary:2026-07-10)",
+                date = now,
+            )
         }
-        coVerify(exactly = 1) { salaryCycleRepository.markRolloverProcessed("salary:2026-07-10") }
     }
 
     @Test
@@ -141,7 +146,7 @@ class ExecuteSalaryRolloverUseCaseTest {
         assertInstanceOf(SalaryRolloverResult.Skipped::class.java, data)
 
         coVerify(exactly = 0) {
-            transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any())
+            transactionRepository.executeSalaryRolloverAtomic(any(), any(), any(), any(), any(), any())
         }
         coVerify(exactly = 0) { salaryCycleRepository.markRolloverProcessed(any()) }
     }
