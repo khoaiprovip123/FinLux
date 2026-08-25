@@ -17,52 +17,62 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 data class IncomeCategoryStat(val category: Category?, val amount: Long, val percent: Int)
+data class IncomeDayStat(val day: Int, val amount: Long)
 
 data class IncomeUiState(
     val month: YearMonth = YearMonth.now(),
+    val total: Long = 0,
+    val changePercent: Int = 0,
     val transactions: List<FinanceTransaction> = emptyList(),
     val categories: Map<String, Category> = emptyMap(),
     val categoryStats: List<IncomeCategoryStat> = emptyList(),
-    val total: Long = 0,
     val dailyAverage: Long = 0,
     val highest: Long = 0,
     val lowest: Long = 0,
+    val dailyStats: List<IncomeDayStat> = emptyList(),
 )
 
 @HiltViewModel
 class IncomeViewModel @Inject constructor(
-    repository: TransactionRepository,
+    transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
 ) : ViewModel() {
     private val selectedMonth = MutableStateFlow(YearMonth.now())
 
     val state = combine(
-        repository.observeRecent(200),
+        transactionRepository.observeRecent(5_000),
         categoryRepository.observeCategories(),
         selectedMonth,
     ) { transactions, categories, month ->
-        val categoryMap = categories.associateBy(Category::id)
-        val rows = transactions.filter { transaction ->
-            transaction.type == TransactionType.INCOME &&
-                YearMonth.from(transaction.date.atZone(ZoneId.systemDefault())) == month
-        }.sortedByDescending(FinanceTransaction::date)
-        val total = rows.sumOf { it.amount.value }
-        val groups = rows.groupBy(FinanceTransaction::categoryId).map { (categoryId, items) ->
-            val amount = items.sumOf { it.amount.value }
-            IncomeCategoryStat(categoryMap[categoryId], amount, if (total <= 0L) 0 else (amount * 100L / total).toInt())
-        }.sortedByDescending(IncomeCategoryStat::amount)
+        val zone = ZoneId.systemDefault()
+        fun incomes(target: YearMonth) = transactions.filter {
+            it.type == TransactionType.INCOME && YearMonth.from(it.date.atZone(zone)) == target
+        }
+        val current = incomes(month).sortedByDescending { it.date }
+        val previousTotal = incomes(month.minusMonths(1)).sumOf { it.amount.value }
+        val total = current.sumOf { it.amount.value }
+        val categoryMap = categories.associateBy { it.id }
+        val categoryStats = current.groupBy { it.categoryId }.map { (id, rows) ->
+            val amount = rows.sumOf { it.amount.value }
+            IncomeCategoryStat(categoryMap[id], amount, if (total == 0L) 0 else (amount * 100 / total).toInt())
+        }.sortedByDescending { it.amount }
+
         IncomeUiState(
             month = month,
-            transactions = rows,
-            categories = categoryMap,
-            categoryStats = groups,
             total = total,
+            changePercent = if (previousTotal == 0L) 0 else (((total - previousTotal) * 100) / previousTotal).toInt(),
+            transactions = current,
+            categories = categoryMap,
+            categoryStats = categoryStats,
             dailyAverage = if (total == 0L) 0L else total / month.lengthOfMonth(),
-            highest = rows.maxOfOrNull { it.amount.value } ?: 0L,
-            lowest = rows.minOfOrNull { it.amount.value } ?: 0L,
+            highest = current.maxOfOrNull { it.amount.value } ?: 0L,
+            lowest = current.minOfOrNull { it.amount.value } ?: 0L,
+            dailyStats = (1..month.lengthOfMonth()).map { day ->
+                IncomeDayStat(day, current.filter { it.date.atZone(zone).dayOfMonth == day }.sumOf { it.amount.value })
+            },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IncomeUiState())
 
     fun previousMonth() { selectedMonth.value = selectedMonth.value.minusMonths(1) }
-    fun nextMonth() { selectedMonth.value = selectedMonth.value.plusMonths(1).coerceAtMost(YearMonth.now()) }
+    fun nextMonth() { if (selectedMonth.value < YearMonth.now()) selectedMonth.value = selectedMonth.value.plusMonths(1) }
 }

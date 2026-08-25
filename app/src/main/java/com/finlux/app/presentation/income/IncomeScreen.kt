@@ -15,44 +15,48 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxBlue
+import com.finlux.app.core.designsystem.FinluxPanel
 import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
-import com.finlux.app.core.designsystem.GradientHeroCard
 import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.navigation.Route
+import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
-import com.finlux.app.domain.model.FinanceTransaction
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -72,9 +76,12 @@ fun IncomeScreen(
         topBar = {
             GlassTopBar(
                 title = { Text("Thu nhập", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Quay lại") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
                 actions = {
-                    IconButton(onClick = onAddIncome) { Icon(Icons.Default.Add, "Thêm thu nhập", tint = MaterialTheme.colorScheme.primary) }
+                    TextButton(onClick = onAddIncome) {
+                        Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+                        Text("Thêm", Modifier.padding(start = 3.dp), fontWeight = FontWeight.Bold)
+                    }
                 },
             )
         },
@@ -83,94 +90,52 @@ fun IncomeScreen(
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 4.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(16.dp, padding.calculateTopPadding() + 4.dp, 16.dp, 28.dp),
+            verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
             item {
-                GlassCard(Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(viewModel::previousMonth) { Icon(Icons.Default.ArrowBack, "Tháng trước") }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                            Text(
-                                state.month.format(DateTimeFormatter.ofPattern("'Tháng' M, yyyy", Locale.forLanguageTag("vi-VN"))),
-                                Modifier.padding(start = 8.dp),
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                        IconButton(viewModel::nextMonth, enabled = state.month < java.time.YearMonth.now()) { Icon(Icons.Default.ArrowForwardIos, "Tháng sau") }
-                    }
-                }
+                MonthPicker(
+                    month = state.month.toString(),
+                    previous = viewModel::previousMonth,
+                    next = viewModel::nextMonth,
+                    canNext = state.month < java.time.YearMonth.now(),
+                )
             }
             item {
-                GradientHeroCard(Modifier.fillMaxWidth()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(50.dp).background(Color.White.copy(alpha = .16f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ArrowDownward, null, tint = Color(0xFF70FFA9))
-                        }
-                        Column(Modifier.weight(1f).padding(start = 14.dp)) {
-                            Text("Tổng thu nhập tháng này", color = Color.White.copy(alpha = .82f))
-                            Text(state.total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                            Text("▲ Dòng tiền vào trong tháng", color = Color(0xFF77FFB3), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Icon(Icons.Default.ShowChart, null, Modifier.size(52.dp), tint = Color.White.copy(alpha = .22f))
-                    }
-                }
+                IncomeHero(
+                    total = state.total,
+                    changePercent = state.changePercent,
+                )
             }
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         IncomeStatistic("Thu bình quân/ngày", state.dailyAverage.toShortVnd(), Icons.Default.ShowChart, IncomeGreen, Modifier.weight(1f))
                         IncomeStatistic("Số giao dịch", state.transactions.size.toString(), Icons.Default.ReceiptLong, FinluxBlue, Modifier.weight(1f))
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         IncomeStatistic("Thu cao nhất", state.highest.toShortVnd(), Icons.Default.ArrowUpward, WarningAmber, Modifier.weight(1f))
                         IncomeStatistic("Thu thấp nhất", state.lowest.toShortVnd(), Icons.Default.ArrowDownward, FinluxPurple, Modifier.weight(1f))
                     }
                 }
             }
             item {
-                GlassCard(Modifier.fillMaxWidth().animateContentSize()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Theo danh mục", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("${state.categoryStats.size} nguồn thu", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        }
-                        if (state.categoryStats.isEmpty()) Text("Chưa có nguồn thu trong tháng này", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        state.categoryStats.forEach { item ->
-                            val accent = item.category?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(34.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                                    Icon(item.category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward, null, Modifier.size(18.dp), tint = accent)
-                                }
-                                Column(Modifier.weight(1f).padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                    Text(item.category?.name ?: "Thu nhập khác", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
-                                    LinearProgressIndicator(
-                                        progress = { item.percent / 100f },
-                                        modifier = Modifier.fillMaxWidth().height(4.dp),
-                                        color = accent,
-                                        trackColor = accent.copy(alpha = .12f),
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(item.amount.toShortVnd(), fontWeight = FontWeight.Bold)
-                                    Text("${item.percent}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                        }
-                    }
-                }
+                IncomeCategoryCard(state = state)
             }
             item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("Danh sách thu nhập", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("${state.transactions.size} giao dịch", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                 }
             }
             if (state.transactions.isEmpty()) {
                 item {
-                    GlassCard(Modifier.fillMaxWidth(), onClick = onAddIncome) {
-                        Text("Chưa có thu nhập. Chạm để thêm giao dịch đầu tiên.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FinluxPanel(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onAddIncome,
+                        padding = PaddingValues(16.dp),
+                    ) {
+                        Text("Chưa có thu nhập trong tháng này. Chạm để thêm mới.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -189,7 +154,7 @@ fun IncomeScreen(
                             Column(Modifier.weight(1f).padding(horizontal = 11.dp)) {
                                 Text(transaction.note.ifBlank { category?.name ?: "Thu nhập" }, fontWeight = FontWeight.Bold)
                                 Text(
-                                    transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                    "${category?.name ?: "Khác"} · ${transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -199,7 +164,64 @@ fun IncomeScreen(
                     }
                 }
             }
-            item { Spacer(Modifier.height(8.dp)) }
+            item { Spacer(Modifier.height(4.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun MonthPicker(month: String, previous: () -> Unit, next: () -> Unit, canNext: Boolean) {
+    val parsed = java.time.YearMonth.parse(month)
+    FinluxPanel(
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        cornerRadius = 24.dp,
+        padding = PaddingValues(horizontal = 5.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Tháng trước") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                Text(parsed.format(DateTimeFormatter.ofPattern("'Tháng' M, yyyy", Locale.forLanguageTag("vi-VN"))), Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
+            }
+            IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Tháng sau") }
+        }
+    }
+}
+
+@Composable
+private fun IncomeHero(total: Long, changePercent: Int) {
+    FinluxPanel(
+        modifier = Modifier.fillMaxWidth().height(128.dp),
+        containerColor = Color.Transparent,
+        borderColor = Color.White.copy(alpha = .30f),
+        cornerRadius = 20.dp,
+        padding = PaddingValues(0.dp),
+    ) {
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.linearGradient(listOf(Color(0xFF5B50EC), Color(0xFF3B82F6), Color(0xFF06B6D4))),
+                RoundedCornerShape(20.dp),
+            ).padding(16.dp),
+        ) {
+            Column(Modifier.align(Alignment.CenterStart), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Tổng thu nhập tháng này", color = Color.White.copy(alpha = .90f))
+                Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    if (changePercent == 0) "▲ Dòng tiền vào trong tháng"
+                    else "${if (changePercent >= 0) "▲" else "▼"} ${kotlin.math.abs(changePercent)}% so với tháng trước",
+                    color = Color(0xFF77FFB3),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Box(
+                Modifier.align(Alignment.CenterEnd).size(68.dp).background(Color.White.copy(alpha = .15f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("${if (changePercent > 0) "+" else ""}$changePercent%", color = Color.White, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.TrendingUp, null, Modifier.size(19.dp), tint = Color.White)
+                }
+            }
         }
     }
 }
@@ -210,16 +232,61 @@ private fun IncomeStatistic(
     value: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     accent: Color,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
-    GlassCard(modifier.height(86.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).background(accent.copy(alpha = .13f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                Icon(icon, null, Modifier.size(18.dp), tint = accent)
+    FinluxPanel(
+        modifier = modifier.height(86.dp),
+        cornerRadius = 18.dp,
+        padding = PaddingValues(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxSize()) {
+            Box(
+                Modifier.size(38.dp).background(accent.copy(alpha = .13f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, Modifier.size(20.dp), tint = accent)
             }
-            Column(Modifier.padding(start = 9.dp)) {
+            Column(Modifier.padding(start = 10.dp), verticalArrangement = Arrangement.Center) {
                 Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                Text(value, fontWeight = FontWeight.Bold, maxLines = 1)
+                Spacer(Modifier.height(2.dp))
+                Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun IncomeCategoryCard(state: IncomeUiState) {
+    FinluxPanel(Modifier.fillMaxWidth(), padding = PaddingValues(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Theo danh mục", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("${state.categoryStats.size} nguồn thu", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+            }
+            if (state.categoryStats.isEmpty()) {
+                Text("Chưa có nguồn thu trong tháng này", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                state.categoryStats.forEach { item ->
+                    val accent = item.category?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(36.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                            Icon(item.category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward, null, Modifier.size(18.dp), tint = accent)
+                        }
+                        Column(Modifier.weight(1f).padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(item.category?.name ?: "Thu nhập khác", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                            LinearProgressIndicator(
+                                progress = { item.percent / 100f },
+                                modifier = Modifier.fillMaxWidth().height(5.dp),
+                                color = accent,
+                                trackColor = accent.copy(alpha = .12f),
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(item.amount.toShortVnd(), fontWeight = FontWeight.Bold)
+                            Text("${item.percent}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
             }
         }
     }
