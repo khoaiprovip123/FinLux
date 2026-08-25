@@ -4,6 +4,26 @@
 - **Phiên bản hiện tại:** v1.10.1 (versionCode 113)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS. Đang thực hiện Hardening Sprint (P0 -> P1 -> P2 -> P3).
 
+## [DONE] Task: [P0.3] Bảo Vệ Số Dư Ví Bằng Ledger & Chặn Set Balance Trực Tiếp
+
+**Ngày hoàn thành:** 2026-08-25
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Tách biệt hoàn toàn metadata ví (`name`, `type`, `color`, `isDefault`, `status`, `archivedAt`) và Financial State (`balance`).
+  - Chặn việc chỉnh sửa số dư ví trực tiếp qua client: Khi cập nhật ví đã tồn tại (`upsertWallet`), chỉ update metadata, không bao giờ ghi đè `balance`.
+  - Xây dựng `AdjustWalletBalanceUseCase`: Mọi thao tác điều chỉnh số dư ví đều sinh ra giao dịch tương ứng (`INCOME` / `EXPENSE` category `balance_adjustment`) ghi vào Sổ Cái (Transaction Ledger) với đầy đủ audit trail.
+  - Chuyển `deleteWallet` sang cơ chế Soft Delete / Archiving (`status = "archived"`, `archivedAt = Instant.now()`) nếu ví đã có lịch sử giao dịch, bảo toàn tính toàn vẹn dữ liệu tài chính lịch sử.
+- **Kết quả kiểm thử:**
+  - `gradlew testDebugUnitTest`: **156/156 PASS (100%)**.
+- **Danh sách file chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseWalletRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AdjustWalletBalanceUseCase.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/AdjustWalletBalanceUseCaseTest.kt`
+- **Trạng thái:** `[DONE]`
+
 ## [DONE] Task: [P0.2] Chặn Ví Âm Ngay Trong Firestore & Repository Atomic Transactions
 
 **Ngày hoàn thành:** 2026-08-25

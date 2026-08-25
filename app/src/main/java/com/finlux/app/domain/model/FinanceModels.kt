@@ -35,6 +35,8 @@ data class Wallet(
     val colorHex: String,
     val isDefault: Boolean,
     val createdAt: Instant,
+    val status: String = "active",
+    val archivedAt: Instant? = null,
 )
 
 data class Category(

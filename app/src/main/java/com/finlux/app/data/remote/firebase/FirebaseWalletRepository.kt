@@ -43,6 +43,9 @@ class FirebaseWalletRepository(
         val uid = requireUid()
         val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
         val targetDoc = firestore.userWallets(uid).document(id)
+        val existingSnap = targetDoc.get().await()
+        val exists = existingSnap.exists()
+
         if (wallet.isDefault) {
             val allWalletsSnapshot = firestore.userWallets(uid).get().await()
             firestore.runBatch { batch ->
@@ -51,10 +54,19 @@ class FirebaseWalletRepository(
                         batch.update(doc.reference, "isDefault", false)
                     }
                 }
-                batch.set(targetDoc, wallet.copy(id = id, isDefault = true).toWalletMap())
+                if (exists) {
+                    // Update only metadata, do NOT overwrite balance directly
+                    batch.update(targetDoc, wallet.toMetadataMap())
+                } else {
+                    batch.set(targetDoc, wallet.copy(id = id, isDefault = true).toWalletMap())
+                }
             }.await()
         } else {
-            targetDoc.set(wallet.copy(id = id).toWalletMap()).await()
+            if (exists) {
+                targetDoc.update(wallet.toMetadataMap()).await()
+            } else {
+                targetDoc.set(wallet.copy(id = id).toWalletMap()).await()
+            }
         }
         id
     }
@@ -64,8 +76,18 @@ class FirebaseWalletRepository(
         val uid = requireUid()
         val usedAsSource = firestore.userTransactions(uid).whereEqualTo("walletId", wallet.id).limit(1).get().await()
         val usedAsRelated = firestore.userTransactions(uid).whereEqualTo("relatedWalletId", wallet.id).limit(1).get().await()
-        require(usedAsSource.isEmpty && usedAsRelated.isEmpty) { "Ví đã có giao dịch, không thể xóa" }
-        firestore.userWallets(uid).document(wallet.id).delete().await()
+        
+        if (!usedAsSource.isEmpty || !usedAsRelated.isEmpty) {
+            // Archive wallet instead of hard-deleting to preserve historical transactions
+            firestore.userWallets(uid).document(wallet.id).update(
+                mapOf(
+                    "status" to "archived",
+                    "archivedAt" to Timestamp.now(),
+                )
+            ).await()
+        } else {
+            firestore.userWallets(uid).document(wallet.id).delete().await()
+        }
         Unit
     }
 
@@ -78,7 +100,18 @@ internal fun Wallet.toWalletMap(): Map<String, Any?> = mapOf(
     "balance" to balance.value,
     "color" to colorHex,
     "isDefault" to isDefault,
+    "status" to status,
+    "archivedAt" to archivedAt?.let { Timestamp(Date.from(it)) },
     "createdAt" to Timestamp(Date.from(createdAt)),
+)
+
+internal fun Wallet.toMetadataMap(): Map<String, Any?> = mapOf(
+    "name" to name,
+    "type" to type.name.lowercase(),
+    "color" to colorHex,
+    "isDefault" to isDefault,
+    "status" to status,
+    "archivedAt" to archivedAt?.let { Timestamp(Date.from(it)) },
 )
 
 internal fun DocumentSnapshot.toWallet(): Wallet? = runCatching {
@@ -89,6 +122,8 @@ internal fun DocumentSnapshot.toWallet(): Wallet? = runCatching {
     val color = getString("color") ?: getString("colorHex") ?: "#1F6FBF"
     val isDef = getBoolean("isDefault") ?: (id == "cash")
     val created = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now()
+    val status = getString("status") ?: "active"
+    val archived = getTimestamp("archivedAt")?.toDate()?.toInstant()
     Wallet(
         id = id,
         name = name,
@@ -97,6 +132,8 @@ internal fun DocumentSnapshot.toWallet(): Wallet? = runCatching {
         colorHex = color,
         isDefault = isDef,
         createdAt = created,
+        status = status,
+        archivedAt = archived,
     )
 }.getOrNull()
 

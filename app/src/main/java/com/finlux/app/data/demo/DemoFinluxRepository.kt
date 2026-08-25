@@ -391,26 +391,37 @@ class DemoFinluxRepository @Inject constructor(
 
     override suspend fun upsertWallet(wallet: Wallet): AppResult<String> = mutationMutex.withLock {
         val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
-        val stored = wallet.copy(id = id)
-        walletState.value = if (walletState.value.any { it.id == id }) {
+        val existing = walletState.value.find { it.id == id }
+        val stored = if (existing != null) {
+            // Update metadata only, preserve actual balance
+            wallet.copy(id = id, balance = existing.balance)
+        } else {
+            wallet.copy(id = id)
+        }
+        walletState.value = if (existing != null) {
             walletState.value.map {
                 if (it.id == id) stored
                 else if (wallet.isDefault) it.copy(isDefault = false)
                 else it
             }
         } else {
-            val existing = if (wallet.isDefault) walletState.value.map { it.copy(isDefault = false) } else walletState.value
-            existing + stored
+            val list = if (wallet.isDefault) walletState.value.map { it.copy(isDefault = false) } else walletState.value
+            list + stored
         }
         AppResult.Success(id)
     }
 
     override suspend fun deleteWallet(wallet: Wallet): AppResult<Unit> = mutationMutex.withLock {
         if (wallet.isDefault) return@withLock AppResult.Error("Không thể xóa ví mặc định")
-        if (transactionState.value.any { it.walletId == wallet.id || it.relatedWalletId == wallet.id }) {
-            return@withLock AppResult.Error("Ví đã có giao dịch, hãy lưu trữ thay vì xóa")
+        val hasTransactions = transactionState.value.any { it.walletId == wallet.id || it.relatedWalletId == wallet.id }
+        if (hasTransactions) {
+            // Archive wallet instead of hard delete
+            walletState.value = walletState.value.map {
+                if (it.id == wallet.id) it.copy(status = "archived", archivedAt = Instant.now()) else it
+            }
+        } else {
+            walletState.value = walletState.value.filterNot { it.id == wallet.id }
         }
-        walletState.value = walletState.value.filterNot { it.id == wallet.id }
         AppResult.Success(Unit)
     }
 
