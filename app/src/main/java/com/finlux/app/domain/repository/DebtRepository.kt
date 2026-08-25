@@ -13,6 +13,9 @@ interface DebtRepository {
     /** Lắng nghe lịch sử thanh toán của một khoản nợ cụ thể. */
     fun observePaymentHistory(debtId: String): Flow<List<DebtPaymentHistory>>
 
+    /** Lắng nghe toàn bộ lịch sử thanh toán nợ của tất cả các khoản nợ. */
+    fun observeAllPaymentHistory(): Flow<List<DebtPaymentHistory>>
+
     /** Thêm mới hoặc cập nhật thông tin khoản nợ. */
     suspend fun upsertDebt(debt: DebtAccount): AppResult<String>
 

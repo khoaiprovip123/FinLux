@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -96,6 +97,7 @@ import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.TransactionType
+import com.finlux.app.domain.model.WalletType
 import java.text.DecimalFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -162,6 +164,30 @@ fun AddTransactionSheet(
     val amountColor = if (isExpense) Color(0xFFDC2626) else Color(0xFF16A34A)
     val activeCategory = state.categories.firstOrNull { it.id == state.categoryId }
     val activeWallet = state.wallets.firstOrNull { it.id == state.walletId }
+    val enteredAmountValue = state.amountInput.toLongOrNull() ?: 0L
+    val isCreditCard = activeWallet?.type == WalletType.CARD
+
+    val isInsufficientBalance = isExpense && !isCreditCard && activeWallet != null && (
+        (state.editingTransaction == null && (activeWallet.balance.value <= 0L || (enteredAmountValue > 0L && enteredAmountValue > activeWallet.balance.value))) ||
+        (state.editingTransaction != null && run {
+            val original = state.editingTransaction
+            val available = if (original.walletId == activeWallet.id) {
+                val refund = if (original.type == TransactionType.EXPENSE) original.amount.value else -original.amount.value
+                activeWallet.balance.value + refund
+            } else {
+                activeWallet.balance.value
+            }
+            available <= 0L || (enteredAmountValue > 0L && enteredAmountValue > available)
+        })
+    )
+
+    val balanceErrorMessage = if (isInsufficientBalance && activeWallet != null) {
+        if (activeWallet.balance.value <= 0L && state.editingTransaction == null) {
+            "Ví [${activeWallet.name}] đã hết số dư (${formatVndAmount(activeWallet.balance.value)})"
+        } else {
+            "Số dư ví [${activeWallet.name}] không đủ để chi tiêu (Khả dụng: ${formatVndAmount(activeWallet.balance.value)})"
+        }
+    } else null
 
     // Date formatting with "Hôm nay" / "Hôm qua" smart labels
     val localDate = state.date.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -225,17 +251,18 @@ fun AddTransactionSheet(
                     color = tokens.onSurface,
                 )
 
-                // Blue Circular Save Button
+                // Save Button (Active / Disabled based on validation)
+                val canSave = !state.isSaving && !isInsufficientBalance && enteredAmountValue > 0L
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFF3B5DF8),
+                    color = if (canSave) Color(0xFF3B5DF8) else (if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0)),
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = ripple(bounded = true),
-                            enabled = !state.isSaving,
+                            enabled = canSave,
                             onClick = viewModel::save,
                         ),
                 ) {
@@ -243,7 +270,7 @@ fun AddTransactionSheet(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Lưu",
-                            tint = Color.White,
+                            tint = if (canSave) Color.White else (if (tokens.isDark) Color(0xFF64748B) else Color(0xFF94A3B8)),
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -405,6 +432,37 @@ fun AddTransactionSheet(
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            // Warning Banner for Insufficient Wallet Balance
+            if (balanceErrorMessage != null) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
+                    border = BorderStroke(1.dp, Color(0xFFF43F5E).copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFE11D48),
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = balanceErrorMessage,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = Color(0xFFE11D48),
+                        )
                     }
                 }
             }

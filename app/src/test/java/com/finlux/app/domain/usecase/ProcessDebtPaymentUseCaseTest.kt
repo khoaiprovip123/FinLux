@@ -92,6 +92,7 @@ private class FakeDebtRepository : DebtRepository {
 
     override fun observeDebts(): Flow<List<DebtAccount>> = flowOf(emptyList())
     override fun observePaymentHistory(debtId: String): Flow<List<DebtPaymentHistory>> = flowOf(emptyList())
+    override fun observeAllPaymentHistory(): Flow<List<DebtPaymentHistory>> = flowOf(emptyList())
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = AppResult.Success("debt-1")
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = AppResult.Success(Unit)
 

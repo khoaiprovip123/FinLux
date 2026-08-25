@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Handshake
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ fun DebtCard(
     onPayClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onHistoryClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
@@ -149,63 +151,88 @@ fun DebtCard(
 
                 Spacer(Modifier.width(8.dp))
 
-                // Right Action Header: Status Badge or Compact Glass [Trả nợ] Button
-                if (isSettled) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = FinluxColors.IncomeGreen.copy(alpha = 0.15f),
-                        border = BorderStroke(0.8.dp, FinluxColors.IncomeGreen.copy(alpha = 0.35f)),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                // Right Action Header: History Button + Status Badge or Compact Glass [Trả nợ] Button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (onHistoryClick != null) {
+                        Surface(
+                            shape = CircleShape,
+                            color = tokens.surfaceSoft,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .clickable(onClick = onHistoryClick),
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = FinluxColors.IncomeGreen,
-                                modifier = Modifier.size(13.dp),
-                            )
-                            Spacer(Modifier.width(3.dp))
-                            Text(
-                                text = "Đã tất toán",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    color = FinluxColors.IncomeGreen,
-                                ),
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = "Lịch sử trả nợ",
+                                    tint = tokens.onSurfaceVariant,
+                                    modifier = Modifier.size(15.dp),
+                                )
+                            }
                         }
                     }
-                } else {
-                    // Refined Glass Button [Trả nợ]
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = tokens.primary.copy(alpha = 0.12f),
-                        border = BorderStroke(0.8.dp, tokens.primary.copy(alpha = 0.35f)),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable(onClick = onPayClick),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+
+                    if (isSettled) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = FinluxColors.IncomeGreen.copy(alpha = 0.15f),
+                            border = BorderStroke(0.8.dp, FinluxColors.IncomeGreen.copy(alpha = 0.35f)),
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Payments,
-                                contentDescription = null,
-                                tint = tokens.primary,
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Trả nợ",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = tokens.primary,
-                                ),
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = FinluxColors.IncomeGreen,
+                                    modifier = Modifier.size(13.dp),
+                                )
+                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    text = "Đã tất toán",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = FinluxColors.IncomeGreen,
+                                    ),
+                                )
+                            }
+                        }
+                    } else {
+                        // Refined Glass Button [Trả nợ]
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = tokens.primary.copy(alpha = 0.12f),
+                            border = BorderStroke(0.8.dp, tokens.primary.copy(alpha = 0.35f)),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable(onClick = onPayClick),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Payments,
+                                    contentDescription = null,
+                                    tint = tokens.primary,
+                                    modifier = Modifier.size(14.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Trả nợ",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = tokens.primary,
+                                    ),
+                                )
+                            }
                         }
                     }
                 }

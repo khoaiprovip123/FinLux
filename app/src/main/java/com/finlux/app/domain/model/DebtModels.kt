@@ -28,6 +28,8 @@ data class DebtAccount(
     val dueDate: Int = 15,            // Ngày đến hạn hàng tháng (1..31)
     val statementDate: Int? = null,   // Ngày chốt sao kê hàng tháng (thẻ tín dụng)
     val colorHex: String = "#E11D48",
+    val isReminderEnabled: Boolean = true,
+    val reminderDaysBefore: Int = 3,
     val isSettled: Boolean = false,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),

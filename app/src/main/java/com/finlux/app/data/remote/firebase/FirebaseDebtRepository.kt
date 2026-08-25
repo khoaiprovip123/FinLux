@@ -16,11 +16,15 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class FirebaseDebtRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
@@ -59,6 +63,18 @@ class FirebaseDebtRepository(
             }
         awaitClose { registration.remove() }
     }
+
+    override fun observeAllPaymentHistory(): Flow<List<DebtPaymentHistory>> =
+        observeDebts().flatMapLatest { debts ->
+            if (debts.isEmpty()) {
+                flowOf(emptyList())
+            } else {
+                val flows = debts.map { debt -> observePaymentHistory(debt.id) }
+                combine(flows) { arrays ->
+                    arrays.flatMap { it }.sortedByDescending { it.paymentDate }
+                }
+            }
+        }
 
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = firebaseResult("Không thể lưu khoản nợ") {
         val uid = requireUid()
@@ -188,6 +204,8 @@ internal fun DebtAccount.toDebtMap(): Map<String, Any?> = mapOf(
     "dueDate" to dueDate,
     "statementDate" to statementDate,
     "colorHex" to colorHex,
+    "isReminderEnabled" to isReminderEnabled,
+    "reminderDaysBefore" to reminderDaysBefore,
     "isSettled" to isSettled,
     "createdAt" to Timestamp(Date.from(createdAt)),
     "updatedAt" to Timestamp(Date.from(updatedAt)),
@@ -206,6 +224,8 @@ internal fun DocumentSnapshot.toDebtAccount(): DebtAccount? = runCatching {
         dueDate = (getLong("dueDate") ?: 15L).toInt().coerceIn(1, 31),
         statementDate = getLong("statementDate")?.toInt(),
         colorHex = getString("colorHex") ?: "#E11D48",
+        isReminderEnabled = getBoolean("isReminderEnabled") ?: true,
+        reminderDaysBefore = (getLong("reminderDaysBefore") ?: 3L).toInt().coerceIn(1, 10),
         isSettled = getBoolean("isSettled") ?: false,
         createdAt = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now(),
         updatedAt = getTimestamp("updatedAt")?.toDate()?.toInstant() ?: Instant.now(),

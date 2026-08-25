@@ -41,6 +41,7 @@ class DebtViewModelTest {
     private val fakeDebtPreferenceRepository = FakeDebtPreferenceRepo()
 
     private val getDebtsUseCase = GetDebtsUseCase(fakeDebtRepository)
+    private val getDebtPaymentHistoryUseCase = com.finlux.app.domain.usecase.GetDebtPaymentHistoryUseCase(fakeDebtRepository)
     private val analyzeDebtCashflowUseCase = com.finlux.app.domain.usecase.AnalyzeDebtCashflowUseCase()
     private val calculatePayoffStrategyUseCase = CalculatePayoffStrategyUseCase()
     private val saveDebtAccountUseCase = SaveDebtAccountUseCase(fakeDebtRepository)
@@ -54,6 +55,7 @@ class DebtViewModelTest {
         Dispatchers.setMain(testDispatcher)
         viewModel = DebtViewModel(
             getDebtsUseCase = getDebtsUseCase,
+            getDebtPaymentHistoryUseCase = getDebtPaymentHistoryUseCase,
             walletRepository = fakeWalletRepository,
             transactionRepository = fakeTransactionRepository,
             categoryRepository = fakeCategoryRepository,
@@ -190,6 +192,7 @@ private class FakeDebtRepo : DebtRepository {
 
     override fun observeDebts(): Flow<List<DebtAccount>> = flowOf(listOf(sampleDebt))
     override fun observePaymentHistory(debtId: String) = flowOf(emptyList<com.finlux.app.domain.model.DebtPaymentHistory>())
+    override fun observeAllPaymentHistory() = flowOf(emptyList<com.finlux.app.domain.model.DebtPaymentHistory>())
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> {
         saveCalls++
         return AppResult.Success(debt.id)

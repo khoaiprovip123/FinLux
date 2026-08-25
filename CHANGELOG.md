@@ -19,13 +19,26 @@
 
 ## [1.9.3] - 2026-08-24
 ### Added
+- **Lịch Sử Thanh Toán Nợ Chi Tiết (`DebtPaymentHistorySheet`)**:
+  - Thống kê toàn diện Tổng tiền đã trả (xanh lá), Đã giảm gốc (Finlux Blue) và Tiền lãi đã trả (đỏ cam).
+  - Hỗ trợ bộ lọc linh hoạt theo từng khoản nợ hoặc xem toàn bộ danh sách.
+  - Tích hợp nút xem Lịch sử trên Header Quản lý nợ (`DebtDashboardScreen`) và trực tiếp trên từng thẻ nợ (`DebtCard`).
+  - UseCase mới: `GetDebtPaymentHistoryUseCase` kết nối đồng bộ giữa Domain, Firestore và Demo Repository.
+- **Cài Đặt Nhắc Nợ Đến Hạn (Due Date Reminder Settings)**:
+  - Bổ sung switch bật/tắt nhắc nợ kèm dải nút chọn nhanh số ngày nhắc trước (*Trước 1, 2, 3, 5 ngày*) trong `AddEditDebtSheet`.
+  - Mở rộng model `DebtAccount` với `isReminderEnabled` & `reminderDaysBefore`, bổ sung loại thông báo `NotificationType.DEBT_DUE_ALERT`.
 - Đóng gói và phát hành bản Release v1.9.3 chuẩn hóa với Proguard/R8 shrinking.
 
 ### Changed
+- **Bảo Vệ Số Dư Ví Khi Chi Tiêu (Insufficient Balance Protection)**:
+  - Chặn tạo/sửa giao dịch chi tiêu (`EXPENSE`) khi số dư ví thanh toán `<= 0` hoặc không đủ tiền (áp dụng cho các ví không phải Thẻ tín dụng `WalletType.CARD`).
+  - Hiển thị banner cảnh báo đỏ `⚠️ Số dư ví không đủ` và vô hiệu hóa nút Lưu trong `AddTransactionSheet`.
 - Nâng cấp `versionCode = 111` và `versionName = "1.9.3"`.
-- Cập nhật tối ưu toàn diện các pipeline phát hành và nạp tự động.
 
 ### Fixed
+- **Sửa Triệt Để Lỗi Ghost Alarm / Nhắc Nhở Đã Xóa Vẫn Tự Bắn Thông Báo**:
+  - Bổ sung Validation Guard trong `ReminderReceiver`: Luôn kiểm tra sự tồn tại và trạng thái `enabled` của nhắc nhở trong database trước khi hiển thị thông báo, trước khi ghi Firestore và trước khi lên lịch tiếp theo.
+  - Hủy sạch `PendingIntent`, `AlarmManager` và notification treo khi người dùng xóa nhắc nhở (`AlarmReminderScheduler.cancel()`), chấm dứt hoàn toàn vòng lặp báo thức mồ côi.
 - Đảm bảo 100% Unit Test suites vượt qua kiểm thử trước khi đóng gói Release.
 
 ## [1.9.2] - 2026-08-24

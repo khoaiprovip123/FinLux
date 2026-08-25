@@ -77,7 +77,7 @@ class DemoFinluxRepository @Inject constructor(
     private val goalState = MutableStateFlow(seedGoals())
     private val notificationState = MutableStateFlow(seedNotifications())
     private val debtState = MutableStateFlow(seedDebts())
-    private val paymentHistoryState = MutableStateFlow<List<DebtPaymentHistory>>(emptyList())
+    private val paymentHistoryState = MutableStateFlow<List<DebtPaymentHistory>>(seedPaymentHistory())
 
     override val currentUser: Flow<UserProfile?> = userState
 
@@ -312,6 +312,8 @@ class DemoFinluxRepository @Inject constructor(
     override fun observePaymentHistory(debtId: String): Flow<List<DebtPaymentHistory>> =
         paymentHistoryState.map { list -> list.filter { it.debtId == debtId } }
 
+    override fun observeAllPaymentHistory(): Flow<List<DebtPaymentHistory>> = paymentHistoryState
+
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = mutationMutex.withLock {
         val id = debt.id.ifBlank { UUID.randomUUID().toString() }
         val stored = debt.copy(id = id)
@@ -468,6 +470,11 @@ class DemoFinluxRepository @Inject constructor(
         mutationMutex.withLock {
             val id = transaction.id.ifBlank { UUID.randomUUID().toString() }
             val stored = transaction.copy(id = id, createdAt = Instant.now(), updatedAt = Instant.now())
+            val targetWallet = walletState.value.find { it.id == stored.walletId }
+                ?: return@withLock AppResult.Error("Không tìm thấy ví")
+            if (stored.type == TransactionType.EXPENSE && targetWallet.type != WalletType.CARD && targetWallet.balance.value < stored.amount.value) {
+                return@withLock AppResult.Error("Số dư ví [${targetWallet.name}] không đủ để thực hiện chi tiêu")
+            }
             if (!changeWalletBalance(stored.walletId, balanceDelta(stored))) {
                 return@withLock AppResult.Error("Không tìm thấy ví")
             }
@@ -756,6 +763,39 @@ class DemoFinluxRepository @Inject constructor(
                 statementDate = null,
                 colorHex = "#7C3AED",
                 isSettled = false,
+            ),
+        )
+
+        fun seedPaymentHistory() = listOf(
+            DebtPaymentHistory(
+                id = "pay-hist-1",
+                debtId = "debt-vcb-credit",
+                walletId = "bank",
+                amount = Money(2_500_000L),
+                principalPaid = Money(2_130_000L),
+                interestPaid = Money(370_000L),
+                paymentDate = Instant.now().minus(5, ChronoUnit.DAYS),
+                note = "Thanh toán sao kê tháng trước",
+            ),
+            DebtPaymentHistory(
+                id = "pay-hist-2",
+                debtId = "debt-vpbank-auto",
+                walletId = "vietcombank",
+                amount = Money(3_800_000L),
+                principalPaid = Money(3_176_000L),
+                interestPaid = Money(624_000L),
+                paymentDate = Instant.now().minus(15, ChronoUnit.DAYS),
+                note = "Đóng tiền gốc & lãi kỳ 12",
+            ),
+            DebtPaymentHistory(
+                id = "pay-hist-3",
+                debtId = "debt-iphone-installment",
+                walletId = "momo",
+                amount = Money(2_833_000L),
+                principalPaid = Money(2_833_000L),
+                interestPaid = Money(0L),
+                paymentDate = Instant.now().minus(20, ChronoUnit.DAYS),
+                note = "Trả góp kỳ 7/12",
             ),
         )
 

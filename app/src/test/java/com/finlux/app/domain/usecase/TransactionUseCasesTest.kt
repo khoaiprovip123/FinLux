@@ -28,15 +28,36 @@ class TransactionUseCasesTest {
 
     @Test
     fun `add rejects zero amount before touching repository`() = runTest {
-        val result = AddTransactionUseCase(repository)(validTransaction().copy(amount = Money(0)))
+        val result = AddTransactionUseCase(repository, walletRepository)(validTransaction().copy(amount = Money(0)))
 
         assertInstanceOf(AppResult.Error::class.java, result)
         assertEquals(0, repository.addCalls)
     }
 
     @Test
+    fun `add rejects expense when cash wallet balance is insufficient`() = runTest {
+        val result = AddTransactionUseCase(repository, walletRepository)(
+            validTransaction().copy(amount = Money(600_000), walletId = "cash")
+        )
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals("Số dư ví [Tiền mặt] không đủ để thực hiện chi tiêu", (result as AppResult.Error).message)
+        assertEquals(0, repository.addCalls)
+    }
+
+    @Test
+    fun `add allows expense for credit card even with zero balance`() = runTest {
+        val result = AddTransactionUseCase(repository, walletRepository)(
+            validTransaction().copy(amount = Money(1_000_000), walletId = "card")
+        )
+
+        assertEquals(AppResult.Success("generated-id"), result)
+        assertEquals(1, repository.addCalls)
+    }
+
+    @Test
     fun `add delegates valid expense to atomic repository method`() = runTest {
-        val result = AddTransactionUseCase(repository)(validTransaction())
+        val result = AddTransactionUseCase(repository, walletRepository)(validTransaction())
 
         assertEquals(AppResult.Success("generated-id"), result)
         assertEquals(1, repository.addCalls)
@@ -45,9 +66,20 @@ class TransactionUseCasesTest {
     @Test
     fun `edit requires the original stable id`() = runTest {
         val original = validTransaction(id = "tx-1")
-        val result = EditTransactionUseCase(repository)(original, original.copy(id = "tx-2"))
+        val result = EditTransactionUseCase(repository, walletRepository)(original, original.copy(id = "tx-2"))
 
         assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals(0, repository.editCalls)
+    }
+
+    @Test
+    fun `edit rejects expense when new amount exceeds available balance`() = runTest {
+        val original = validTransaction(id = "tx-1").copy(amount = Money(100_000), walletId = "cash")
+        val updated = original.copy(amount = Money(800_000)) // cash has 500k + 100k refund = 600k < 800k
+        val result = EditTransactionUseCase(repository, walletRepository)(original, updated)
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals("Số dư ví [Tiền mặt] không đủ để thực hiện chi tiêu", (result as AppResult.Error).message)
         assertEquals(0, repository.editCalls)
     }
 
