@@ -4,6 +4,25 @@
 - **Phiên bản hiện tại:** v1.10.1 (versionCode 113)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS. Đang thực hiện Hardening Sprint (P0 -> P1 -> P2 -> P3).
 
+## [DONE] Task: [P0.4] Hoàn Thiện Salary Cycle Thành Financial Period Engine (`FinancialPeriodResolver`)
+
+**Ngày hoàn thành:** 2026-08-25
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Xây dựng abstraction thống nhất `FinancialPeriod` và `FinancialPeriodResolver` kết nối đồng bộ giữa `CALENDAR_MONTH` và `SALARY_CYCLE`.
+  - Hỗ trợ đầy đủ các API: `resolveCurrentPeriod`, `resolvePreviousPeriod`, `resolvePeriodContaining`, `resolvePeriodKey`.
+  - Xử lý triệt để toàn bộ boundary cases của Payday: các ngày 28/29/30/31, năm nhuận/không nhuận tháng 2, quy tắc `FIRST_DAY_OF_MONTH`, `LAST_DAY_OF_MONTH` và Timezone configuration.
+  - Cung cấp kiến trúc nền tảng dùng chung cho Home, Dashboard, Reports, Budgets và Previous-period comparison.
+- **Kết quả kiểm thử:**
+  - `gradlew testDebugUnitTest`: **162/162 PASS (100%)**.
+- **Danh sách file chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/FinancialPeriodResolver.kt`
+  - `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/FinancialPeriodResolverTest.kt`
+- **Trạng thái:** `[DONE]`
+
 ## [DONE] Task: [P0.3] Bảo Vệ Số Dư Ví Bằng Ledger & Chặn Set Balance Trực Tiếp
 
 **Ngày hoàn thành:** 2026-08-25

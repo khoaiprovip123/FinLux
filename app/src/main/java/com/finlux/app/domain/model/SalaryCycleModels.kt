@@ -36,3 +36,12 @@ data class FinancialCycle(
     val endExclusive: Instant,
     val label: String,
 )
+
+data class FinancialPeriod(
+    val key: String,
+    val start: Instant,
+    val endExclusive: Instant,
+    val displayLabel: String,
+    val basis: BudgetPeriodBasis,
+)
+

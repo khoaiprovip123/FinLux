@@ -21,7 +21,9 @@ import com.finlux.app.data.remote.firebase.FirebaseTransactionRepository
 import com.finlux.app.data.remote.firebase.FirebaseWalletRepository
 import com.finlux.app.core.time.FinanceClock
 import com.finlux.app.core.time.SystemFinanceClock
+import com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver
 import com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator
+import com.finlux.app.domain.usecase.FinancialPeriodResolver
 import com.finlux.app.domain.usecase.SalaryCycleCalculator
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
@@ -88,6 +90,12 @@ abstract class LocalRepositoryModule {
     abstract fun bindSalaryCycleCalculator(
         implementation: DefaultSalaryCycleCalculator,
     ): SalaryCycleCalculator
+
+    @Binds
+    @Singleton
+    abstract fun bindFinancialPeriodResolver(
+        implementation: DefaultFinancialPeriodResolver,
+    ): FinancialPeriodResolver
 }
 
 @Module
