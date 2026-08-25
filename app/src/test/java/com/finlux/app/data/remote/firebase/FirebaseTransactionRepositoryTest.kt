@@ -97,8 +97,8 @@ class FirebaseTransactionRepositoryTest {
         val transactionDocRef: DocumentReference = mockk(relaxed = true)
         val walletDocRef: DocumentReference = mockk(relaxed = true)
         val budgetDocRef: DocumentReference = mockk(relaxed = true)
-        val walletSnapshot: DocumentSnapshot = mockk()
-        val budgetSnapshot: DocumentSnapshot = mockk()
+        val walletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val budgetSnapshot: DocumentSnapshot = mockk(relaxed = true)
 
         every { firestore.collection("users").document(uid) } returns userDocRef
         every { userDocRef.collection("transactions") } returns transactionsColl
@@ -110,6 +110,7 @@ class FirebaseTransactionRepositoryTest {
         every { budgetsColl.document(any()) } returns budgetDocRef
         every { walletSnapshot.exists() } returns true
         every { walletSnapshot.getLong("balance") } returns 1_000_000L
+        every { walletSnapshot.getString("type") } returns "CASH"
         every { budgetSnapshot.exists() } returns true
 
         val atomicTx: Transaction = mockk(relaxed = true)
@@ -132,6 +133,91 @@ class FirebaseTransactionRepositoryTest {
     }
 
     @Test
+    fun `addWithBalanceUpdate fails when cash wallet balance is insufficient in transaction`() = runTest {
+        val uid = "test_uid"
+        every { auth.currentUser } returns user
+        every { user.uid } returns uid
+
+        val userDocRef: DocumentReference = mockk()
+        val transactionsColl: CollectionReference = mockk()
+        val walletsColl: CollectionReference = mockk()
+        val budgetsColl: CollectionReference = mockk()
+        val transactionDocRef: DocumentReference = mockk(relaxed = true)
+        val walletDocRef: DocumentReference = mockk(relaxed = true)
+        val budgetDocRef: DocumentReference = mockk(relaxed = true)
+        val walletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("transactions") } returns transactionsColl
+        every { userDocRef.collection("wallets") } returns walletsColl
+        every { userDocRef.collection("budgets") } returns budgetsColl
+        every { transactionsColl.document() } returns transactionDocRef
+        every { walletsColl.document("wallet_1") } returns walletDocRef
+        every { budgetsColl.document(any()) } returns budgetDocRef
+        every { walletSnapshot.exists() } returns true
+        every { walletSnapshot.getLong("balance") } returns 100_000L
+        every { walletSnapshot.getString("type") } returns "CASH"
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(walletDocRef) } returns walletSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
+        every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
+            transactionSlot.captured.apply(atomicTx)
+            Tasks.forResult<Any?>(null)
+        }
+
+        val sampleTx = sampleTransaction(walletId = "wallet_1", amount = 200_000L) // 100k < 200k
+        val result = repository.addWithBalanceUpdate(sampleTx)
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertTrue((result as AppResult.Error).message.contains("Số dư ví không đủ"))
+    }
+
+    @Test
+    fun `addWithBalanceUpdate allows negative balance on credit card wallet`() = runTest {
+        val uid = "test_uid"
+        every { auth.currentUser } returns user
+        every { user.uid } returns uid
+
+        val userDocRef: DocumentReference = mockk()
+        val transactionsColl: CollectionReference = mockk()
+        val walletsColl: CollectionReference = mockk()
+        val budgetsColl: CollectionReference = mockk()
+        val transactionDocRef: DocumentReference = mockk(relaxed = true)
+        val walletDocRef: DocumentReference = mockk(relaxed = true)
+        val budgetDocRef: DocumentReference = mockk(relaxed = true)
+        val walletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("transactions") } returns transactionsColl
+        every { userDocRef.collection("wallets") } returns walletsColl
+        every { userDocRef.collection("budgets") } returns budgetsColl
+        every { transactionsColl.document() } returns transactionDocRef
+        every { transactionDocRef.id } returns "card_tx_id"
+        every { walletsColl.document("card_wallet") } returns walletDocRef
+        every { budgetsColl.document(any()) } returns budgetDocRef
+        every { walletSnapshot.exists() } returns true
+        every { walletSnapshot.getLong("balance") } returns 0L
+        every { walletSnapshot.getString("type") } returns "CARD"
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(walletDocRef) } returns walletSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
+        every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
+            transactionSlot.captured.apply(atomicTx)
+            Tasks.forResult<Any?>(null)
+        }
+
+        val sampleTx = sampleTransaction(walletId = "card_wallet", amount = 500_000L)
+        val result = repository.addWithBalanceUpdate(sampleTx)
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+        verify { atomicTx.update(walletDocRef, "balance", -500_000L) }
+    }
+
+    @Test
     fun `addWithBalanceUpdate executes atomic transaction successfully for INCOME`() = runTest {
         val uid = "test_uid"
         every { auth.currentUser } returns user
@@ -142,7 +228,7 @@ class FirebaseTransactionRepositoryTest {
         val walletsColl: CollectionReference = mockk()
         val transactionDocRef: DocumentReference = mockk(relaxed = true)
         val walletDocRef: DocumentReference = mockk(relaxed = true)
-        val walletSnapshot: DocumentSnapshot = mockk()
+        val walletSnapshot: DocumentSnapshot = mockk(relaxed = true)
 
         every { firestore.collection("users").document(uid) } returns userDocRef
         every { userDocRef.collection("transactions") } returns transactionsColl
@@ -152,6 +238,7 @@ class FirebaseTransactionRepositoryTest {
         every { walletsColl.document("wallet_1") } returns walletDocRef
         every { walletSnapshot.exists() } returns true
         every { walletSnapshot.getLong("balance") } returns 500_000L
+        every { walletSnapshot.getString("type") } returns "CASH"
 
         val atomicTx: Transaction = mockk(relaxed = true)
         every { atomicTx.get(walletDocRef) } returns walletSnapshot

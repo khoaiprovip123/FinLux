@@ -4,6 +4,25 @@
 - **Phiên bản hiện tại:** v1.10.1 (versionCode 113)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS. Đang thực hiện Hardening Sprint (P0 -> P1 -> P2 -> P3).
 
+## [DONE] Task: [P0.2] Chặn Ví Âm Ngay Trong Firestore & Repository Atomic Transactions
+
+**Ngày hoàn thành:** 2026-08-25
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Bảo vệ bất biến số dư ví (Financial Invariant) ở cấp độ Atomic Transaction: Ví không phải thẻ tín dụng (`WalletType.CARD`) tuyệt đối không bao giờ được âm số dư (`balance >= 0`).
+  - Áp dụng kiểm tra `finalBalance` ngay bên trong `runTransaction` của `FirebaseTransactionRepository` và mutex lock của `DemoFinluxRepository` cho toàn bộ các thao tác: `addWithBalanceUpdate`, `editWithBalanceUpdate`, `deleteWithBalanceUpdate` (hoàn tác thu nhập), `transferBetweenWallets`, `processPayment`.
+  - Không dựa vào validation UI/ViewModel để bảo vệ dữ liệu chống race conditions hoặc can thiệp client.
+  - Viết suite kiểm thử unit tests toàn diện: kiểm thử chi tiêu vượt quá số dư, sửa giao dịch làm âm ví, chuyển ví không đủ tiền, hoàn tác thu nhập làm âm ví, và kiểm thử concurrent mutations.
+- **Kết quả kiểm thử:**
+  - `gradlew testDebugUnitTest`: **153/153 PASS (100%)**.
+- **Danh sách file chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+  - `app/src/test/java/com/finlux/app/data/demo/DemoTransactionInvariantTest.kt`
+- **Trạng thái:** `[DONE]`
+
 ## [DONE] Task: [P0.1] Harden Release Signing & Fail-Closed OTA Updater
 
 **Ngày hoàn thành:** 2026-08-25

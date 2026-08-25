@@ -564,9 +564,13 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     private fun changeWalletBalance(walletId: String, delta: Long): Boolean {
-        if (walletState.value.none { it.id == walletId }) return false
+        val target = walletState.value.find { it.id == walletId } ?: return false
+        val newBalance = target.balance.value + delta
+        if (target.type != WalletType.CARD && newBalance < 0) {
+            return false
+        }
         walletState.value = walletState.value.map { wallet ->
-            if (wallet.id == walletId) wallet.copy(balance = Money(wallet.balance.value + delta)) else wallet
+            if (wallet.id == walletId) wallet.copy(balance = Money(newBalance)) else wallet
         }
         return true
     }
