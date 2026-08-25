@@ -4,6 +4,23 @@
 - **Phiên bản hiện tại:** v1.10.1 (versionCode 113)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS. Đang thực hiện Hardening Sprint (P0 -> P1 -> P2 -> P3).
 
+## [DONE] Task: [P0.6 & P0.7] Reminder Idempotency & Action "Đã thanh toán" Verification
+
+**Ngày hoàn thành:** 2026-08-25
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Thống nhất cơ chế Reminder qua `AlarmReminderScheduler` (chính xác từng giây).
+  - Tích hợp `ReminderTriggerDeduplicator` chống duplicate trigger trong khoảng thời gian ngắn (< 60s), ngăn chặn hoàn toàn hiện tượng bắn nhiều thông báo lặp lại cho cùng một trigger window.
+  - Tự động cập nhật `nextTriggerDate` của chu kỳ kế tiếp vào Database (`reminderRepository.upsertReminder`) khi kích hoạt thông báo nhắc nhở định kỳ.
+  - Khắc phục lỗi ở Action "Đã thanh toán" (`ACTION_PAY`): Bắt buộc kiểm tra `AppResult.Success` từ `addTransactionUseCase` trước khi gọi `markAsPaidByReminderId`. Nếu ví không đủ tiền hoặc giao dịch thất bại, không đánh dấu đã thanh toán sai lệch.
+- **Kết quả kiểm thử:**
+  - `gradlew testDebugUnitTest`: **170/170 PASS (100%)**.
+- **Danh sách file chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`
+  - `app/src/test/java/com/finlux/app/data/local/reminder/ReminderTriggerDeduplicatorTest.kt`
+- **Trạng thái:** `[DONE]`
+
 ## [DONE] Task: [P0.5] Thực Thi Salary Rollover / Move To Savings (Idempotent Business Command)
 
 **Ngày hoàn thành:** 2026-08-25

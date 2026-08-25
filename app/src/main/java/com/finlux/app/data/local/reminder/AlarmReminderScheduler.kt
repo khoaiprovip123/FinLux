@@ -10,6 +10,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.finlux.app.MainActivity
 import com.finlux.app.R
+import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
@@ -39,6 +40,24 @@ private const val ACTION_TRIGGER = "com.finlux.app.ACTION_TRIGGER_REMINDER"
 private const val ACTION_PAY = "com.finlux.app.ACTION_PAY_REMINDER"
 private const val ACTION_SNOOZE = "com.finlux.app.ACTION_SNOOZE_REMINDER"
 private const val ACTION_EDIT_PAYMENT = "com.finlux.app.ACTION_EDIT_PAYMENT"
+
+object ReminderTriggerDeduplicator {
+    private val lastTriggeredMap = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    fun shouldTrigger(reminderId: String, triggerTimeWindowMs: Long = 60_000L): Boolean {
+        val now = System.currentTimeMillis()
+        val last = lastTriggeredMap[reminderId] ?: 0L
+        if (now - last < triggerTimeWindowMs) {
+            return false
+        }
+        lastTriggeredMap[reminderId] = now
+        return true
+    }
+
+    fun resetForTest() {
+        lastTriggeredMap.clear()
+    }
+}
 
 @Singleton
 class AlarmReminderScheduler @Inject constructor(
@@ -101,7 +120,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         if (fallbackAmount > 0 && fallbackWalletId.isNotBlank()) {
-                            addTransactionUseCase(
+                            val addResult = addTransactionUseCase(
                                 FinanceTransaction(
                                     type = TransactionType.EXPENSE,
                                     amount = Money(fallbackAmount),
@@ -111,8 +130,12 @@ class ReminderReceiver : BroadcastReceiver() {
                                     date = Instant.now(),
                                 )
                             )
+                            if (addResult is AppResult.Success) {
+                                notificationRepository.markAsPaidByReminderId(id)
+                            }
+                        } else {
+                            notificationRepository.markAsPaidByReminderId(id)
                         }
-                        notificationRepository.markAsPaidByReminderId(id)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {
@@ -173,7 +196,12 @@ class ReminderReceiver : BroadcastReceiver() {
                             return@launch
                         }
 
-                        // 2. Sử dụng thông tin chính xác mới nhất từ activeReminder
+                        // 2. Deduplication check: Tránh trigger lặp lại trong vòng 60 giây
+                        if (!ReminderTriggerDeduplicator.shouldTrigger(id)) {
+                            return@launch
+                        }
+
+                        // 3. Sử dụng thông tin chính xác mới nhất từ activeReminder
                         val effectiveTitle = activeReminder.title.ifBlank { fallbackTitle }
                         val effectiveAmount = activeReminder.amount.value
                         val effectiveCategoryId = activeReminder.categoryId
@@ -198,7 +226,7 @@ class ReminderReceiver : BroadcastReceiver() {
                             "Đến hạn xác nhận giao dịch"
                         }
 
-                        // 3. Lưu thông báo vào Firestore
+                        // 4. Lưu thông báo vào Firestore
                         notificationRepository.saveNotification(
                             AppNotification(
                                 id = UUID.randomUUID().toString(),
@@ -214,7 +242,7 @@ class ReminderReceiver : BroadcastReceiver() {
                             )
                         )
 
-                        // 4. Bắn thông báo Android System Notification
+                        // 5. Bắn thông báo Android System Notification
                         val openAppIntent = Intent(context, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                             putExtra("destination", "notifications")
@@ -289,8 +317,10 @@ class ReminderReceiver : BroadcastReceiver() {
                                 .build(),
                         )
 
-                        // 5. Lên lịch báo thức kế tiếp
+                        // 6. Cập nhật nextTriggerDate vào Database & lên lịch báo thức kế tiếp
                         val next = nextTrigger(Instant.now(), effectiveRecurrence)
+                        reminderRepository.upsertReminder(activeReminder.copy(nextTriggerDate = next))
+
                         val nextIntent = Intent(context, ReminderReceiver::class.java).apply {
                             action = ACTION_TRIGGER
                             putExtra("id", id)
