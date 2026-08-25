@@ -67,15 +67,11 @@ foreach ($line in $adbOutput) {
 }
 
 if ($targetDevices.Count -eq 0) {
-    Write-Host "❌ KHONG TIM THAY THIET BI ANDROID NAO DANG KET NOI ADB!" -ForegroundColor Red
-    Write-Host "Vui long kiem tra:" -ForegroundColor Yellow
-    Write-Host "  1. Cap USB da ket noi voi PC"
-    Write-Host "  2. Che do 'USB Debugging' (Sửa lỗi USB) da bat tren dien thoai"
-    Write-Host "  3. Ban da cho phép (Allow) máy tính truy cập ADB tren màn hình dien thoai"
-    exit 1
+    Write-Host "⚠️ KHONG TIM THAY THIET BI ANDROID NAO DANG KET NOI ADB!" -ForegroundColor Yellow
+    Write-Host "   -> Tien trinh se tiep tuc BUILD APK (bo qua buoc tu dong nap qua ADB)." -ForegroundColor DarkYellow
+} else {
+    $targetDevices | ForEach-Object { Write-Host "   -> Thiet bi tim thay: $_" -ForegroundColor Green }
 }
-
-$targetDevices | ForEach-Object { Write-Host "   -> Thiet bi tim thay: $_" -ForegroundColor Green }
 
 # 1.5 Hien thi thong tin phien ban hien tai tu app/build.gradle.kts (Khong tu dong tang versionCode)
 $gradleFile = "app/build.gradle.kts"
@@ -100,8 +96,21 @@ if (-not (Test-Path $apkPath)) {
     exit 1
 }
 
-# 3. Cài đè (Replace/Update) APK trực tiếp lên từng thiết bị
-Write-Host "`n[3/3] Dang nap APK moi vao cac thiet bi Android..." -ForegroundColor Yellow
+$apkItem = Get-Item $apkPath
+$apkSizeMb = [math]::Round($apkItem.Length / 1MB, 2)
+Write-Host "   ✅ Build APK thanh cong: $apkPath ($apkSizeMb MB)" -ForegroundColor Green
+
+# 3. Cài đè (Replace/Update) APK trực tiếp lên từng thiết bị (neu co)
+Write-Host "`n[3/3] Nap APK vao thiet bi Android..." -ForegroundColor Yellow
+if ($targetDevices.Count -eq 0) {
+    Write-Host "ℹ️ Bo qua buoc nap tu dong vi khong co thiet bi ADB nao dang ket noi." -ForegroundColor Yellow
+    Write-Host "📦 File APK da san sang tai: $(Resolve-Path $apkPath)" -ForegroundColor Cyan
+    Write-Host "`n==========================================" -ForegroundColor Green
+    Write-Host "   ✅ BUILD APK HOAN TAT!" -ForegroundColor Green
+    Write-Host "==========================================" -ForegroundColor Green
+    exit 0
+}
+
 $successCount = 0
 foreach ($devId in $targetDevices) {
     Write-Host "   -> Dang nap va open app tren [$devId]..." -ForegroundColor Cyan
