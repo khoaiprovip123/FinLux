@@ -357,7 +357,21 @@ STATES: Empty State có CTA; form có validation/loading/error. Toàn màn hình
 ```
 Route: /reminders
 LAYOUT: Danh sách bill định kỳ (tên, số tiền, chu kỳ, ngày nhắc tiếp theo) + FAB thêm mới
-Form thêm: Tên bill, Số tiền, Danh mục, Ví, Chu kỳ (ngày/tuần/tháng), Ngày bắt đầu, Bật/tắt nhắc
+## 17. SCREEN: Cấu hình Tháng tài chính / Chu kỳ lương (Salary Cycle Sheet)
+```
+Trigger: Cài đặt -> "Tháng tài chính & Chu kỳ lương" hoặc badge kỳ lương trên Trang chủ.
+LAYOUT: ModalBottomSheet chuẩn Liquid Glass / Finlux Prism bo góc 28dp, hiệu ứng mờ kính mềm:
+  - Header: Icon lịch tài chính xanh lá (0xFF10B981) + Tiêu đề + Phụ đề
+  - Toggle Switch: Bật/Tắt chu kỳ lương
+  - Thẻ Live Preview: Dải ngày kỳ hiện tại và kỳ tiếp theo cập nhật tức thời
+  - Lựa chọn quy tắc ngày nhận lương: Ngày cố định (1-31) / Đầu tháng / Cuối tháng
+  - Bộ chọn ngày: Thanh trượt Slider 1..31 + Các nút bấm nhanh (1, 5, 10, 15, 20, 25, 30)
+  - Bộ chọn ví nhận lương chính
+  - Nhập mức lương dự kiến (format VND tự động)
+  - Quy tắc xử lý tiền dư cuối kỳ (Giữ lại / Nhắc nhở / Gợi ý ví tiết kiệm)
+  - Căn cứ kỳ ngân sách (Tháng dương lịch / Theo kỳ lương)
+  - Nút bấm: "Đóng" và "Lưu cấu hình"
+THEME: Đồng bộ 100% màu động từ LocalFinluxTokens.current (Dark/Light).
 ```
 
 ---

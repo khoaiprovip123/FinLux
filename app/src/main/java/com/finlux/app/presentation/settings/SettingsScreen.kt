@@ -36,7 +36,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
+import com.finlux.app.presentation.settings.salary.SalaryCycleSettingsSheet
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
@@ -154,6 +156,7 @@ fun SettingsScreen(
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var showNameEditor by remember { mutableStateOf(false) }
     var showUiStyleSheet by remember { mutableStateOf(false) }
+    var showSalaryCycleSheet by remember { mutableStateOf(false) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
 
     fun openNameEditor() {
@@ -323,6 +326,7 @@ fun SettingsScreen(
                             ProfileMenuRow(Icons.Default.Edit, "Thông tin cá nhân") { openNameEditor() }
                             ProfileMenuRow(Icons.Default.AccountBalanceWallet, "Ví và tài khoản") { onNavigate(Route.Wallets.value) }
                             ProfileMenuRow(Icons.Default.Savings, "Ngân sách cá nhân") { onNavigate(Route.Budget.value) }
+                            ProfileMenuRow(Icons.Default.CalendarMonth, "Tháng tài chính & Chu kỳ lương") { showSalaryCycleSheet = true }
                             ProfileMenuRow(Icons.Default.Category, "Quản lý danh mục") { onNavigate(Route.Categories.value) }
                             ProfileMenuRow(Icons.Default.Alarm, "Nhắc nhở thanh toán") { onNavigate(Route.Reminders.value) }
                             ProfileMenuRow(Icons.Default.NotificationsNone, "Thông báo") { onNavigate(Route.Notifications.value) }
@@ -512,6 +516,10 @@ fun SettingsScreen(
                         Text("Đăng xuất", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
                 }
+            }
+
+            if (showSalaryCycleSheet) {
+                SalaryCycleSettingsSheet(onDismiss = { showSalaryCycleSheet = false })
             }
 
             if (showUiStyleSheet) {

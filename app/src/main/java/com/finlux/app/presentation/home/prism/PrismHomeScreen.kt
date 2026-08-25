@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -159,6 +160,49 @@ fun PrismHomeScreen(
                     onDebtsClick = { onNavigate(Route.Debt.value) },
                     onWalletsClick = { onNavigate(Route.Wallets.value) },
                 )
+            }
+
+            state.salaryCycleLabel?.let { cycleLabel ->
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0xFF10B981).copy(alpha = if (tokens.isDark) 0.16f else 0.10f),
+                        border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.30f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable { onNavigate(Route.Settings.value) },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = null,
+                                    tint = Color(0xFF10B981),
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Text(
+                                    text = "Kỳ tài chính: $cycleLabel",
+                                    style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                                    color = Color(0xFF10B981),
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
+                }
             }
 
             // 3. Metric 3-Column Card (Thu tháng này | Chi tháng này | Dòng tiền (ròng))

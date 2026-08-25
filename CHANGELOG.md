@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.10.0] - 2026-08-24
+### Added
+- **Tính năng Tháng Tài Chính & Chu Kỳ Lương (Salary Cycle & Financial Month)**:
+  - Tùy biến chu kỳ tài chính theo ngày nhận lương thực tế (ví dụ: ngày 25 hàng tháng) thay vì tháng dương lịch cố định.
+  - Thuật toán `SalaryCycleCalculator` tính dải ngày chính xác `[start, endExclusive)` và tự động xử lý các tháng ngắn ngày (28, 29, 30 ngày) cùng năm nhuận.
+  - Giao diện `SalaryCycleSettingsSheet` chuẩn Liquid Glass & Prism với Live Preview dải ngày chu kỳ hiện tại / kế tiếp, bộ chọn ngày nhanh & Slider, chọn ví nhận lương, mức lương dự kiến, quy tắc tiền dư cuối kỳ và căn cứ kỳ ngân sách.
+  - Tích hợp Trang chủ (`PrismHomeScreen`): Thẻ Hero hiển thị badge dải ngày chu kỳ tài chính trực quan.
+  - Tích hợp Báo cáo (`ReportsViewModel`, `PrismReportsScreen`): Bổ sung `ReportPeriod.SALARY_CYCLE` truy vấn theo dải giao dịch thực tế `TransactionRangeRepository`.
+  - Tầng dữ liệu Firestore: Subcollection `users/{uid}/financialPreferences/salaryCycle` kèm bảo mật Firestore Rules.
+
+### Changed
+- Nâng cấp `versionCode = 112` và `versionName = "1.10.0"`.
+- Cập nhật toàn bộ các tài liệu đặc tả hệ thống: `BA_SPEC.md` (`UC-27`, `BR-SALARY-01..03`), `DATA_SPEC.md`, `UI_SPEC.md`, `HANDOVER_LOG.md`.
+
+### Fixed
+- Đảm bảo 100% Unit Tests (136/136 tests) vượt qua kiểm thử thành công trước khi đóng gói Release.
+
 ## [1.9.3] - 2026-08-24
 ### Added
 - **Lịch Sử Thanh Toán Nợ Chi Tiết (`DebtPaymentHistorySheet`)**:
@@ -10,16 +27,19 @@
 - **Cài Đặt Nhắc Nợ Đến Hạn (Due Date Reminder Settings)**:
   - Bổ sung switch bật/tắt nhắc nợ kèm dải nút chọn nhanh số ngày nhắc trước (*Trước 1, 2, 3, 5 ngày*) trong `AddEditDebtSheet`.
   - Mở rộng model `DebtAccount` với `isReminderEnabled` & `reminderDaysBefore`, bổ sung loại thông báo `NotificationType.DEBT_DUE_ALERT`.
+- Đóng gói và phát hành bản Release v1.9.3 chuẩn hóa với Proguard/R8 shrinking.
 
 ### Changed
 - **Bảo Vệ Số Dư Ví Khi Chi Tiêu (Insufficient Balance Protection)**:
   - Chặn tạo/sửa giao dịch chi tiêu (`EXPENSE`) khi số dư ví thanh toán `<= 0` hoặc không đủ tiền (áp dụng cho các ví không phải Thẻ tín dụng `WalletType.CARD`).
   - Hiển thị banner cảnh báo đỏ `⚠️ Số dư ví không đủ` và vô hiệu hóa nút Lưu trong `AddTransactionSheet`.
+- Nâng cấp `versionCode = 111` và `versionName = "1.9.3"`.
 
 ### Fixed
 - **Sửa Triệt Để Lỗi Ghost Alarm / Nhắc Nhở Đã Xóa Vẫn Tự Bắn Thông Báo**:
   - Bổ sung Validation Guard trong `ReminderReceiver`: Luôn kiểm tra sự tồn tại và trạng thái `enabled` của nhắc nhở trong database trước khi hiển thị thông báo, trước khi ghi Firestore và trước khi lên lịch tiếp theo.
   - Hủy sạch `PendingIntent`, `AlarmManager` và notification treo khi người dùng xóa nhắc nhở (`AlarmReminderScheduler.cancel()`), chấm dứt hoàn toàn vòng lặp báo thức mồ côi.
+- Đảm bảo 100% Unit Test suites vượt qua kiểm thử trước khi đóng gói Release.
 
 ## [1.9.2] - 2026-08-24
 ### Added
