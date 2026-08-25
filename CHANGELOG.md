@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.10.1] - 2026-08-25
+### Added
+- **Hợp Nhất Bản Phát Hành Hoàn Chỉnh Release v1.10.1**:
+  - Tích hợp Tháng Tài Chính & Chu Kỳ Lương (Salary Cycle & Financial Month) với Live Preview, tùy biến ngày nhận lương, liên kết ví, mức lương dự kiến và báo cáo theo chu kỳ.
+  - Tích hợp Lịch Sử Thanh Toán Nợ Chi Tiết (`DebtPaymentHistorySheet` + `GetDebtPaymentHistoryUseCase`) với phân loại giảm gốc và lãi vay.
+  - Tích hợp Cài Đặt Nhắc Nợ Đến Hạn (`Due Date Reminder`) trong `AddEditDebtSheet` với lựa chọn nhắc trước 1, 2, 3, 5 ngày.
+  - Tích hợp Bảo Vệ Số Dư Ví (`Insufficient Balance Protection`) cảnh báo và chặn ghi chi tiêu khi số dư không đủ.
+
+### Changed
+- Nâng cấp `versionCode = 113` và `versionName = "1.10.1"`.
+- Đồng bộ toàn diện hệ thống tài liệu đặc tả BA, DATA, UI và Handover Log.
+
+### Fixed
+- Sửa triệt để lỗi Ghost Alarm trong `AlarmReminderScheduler` (kiểm tra trạng thái enabled và hủy sạch PendingIntent khi xóa).
+- Đảm bảo 100% Unit Test suites vượt qua kiểm thử thành công trước khi đóng gói Release.
+
 ## [1.10.0] - 2026-08-24
 ### Added
 - **Tính năng Tháng Tài Chính & Chu Kỳ Lương (Salary Cycle & Financial Month)**:

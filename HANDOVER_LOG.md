@@ -1,8 +1,27 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.0 (versionCode 112)
-- **Trạng thái Build:** 🟢 100% tests PASS (136/136 tests). Tính năng Tháng tài chính / Chu kỳ lương đã hoàn tất và đóng gói bản Release.
+- **Phiên bản hiện tại:** v1.10.1 (versionCode 113)
+- **Trạng thái Build:** 🟢 100% tests PASS. Đã hợp nhất toàn bộ tính năng và đóng gói bản Release v1.10.1.
+
+## [DONE] Task: Đóng Gói & Phát Hành Phiên Bản Release v1.10.1 (versionCode 113)
+
+**Ngày hoàn thành:** 2026-08-25
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Hợp nhất toàn bộ thay đổi từ PR #12 vào `main`: Lịch sử thanh toán nợ (`DebtPaymentHistorySheet`), Cài đặt nhắc nợ đến hạn (`AddEditDebtSheet`), Bảo vệ số dư ví (`Insufficient Balance Protection`), Fix Ghost Alarm trong `AlarmReminderScheduler`.
+  - Nâng cấp `versionCode = 113`, `versionName = "1.10.1"`.
+  - Chạy toàn bộ test suites `gradlew testDebugUnitTest` đảm bảo 100% PASS.
+  - Đóng gói APK Release với R8/Proguard optimization.
+  - Cài đặt APK trực tiếp lên thiết bị Android qua ADB và đẩy tag release lên Git.
+- **Kết quả thực hiện:**
+  - `versionCode` nâng lên 113, `versionName` nâng lên 1.10.1 trong `app/build.gradle.kts`.
+  - Cập nhật `CHANGELOG.md` cho phiên bản `[1.10.1] - 2026-08-25`.
+  - Kiểm thử `gradlew testDebugUnitTest`: **100% tests PASS**.
+  - Đóng gói `gradlew assembleRelease`: **BUILD SUCCESSFUL**.
+  - Nạp thành công vào thiết bị thật `7f4ca06a` qua ADB.
+- **Trạng thái:** `[DONE]`
 
 ## [DONE] Task: Triển Khai Tính Năng Tháng Tài Chính / Chu Kỳ Lương (Salary Cycle & Financial Month)
 
