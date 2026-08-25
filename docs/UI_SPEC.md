@@ -341,6 +341,10 @@ LAYOUT:
 
 ## 13. SCREEN: Nhắc nhở định kỳ (Reminders/Bill)
 ```
+Route: /reminders
+LAYOUT: Danh sách bill định kỳ (tên, số tiền, chu kỳ, ngày nhắc tiếp theo) + FAB thêm mới
+Form thêm: Tên bill, Số tiền, Danh mục, Ví, Chu kỳ (ngày/tuần/tháng), Ngày bắt đầu, Bật/tắt nhắc
+```
 
 ## 15. SCREEN: Quét hóa đơn
 ```
@@ -355,8 +359,7 @@ Route: /goals
 LAYOUT: danh sách GlassCard mục tiêu và form full screen: tên, số tiền, hạn, danh mục, tích lũy/tháng, ảnh.
 STATES: Empty State có CTA; form có validation/loading/error. Toàn màn hình thích ứng Sáng/Tối và VisualStyle.
 ```
-Route: /reminders
-LAYOUT: Danh sách bill định kỳ (tên, số tiền, chu kỳ, ngày nhắc tiếp theo) + FAB thêm mới
+
 ## 17. SCREEN: Cấu hình Tháng tài chính / Chu kỳ lương (Salary Cycle Sheet)
 ```
 Trigger: Cài đặt -> "Tháng tài chính & Chu kỳ lương" hoặc badge kỳ lương trên Trang chủ.
