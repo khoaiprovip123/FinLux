@@ -229,16 +229,17 @@ class AppUpdateManager @Inject constructor(
             return AppResult.Error("Gói ứng dụng không khớp với FinLux (${archiveInfo.packageName} != ${context.packageName}).")
         }
 
-        // 3. Verify Signing Certificate Digest
+        // 3. Verify Signing Certificate Digest (Fail-Closed)
         val currentSignatures = getAppSignatures(context.packageName)
         val apkSignatures = getApkSignatures(apkFile.absolutePath)
-        if (currentSignatures.isNotEmpty() && apkSignatures.isNotEmpty()) {
-            val matches = currentSignatures.any { currentSig ->
-                apkSignatures.any { apkSig -> currentSig.equals(apkSig, ignoreCase = true) }
-            }
-            if (!matches) {
-                return AppResult.Error("Chữ ký bảo mật của bản cập nhật không khớp với ứng dụng FinLux đang cài đặt.")
-            }
+        if (currentSignatures.isEmpty() || apkSignatures.isEmpty()) {
+            return AppResult.Error("Không thể xác minh chứng chỉ số của ứng dụng cập nhật (Chữ ký rỗng).")
+        }
+        val matches = currentSignatures.any { currentSig ->
+            apkSignatures.any { apkSig -> currentSig.equals(apkSig, ignoreCase = true) }
+        }
+        if (!matches) {
+            return AppResult.Error("Chữ ký bảo mật của bản cập nhật không khớp với ứng dụng FinLux đang cài đặt.")
         }
 
         return AppResult.Success(Unit)

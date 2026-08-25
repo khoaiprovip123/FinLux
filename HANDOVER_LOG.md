@@ -2,7 +2,26 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.10.1 (versionCode 113)
-- **Trạng thái Build:** 🟢 100% tests PASS. Đã hợp nhất toàn bộ tính năng và đóng gói bản Release v1.10.1.
+- **Trạng thái Build:** 🟢 100% tests & lint PASS. Đang thực hiện Hardening Sprint (P0 -> P1 -> P2 -> P3).
+
+## [DONE] Task: [P0.1] Harden Release Signing & Fail-Closed OTA Updater
+
+**Ngày hoàn thành:** 2026-08-25
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Audit chữ ký bảo mật của bản Release hiện tại bằng `apksigner` (SHA-1: `eaa9eaabb7b99a1ff18164bf762ee175c5327f47`, SHA-256: `4ca0dab2a3d4947db40889d211a81303ab7705fd5ba0f587f7d8d41d0a769989`).
+  - Đối chiếu 100% khớp với cấu hình Firebase OAuth Android Client để không phá vỡ Google Sign-In, Firebase Auth và update APK.
+  - Xóa bỏ hoàn toàn hardcoded embedded release keystore và fallback password "android" khỏi `.github/workflows/release.yml`.
+  - Thiết lập cơ chế Fail-Fast trên Release Pipeline: Bắt buộc đủ 4 GitHub Secrets (`FINLUX_KEYSTORE_BASE64`, `FINLUX_KEYSTORE_PASSWORD`, `FINLUX_KEY_ALIAS`, `FINLUX_KEY_PASSWORD`), thiếu bất kỳ secret nào pipeline sẽ fail ngay.
+  - Nâng cấp `AppUpdateManager`: Áp dụng cơ chế Fail-Closed (chặn update nếu chữ ký chứng chỉ rỗng hoặc không xác minh được).
+- **Kết quả kiểm thử:**
+  - `gradlew testDebugUnitTest`: **100% PASS**.
+  - `gradlew lintDebug`: **100% PASS** (0 errors).
+- **Danh sách file chỉnh sửa:**
+  - `.github/workflows/release.yml`
+  - `app/src/main/java/com/finlux/app/core/updater/AppUpdateManager.kt`
+- **Trạng thái:** `[DONE]`
 
 ## [DONE] Task: Đóng Gói & Phát Hành Phiên Bản Release v1.10.1 (versionCode 113)
 
