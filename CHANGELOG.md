@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.10.5] - 2026-08-25
+### Changed
+- **Nâng cấp `versionCode = 117` và `versionName = "1.10.5"`.
+- **Đồng bộ giao diện màn hình Thu nhập (`IncomeScreen`)**: Chuyển đổi toàn bộ thẻ (MonthPicker, IncomeHero, 4 Statistic Cards, Theo danh mục, Danh sách thu nhập) sang chuẩn `FinluxPanel` với đường viền mỏng và đổ bóng (border & shadow elevation 5dp) đồng bộ hoàn hảo với màn hình Chi tiêu (`ExpenseScreen`).
+- **Nâng cấp `IncomeViewModel`**: Hỗ trợ tính toán tỷ lệ tăng/giảm thu nhập theo tháng (`changePercent`), biểu đồ phân bổ theo ngày (`dailyStats`), và mở rộng phạm vi nạp giao dịch lên 5,000 bản ghi.
+
 ## [1.10.4] - 2026-08-25
 ### Changed
 - **Nâng cấp `versionCode = 116` và `versionName = "1.10.4"`.

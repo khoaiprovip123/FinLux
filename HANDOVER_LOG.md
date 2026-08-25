@@ -1,8 +1,16 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.4 (versionCode 116)
-- **Trạng thái Build:** 🟢 100% tests & lint PASS. Đã fix lỗi Firebase Emulator CI (JDK 21) và cấu hình Emulator port.
+- **Phiên bản hiện tại:** v1.10.5 (versionCode 117)
+- **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-UI-IncomeScreen-Style-Sync] - Đồng Bộ Giao Diện & Thẻ Thu Nhập Chuẩn FinluxPanel Khớp Chi Tiêu
+- **Status**: `[DONE]`
+- **Goal**: Cập nhật toàn bộ thẻ và component trong `IncomeScreen.kt` (MonthPicker, IncomeHero, 4 Statistic Cards, Theo danh mục, Danh sách thu nhập) sử dụng `FinluxPanel` với đường viền mỏng và đổ bóng (border & shadow elevation 5dp) đồng bộ 100% với giao diện màn hình `ExpenseScreen.kt`.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeViewModel.kt`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Giao diện màn hình Thu nhập đã đồng bộ hoàn hảo phong cách thẻ nổi (border & shadow) với màn hình Chi tiêu.
 
 ### [Task-HOTFIX-CI] - Fix GitHub Actions CI & Chuẩn Bị Build Release
 - **Status**: `[DONE]`
