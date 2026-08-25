@@ -1,4 +1,4 @@
-﻿package com.finlux.app.presentation.budget.modern
+package com.finlux.app.presentation.budget.modern
 
 import com.finlux.app.presentation.budget.*
 import com.finlux.app.core.designsystem.modern.*
@@ -107,17 +107,19 @@ fun ModernBudgetScreen(
                 item {
                     GlassCard(Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            IconButton(onClick = viewModel::previousMonth) { Icon(Icons.Default.ChevronLeft, "Tháng trước") }
+                            IconButton(onClick = viewModel::previousMonth) { Icon(Icons.Default.ChevronLeft, "Kỳ trước") }
                             Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                                Text("Tháng ${state.month.format(DateTimeFormatter.ofPattern("MM/yyyy", Locale("vi", "VN")))}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                if (state.month != YearMonth.now()) Text("Chạm để về tháng hiện tại", Modifier.padding(top = 2.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(state.period?.displayLabel ?: "Đang tải...", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                val isPast = state.period?.let { it.endExclusive <= java.time.Instant.now() } == true
+                                if (isPast) Text("Chạm để về kỳ hiện tại", Modifier.padding(top = 2.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
-                            IconButton(onClick = viewModel::nextMonth, enabled = state.month < YearMonth.now()) { Icon(Icons.Default.ChevronRight, "Tháng sau") }
+                            IconButton(onClick = viewModel::nextMonth, enabled = state.period?.let { it.start < java.time.Instant.now() } == true) { Icon(Icons.Default.ChevronRight, "Kỳ sau") }
                         }
                     }
                 }
-                if (state.month != YearMonth.now()) item {
-                    Button(onClick = viewModel::currentMonth, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.CalendarMonth, null); Text("Về tháng hiện tại", Modifier.padding(start = 8.dp)) }
+                val isPast = state.period?.let { it.endExclusive <= java.time.Instant.now() } == true
+                if (isPast) item {
+                    Button(onClick = viewModel::currentMonth, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.CalendarMonth, null); Text("Về kỳ hiện tại", Modifier.padding(start = 8.dp)) }
                 }
                 item {
                     GlassCard(
@@ -160,20 +162,20 @@ fun ModernBudgetScreen(
             }
         }
     }
-    if (showEditor) BudgetEditor(state.categories, state.month, editing, state.busy, { showEditor = false }) { categoryId, amount ->
+    if (showEditor) BudgetEditor(state.categories, state.period, editing, state.busy, { showEditor = false }) { categoryId, amount ->
         viewModel.save(categoryId, amount, editing?.budget) { showEditor = false }
     }
 }
 
 @Composable
-private fun BudgetEditor(categories: List<Category>, month: YearMonth, initial: BudgetItemUi?, busy: Boolean, onDismiss: () -> Unit, onSave: (String, Long) -> Unit) {
+private fun BudgetEditor(categories: List<Category>, period: com.finlux.app.domain.model.FinancialPeriod?, initial: BudgetItemUi?, busy: Boolean, onDismiss: () -> Unit, onSave: (String, Long) -> Unit) {
     var categoryId by remember(initial) { mutableStateOf(initial?.budget?.categoryId ?: categories.firstOrNull()?.id.orEmpty()) }
     var amount by remember(initial) { mutableStateOf(initial?.budget?.limitAmount?.value?.toString().orEmpty()) }
     Dialog(onDismissRequest = onDismiss) {
         GlassDialogSurface {
             Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Text(if (initial == null) "Thêm ngân sách" else "Sửa ngân sách", style = MaterialTheme.typography.titleLarge)
-                Text("Áp dụng tháng ${month.monthValue}/${month.year}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Áp dụng: ${period?.displayLabel ?: "Đang tải..."}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Danh mục", fontWeight = FontWeight.Bold)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(categories) { category -> FilterChip(categoryId == category.id, { categoryId = category.id }, { Text(category.name) }) } }
                 OutlinedTextField(

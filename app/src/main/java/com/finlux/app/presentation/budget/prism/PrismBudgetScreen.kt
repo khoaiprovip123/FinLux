@@ -104,7 +104,7 @@ fun PrismBudgetScreen(
         topBar = {
             FinluxScreenHeader(
                 title = "Ngân sách chi tiêu",
-                subtitle = "Tháng ${state.month.monthValue}/${state.month.year}",
+                subtitle = state.period?.displayLabel ?: "Đang tải...",
                 onBack = onBack,
             )
         },
@@ -135,7 +135,7 @@ fun PrismBudgetScreen(
                     }
 
                     Text(
-                        text = "Tháng ${state.month.monthValue}, ${state.month.year}",
+                        text = state.period?.displayLabel ?: "Đang tải...",
                         style = FinluxTextStyles.SectionTitle,
                         fontWeight = FontWeight.Bold,
                         color = tokens.onSurface,
@@ -439,7 +439,7 @@ fun PrismBudgetScreen(
         FinluxDialog(
             onDismissRequest = { pendingDelete = null },
             title = "Xóa ngân sách?",
-            message = "Ngân sách hạn mức ${formatVndAmount(budget.limitAmount.value)} sẽ bị gỡ bỏ khỏi tháng ${state.month.monthValue}/${state.month.year}.",
+            message = "Ngân sách hạn mức ${formatVndAmount(budget.limitAmount.value)} sẽ bị gỡ bỏ khỏi ${state.period?.displayLabel ?: "kỳ này"}.",
             confirmLabel = "Xác nhận xóa",
             dismissLabel = "Hủy",
             onConfirm = {

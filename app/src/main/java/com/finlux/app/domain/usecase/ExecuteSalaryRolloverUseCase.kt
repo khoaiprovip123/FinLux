@@ -48,22 +48,15 @@ class ExecuteSalaryRolloverUseCase @Inject constructor(
         val previousPeriod = financialPeriodResolver.resolvePreviousPeriod(config, now)
         val cycleKey = previousPeriod.key
 
-        if (salaryCycleRepository.isRolloverProcessed(cycleKey)) {
-            return AppResult.Success(SalaryRolloverResult.AlreadyProcessed(cycleKey))
-        }
-
         val salaryWallet = wallets.find { it.id == salaryWalletId }
             ?: return AppResult.Error("Không tìm thấy ví nhận lương")
 
         val balanceToMove = salaryWallet.balance.value
-        if (balanceToMove <= 0L) {
-            salaryCycleRepository.markRolloverProcessed(cycleKey)
-            return AppResult.Success(SalaryRolloverResult.ZeroBalance(cycleKey))
-        }
-
         val note = "Tích lũy kết chuyển chu kỳ lương ($cycleKey)"
+
         return when (
-            val transferResult = transactionRepository.transferBetweenWallets(
+            val atomicResult = transactionRepository.executeSalaryRolloverAtomic(
+                cycleKey = cycleKey,
                 sourceWalletId = salaryWalletId,
                 destinationWalletId = savingsWalletId,
                 amount = balanceToMove,
@@ -72,18 +65,25 @@ class ExecuteSalaryRolloverUseCase @Inject constructor(
             )
         ) {
             is AppResult.Success -> {
-                salaryCycleRepository.markRolloverProcessed(cycleKey)
-                AppResult.Success(
-                    SalaryRolloverResult.Transferred(
-                        cycleKey = cycleKey,
-                        amount = balanceToMove,
-                        fromWalletId = salaryWalletId,
-                        toWalletId = savingsWalletId,
+                if (balanceToMove <= 0L) {
+                    AppResult.Success(SalaryRolloverResult.ZeroBalance(cycleKey))
+                } else {
+                    AppResult.Success(
+                        SalaryRolloverResult.Transferred(
+                            cycleKey = cycleKey,
+                            amount = balanceToMove,
+                            fromWalletId = salaryWalletId,
+                            toWalletId = savingsWalletId,
+                        )
                     )
-                )
+                }
             }
             is AppResult.Error -> {
-                AppResult.Error("Không thể chuyển tiền sang ví tích lũy: ${transferResult.message}", transferResult.cause)
+                if (atomicResult.message.contains("Chu kỳ lương này đã được kết chuyển")) {
+                    AppResult.Success(SalaryRolloverResult.AlreadyProcessed(cycleKey))
+                } else {
+                    AppResult.Error("Không thể kết chuyển lương: ${atomicResult.message}", atomicResult.cause)
+                }
             }
         }
     }

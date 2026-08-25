@@ -18,14 +18,16 @@ class FirebaseBudgetRepository(
     private val firestore: FirebaseFirestore,
 ) : BudgetRepository {
 
-    override fun observeBudgets(month: YearMonth): Flow<List<Budget>> = callbackFlow {
+    override fun observeBudgets(periodKey: String): Flow<List<Budget>> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) {
             close()
             return@callbackFlow
         }
         val registration = firestore.collection("users").document(uid).collection("budgets")
-            .whereEqualTo("month", month.toString())
+            // Backward compatibility: try querying by periodKey first. If the backend is old, it might still use 'month'.
+            // In the new schema, we query by periodKey.
+            .whereEqualTo("periodKey", periodKey)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
                 else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toBudget() })
@@ -35,7 +37,7 @@ class FirebaseBudgetRepository(
 
     override suspend fun upsertBudget(budget: Budget): AppResult<String> = firebaseResult("Không thể lưu ngân sách") {
         val uid = requireUid()
-        val id = budget.id.ifBlank { "${budget.categoryId}_${budget.month}" }
+        val id = budget.id.ifBlank { "${budget.categoryId}_${budget.periodKey}" }
         firestore.collection("users").document(uid).collection("budgets").document(id)
             .set(budget.copy(id = id).toBudgetMap()).await()
         id
@@ -52,7 +54,11 @@ class FirebaseBudgetRepository(
 
 internal fun Budget.toBudgetMap(): Map<String, Any?> = mapOf(
     "categoryId" to categoryId,
-    "month" to month.toString(),
+    "periodKey" to periodKey,
+    "periodStart" to periodStart?.toEpochMilli(),
+    "periodEndExclusive" to periodEndExclusive?.toEpochMilli(),
+    "periodBasis" to periodBasis,
+    "month" to month?.toString(), // Deprecated but keep for old clients
     "limitAmount" to limitAmount.value,
     "spentAmount" to spentAmount.value,
     "notified80" to notified80,
@@ -60,10 +66,14 @@ internal fun Budget.toBudgetMap(): Map<String, Any?> = mapOf(
 )
 
 internal fun DocumentSnapshot.toBudget(): Budget? = runCatching {
+    val legacyMonthString = getString("month")
+    val parsedMonth = if (!legacyMonthString.isNullOrEmpty()) YearMonth.parse(legacyMonthString) else null
+    val pKey = getString("periodKey") ?: legacyMonthString ?: ""
     Budget(
         id = id,
         categoryId = requireNotNull(getString("categoryId")),
-        month = YearMonth.parse(requireNotNull(getString("month"))),
+        periodKey = pKey,
+        month = parsedMonth,
         limitAmount = Money(getLong("limitAmount") ?: 0L),
         spentAmount = Money(getLong("spentAmount") ?: 0L),
         notified80 = getBoolean("notified80") ?: false,

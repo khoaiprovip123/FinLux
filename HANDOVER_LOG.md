@@ -2,7 +2,21 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.10.2 (versionCode 114)
-- **Trạng thái Build:** 🟢 100% tests & lint PASS. Hoàn thành Hardening Sprint P0 (P0.1 -> P0.7). Đã phát hành Release v1.10.2.
+- **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-HOTFIX-P0] - Hardening Sprint Phase 2 (HOTFIX-04 -> 06)
+- **Status**: `[DONE]`
+- **Goal**: Implement Reminder Single Source of Truth, Payment Action Idempotency, and Firebase Emulator tests for Firestore Rules.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`: Removed local `nextTriggerDate` and `notifications` Firestore updates, inject `paymentActionId`.
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`: Enhanced `addWithBalanceUpdate` to support explicit transaction ID for idempotency check.
+  - `.github/workflows/firebase-ci.yml`: Added GitHub action for emulator testing.
+  - `functions/test/firestore.rules.test.ts`: Added mocha tests for Firestore Rules (`balance`, `salaryRollovers`, `budget.spentAmount`).
+  - `functions/package.json`: Added `mocha` and `test` script.
+- **Result**: Successfully enforced atomic properties for reminder payments and created CI coverage for critical rules. Version bumped to 1.10.3.
+
+### [Task-HOTFIX-P0] - Hardening Sprint Phase 1 (HOTFIX-01 -> 03)
+Hoàn thành Hardening Sprint P0 (P0.1 -> P0.7). Đã phát hành Release v1.10.2.
 
 ## [DONE] Task: [P0.6 & P0.7] Reminder Idempotency & Action "Đã thanh toán" Verification
 

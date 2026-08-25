@@ -110,6 +110,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val fallbackWalletId = intent.getStringExtra("walletId").orEmpty()
         val recurrenceName = intent.getStringExtra("recurrence")
         val fallbackRecurrence = recurrenceName?.let { runCatching { ReminderRecurrence.valueOf(it) }.getOrNull() } ?: ReminderRecurrence.MONTHLY
+        val paymentActionId = intent.getStringExtra("paymentActionId")
 
         val notifications = context.getSystemService(NotificationManager::class.java)
 
@@ -122,6 +123,7 @@ class ReminderReceiver : BroadcastReceiver() {
                         if (fallbackAmount > 0 && fallbackWalletId.isNotBlank()) {
                             val addResult = addTransactionUseCase(
                                 FinanceTransaction(
+                                    id = paymentActionId.orEmpty(),
                                     type = TransactionType.EXPENSE,
                                     amount = Money(fallbackAmount),
                                     categoryId = fallbackCategoryId.ifBlank { null },
@@ -226,23 +228,12 @@ class ReminderReceiver : BroadcastReceiver() {
                             "Đến hạn xác nhận giao dịch"
                         }
 
-                        // 4. Lưu thông báo vào Firestore
-                        notificationRepository.saveNotification(
-                            AppNotification(
-                                id = UUID.randomUUID().toString(),
-                                title = effectiveTitle,
-                                body = body,
-                                amount = Money(effectiveAmount),
-                                reminderId = id,
-                                categoryId = effectiveCategoryId.ifBlank { null },
-                                walletId = effectiveWalletId.ifBlank { null },
-                                timestamp = Instant.now(),
-                                isRead = false,
-                                isPaid = false,
-                            )
-                        )
+                        // 4. Bỏ qua việc lưu thông báo vào Firestore (Cloud Function sẽ làm việc này)
 
                         // 5. Bắn thông báo Android System Notification
+                        val currentEpochDay = Instant.now().toEpochMilli() / 86400000L
+                        val generatedPaymentActionId = "pay_rem_${id}_$currentEpochDay"
+
                         val openAppIntent = Intent(context, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                             putExtra("destination", "notifications")
@@ -262,6 +253,7 @@ class ReminderReceiver : BroadcastReceiver() {
                             putExtra("amount", effectiveAmount)
                             putExtra("categoryId", effectiveCategoryId)
                             putExtra("walletId", effectiveWalletId)
+                            putExtra("paymentActionId", generatedPaymentActionId)
                         }
                         val payPending = PendingIntent.getBroadcast(
                             context,
@@ -317,9 +309,8 @@ class ReminderReceiver : BroadcastReceiver() {
                                 .build(),
                         )
 
-                        // 6. Cập nhật nextTriggerDate vào Database & lên lịch báo thức kế tiếp
+                        // 6. Tính toán lịch báo thức kế tiếp cục bộ (việc ghi DB do Cloud Function đảm nhiệm)
                         val next = nextTrigger(Instant.now(), effectiveRecurrence)
-                        reminderRepository.upsertReminder(activeReminder.copy(nextTriggerDate = next))
 
                         val nextIntent = Intent(context, ReminderReceiver::class.java).apply {
                             action = ACTION_TRIGGER

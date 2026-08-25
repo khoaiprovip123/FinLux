@@ -67,7 +67,11 @@ data class FinanceTransaction(
 data class Budget(
     val id: String,
     val categoryId: String,
-    val month: YearMonth,
+    val periodKey: String,
+    val periodStart: Instant? = null,
+    val periodEndExclusive: Instant? = null,
+    val periodBasis: String? = null,
+    val month: YearMonth? = null, // Deprecated, kept for backward compatibility during migration
     val limitAmount: Money,
     val spentAmount: Money,
     val notified80: Boolean,

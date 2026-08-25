@@ -32,32 +32,62 @@ type ReminderDocument = {
   walletId?: string;
 };
 
-function monthKey(date: Date): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: FINANCE_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(date);
-  const year = parts.find((part) => part.type === "year")?.value;
-  const month = parts.find((part) => part.type === "month")?.value;
-  if (!year || !month) throw new Error("Không thể xác định tháng tài chính");
-  return `${year}-${month}`;
+type SalaryCycleConfig = {
+  enabled?: boolean;
+  baseDay?: number;
+  budgetPeriodBasis?: "CALENDAR_MONTH" | "SALARY_CYCLE";
+  financeTimeZone?: string;
+};
+
+async function getSalaryConfig(uid: string): Promise<SalaryCycleConfig> {
+  const snapshot = await db.doc(`users/${uid}/preferences/salaryCycle`).get();
+  return snapshot.exists ? (snapshot.data() as SalaryCycleConfig) : {};
 }
 
-function monthBounds(month: string): {start: Timestamp; end: Timestamp} {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const next = new Date(Date.UTC(year, monthNumber, 1));
-  const nextMonth = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
-  return {
-    start: Timestamp.fromDate(new Date(`${month}-01T00:00:00+07:00`)),
-    end: Timestamp.fromDate(new Date(`${nextMonth}-01T00:00:00+07:00`)),
-  };
+function resolvePeriod(date: Date, config: SalaryCycleConfig): { key: string; start: Timestamp; end: Timestamp; basis: string } {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  
+  if (!config.enabled || config.budgetPeriodBasis === "CALENDAR_MONTH" || config.budgetPeriodBasis === undefined) {
+    const start = new Date(Date.UTC(year, month, 1));
+    const end = new Date(Date.UTC(year, month + 1, 1));
+    const mStr = String(month + 1).padStart(2, "0");
+    return {
+      key: `month:${year}-${mStr}`,
+      start: Timestamp.fromDate(start),
+      end: Timestamp.fromDate(end),
+      basis: "CALENDAR_MONTH"
+    };
+  } else {
+    const baseDay = config.baseDay || 5;
+    
+    // Helper to get safe day (handles 31st etc)
+    const getSafeDay = (y: number, m: number, d: number) => {
+      const maxDays = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      return Math.min(d, maxDays);
+    };
+
+    let start = new Date(Date.UTC(year, month, getSafeDay(year, month, baseDay)));
+    if (date < start) {
+      start = new Date(Date.UTC(year, month - 1, getSafeDay(year, month - 1, baseDay)));
+    }
+    const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, getSafeDay(start.getUTCFullYear(), start.getUTCMonth() + 1, baseDay)));
+    
+    const yStr = start.getUTCFullYear();
+    const mStr = String(start.getUTCMonth() + 1).padStart(2, "0");
+    const dStr = String(start.getUTCDate()).padStart(2, "0");
+    return {
+      key: `salary:${yStr}-${mStr}-${dStr}`,
+      start: Timestamp.fromDate(start),
+      end: Timestamp.fromDate(end),
+      basis: "SALARY_CYCLE"
+    };
+  }
 }
 
-function shiftedMonth(month: string, delta: number): string {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const value = new Date(Date.UTC(year, monthNumber - 1 + delta, 1));
-  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}`;
+function resolveNextPeriod(date: Date, config: SalaryCycleConfig): { key: string; start: Timestamp; end: Timestamp; basis: string } {
+    const current = resolvePeriod(date, config);
+    return resolvePeriod(current.end.toDate(), config);
 }
 
 function isExpense(data: TransactionDocument | undefined): data is ExpenseTransactionDocument {
@@ -90,12 +120,11 @@ async function sendUserPush(
   }
 }
 
-async function reconcileBudget(uid: string, categoryId: string, month: string): Promise<void> {
-  const budgetRef = db.doc(`users/${uid}/budgets/${categoryId}_${month}`);
+async function reconcileBudget(uid: string, categoryId: string, periodKey: string, start: Timestamp, end: Timestamp): Promise<void> {
+  const budgetRef = db.doc(`users/${uid}/budgets/${categoryId}_${periodKey}`);
   const budgetSnapshot = await budgetRef.get();
   if (!budgetSnapshot.exists) return;
 
-  const {start, end} = monthBounds(month);
   const transactionSnapshot = await db.collection(`users/${uid}/transactions`)
     .where("date", ">=", start)
     .where("date", "<", end)
@@ -137,7 +166,7 @@ async function reconcileBudget(uid: string, categoryId: string, month: string): 
 
     transaction.update(budgetRef, updates);
     if (pendingPush) {
-      const notificationRef = db.doc(`users/${uid}/notifications/budget_${categoryId}_${month}_${pendingPush.threshold}`);
+      const notificationRef = db.doc(`users/${uid}/notifications/budget_${categoryId}_${periodKey}_${pendingPush.threshold}`);
       transaction.set(notificationRef, {
         title: pendingPush.title,
         body: pendingPush.body,
@@ -169,40 +198,78 @@ export const onTransactionWrite = onDocumentWritten(
     const uid = event.params.uid;
     const before = event.data?.before.data() as TransactionDocument | undefined;
     const after = event.data?.after.data() as TransactionDocument | undefined;
-    const affected = new Map<string, {categoryId: string; month: string}>();
+    const affected = new Map<string, {categoryId: string; periodKey: string; start: Timestamp; end: Timestamp}>();
+    
+    let config: SalaryCycleConfig | undefined;
 
     for (const candidate of [before, after]) {
       if (!isExpense(candidate)) continue;
-      const month = monthKey(candidate.date.toDate());
-      affected.set(`${candidate.categoryId}_${month}`, {categoryId: candidate.categoryId, month});
+      if (!config) config = await getSalaryConfig(uid);
+      const period = resolvePeriod(candidate.date.toDate(), config);
+      affected.set(`${candidate.categoryId}_${period.key}`, {
+        categoryId: candidate.categoryId, 
+        periodKey: period.key,
+        start: period.start,
+        end: period.end
+      });
     }
 
-    await Promise.all([...affected.values()].map(({categoryId, month}) =>
-      reconcileBudget(uid, categoryId, month),
+    await Promise.all([...affected.values()].map(({categoryId, periodKey, start, end}) =>
+      reconcileBudget(uid, categoryId, periodKey, start, end),
     ));
   },
 );
 
 export const monthlyBudgetReset = onSchedule(
-  {schedule: "0 0 1 * *", timeZone: FINANCE_TIME_ZONE, region: "asia-southeast1"},
+  {schedule: "0 0 * * *", timeZone: FINANCE_TIME_ZONE, region: "asia-southeast1"},
   async () => {
-    const currentMonth = monthKey(new Date());
-    const previousMonth = shiftedMonth(currentMonth, -1);
+    // Note: for salary cycle, the budget resets on the salary day, not necessarily the 1st of the month.
+    // So we should run this function daily and check if today is the boundary of the next period.
+    const now = new Date();
     const users = await db.collection("users").get();
 
     for (const user of users.docs) {
+      const config = await getSalaryConfig(user.id);
+      
+      // Determine what period we are currently in
+      const currentPeriod = resolvePeriod(now, config);
+      
+      // Determine what the PREVIOUS period was by subtracting 15 days from the start of the current period
+      // This is a robust way to land in the previous period regardless of whether it's month or salary based.
+      const previousDate = new Date(currentPeriod.start.toDate().getTime() - 15 * 24 * 60 * 60 * 1000);
+      const previousPeriod = resolvePeriod(previousDate, config);
+      
+      // We only want to duplicate budgets if today is EXACTLY the start of the current period.
+      // E.g. if today is baseDay (or 1st), then we roll over.
+      const todayString = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
+      const startString = `${currentPeriod.start.toDate().getUTCFullYear()}-${currentPeriod.start.toDate().getUTCMonth()}-${currentPeriod.start.toDate().getUTCDate()}`;
+      
+      if (todayString !== startString) {
+          continue; // Not the boundary day for this user
+      }
+
       const previousBudgets = await user.ref.collection("budgets")
-        .where("month", "==", previousMonth)
+        .where("periodKey", "==", previousPeriod.key)
         .get();
-      if (previousBudgets.empty) continue;
+        
+      // Fallback: If no previousBudgets with periodKey, try the old 'month' field for legacy transition
+      const legacyBudgets = previousBudgets.empty ? await user.ref.collection("budgets")
+        .where("month", "==", previousPeriod.key.replace("month:", ""))
+        .get() : previousBudgets;
+
+      if (legacyBudgets.empty) continue;
 
       const batch = db.batch();
-      for (const previous of previousBudgets.docs) {
+      for (const previous of legacyBudgets.docs) {
         const categoryId = String(previous.get("categoryId") ?? "");
         if (!categoryId) continue;
-        batch.set(user.ref.collection("budgets").doc(`${categoryId}_${currentMonth}`), {
+        batch.set(user.ref.collection("budgets").doc(`${categoryId}_${currentPeriod.key}`), {
           categoryId,
-          month: currentMonth,
+          periodKey: currentPeriod.key,
+          periodStart: currentPeriod.start.toMillis(),
+          periodEndExclusive: currentPeriod.end.toMillis(),
+          periodBasis: currentPeriod.basis,
+          month: currentPeriod.key.replace("month:", ""), // Keep for backward compatibility
           limitAmount: Number(previous.get("limitAmount") ?? 0),
           spentAmount: 0,
           notified80: false,

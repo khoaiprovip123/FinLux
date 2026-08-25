@@ -109,14 +109,46 @@ service cloud.firestore {
       match /wallets/{docId} {
         allow read: if isOwner(uid);
         allow delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
+        allow create: if isOwner(uid)
           && request.resource.data.keys().hasOnly([
-            'name', 'type', 'balance', 'color', 'isDefault', 'createdAt'
+            'name', 'type', 'balance', 'color', 'isDefault', 'createdAt', 'status', 'archivedAt', 'lastTransactionId'
           ])
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0
           && request.resource.data.balance is int
-          && request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other'];
+          && request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other']
+          && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived'])
+          && (!('archivedAt' in request.resource.data) || request.resource.data.archivedAt is timestamp);
+
+        allow update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'name', 'type', 'balance', 'color', 'isDefault', 'createdAt', 'status', 'archivedAt', 'lastTransactionId'
+          ])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.balance is int
+          && request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other']
+          && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived'])
+          && (!('archivedAt' in request.resource.data) || request.resource.data.archivedAt is timestamp)
+          && (
+            request.resource.data.balance == resource.data.balance
+            || (
+              'lastTransactionId' in request.resource.data
+              && request.resource.data.lastTransactionId is string
+              && request.resource.data.lastTransactionId != ""
+              && (
+                // Calculate the delta of the transaction in this batch
+                let txId = request.resource.data.lastTransactionId;
+                let txPath = /databases/$(database)/documents/users/$(uid)/transactions/$(txId);
+                let txAfter = existsAfter(txPath) ? getAfter(txPath).data : null;
+                let txBefore = exists(txPath) ? get(txPath).data : null;
+                let txAfterDelta = txAfter != null && txAfter.walletId == docId ? transactionDelta(txAfter) : 0;
+                let txBeforeDelta = txBefore != null && txBefore.walletId == docId ? transactionDelta(txBefore) : 0;
+                let delta = txAfterDelta - txBeforeDelta;
+                request.resource.data.balance == resource.data.balance + delta
+              )
+            )
+          );
       }
 
       // Subcollection: Budgets
@@ -178,6 +210,15 @@ service cloud.firestore {
           && preferenceId == 'salaryCycle'
           && validSalaryCyclePreference(request.resource.data);
         allow delete: if isOwner(uid) && preferenceId == 'salaryCycle';
+      }
+
+      // Subcollection: Salary Rollovers
+      match /salaryRollovers/{docId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['cycleKey', 'processedAt'])
+          && request.resource.data.cycleKey is string
+          && request.resource.data.processedAt is timestamp;
       }
 
       // Subcollection: Debts & Debt Payments

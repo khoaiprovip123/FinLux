@@ -26,9 +26,15 @@ import kotlinx.coroutines.launch
 import java.time.YearMonth
 import javax.inject.Inject
 
+import com.finlux.app.domain.model.FinancialPeriod
+import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.repository.SalaryCycleRepository
+import com.finlux.app.domain.usecase.FinancialPeriodResolver
+import java.time.Instant
+
 data class BudgetItemUi(val budget: Budget, val category: Category?, val status: BudgetStatus)
 data class BudgetUiState(
-    val month: YearMonth = YearMonth.now(),
+    val period: FinancialPeriod? = null,
     val items: List<BudgetItemUi> = emptyList(),
     val categories: List<Category> = emptyList(),
     val busy: Boolean = false,
@@ -40,54 +46,50 @@ data class BudgetUiState(
 class BudgetViewModel @Inject constructor(
     budgetRepository: BudgetRepository,
     categoryRepository: CategoryRepository,
+    salaryCycleRepository: SalaryCycleRepository,
+    private val financialPeriodResolver: FinancialPeriodResolver,
     private val transactionRepository: TransactionRepository,
     private val getBudgetStatus: GetBudgetStatusUseCase,
     private val saveBudget: SaveBudgetUseCase,
     private val deleteBudget: DeleteBudgetUseCase,
 ) : ViewModel() {
-    private val selectedMonth = MutableStateFlow(YearMonth.now())
+    private val configFlow = salaryCycleRepository.observeConfig().stateIn(viewModelScope, SharingStarted.Eagerly, SalaryCycleConfig())
+    private val selectedTime = MutableStateFlow(Instant.now())
     private val action = MutableStateFlow(false to null as String?)
 
+    private val currentPeriod = combine(selectedTime, configFlow) { time, config ->
+        financialPeriodResolver.resolvePeriodContaining(time, config)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val state = combine(
-        selectedMonth.flatMapLatest { month -> budgetRepository.observeBudgets(month) },
+        currentPeriod,
+        currentPeriod.flatMapLatest { p -> if (p == null) kotlinx.coroutines.flow.flowOf(emptyList()) else budgetRepository.observeBudgets(p.key) },
         categoryRepository.observeCategories(),
-        selectedMonth.flatMapLatest { month -> transactionRepository.observeMonth(month) },
-        selectedMonth,
+        currentPeriod.flatMapLatest { p ->
+            if (p == null) kotlinx.coroutines.flow.flowOf(emptyList()) else transactionRepository.observePeriod(p.start, p.endExclusive)
+        },
         action,
-    ) { budgets, categories, monthTransactions, month, actionState ->
+    ) { period, budgets, categories, monthTransactions, actionState ->
         val byId = categories.associateBy(Category::id)
         val byName = categories.associateBy { it.name.lowercase().trim() }
 
-        // Build spent map: primary key = categoryId, secondary fallback = category name (for legacy txs)
         val spentByCategoryId = monthTransactions
-            .filter { it.type == TransactionType.EXPENSE }
-            .groupBy { tx ->
-                when {
-                    tx.categoryId != null && tx.categoryId.isNotBlank() -> tx.categoryId
-                    // Legacy: some old transactions may have stored category name as categoryId
-                    else -> null
-                }
-            }
+            .filter { it.type == TransactionType.EXPENSE && it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX) }
+            .groupBy { tx -> tx.categoryId?.takeIf { it.isNotBlank() } }
             .filterKeys { it != null }
             .mapKeys { it.key!! }
             .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
 
-        // Name-based spent map for legacy transactions whose categoryId was a name string
         val spentByCategoryName = monthTransactions
-            .filter { it.type == TransactionType.EXPENSE && it.categoryId != null }
+            .filter { it.type == TransactionType.EXPENSE && it.categoryId != null && it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX) }
             .groupBy { tx -> tx.categoryId!!.lowercase().trim() }
             .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
 
         val items = budgets.map { budget ->
             val cat = byId[budget.categoryId]
-            // Dynamic spentAmount: SUM of both ID-matched and name-matched (legacy fallback) transactions
-            // Using addition (not ?:) so both modern and legacy transactions are always accumulated.
-            // Guard: only add name-based amount if name ≠ categoryId (avoids double-count when they happen to be equal)
             val byIdAmount = spentByCategoryId[budget.categoryId] ?: 0L
             val catNameLower = cat?.name?.lowercase()?.trim()
-            val byNameAmount = if (catNameLower != null &&
-                catNameLower != budget.categoryId.lowercase().trim()
-            ) {
+            val byNameAmount = if (catNameLower != null && catNameLower != budget.categoryId.lowercase().trim()) {
                 spentByCategoryName[catNameLower] ?: 0L
             } else 0L
             val dynamicSpent = byIdAmount + byNameAmount
@@ -96,7 +98,7 @@ class BudgetViewModel @Inject constructor(
         }.sortedByDescending { it.status.progress }
 
         BudgetUiState(
-            month = month,
+            period = period,
             items = items,
             categories = categories.filter { it.type == CategoryType.EXPENSE },
             busy = actionState.first,
@@ -104,16 +106,25 @@ class BudgetViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BudgetUiState())
 
-    fun previousMonth() { selectedMonth.value = selectedMonth.value.minusMonths(1) }
-    fun nextMonth() { if (selectedMonth.value < YearMonth.now()) selectedMonth.value = selectedMonth.value.plusMonths(1) }
-    fun currentMonth() { selectedMonth.value = YearMonth.now() }
+    fun previousMonth() {
+        val p = currentPeriod.value ?: return
+        selectedTime.value = p.start.minusMillis(1)
+    }
+    fun nextMonth() {
+        val p = currentPeriod.value ?: return
+        if (p.start < Instant.now()) {
+            selectedTime.value = p.endExclusive.plusMillis(1)
+        }
+    }
+    fun currentMonth() { selectedTime.value = Instant.now() }
 
     fun save(categoryId: String, limit: Long, existing: Budget?, onSaved: () -> Unit) = viewModelScope.launch {
         action.value = true to null
-        val month = selectedMonth.value
-        // spentAmount stored = 0; real value computed dynamically from transactions above
+        val period = currentPeriod.value ?: return@launch
         val budget = existing?.copy(limitAmount = Money(limit)) ?: Budget(
-            id = "${categoryId}_${month}", categoryId = categoryId, month = month,
+            id = "${categoryId}_${period.key}", categoryId = categoryId,
+            periodKey = period.key, periodStart = period.start, periodEndExclusive = period.endExclusive,
+            periodBasis = period.basis.name,
             limitAmount = Money(limit), spentAmount = Money(0),
             notified80 = false, notified100 = false,
         )

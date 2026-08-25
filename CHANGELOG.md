@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.3] - 2026-08-25
+### Added
+- **Hardening CI/CD & Firebase Rules**: Tích hợp Firebase Emulator Tests kiểm thử Firestore rules tự động trên GitHub Actions (bảo vệ ghi balance & salaryRollovers).
+
+### Changed
+- **Nâng cấp `versionCode = 115` và `versionName = "1.10.3"`.
+- **Payment Action Idempotency**: Đảm bảo thanh toán nhắc nhở (Reminder) là nguyên tử (Atomic) và ngăn chặn bấm "Đã thanh toán" nhiều lần sinh ra giao dịch trùng lặp qua `paymentActionId`.
+- Loại bỏ tính toán và lưu `nextTriggerDate` trên Android `AlarmReminderScheduler` để nhường Cloud Function làm Canonical Owner (Single Source of Truth).
+
 ## [1.10.2] - 2026-08-25
 ### Added
 - **Hardening Sprint P0 (Bảo Mật & Tính Toàn Vẹn Dữ Liệu Tài Chính)**:

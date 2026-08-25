@@ -19,6 +19,9 @@ interface TransactionRepository {
      *  to compute dynamic budget.spentAmount per category without relying on stored Firestore field. */
     fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>>
 
+    /** Observes all transactions in a specific time range. Used for generic financial periods. */
+    fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>>
+
     /** Creates the transaction and changes wallet.balance in one Firestore transaction (BR-14). */
     suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String>
 
@@ -33,6 +36,16 @@ interface TransactionRepository {
 
     /** Creates the transfer pair and changes both wallet balances atomically (BR-07/BR-14). */
     suspend fun transferBetweenWallets(
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+    ): AppResult<Unit>
+
+    /** Atomically executes salary rollover by transferring funds and writing the rollover marker. */
+    suspend fun executeSalaryRolloverAtomic(
+        cycleKey: String,
         sourceWalletId: String,
         destinationWalletId: String,
         amount: Long,
@@ -54,7 +67,7 @@ interface CategoryRepository {
 }
 
 interface BudgetRepository {
-    fun observeBudgets(month: YearMonth): Flow<List<Budget>>
+    fun observeBudgets(periodKey: String): Flow<List<Budget>>
     suspend fun upsertBudget(budget: Budget): AppResult<String>
     suspend fun deleteBudget(budget: Budget): AppResult<Unit>
 }

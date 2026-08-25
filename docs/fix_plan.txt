@@ -1,0 +1,1011 @@
+FINLUX v1.10.2 — REMAINING HARDENING & REMEDIATION PLAN
+
+Trạng thái audit: Sau Hardening P0 vòng 1
+Mục tiêu: xử lý các P0/P1 còn thiếu hoặc chưa đạt sau commit 1063b3075e2bd5a8a0d3eb7383877c5a42a7fcd7 trước khi phát hành v1.10.2.
+
+1. TÓM TẮT ĐÁNH GIÁ HIỆN TẠI
+
+Các phần đã cải thiện tốt:
+
+P0.1 Release Signing           → gần hoàn tất
+P0.2 Non-negative Wallet       → đã cải thiện tốt
+P0.7 Payment result checking   → đã sửa phần chính
+Android Unit Test              → PASS
+Android Lint                   → PASS
+Debug Build                    → PASS
+
+Các phần chưa đạt Definition of Done:
+
+P0.3 Wallet/Ledger Security    → còn regression Firestore Rules
+P0.4 Financial Period Engine   → mới có engine, chưa tích hợp runtime đầy đủ
+P0.5 Salary Rollover           → chưa atomic, chưa runtime, chưa có rules
+P0.6 Reminder Source of Truth  → vẫn tồn tại 2 scheduler
+P0.7 Payment Idempotency       → chưa chống double tap / retry duplicate
+P1 Firebase Test Coverage      → chưa có Emulator/Rules/Functions CI
+
+2. THỨ TỰ ƯU TIÊN BẮT BUỘC
+
+HOTFIX-01
+Firestore Rules compatibility & Wallet security
+        ↓
+HOTFIX-02
+Salary Rollover atomic command
+        ↓
+HOTFIX-03
+FinancialPeriodResolver integration
+        ↓
+HOTFIX-04
+Reminder single source of truth
+        ↓
+HOTFIX-05
+Payment action idempotency
+        ↓
+HOTFIX-06
+Firebase Emulator + Functions CI
+        ↓
+Release Regression
+        ↓
+v1.10.2 Production Release
+
+Không release trước khi hoàn tất HOTFIX-01 → HOTFIX-06.
+
+3. HOTFIX-01 — FIRESTORE RULES COMPATIBILITY & WALLET SECURITY
+
+3.1. Vấn đề hiện tại
+
+FirebaseWalletRepository hiện đã bổ sung:
+
+status
+archivedAt
+
+vào Wallet schema.
+
+Nhưng firestore.rules vẫn chỉ whitelist:
+
+name
+type
+balance
+color
+isDefault
+createdAt
+
+Điều này có thể khiến Firebase production từ chối:
+
+Create Wallet
+Edit Wallet
+Archive Wallet
+
+với:
+
+PERMISSION_DENIED
+
+3.2. Root Cause
+
+Application schema và Firestore Security Rules không được cập nhật đồng bộ.
+
+3.3. File cần xử lý
+
+firestore.rules
+
+app/src/main/java/com/finlux/app/data/remote/firebase/
+    FirebaseWalletRepository.kt
+
+app/src/main/java/com/finlux/app/domain/model/
+    FinanceModels.kt
+
+Bổ sung Firebase Emulator Rules tests.
+
+3.4. Yêu cầu sửa schema Rules
+
+Wallet cần whitelist tối thiểu:
+
+name
+type
+balance
+color
+isDefault
+status
+archivedAt
+createdAt
+
+Validate:
+
+status in ['active', 'archived']
+
+archivedAt:
+
+null OR timestamp
+
+3.5. Direct Balance Mutation
+
+Hiện Rules vẫn cho owner update:
+
+wallet.balance
+
+nếu field là integer.
+
+Điều này có nghĩa modified client/direct SDK vẫn có thể bỏ qua Ledger.
+
+Repository chỉ update metadata là chưa đủ để bảo vệ security boundary.
+
+3.6. Mục tiêu kiến trúc
+
+Client
+  │
+  ├─ Edit Wallet Metadata
+  │
+  └─ Financial Command
+          ↓
+      Trusted Backend
+          ↓
+      Firestore Transaction
+          ├─ Ledger
+          └─ Wallet Projection
+
+Wallet balance không phải user-editable metadata.
+
+3.7. Phương án khuyến nghị
+
+Phase A — Compatibility Hotfix
+
+[ ] add status
+[ ] add archivedAt
+[ ] validate active/archived
+[ ] archive flow pass
+
+Phase B — Security Hardening
+
+Chuyển money-affecting command sang trusted layer:
+
+addTransaction
+editTransaction
+deleteTransaction
+transfer
+balanceAdjustment
+salaryRollover
+debtPayment
+
+Sau đó:
+
+Client direct wallet.balance update → DENY
+
+3.8. Test bắt buộc
+
+[ ] Owner create active wallet → ALLOW
+[ ] Owner edit wallet name → ALLOW
+[ ] Owner archive wallet → ALLOW
+[ ] Invalid status → DENY
+[ ] Non-owner read → DENY
+[ ] Non-owner update → DENY
+[ ] Client direct arbitrary balance update → DENY
+[ ] Transaction command updates balance correctly
+
+3.9. Acceptance Criteria
+
+[ ] Create Wallet production flow không PERMISSION_DENIED
+[ ] Edit Wallet production flow không PERMISSION_DENIED
+[ ] Archive Wallet hoạt động
+[ ] status chỉ active/archived
+[ ] archivedAt đúng type
+[ ] Direct financial state mutation bị hạn chế
+[ ] Rules Emulator tests PASS
+
+Priority: P0 CRITICAL
+
+4. HOTFIX-02 — SALARY ROLLOVER PHẢI ATOMIC & IDEMPOTENT THỰC SỰ
+
+4.1. Vấn đề hiện tại
+
+Hiện flow đang gần dạng:
+
+isRolloverProcessed()
+        ↓
+transferBetweenWallets()
+        ↓
+markRolloverProcessed()
+
+Đây là nhiều thao tác tách rời.
+
+4.2. Failure Scenario
+
+isProcessed = false
+        ↓
+Transfer thành công
+        ↓
+Network error
+        ↓
+markRolloverProcessed FAILED
+        ↓
+Retry
+        ↓
+isProcessed = false
+        ↓
+Transfer lần 2
+
+Kết quả:
+
+Duplicate rollover
+Duplicate ledger
+Sai số dư
+
+4.3. Lỗi fail-open
+
+FirebaseSalaryCycleRepository.isRolloverProcessed() hiện có pattern:
+
+runCatching { ... }.getOrDefault(false)
+
+Điều này có thể biến:
+
+PERMISSION_DENIED
+Network Error
+Firestore Error
+
+thành:
+
+false = "chưa xử lý"
+
+Financial command phải fail-closed.
+
+4.4. salaryRollovers Rules còn thiếu
+
+App ghi:
+
+users/{uid}/salaryRollovers/{cycleKey}
+
+Firestore Rules cần explicit match + validation phù hợp.
+
+4.5. Kiến trúc đúng
+
+Rollover phải là một atomic command:
+
+ExecuteSalaryRolloverCommand
+        ↓
+Firestore Transaction / Trusted Function
+        │
+        ├─ Read rollover marker
+        ├─ Abort if already processed
+        ├─ Read salary wallet
+        ├─ Read savings wallet
+        ├─ Validate wallets
+        ├─ Calculate transfer amount
+        ├─ Create TRANSFER_OUT
+        ├─ Create TRANSFER_IN
+        ├─ Update salary wallet balance
+        ├─ Update savings wallet balance
+        └─ Create rollover marker
+
+Atomic:
+
+ALL SUCCESS
+OR
+ALL ROLLBACK
+
+4.6. Marker schema đề xuất
+
+salaryRollovers/{periodKey}
+
+cycleKey
+status
+amount
+sourceWalletId
+destinationWalletId
+transferPairId
+processedAt
+createdAt
+
+Status:
+
+processed
+skipped_zero_balance
+pending_user_decision
+
+4.7. Idempotency key
+
+Nên deterministic:
+
+salary_rollover:{uid}:{cycleKey}
+
+hoặc dùng chính sanitized cycleKey làm document ID.
+
+4.8. Không swallow database error
+
+Sai:
+
+getOrDefault(false)
+
+Đúng:
+
+AppResult.Success(true)
+AppResult.Success(false)
+AppResult.Error(...)
+
+4.9. Runtime Caller còn thiếu
+
+ExecuteSalaryRolloverUseCase phải được gọi thật sự trong runtime.
+
+Ưu tiên server-side:
+
+Cloud Scheduler
+        ↓
+Find due salary cycles
+        ↓
+Execute idempotent rollover command
+
+Nếu chưa muốn backend scheduler:
+
+App startup/resume
+        ↓
+Check previous cycle closure
+        ↓
+Execute idempotent command
+
+nhưng vẫn phải đảm bảo command atomic.
+
+4.10. ASK_EACH_CYCLE
+
+Phải trở thành business state thật:
+
+Cycle closed
+    ↓
+ASK_EACH_CYCLE
+    ↓
+Create pending decision
+    ↓
+UI Notification / Banner
+    ↓
+User:
+  KEEP
+  MOVE_TO_SAVINGS
+  SKIP
+
+4.11. Test bắt buộc
+
+[ ] First execution transfers once
+[ ] Second execution same cycle does nothing
+[ ] Concurrent execution same cycle only one succeeds
+[ ] Marker failure không thể xảy ra sau transfer vì cùng atomic transaction
+[ ] Marker exists → no transfer
+[ ] Zero balance → no transfer + processed status
+[ ] Same source/destination → error
+[ ] Missing wallet → error
+[ ] Archived wallet → error
+[ ] ASK_EACH_CYCLE → pending
+[ ] KEEP_IN_WALLET → no transfer
+[ ] Network failure → no partial financial state
+
+4.12. Acceptance Criteria
+
+[ ] Rollover transfer + marker nằm trong cùng atomic command
+[ ] Retry không duplicate
+[ ] Concurrent execution không duplicate
+[ ] Firestore errors không bị đổi thành false
+[ ] salaryRollovers có Rules
+[ ] Có runtime trigger
+[ ] ASK_EACH_CYCLE hoạt động
+[ ] Ledger ghi nhận đầy đủ
+
+Priority: P0 CRITICAL
+
+5. HOTFIX-03 — FINANCIAL PERIOD ENGINE PHẢI ĐƯỢC TÍCH HỢP TOÀN HỆ THỐNG
+
+5.1. Hiện trạng
+
+FinancialPeriodResolver đã có và có test cho:
+
+CALENDAR_MONTH
+SALARY_CYCLE
+Payday 28/29/30/31
+FIRST_DAY
+LAST_DAY
+Timezone
+Previous Period
+
+Nhưng hiện mới là domain engine, chưa trở thành source of truth của toàn app.
+
+5.2. Các phần còn dùng Calendar Month
+
+Cần rà soát và chuyển:
+
+BudgetRepository
+BudgetViewModel
+Transaction → Budget mapping
+Reports
+Dashboard
+Cloud Functions
+Budget alerts
+Previous period comparison
+Budget reset/lifecycle
+
+5.3. Mục tiêu
+
+Mọi logic period đi qua:
+
+FinancialPeriod
+
+không tự tính tháng riêng.
+
+5.4. FinancialPeriod contract
+
+data class FinancialPeriod(
+    val key: String,
+    val start: Instant,
+    val endExclusive: Instant,
+    val displayLabel: String,
+    val basis: BudgetPeriodBasis
+)
+
+5.5. Period Key
+
+Không tiếp tục chỉ dùng:
+
+2026-08
+
+Nên:
+
+month:2026-08
+salary:2026-08-10
+
+Budget key:
+
+{categoryId}:{periodKey}
+
+Ví dụ:
+
+food:month:2026-08
+food:salary:2026-08-10
+
+5.6. BudgetRepository cần đổi
+
+Hiện dạng:
+
+observeBudgets(YearMonth)
+
+nên tiến tới:
+
+observeBudgets(periodKey)
+
+hoặc:
+
+observeBudgets(FinancialPeriod)
+
+5.7. Budget Model
+
+Nên bổ sung/migrate:
+
+periodKey
+periodStart
+periodEndExclusive
+periodBasis
+
+Có thể giữ month tạm thời cho backward compatibility.
+
+5.8. Transaction → Budget Mapping
+
+Đúng:
+
+transaction.date
+      ↓
+FinancialPeriodResolver
+      ↓
+periodKey
+      ↓
+budget document
+
+5.9. Reports / Dashboard
+
+Các chỉ số:
+
+Income
+Expense
+Budget progress
+Remaining
+Previous-period comparison
+
+phải dùng cùng period.start và period.endExclusive.
+
+5.10. Cloud Functions
+
+Backend phải có financial period semantics tương đương Android.
+
+Cần sửa:
+
+onTransactionWrite
+reconcileBudget
+monthlyBudgetReset
+budget alerts
+
+Không giữ một lifecycle chỉ theo ngày 1 nếu user dùng SALARY_CYCLE.
+
+5.11. Timezone
+
+Phải chọn một:
+
+Option A — VN only
+
+financeTimeZone = Asia/Ho_Chi_Minh cố định
+
+→ bỏ setting timezone.
+
+Option B — Configurable
+
+financialPreferences.financeTimeZone
+
+→ Android và Functions cùng đọc.
+
+Không để setting tồn tại nhưng backend bỏ qua.
+
+5.12. Migration Strategy
+
+Budget cũ:
+
+food_2026-08
+
+migrate non-destructive sang:
+
+categoryId = food
+periodKey = month:2026-08
+periodBasis = CALENDAR_MONTH
+periodStart = ...
+periodEndExclusive = ...
+
+5.13. Test bắt buộc
+
+[ ] Calendar month user vẫn hoạt động như trước
+[ ] Payday 10 → 10/08–09/09
+[ ] Report và Budget cùng range
+[ ] Budget warning 80/100 cùng period
+[ ] Transaction ngày 09/09 vào đúng cycle cũ
+[ ] Transaction ngày 10/09 vào cycle mới
+[ ] Payday 31 clamp đúng
+[ ] February leap/non-leap đúng
+[ ] Migration budget cũ đúng
+[ ] Backend resolver và Android resolver cùng test vectors
+
+5.14. Acceptance Criteria
+
+[ ] Budget không còn lệch period khi SALARY_CYCLE
+[ ] Budget = Reports = Dashboard cùng period
+[ ] Cloud Functions cùng semantics
+[ ] periodKey dùng thống nhất
+[ ] timezone strategy thống nhất
+[ ] migration có test
+
+Priority: P0 CRITICAL
+
+6. HOTFIX-04 — REMINDER SINGLE SOURCE OF TRUTH
+
+6.1. Vấn đề hiện tại
+
+Hệ thống vẫn có:
+
+Android AlarmManager
+
+và:
+
+Cloud Function sendReminderPush
+
+cả hai có thể trigger notification và update nextTriggerDate.
+
+6.2. Vì sao 60s Deduplicator chưa đủ
+
+In-memory ConcurrentHashMap không bảo vệ:
+
+App restart
+Process killed
+Device reboot
+Multi-device
+Cloud Function
+Retry > 60 seconds
+
+6.3. Phải chọn canonical owner
+
+Option A — Khuyến nghị
+
+Cloud Scheduler = Source of Truth
+
+Cloud chịu trách nhiệm:
+
+occurrence generation
+nextTriggerDate
+notification record
+FCM push
+idempotency
+
+Android AlarmManager chỉ fallback/local assist và không update canonical recurrence state.
+
+Option B
+
+Android AlarmManager = Source of Truth
+
+Nếu chọn thì disable/remove cloud scheduler.
+
+Không tồn tại 2 owner.
+
+6.4. Occurrence ID
+
+Mỗi occurrence deterministic:
+
+reminder:{reminderId}:{scheduledTimestamp}
+
+6.5. Notification Document ID
+
+Không dùng UUID cho cùng occurrence.
+
+Nên:
+
+notificationId = occurrenceId
+
+Retry cùng occurrence phải ghi cùng document.
+
+6.6. nextTriggerDate
+
+Chỉ canonical scheduler được update.
+
+6.7. Monthly recurrence contract
+
+Phải thống nhất 29/30/31.
+
+Khuyến nghị clamp ngày không tồn tại về last valid day.
+
+6.8. Notification Privacy
+
+Default nên:
+
+VISIBILITY_PRIVATE
+
+hoặc user-configurable, mặc định không hiển thị số tiền trên lockscreen.
+
+6.9. Test bắt buộc
+
+[ ] Same occurrence retry → 1 notification
+[ ] Device restart → không duplicate
+[ ] Cloud retry → không duplicate
+[ ] Multi-device → 1 canonical occurrence
+[ ] nextTriggerDate chỉ 1 owner update
+[ ] Monthly recurrence ngày 29/30/31 đúng
+[ ] Disabled reminder không trigger
+[ ] Deleted reminder không trigger
+
+6.10. Acceptance Criteria
+
+[ ] Chỉ một scheduler là canonical owner
+[ ] Persistent idempotency
+[ ] Deterministic occurrence ID
+[ ] Retry-safe
+[ ] Multi-device safe
+[ ] Recurrence semantics thống nhất
+[ ] Privacy default phù hợp
+
+Priority: P0 HIGH
+
+7. HOTFIX-05 — PAYMENT ACTION IDEMPOTENCY
+
+7.1. Phần đã sửa
+
+Flow hiện đã kiểm tra transaction success trước khi mark paid.
+
+7.2. Phần còn thiếu
+
+Double tap/retry có thể tạo 2 expense transaction trước khi paid state được persist.
+
+7.3. Giải pháp
+
+Mỗi payment action có deterministic ID:
+
+pay:{reminderId}:{occurrenceId}
+
+7.4. Metadata / Marker
+
+Có thể dùng:
+
+sourceType = reminder_payment
+sourceId = paymentActionId
+
+hoặc command marker riêng.
+
+7.5. Atomic Processing
+
+Financial Command
+        │
+        ├─ check paymentActionId
+        ├─ create expense if absent
+        ├─ update wallet
+        ├─ mark notification paid
+        └─ persist payment marker
+
+7.6. Test bắt buộc
+
+[ ] Double tap → 1 expense
+[ ] Retry receiver → 1 expense
+[ ] Transaction failure → unpaid
+[ ] Insufficient balance → unpaid
+[ ] Success → paid
+[ ] Success retry → no duplicate
+
+7.7. Acceptance Criteria
+
+[ ] Payment action deterministic
+[ ] Retry-safe
+[ ] Double tap-safe
+[ ] Financial transaction và paid state consistent
+
+Priority: P0 HIGH
+
+8. HOTFIX-06 — FIREBASE EMULATOR + FUNCTIONS CI
+
+8.1. Vấn đề
+
+Android CI hiện chưa kiểm tra:
+
+functions/**
+firestore.rules
+storage.rules
+Firebase integration
+
+8.2. CI paths phải bổ sung
+
+.github/workflows/ci.yml trigger khi thay đổi:
+
+functions/**
+firestore.rules
+storage.rules
+firebase.json
+
+8.3. Functions CI
+
+cd functions
+npm ci
+npm run check
+npm run build
+npm test
+
+8.4. Firestore Rules Tests
+
+Firebase Emulator Suite test:
+
+Wallet
+Transaction
+Budget
+Salary Preferences
+Salary Rollover
+Reminder
+Notification
+Debt
+Debt Payment
+
+8.5. Storage Rules Tests
+
+Avatar upload
+Avatar read
+Receipt upload
+Receipt delete
+Invalid MIME
+Oversized file
+Cross-user access
+
+8.6. Integration Tests
+
+Add Expense
+Edit Expense
+Delete Expense
+Transfer
+Balance Adjustment
+Salary Rollover
+Reminder Payment
+
+8.7. CI Gate
+
+Main/release không xanh nếu:
+
+Android tests fail
+Android lint fail
+Functions check fail
+Functions tests fail
+Firestore rules tests fail
+Storage rules tests fail
+Integration tests fail
+
+8.8. Acceptance Criteria
+
+[ ] CI trigger backend/rules changes
+[ ] Functions build/test PASS
+[ ] Firestore Emulator PASS
+[ ] Storage Rules tests PASS
+[ ] Critical financial integration tests PASS
+
+Priority: P1 HIGH
+
+9. RELEASE SIGNING — VERIFY BEFORE v1.10.2
+
+P0.1 đã cải thiện nhưng phải verify artifact thật trước release.
+
+9.1. Release build
+
+./gradlew assembleRelease
+
+9.2. Certificate verify
+
+apksigner verify   --verbose   --print-certs   FinLux-v1.10.2.apk
+
+9.3. Signing identity
+
+v1.10.1 certificate
+        =
+v1.10.2 certificate
+
+trừ khi có signing migration chính thức.
+
+9.4. Google Sign-In Test
+
+[ ] Fresh install login
+[ ] Existing account login
+[ ] Logout/login
+[ ] Google credential flow
+
+9.5. Upgrade Test
+
+Install v1.10.1
+        ↓
+Login / create sample data
+        ↓
+Update v1.10.2
+
+Kiểm tra:
+
+[ ] Android accepts update
+[ ] User session intact
+[ ] Firebase data intact
+[ ] Google login intact
+[ ] OTA updater accepts signature
+
+10. TEST MATRIX TRƯỚC RELEASE
+
+Wallet
+
+[ ] Create CASH
+[ ] Create BANK
+[ ] Create CARD
+[ ] Edit metadata
+[ ] Archive wallet
+[ ] Default wallet
+[ ] Balance Adjustment
+[ ] Cannot direct set balance
+
+Transactions
+
+[ ] Income
+[ ] Expense
+[ ] Edit
+[ ] Delete
+[ ] Transfer
+[ ] Concurrent expense
+[ ] CARD negative balance
+[ ] Non-CARD no negative
+
+Salary Cycle
+
+[ ] Disabled
+[ ] Calendar month
+[ ] Payday 1
+[ ] Payday 10
+[ ] Payday 15
+[ ] Payday 20
+[ ] Payday 25
+[ ] Payday 30
+[ ] Payday 31
+[ ] Last day month
+[ ] February
+[ ] Previous period
+
+Rollover
+
+[ ] KEEP
+[ ] MOVE_TO_SAVINGS
+[ ] ASK
+[ ] Zero balance
+[ ] Concurrent execution
+[ ] Retry
+[ ] Network failure
+
+Budget
+
+[ ] Calendar budget
+[ ] Salary-cycle budget
+[ ] 80% warning
+[ ] 100% warning
+[ ] Previous period
+[ ] Transaction mapping
+
+Reminder
+
+[ ] Daily
+[ ] Weekly
+[ ] Monthly
+[ ] Snooze
+[ ] Pay
+[ ] Disable
+[ ] Delete
+[ ] App restart
+[ ] Device reboot
+[ ] Retry
+[ ] Multi-device
+
+11. DEFINITION OF DONE
+
+v1.10.2 chỉ ready khi:
+
+[ ] Wallet Rules tương thích schema mới
+[ ] Direct arbitrary balance mutation được kiểm soát
+[ ] Salary rollover atomic
+[ ] Salary rollover idempotent
+[ ] Rollover có runtime execution
+[ ] ASK_EACH_CYCLE hoạt động
+
+[ ] FinancialPeriodResolver dùng trong Budget
+[ ] FinancialPeriodResolver dùng trong Reports
+[ ] FinancialPeriodResolver dùng trong Dashboard
+[ ] Backend dùng cùng period semantics
+[ ] Budget warnings dùng đúng period
+
+[ ] Reminder chỉ có 1 canonical scheduler
+[ ] Persistent reminder idempotency
+[ ] Payment action idempotent
+
+[ ] Firestore Rules tests PASS
+[ ] Storage Rules tests PASS
+[ ] Functions tests PASS
+[ ] Integration tests PASS
+
+[ ] Android Unit Tests PASS
+[ ] Android Lint PASS
+[ ] Debug Build PASS
+[ ] Release Build PASS
+
+[ ] v1.10.1 → v1.10.2 upgrade PASS
+[ ] Google Sign-In PASS
+[ ] Same signing certificate
+[ ] OTA updater PASS
+
+12. COMMIT / PR STRATEGY
+
+fix/p0-wallet-rules-schema
+fix/p0-rollover-atomic-command
+refactor/p0-financial-period-integration
+fix/p0-reminder-single-owner
+fix/p0-reminder-payment-idempotency
+test/p1-firebase-emulator-ci
+
+Mỗi PR phải có:
+
+Problem
+Root Cause
+Solution
+Data Migration
+Security Impact
+Financial Impact
+Tests
+Rollback Plan
+
+13. PROMPT GIAO CHO AI AGENT
+
+Hãy xử lý FINLUX_V1.10.2_REMEDIATION_PLAN.md đúng thứ tự HOTFIX-01 → HOTFIX-06. Không thêm feature mới ngoài phạm vi plan. Không đánh dấu [DONE] chỉ vì unit test pass; mỗi task phải kiểm tra runtime integration, Firestore Rules, backend semantics và acceptance criteria. Mọi financial mutation phải fail-closed và idempotent. Salary Rollover phải atomic; transfer và processed marker phải nằm trong cùng một transaction/trusted command. FinancialPeriodResolver phải được tích hợp thật sự vào Budget, Reports, Dashboard, transaction-budget mapping và Cloud Functions. Reminder phải chỉ có một canonical scheduler. Sau từng task cập nhật HANDOVER_LOG.md và chạy test tương ứng. Không bump/release version mới cho đến khi Firebase Emulator, Functions, Android tests/lint/build, signing verification, Google Sign-In và upgrade v1.10.1 → v1.10.2 đều đạt.
+
+14. KẾT LUẬN
+
+FinLux v1.10.2 hiện đã cải thiện đáng kể ở Android-side hardening nhưng chưa đủ điều kiện production release.
+
+Thứ tự đúng:
+
+Firestore Compatibility
+        ↓
+Financial Atomicity
+        ↓
+Financial Period Consistency
+        ↓
+Reminder Reliability
+        ↓
+Firebase Test Coverage
+        ↓
+Release Verification
+
+Không nên mở rộng feature mới cho đến khi các điểm trên được đóng hoàn toàn.

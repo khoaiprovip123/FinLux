@@ -1,0 +1,40 @@
+name: Firebase CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  test-functions-and-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ./functions
+        run: npm ci
+
+      - name: Build functions
+        working-directory: ./functions
+        run: npm run build
+
+      - name: Setup Java (for Firebase Emulator)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Run Emulator Tests
+        working-directory: ./functions
+        run: firebase emulators:exec "npm run test"
