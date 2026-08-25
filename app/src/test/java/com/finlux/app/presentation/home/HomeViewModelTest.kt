@@ -174,4 +174,6 @@ private class FakeHomeDebtRepository(private val list: List<DebtAccount>) : Debt
 private class FakeHomeSalaryCycleRepository : com.finlux.app.domain.repository.SalaryCycleRepository {
     override fun observeConfig(): Flow<com.finlux.app.domain.model.SalaryCycleConfig> = flowOf(com.finlux.app.domain.model.SalaryCycleConfig())
     override suspend fun saveConfig(config: com.finlux.app.domain.model.SalaryCycleConfig): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun isRolloverProcessed(cycleKey: String): Boolean = false
+    override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> = AppResult.Success(Unit)
 }

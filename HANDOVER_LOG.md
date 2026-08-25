@@ -4,6 +4,28 @@
 - **Phiên bản hiện tại:** v1.10.1 (versionCode 113)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS. Đang thực hiện Hardening Sprint (P0 -> P1 -> P2 -> P3).
 
+## [DONE] Task: [P0.5] Thực Thi Salary Rollover / Move To Savings (Idempotent Business Command)
+
+**Ngày hoàn thành:** 2026-08-25
+**Nhánh git:** `main`
+**Mục tiêu & Kết quả thực hiện:**
+- **Mục tiêu:**
+  - Thiết kế `ExecuteSalaryRolloverUseCase` chuyển giao toàn bộ số dư còn lại của `salaryWallet` sang `savingsWallet` (`MOVE_TO_SAVINGS`) khi kết thúc chu kỳ lương.
+  - Ghi nhận lịch sử giao dịch rõ ràng vào Sổ Cái (Ledger Transfer) với ghi chú gắn với `cycleKey`.
+  - Đảm bảo tính Idempotent tuyệt đối: Lưu trữ trạng thái xử lý rollover theo `cycleKey` vào Firestore (`users/{uid}/salaryRollovers/{docId}`) và Demo Repository, đảm bảo chạy nhiều lần không bao giờ duplicate transfer hoặc duplicate ledger entries.
+  - Xử lý các edge cases: số dư ví lương <= 0, chọn trùng ví, cấu hình `KEEP_IN_WALLET` (skip không sinh transaction thừa).
+- **Kết quả kiểm thử:**
+  - `gradlew testDebugUnitTest`: **167/167 PASS (100%)**.
+- **Danh sách file chỉnh sửa:**
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/ExecuteSalaryRolloverUseCase.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/ExecuteSalaryRolloverUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModelTest.kt`
+- **Trạng thái:** `[DONE]`
+
 ## [DONE] Task: [P0.4] Hoàn Thiện Salary Cycle Thành Financial Period Engine (`FinancialPeriodResolver`)
 
 **Ngày hoàn thành:** 2026-08-25

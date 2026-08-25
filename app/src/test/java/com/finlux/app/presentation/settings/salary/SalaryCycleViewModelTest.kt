@@ -140,6 +140,8 @@ private class FakeSalaryCycleRepo(initial: SalaryCycleConfig) : SalaryCycleRepos
         flow.value = config
         return AppResult.Success(Unit)
     }
+    override suspend fun isRolloverProcessed(cycleKey: String): Boolean = false
+    override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> = AppResult.Success(Unit)
 }
 
 private class FakeWalletRepo(private val list: List<Wallet>) : WalletRepository {

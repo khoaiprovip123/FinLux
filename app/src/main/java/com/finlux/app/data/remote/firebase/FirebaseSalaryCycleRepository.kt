@@ -54,5 +54,31 @@ class FirebaseSalaryCycleRepository(
             Unit
         }
 
+    override suspend fun isRolloverProcessed(cycleKey: String): Boolean = runCatching {
+        val uid = auth.currentUser?.uid ?: return false
+        val docId = sanitizeKey(cycleKey)
+        val snapshot = firestore.collection("users").document(uid)
+            .collection("salaryRollovers").document(docId).get().await()
+        snapshot.exists()
+    }.getOrDefault(false)
+
+    override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> =
+        firebaseResult("Không thể ghi nhận trạng thái chuyển chu kỳ lương") {
+            val uid = requireUid()
+            val docId = sanitizeKey(cycleKey)
+            val data = mapOf(
+                "cycleKey" to cycleKey,
+                "processedAt" to FieldValue.serverTimestamp(),
+            )
+            firestore.collection("users").document(uid)
+                .collection("salaryRollovers").document(docId)
+                .set(data, SetOptions.merge())
+                .await()
+            Unit
+        }
+
+    private fun sanitizeKey(key: String): String =
+        key.replace(":", "_").replace("/", "_").replace(".", "_")
+
     private fun requireUid(): String = auth.currentUser?.uid ?: error("Phiên đăng nhập đã hết hạn")
 }

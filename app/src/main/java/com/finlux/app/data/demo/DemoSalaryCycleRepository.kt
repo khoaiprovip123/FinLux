@@ -12,11 +12,25 @@ import kotlinx.coroutines.flow.asStateFlow
 @Singleton
 class DemoSalaryCycleRepository @Inject constructor() : SalaryCycleRepository {
     private val config = MutableStateFlow(SalaryCycleConfig())
+    private val processedRollovers = mutableSetOf<String>()
 
     override fun observeConfig(): Flow<SalaryCycleConfig> = config.asStateFlow()
 
     override suspend fun saveConfig(config: SalaryCycleConfig): AppResult<Unit> {
         this.config.value = config
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun isRolloverProcessed(cycleKey: String): Boolean {
+        return synchronized(processedRollovers) {
+            processedRollovers.contains(cycleKey)
+        }
+    }
+
+    override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> {
+        synchronized(processedRollovers) {
+            processedRollovers.add(cycleKey)
+        }
         return AppResult.Success(Unit)
     }
 }
