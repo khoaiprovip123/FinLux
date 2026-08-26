@@ -1,14 +1,20 @@
 import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import type { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import * as fs from "fs";
+import * as path from "path";
 
 let testEnv: RulesTestEnvironment;
 
 before(async () => {
+    const rulesPath = fs.existsSync("firestore.rules") 
+        ? "firestore.rules" 
+        : fs.existsSync("../firestore.rules") 
+            ? "../firestore.rules" 
+            : path.resolve(process.cwd(), "firestore.rules");
     testEnv = await initializeTestEnvironment({
         projectId: "finlux-test",
         firestore: {
-            rules: fs.readFileSync("../firestore.rules", "utf8"),
+            rules: fs.readFileSync(rulesPath, "utf8"),
         },
     });
 });
