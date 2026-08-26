@@ -398,9 +398,9 @@ class FirebaseTransactionRepository(
 }
 
 /**
- * Returns a DocumentReference to the Budget document for this transaction's month+category,
+ * Returns a DocumentReference to the Budget document for this transaction's period+category,
  * or null if the transaction is not an EXPENSE or has no categoryId.
- * Budget IDs follow the convention: "{categoryId}_{YearMonth}" (e.g. "abc123_2025-08").
+ * Budget IDs follow the standard convention: "{categoryId}_{periodKey}" (e.g. "abc123_month:2026-08").
  */
 internal fun FinanceTransaction.budgetRef(
     firestore: FirebaseFirestore,
@@ -410,7 +410,7 @@ internal fun FinanceTransaction.budgetRef(
     if (type != TransactionType.EXPENSE) return null
     val catId = categoryId ?: return null
     val month = FinanceTime.financialMonth(date, zone)
-    val budgetId = "${catId}_${month}"
+    val budgetId = "${catId}_month:${month}"
     return firestore.collection("users").document(uid).collection("budgets").document(budgetId)
 }
 

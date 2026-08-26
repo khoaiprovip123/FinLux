@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.10.7] - 2026-08-26
+### Fixed
+- **Đồng bộ Key Ngân sách (`budgetRef`)**: Sửa format document ID trong `FirebaseTransactionRepository.kt` thành `"${catId}_month:${month}"` khớp 100% với Cloud Functions `reconcileBudget`, đảm bảo `spentAmount` được cập nhật chính xác trong Firestore Atomic Transaction.
+- **Khôi phục Hộp thư Thông báo (`Notification Center Sync`)**: Khôi phục lưu `AppNotification` trong `AlarmReminderScheduler.kt` (`ReminderReceiver`) khi báo thức kích hoạt, giải quyết triệt để lỗi màn hình `NotificationsScreen` bị trống sau commit `431abd7`.
+- **Cập nhật Báo thức Kế tiếp**: Cập nhật `nextTriggerDate` vào Database ngay khi báo thức reo để duy trì tính toàn vẹn của lịch nhắc nhở.
+
+### Added
+- **Cảnh báo Ngân sách Tức thì (Local Budget Alert)**: Tích hợp cơ chế kiểm tra ngân sách ngay trong `AddTransactionUseCase.kt`. Tự động bắn thông báo hệ thống (Status Bar Notification) và ghi `AppNotification` (loại `BUDGET_ALERT`) khi chi tiêu đạt 80% (cảnh báo) hoặc 100% (vượt hạn mức).
+- **Hệ thống Quản lý Notification Channels (`SystemNotificationHelper`)**: Khởi tạo và quản lý 3 kênh thông báo riêng biệt (`finlux_budget_alerts`, `finlux_reminders_v2`, `finlux_system_notifications`).
+- **Foreground FCM Push Handler**: Bổ sung `onMessageReceived` trong `FinluxMessagingService.kt` để hiển thị thông báo hệ thống ngay cả khi ứng dụng đang mở.
+
 ## [1.10.6] - 2026-08-26
 ### Fixed
 - **Bảo mật & Xác thực Google Sign-In**: Cấu hình Release Keystore chính thức cho luồng CI/CD Release trên GitHub Actions, đăng ký SHA-1 và SHA-256 fingerprint đồng bộ với Firebase Console & Google Cloud Console.

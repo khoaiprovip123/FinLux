@@ -1,8 +1,27 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.6 (versionCode 118)
+- **Phiên bản hiện tại:** v1.10.7 (versionCode 119)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-BUGFIX-Notification-Budget-Sync] - Fix Budget Alert Key Mismatch & In-App Notification Center Sync
+- **Status**: `[DONE]`
+- **Goal**: 
+  1. Đồng bộ key ID ngân sách `budgetRef` trong `FirebaseTransactionRepository.kt` theo đúng định dạng `"${catId}_month:${month}"` khớp 100% với Cloud Functions `reconcileBudget`.
+  2. Bổ sung logic kiểm tra và phát cảnh báo ngân sách tức thì (In-App Local System Notification & `AppNotification` type `BUDGET_ALERT`) trong `AddTransactionUseCase.kt`.
+  3. Khôi phục lưu `AppNotification` trong `AlarmReminderScheduler.kt` (`ReminderReceiver`) khi báo thức reo để hiển thị đầy đủ trong `NotificationsScreen`.
+  4. Cập nhật `FinluxMessagingService.kt` để hiển thị System Notification khi nhận FCM Push từ Cloud Functions.
+  5. Tạo `SystemNotificationHelper.kt` quản lý 3 channels (`finlux_reminders_v2`, `finlux_budget_alerts`, `finlux_system_notifications`).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/local/notification/SystemNotificationHelper.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AddTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FinluxMessagingService.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Build và Streamed Install APK thành công vào thiết bị Android `192.168.17.153:37989`.
+
 
 ### [Task-RELEASE-1.10.6] - Official Release Keystore & Google Sign-In CI Configuration
 - **Status**: `[DONE]`

@@ -124,6 +124,71 @@ class TransactionUseCasesTest {
         assertEquals(1, repository.transferCalls)
     }
 
+    @Test
+    fun `add expense triggers 80 percent budget warning notification`() = runTest {
+        val fakeBudgetRepo = FakeBudgetRepository(
+            mutableListOf(
+                com.finlux.app.domain.model.Budget(
+                    id = "food_month:2026-08",
+                    categoryId = "food",
+                    periodKey = "month:2026-08",
+                    limitAmount = Money(1_000_000),
+                    spentAmount = Money(750_000),
+                    notified80 = false,
+                    notified100 = false,
+                )
+            )
+        )
+        val fakeNotiRepo = FakeNotificationRepository()
+        val useCase = AddTransactionUseCase(
+            repository = repository,
+            walletRepository = walletRepository,
+            budgetRepository = fakeBudgetRepo,
+            notificationRepository = fakeNotiRepo,
+        )
+
+        val tx = validTransaction().copy(amount = Money(100_000)) // 750k + 100k = 850k (85% >= 80%)
+        val result = useCase(tx)
+
+        assertEquals(AppResult.Success("generated-id"), result)
+        assertEquals(1, fakeNotiRepo.savedNotifications.size)
+        assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
+        assertEquals(true, fakeBudgetRepo.budgets.first().notified80)
+        assertEquals(false, fakeBudgetRepo.budgets.first().notified100)
+    }
+
+    @Test
+    fun `add expense triggers 100 percent budget exceeded notification`() = runTest {
+        val fakeBudgetRepo = FakeBudgetRepository(
+            mutableListOf(
+                com.finlux.app.domain.model.Budget(
+                    id = "food_month:2026-08",
+                    categoryId = "food",
+                    periodKey = "month:2026-08",
+                    limitAmount = Money(1_000_000),
+                    spentAmount = Money(950_000),
+                    notified80 = true,
+                    notified100 = false,
+                )
+            )
+        )
+        val fakeNotiRepo = FakeNotificationRepository()
+        val useCase = AddTransactionUseCase(
+            repository = repository,
+            walletRepository = walletRepository,
+            budgetRepository = fakeBudgetRepo,
+            notificationRepository = fakeNotiRepo,
+        )
+
+        val tx = validTransaction().copy(amount = Money(100_000)) // 950k + 100k = 1050k (105% >= 100%)
+        val result = useCase(tx)
+
+        assertEquals(AppResult.Success("generated-id"), result)
+        assertEquals(1, fakeNotiRepo.savedNotifications.size)
+        assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
+        assertEquals(true, fakeBudgetRepo.budgets.first().notified100)
+    }
+
     private fun validTransaction(id: String = "") = FinanceTransaction(
         id = id,
         type = TransactionType.EXPENSE,
@@ -133,6 +198,45 @@ class TransactionUseCasesTest {
         note = "Bữa trưa",
         date = Instant.parse("2026-08-11T05:00:00Z"),
     )
+}
+
+private class FakeBudgetRepository(
+    val budgets: MutableList<com.finlux.app.domain.model.Budget> = mutableListOf()
+) : com.finlux.app.domain.repository.BudgetRepository {
+    override fun observeBudgets(periodKey: String): Flow<List<com.finlux.app.domain.model.Budget>> =
+        flowOf(budgets.filter { it.periodKey == periodKey })
+
+    override suspend fun upsertBudget(budget: com.finlux.app.domain.model.Budget): AppResult<String> {
+        budgets.removeIf { it.id == budget.id }
+        budgets.add(budget)
+        return AppResult.Success(budget.id)
+    }
+
+    override suspend fun deleteBudget(budget: com.finlux.app.domain.model.Budget): AppResult<Unit> {
+        budgets.removeIf { it.id == budget.id }
+        return AppResult.Success(Unit)
+    }
+}
+
+private class FakeNotificationRepository : com.finlux.app.domain.repository.NotificationRepository {
+    val savedNotifications = mutableListOf<com.finlux.app.domain.model.AppNotification>()
+
+    override fun observeNotifications(): Flow<List<com.finlux.app.domain.model.AppNotification>> =
+        flowOf(savedNotifications)
+
+    override suspend fun saveNotification(notification: com.finlux.app.domain.model.AppNotification): AppResult<String> {
+        savedNotifications.add(notification)
+        return AppResult.Success(notification.id)
+    }
+
+    override suspend fun markAsRead(id: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun markAsPaid(id: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun markAsPaidWithAmount(id: String, amount: Money, newBody: String?): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun clearAll(): AppResult<Unit> {
+        savedNotifications.clear()
+        return AppResult.Success(Unit)
+    }
 }
 
 private class RecordingTransactionRepository : TransactionRepository {

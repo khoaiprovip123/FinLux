@@ -228,7 +228,23 @@ class ReminderReceiver : BroadcastReceiver() {
                             "Đến hạn xác nhận giao dịch"
                         }
 
-                        // 4. Bỏ qua việc lưu thông báo vào Firestore (Cloud Function sẽ làm việc này)
+                        // 4. Lưu thông báo vào NotificationRepository (đồng bộ vào In-App Notification Center)
+                        notificationRepository.saveNotification(
+                            AppNotification(
+                                id = UUID.randomUUID().toString(),
+                                title = effectiveTitle,
+                                body = body,
+                                type = com.finlux.app.domain.model.NotificationType.REMINDER,
+                                amount = Money(effectiveAmount),
+                                reminderId = id,
+                                categoryId = effectiveCategoryId.ifBlank { null },
+                                walletId = effectiveWalletId.ifBlank { null },
+                                targetRoute = "reminders",
+                                timestamp = Instant.now(),
+                                isRead = false,
+                                isPaid = false,
+                            )
+                        )
 
                         // 5. Bắn thông báo Android System Notification
                         val currentEpochDay = Instant.now().toEpochMilli() / 86400000L
@@ -309,8 +325,9 @@ class ReminderReceiver : BroadcastReceiver() {
                                 .build(),
                         )
 
-                        // 6. Tính toán lịch báo thức kế tiếp cục bộ (việc ghi DB do Cloud Function đảm nhiệm)
+                        // 6. Cập nhật nextTriggerDate vào Database & lên lịch báo thức kế tiếp
                         val next = nextTrigger(Instant.now(), effectiveRecurrence)
+                        reminderRepository.upsertReminder(activeReminder.copy(nextTriggerDate = next))
 
                         val nextIntent = Intent(context, ReminderReceiver::class.java).apply {
                             action = ACTION_TRIGGER
