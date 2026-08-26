@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "mocha -r ts-node/register \"test/**/*.ts\""
+    "test": "mocha --import tsx \"test/**/*.ts\""
   },
   "dependencies": {
     "firebase-admin": "14.3.0",
@@ -21,6 +21,7 @@
     "@types/mocha": "^10.0.10",
     "mocha": "^11.8.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.12",
     "typescript": "^5.9.2"
   }
 }

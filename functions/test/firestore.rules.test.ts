@@ -11,9 +11,14 @@ before(async () => {
         : fs.existsSync("../firestore.rules") 
             ? "../firestore.rules" 
             : path.resolve(process.cwd(), "firestore.rules");
+    const host = process.env.FIRESTORE_EMULATOR_HOST ? process.env.FIRESTORE_EMULATOR_HOST.split(":")[0] : "127.0.0.1";
+    const port = process.env.FIRESTORE_EMULATOR_HOST ? parseInt(process.env.FIRESTORE_EMULATOR_HOST.split(":")[1], 10) : 8080;
+
     testEnv = await initializeTestEnvironment({
         projectId: "finlux-test",
         firestore: {
+            host,
+            port,
             rules: fs.readFileSync(rulesPath, "utf8"),
         },
     });
