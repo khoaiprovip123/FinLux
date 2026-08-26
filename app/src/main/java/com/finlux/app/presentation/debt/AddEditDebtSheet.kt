@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -389,6 +390,37 @@ fun AddEditDebtSheet(
                                         modifier = Modifier.padding(vertical = 8.dp),
                                     )
                                 }
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+                        val dueDayInt = dueDateText.toIntOrNull()?.coerceIn(1, 31) ?: 15
+                        val remindDayInt = if (dueDayInt > reminderDaysBefore) dueDayInt - reminderDaysBefore else (30 + dueDayInt - reminderDaysBefore)
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = FinluxBlue.copy(alpha = 0.08f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, FinluxBlue.copy(alpha = 0.20f)),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = FinluxBlue,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Text(
+                                    text = "Thông báo sẽ gửi vào lúc 09:00 sáng ngày $remindDayInt hàng tháng (trước hạn thanh toán ngày $dueDayInt $reminderDaysBefore ngày).",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
                             }
                         }
                     }

@@ -1,0 +1,241 @@
+# TÀI LIỆU QUY CHUẨN: BỘ COMPONENT FORM & PICKER TIÊU CHUẨN (FINLUX DESIGN SYSTEM)
+
+> **Mục đích:** Tài liệu này đặc tả chi tiết toàn bộ các component biểu mẫu (Form Rows, Input Cards) và Modal chọn lựa (Wallet Picker, Category Picker) tiêu chuẩn trong ứng dụng **Finlux**. Mọi Developer và AI Coding Agent khi tham gia phát triển tính năng mới **BẮT BUỘC** phải kế thừa các component này, không tự ý tạo lại từ đầu (Tuân thủ Nguyên tắc cốt lõi #2: Tái sử dụng & tránh phân mảnh code).
+
+---
+
+## 📍 1. Vị Trí Lưu Trữ Mã Nguồn
+
+Toàn bộ component tiêu chuẩn được đặt tập trung tại:
+- **Form & Pickers Component:** [`app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt)
+- **Amount Hero Component:** [`app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt)
+- **Package:** `com.finlux.app.core.designsystem.component.*`
+
+---
+
+## 🧱 2. Danh Sách & Đặc Tả Chi Tiết Các Component Tiêu Chuẩn
+
+### 1️⃣ `FinluxCategoryPickerBottomSheet` — Bộ Chọn Danh Mục Chuẩn
+Modal Bottom Sheet chọn danh mục chi tiêu / thu nhập dạng lưới Grid 4 cột có thanh tìm kiếm.
+
+* **Đặc điểm thiết kế:**
+  - Header có tiêu đề "Chọn danh mục" + nút đóng `[x]`.
+  - Thanh tìm kiếm danh mục (Search Bar) bo tròn 14dp tích hợp nút xóa tìm kiếm.
+  - Lưới **Grid 4 cột** (`LazyVerticalGrid(columns = GridCells.Fixed(4))`) hiển thị icon badge màu sắc động theo token (`tokens.primary` / `cat.colorHex`).
+  - Badge checkmark đỏ/accent nổi bật ở góc trên bên phải của danh mục đang được chọn.
+  - Nút `+ Thêm danh mục mới` ở đáy sheet (khi có truyền callback `onAddNew`).
+  - Hỗ trợ nhấn giữ (`onLongPressCategory`) để chỉnh sửa/xóa danh mục tùy chỉnh.
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
+
+if (showCategoryPicker) {
+    FinluxCategoryPickerBottomSheet(
+        categories = categoriesList,
+        selectedCategoryId = selectedCategoryId,
+        onSelectCategory = { category ->
+            selectedCategoryId = category.id
+            showCategoryPicker = false
+        },
+        onDismiss = { showCategoryPicker = false },
+        onAddNew = { /* Mở dialog tạo danh mục mới nếu cần */ },
+        onLongPressCategory = { category -> /* Chỉnh sửa danh mục nếu cần */ },
+    )
+}
+```
+
+* **Các màn hình đang kế thừa:**
+  - [`AddTransactionSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt) (Thêm chi tiêu / thu nhập).
+  - [`NotificationsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt) (Modal QuickPay xác nhận thanh toán).
+
+---
+
+### 2️⃣ `FinluxWalletPickerBottomSheet` — Bộ Chọn Ví Tài Khoản Chuẩn
+Modal Bottom Sheet chọn ví nguồn / ví nhận tiền dạng danh sách thẻ kính.
+
+* **Đặc điểm thiết kế:**
+  - Header có tiêu đề "Chọn ví tài khoản" + nút đóng `[x]`.
+  - Danh sách thẻ Surface bo góc 16dp với viền kính `tokens.border`.
+  - Icon badge tròn đại diện cho từng loại ví (`walletIcon(wallet.type)`: Tiền mặt, Ngân hàng, Thẻ tín dụng, Ví điện tử...).
+  - Tên ví hiển thị 15sp SemiBold; phụ đề hiển thị **Số dư khả dụng** định dạng phân tách hàng nghìn VNĐ (`formatVndAmount`).
+  - Checkmark xanh/accent bên phải khi ví được chọn.
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
+
+if (showWalletPicker) {
+    FinluxWalletPickerBottomSheet(
+        wallets = walletsList,
+        selectedWalletId = selectedWalletId,
+        onSelectWallet = { wallet ->
+            selectedWalletId = wallet.id
+            showWalletPicker = false
+        },
+        onDismiss = { showWalletPicker = false },
+    )
+}
+```
+
+* **Các màn hình đang kế thừa:**
+  - [`AddTransactionSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt) (Chọn ví thanh toán / nhận tiền).
+  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Chọn ví nguồn trích tiền trả nợ).
+  - [`NotificationsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt) (Chọn ví thanh toán từ thông báo).
+
+---
+
+### 3️⃣ `ErgonomicFormRow` — Hàng Chọn Dữ Liệu 2 Dòng Tiêu Chuẩn
+Hàng chọn thông tin (Selector Row) chuẩn Liquid Glass cho các trường cần bấm để mở picker (Danh mục, Ví, Ngày tháng...).
+
+* **Đặc điểm thiết kế:**
+  - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)`.
+  - Icon badge 42dp bo góc 12dp bên trái với màu nền trong suốt alpha 14%.
+  - Column 2 dòng:
+    * Dòng 1: Label viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt).
+    * Dòng 2: Tên giá trị chính (`15sp SemiBold`, màu `tokens.onSurface`).
+    * Dòng phụ: Phụ đề / Số dư khả dụng (`12sp Medium`).
+  - Mũi tên điều hướng `>` (Chevron) bên phải.
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+
+ErgonomicFormRow(
+    label = "VÍ THANH TOÁN",
+    primaryValue = activeWallet?.name ?: "Chưa chọn ví",
+    secondaryValue = activeWallet?.let { "Số dư: ${formatVndAmount(it.balance.value)}" },
+    icon = walletIcon,
+    iconBgColor = walletAccent.copy(alpha = 0.14f),
+    iconTintColor = walletAccent,
+    onClick = { showWalletPicker = true },
+)
+```
+
+---
+
+### 4️⃣ `ErgonomicInputRow` — Thẻ Nhập Liệu Phẳng Bo Góc
+Hàng nhập text/số thay thế hoàn toàn cho `OutlinedTextField` của Material 3 (giải quyết triệt để lỗi label notch cutout đè lên viền kính).
+
+* **Đặc điểm thiết kế:**
+  - Thẻ Surface bo góc 18dp phẳng và sạch sẽ.
+  - Icon badge 42dp bên trái.
+  - Label nhỏ viết hoa ở trên + Ô nhập bằng `BasicTextField` mượt mà bên dưới.
+  - Nút `[x]` xóa nhanh xuất hiện khi có nội dung.
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.ErgonomicInputRow
+
+ErgonomicInputRow(
+    label = "GHI CHÚ GIAO DỊCH",
+    value = noteText,
+    onValueChange = { noteText = it },
+    placeholder = "Nhập ghi chú chi tiêu...",
+    icon = Icons.AutoMirrored.Filled.ReceiptLong,
+    iconBgColor = Color(0xFF06B6D4).copy(alpha = 0.14f),
+    iconTintColor = Color(0xFF0891B2),
+    onClear = { noteText = "" },
+)
+```
+
+---
+
+### 5️⃣ `ErgonomicCompactAmountCard` — Thẻ Ô Nhập / Hiển Thị Tiền Gọn Gàng (Custom Color & Quick Chips)
+Thẻ Surface bo góc 18dp độc lập, dùng để hiển thị hoặc nhập số tiền thu gọn với typography 16sp Bold, tự động preview định dạng phân tách hàng nghìn VNĐ trong thời gian thực, có chữ mờ (placeholder), dải chip gợi ý nhân số tiền thông minh (vd: gõ 3 -> [3k, 30k, 300k, 3000k]) và cho phép tùy biến màu sắc số tiền theo từng màn hình. Không có dòng chữ phụ bên dưới.
+
+* **Đặc điểm thiết kế:**
+  - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)`.
+  - **Label ở trên:** Chữ viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt).
+  - **Ô nhập / hiển thị tiền:** Typography 16sp Bold, tự format VNĐ khi gõ (vd: `15.000 ₫`), có placeholder xám mờ khi chưa nhập.
+  - **Dải Chip Gợi Ý Thông Minh (`showSuggestions = true` mặc định):**
+    * Khi gõ số (vd: gõ `3`), hệ thống tự sinh dải chip nhân hàng nghìn `[3k, 30k, 300k, 3000k]`.
+    * Khi bấm vào chip, số tiền trong ô nhập được thay thế tức thì (`300000` -> `300.000 ₫`).
+    * Khi chưa gõ số nào, gợi ý các mốc phổ biến `[50k, 100k, 200k, 500k, 1000k, 2000k, 5000k]`.
+    * Cho phép tùy biến ẩn/hiện (`showSuggestions = false` khi nằm trong layout hẹp 2 cột).
+  - **Tùy biến màu (`amountColor: Color`):** Hỗ trợ truyền bất kỳ màu nào (Xanh dương cho gốc, Tím cho lãi, Đỏ cho chi tiêu, Xanh lá cho thu nhập...).
+  - **Chế độ Read-only hoặc Input:** Tự động chuyển sang chế độ chỉ đọc nếu không truyền `onAmountChange` hoặc set `isReadOnly = true`.
+  - **Linh hoạt bố cục:** Dùng độc lập 1 card full width hoặc xếp 2 card cạnh nhau trong `Row` bằng `Modifier.weight(1f)`.
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+
+// 1. Chế độ Nhập liệu (Editable) có màu tùy biến & dải chip gợi ý (mặc định bật)
+ErgonomicCompactAmountCard(
+    label = "HẠN MỨC CHI TIÊU THÁNG",
+    amountText = limitInput,
+    onAmountChange = { limitInput = it },
+    placeholder = "0",
+    amountColor = tokens.primary,
+    showSuggestions = true, // Mặc định là true
+    modifier = Modifier.fillMaxWidth(),
+)
+
+// 2. Chế độ Chỉ đọc (Read-only) tự động tính toán
+ErgonomicCompactAmountCard(
+    label = "TRỪ TIỀN GỐC",
+    amountText = principalAmount.toString(),
+    isReadOnly = true,
+    amountColor = tokens.primary,
+    modifier = Modifier.weight(1f),
+)
+```
+
+* **Các màn hình đang kế thừa:**
+  - [`PrismBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt), [`ClassicBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt), [`ModernBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt) (Ô nhập hạn mức chi tiêu tháng).
+  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Ô trừ tiền gốc & Ô nhập tiền lãi phát sinh qua `PrincipalInterestSplitCard`).
+
+---
+
+### 6️⃣ `PrincipalInterestSplitCard` — Card Đôi Phân Bổ Gốc & Lãi
+Thẻ đôi chia 2 cột liền mạch được cấu thành từ 2 `ErgonomicCompactAmountCard` độc lập, dành riêng cho các nghiệp vụ thanh toán nợ / vay tài chính.
+
+* **Đặc điểm thiết kế:**
+  - **Cột 1 (Trừ tiền gốc):** Tự động tính toán và hiển thị số tiền gốc to rõ màu `principalColor` (mặc định `tokens.primary`).
+  - **Cột 2 (Tiền lãi phát sinh):** Ô nhập số tiền lãi hỗ trợ tự động định dạng phân tách hàng nghìn VNĐ màu `interestColor` (mặc định `Color(0xFF6366F1)`).
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.PrincipalInterestSplitCard
+
+PrincipalInterestSplitCard(
+    principalAmount = computedPrincipal,
+    interestText = interestDigits,
+    onInterestChange = { interestDigits = it },
+    principalColor = tokens.primary,
+    interestColor = Color(0xFF6366F1),
+)
+```
+
+---
+
+### 7️⃣ `FinluxAmountInputCard` — Hero Amount Input Card
+Card nhập số tiền lớn ở đầu modal với typography 32sp, format phân tách hàng nghìn tức thì và dải Quick Chips (+10k, +50k, +100k, +500k hoặc Tối thiểu, 50% nợ, Tất toán).
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
+
+FinluxAmountInputCard(
+    label = "SỐ TIỀN THANH TOÁN",
+    amountDigits = amountText,
+    onAmountChange = { amountText = it },
+    showQuickChips = true,
+    primaryColor = tokens.primary,
+)
+```
+
+---
+
+## 📱 4. DANH SÁCH MÀN HÌNH ĐÃ KẾ THỪA BỘ COMPONENT CHUẨN
+
+| Màn hình / Modal | Component được áp dụng |
+| :--- | :--- |
+| **Thêm Giao Dịch (`AddTransactionSheet.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `FinluxAmountInputCard`, `ErgonomicInputRow` |
+| **Thanh Toán Nợ (`DebtPaymentSheet.kt`)** | `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
+| **Thêm / Sửa Nợ & Tín Dụng (`AddEditDebtSheet.kt`)** | Banner lịch nhắc nhở `Schedule`, `FinluxCategoryPickerBottomSheet` |
+| **Thêm / Sửa Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` (Quick Chips `.000`) |
+| **Nhắc Nhở Định Kỳ (`RemindersScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow`, Native `TimePickerDialog` |
+| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, Thẻ `NotificationItemCard` chuẩn Glass |
+

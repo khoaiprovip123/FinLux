@@ -6,6 +6,7 @@ import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
+import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.repository.BudgetRepository
@@ -37,6 +38,7 @@ data class BudgetUiState(
     val period: FinancialPeriod? = null,
     val items: List<BudgetItemUi> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val transactions: List<FinanceTransaction> = emptyList(),
     val busy: Boolean = false,
     val message: String? = null,
 )
@@ -101,6 +103,7 @@ class BudgetViewModel @Inject constructor(
             period = period,
             items = items,
             categories = categories.filter { it.type == CategoryType.EXPENSE },
+            transactions = monthTransactions.filter { it.type == TransactionType.EXPENSE },
             busy = actionState.first,
             message = actionState.second,
         )

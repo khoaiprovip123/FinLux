@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -47,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.filled.Category
 import com.finlux.app.core.designsystem.ExpenseRed
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassDialogSurface
@@ -54,9 +60,18 @@ import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.GradientHeroCard
 import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
+import com.finlux.app.core.designsystem.categoryIcon
+import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.FinluxBottomSheet
+import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.component.FinluxTransactionRow
 import com.finlux.app.core.navigation.Route
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
+import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.usecase.BudgetLevel
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.toShortVnd
@@ -65,6 +80,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ClassicBudgetScreen(
     onNavigate: (String) -> Unit,
@@ -75,6 +91,7 @@ fun ClassicBudgetScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
     var editing by remember { mutableStateOf<BudgetItemUi?>(null) }
+    var viewingHistory by remember { mutableStateOf<BudgetItemUi?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.consumeMessage() } }
     val spent = state.items.sumOf { it.budget.spentAmount.value }
@@ -132,7 +149,11 @@ fun ClassicBudgetScreen(
             if (state.items.isEmpty()) item { GlassCard(Modifier.fillMaxWidth(), onClick = { showEditor = true }) { Text("Chưa có ngân sách trong tháng này · Chạm để thêm") } }
             items(state.items, key = { it.budget.id }) { item ->
                 val color = when (item.status.level) { BudgetLevel.SAFE -> IncomeGreen; BudgetLevel.WARNING -> WarningAmber; BudgetLevel.EXCEEDED -> ExpenseRed }
-                GlassCard(Modifier.fillMaxWidth(), onClick = { editing = item; showEditor = true }) {
+                GlassCard(
+                    Modifier.fillMaxWidth(),
+                    onClick = { viewingHistory = item },
+                    onLongClick = { editing = item; showEditor = true },
+                ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(item.category?.name ?: "Danh mục", style = MaterialTheme.typography.titleMedium)
@@ -148,6 +169,59 @@ fun ClassicBudgetScreen(
             }
         }
     }
+    viewingHistory?.let { itemUi ->
+        val cat = itemUi.category
+        val catId = itemUi.budget.categoryId
+        val catNameLower = cat?.name?.lowercase()?.trim()
+        val categoryTransactions = state.transactions.filter { tx ->
+            tx.categoryId == catId || (catNameLower != null && tx.categoryId?.lowercase()?.trim() == catNameLower)
+        }.sortedByDescending { it.date }
+
+        FinluxBottomSheet(
+            onDismissRequest = { viewingHistory = null },
+            title = "Lịch sử chi tiêu: ${cat?.name ?: "Danh mục"}",
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (categoryTransactions.isEmpty()) {
+                    FinluxEmptyState(
+                        title = "Chưa có giao dịch",
+                        description = "Chưa có giao dịch chi tiêu nào trong danh mục ${cat?.name ?: ""} vào ${state.period?.displayLabel ?: "kỳ này"}.",
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 280.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(categoryTransactions, key = { it.id }) { tx ->
+                            FinluxTransactionRow(transaction = tx, category = cat, onClick = null)
+                        }
+                    }
+                }
+                Button(
+                    onClick = {
+                        val toEdit = viewingHistory
+                        viewingHistory = null
+                        editing = toEdit
+                        showEditor = true
+                    },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Chỉnh sửa ngân sách này", fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    }
     if (showEditor) BudgetEditor(state.categories, state.period, editing, state.busy, { showEditor = false }) { categoryId, amount ->
         viewModel.save(categoryId, amount, editing?.budget) { showEditor = false }
     }
@@ -157,24 +231,50 @@ fun ClassicBudgetScreen(
 private fun BudgetEditor(categories: List<Category>, period: com.finlux.app.domain.model.FinancialPeriod?, initial: BudgetItemUi?, busy: Boolean, onDismiss: () -> Unit, onSave: (String, Long) -> Unit) {
     var categoryId by remember(initial) { mutableStateOf(initial?.budget?.categoryId ?: categories.firstOrNull()?.id.orEmpty()) }
     var amount by remember(initial) { mutableStateOf(initial?.budget?.limitAmount?.value?.toString().orEmpty()) }
+    var showCategoryPicker by remember { mutableStateOf(false) }
+
+    val activeCategory = categories.firstOrNull { it.id == categoryId }
+    val catAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: MaterialTheme.colorScheme.primary
+    val catIcon = activeCategory?.let { categoryIcon(it.icon) } ?: Icons.Default.Category
+
     Dialog(onDismissRequest = onDismiss) {
         GlassDialogSurface {
             Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Text(if (initial == null) "Thêm ngân sách" else "Sửa ngân sách", style = MaterialTheme.typography.titleLarge)
                 Text("Áp dụng: ${period?.displayLabel ?: "Đang tải..."}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Danh mục", fontWeight = FontWeight.Bold)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(categories) { category -> FilterChip(categoryId == category.id, { categoryId = category.id }, { Text(category.name) }) } }
-                OutlinedTextField(
-                    amount,
-                    { amount = it.filter(Char::isDigit).take(15) },
-                    Modifier.fillMaxWidth(),
-                    label = { Text("Hạn mức tháng") },
-                    supportingText = { Text((amount.toLongOrNull() ?: 0L).toVnd()) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                
+                ErgonomicFormRow(
+                    label = "DANH MỤC CHI TIÊU",
+                    primaryValue = activeCategory?.name ?: "Chưa chọn danh mục",
+                    secondaryValue = "Khoản chi tiêu ngân sách",
+                    icon = catIcon,
+                    iconBgColor = catAccent.copy(alpha = 0.14f),
+                    iconTintColor = catAccent,
+                    onClick = { showCategoryPicker = true },
+                )
+
+                ErgonomicCompactAmountCard(
+                    label = "HẠN MỨC THÁNG",
+                    amountText = amount,
+                    onAmountChange = { amount = it },
+                    placeholder = "0",
+                    amountColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Button({ onSave(categoryId, amount.toLongOrNull() ?: 0) }, Modifier.fillMaxWidth(), enabled = categoryId.isNotBlank() && amount.toLongOrNull()?.let { it > 0 } == true && !busy) { Text(if (busy) "Đang lưu…" else "Lưu ngân sách") }
             }
         }
+    }
+
+    if (showCategoryPicker) {
+        FinluxCategoryPickerBottomSheet(
+            categories = categories,
+            selectedCategoryId = categoryId,
+            onSelectCategory = { cat ->
+                categoryId = cat.id
+                showCategoryPicker = false
+            },
+            onDismiss = { showCategoryPicker = false },
+        )
     }
 }

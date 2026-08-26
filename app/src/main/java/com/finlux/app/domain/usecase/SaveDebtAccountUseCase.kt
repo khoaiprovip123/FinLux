@@ -7,6 +7,7 @@ import javax.inject.Inject
 
 class SaveDebtAccountUseCase @Inject constructor(
     private val repository: DebtRepository,
+    private val syncDebtReminderUseCase: SyncDebtReminderUseCase,
 ) {
     suspend operator fun invoke(debt: DebtAccount): AppResult<String> {
         if (debt.name.isBlank()) {
@@ -25,6 +26,11 @@ class SaveDebtAccountUseCase @Inject constructor(
             return AppResult.Error("Ngày đến hạn phải từ 1 đến 31")
         }
 
-        return repository.upsertDebt(debt)
+        val result = repository.upsertDebt(debt)
+        if (result is AppResult.Success) {
+            val savedDebt = debt.copy(id = result.value)
+            syncDebtReminderUseCase.syncDebt(savedDebt)
+        }
+        return result
     }
 }

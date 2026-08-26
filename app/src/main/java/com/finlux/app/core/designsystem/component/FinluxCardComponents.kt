@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +58,7 @@ fun FinluxSoftCard(
     radius: Dp = 20.dp,
     padding: Dp = 16.dp,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     borderColor: Color? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -64,11 +66,12 @@ fun FinluxSoftCard(
     val shape = RoundedCornerShape(radius)
     val border = borderColor ?: tokens.onSurface.copy(alpha = tokens.borderAlpha)
 
-    val clickableMod = if (onClick != null) {
-        Modifier.clickable(
+    val clickableMod = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = ripple(bounded = true),
-            onClick = onClick,
+            onClick = { onClick?.invoke() },
+            onLongClick = onLongClick,
         )
     } else Modifier
 

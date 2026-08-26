@@ -1,7 +1,7 @@
 package com.finlux.app.presentation.debt
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,8 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -44,18 +46,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.finlux.app.core.designsystem.FinluxBlue
-import com.finlux.app.core.designsystem.LiquidGlassSurface
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.walletIcon
+import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.ErgonomicInputRow
+import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
+import com.finlux.app.core.designsystem.component.PrincipalInterestSplitCard
+import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.Wallet
-import com.finlux.app.presentation.home.toShortVnd
-import com.finlux.app.presentation.home.toVnd
-import java.time.Instant
+import com.finlux.app.domain.model.WalletType
+import com.finlux.app.core.designsystem.component.formatVndAmount
 import kotlin.math.roundToLong
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,9 +74,11 @@ fun DebtPaymentSheet(
 ) {
     val tokens = LocalFinluxTokens.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     var selectedWalletId by remember {
         mutableStateOf(wallets.firstOrNull { it.isDefault }?.id ?: wallets.firstOrNull()?.id.orEmpty())
     }
+    var showWalletPicker by remember { mutableStateOf(false) }
 
     val defaultAmount = if (debt.minimumPayment.value > 0L) debt.minimumPayment.value
     else (debt.remainingBalance.value * 0.05).roundToLong().coerceAtLeast(100_000L).coerceAtMost(debt.remainingBalance.value)
@@ -90,20 +97,26 @@ fun DebtPaymentSheet(
     val currentInterest = interestText.toLongOrNull() ?: 0L
     val currentPrincipal = (currentAmount - currentInterest).coerceAtLeast(0L)
 
+    val selectedWallet = wallets.find { it.id == selectedWalletId }
+    val isInsufficientBalance = selectedWallet != null &&
+        selectedWallet.type != WalletType.CARD &&
+        selectedWallet.balance.value < currentAmount
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = tokens.surface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Header
+            // 1. Header Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -116,47 +129,56 @@ fun DebtPaymentSheet(
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 20.sp,
                         ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = tokens.onSurface,
                     )
                     Text(
                         text = debt.name,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            color = FinluxBlue,
+                            color = tokens.primary,
                         ),
                     )
                 }
-                IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Đóng")
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(tokens.surfaceSoft, CircleShape),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Đóng",
+                        tint = tokens.onSurface,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
-
-            // Debt Summary Card
+            // 2. Compact Debt Summary Card
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                color = tokens.surfaceSoft,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column {
                         Text(
-                            text = "Dư nợ còn lại",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = "Dư nợ hiện tại",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
+                            color = tokens.onSurfaceVariant,
                         )
                         Text(
-                            text = debt.remainingBalance.value.toVnd(),
+                            text = formatVndAmount(debt.remainingBalance.value),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = tokens.onSurface,
                             ),
                         )
                     }
@@ -164,13 +186,13 @@ fun DebtPaymentSheet(
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 text = "Mức tối thiểu",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
+                                color = tokens.onSurfaceVariant,
                             )
                             Text(
-                                text = debt.minimumPayment.value.toVnd(),
+                                text = formatVndAmount(debt.minimumPayment.value),
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontWeight = FontWeight.Bold,
                                     color = Color(0xFFEF4444),
                                 ),
                             )
@@ -179,164 +201,112 @@ fun DebtPaymentSheet(
                 }
             }
 
-            Spacer(Modifier.height(18.dp))
-
-            // Select Source Wallet
-            Text(
-                text = "Chọn ví nguồn thanh toán",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(8.dp))
-
+            // 3. Hero Amount Input Card & Quick Chips
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                wallets.forEach { wallet ->
-                    val isSelected = wallet.id == selectedWalletId
-                    val walletColor = colorFromHex(wallet.colorHex, FinluxBlue)
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) walletColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, walletColor) else null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable { selectedWalletId = wallet.id },
+                FinluxAmountInputCard(
+                    label = "TỔNG SỐ TIỀN TRẢ",
+                    amountDigits = amountText,
+                    onAmountChange = { amountText = it },
+                    showQuickChips = false,
+                    primaryColor = tokens.primary,
+                )
+
+                // Quick Chips: Tối thiểu | 50% nợ | Tất toán hết
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (debt.minimumPayment.value > 0L) {
+                        QuickChip(
+                            label = "Tối thiểu",
+                            onClick = { amountText = debt.minimumPayment.value.toString() },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    QuickChip(
+                        label = "50% nợ",
+                        onClick = { amountText = (debt.remainingBalance.value / 2).toString() },
+                        modifier = Modifier.weight(1f),
+                    )
+                    QuickChip(
+                        label = "Tất toán hết",
+                        onClick = { amountText = debt.remainingBalance.value.toString() },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            // 4. Source Wallet Selector Row (Compact & Ergonomic)
+            val walletIcon = selectedWallet?.type?.let { walletIcon(it) } ?: Icons.Default.AccountBalanceWallet
+            val walletAccent = selectedWallet?.let { colorFromHex(it.colorHex, tokens.primary) } ?: tokens.primary
+
+            ErgonomicFormRow(
+                label = "VÍ NGUỒN THANH TOÁN",
+                primaryValue = selectedWallet?.name ?: "Chưa chọn ví",
+                secondaryValue = selectedWallet?.let { "Số dư khả dụng: ${formatVndAmount(it.balance.value)}" },
+                icon = walletIcon,
+                iconBgColor = walletAccent.copy(alpha = 0.14f),
+                iconTintColor = walletAccent,
+                onClick = { showWalletPicker = true },
+            )
+
+            // 5. Principal vs Interest Split Inputs (Ergonomic 2-Column Card)
+            PrincipalInterestSplitCard(
+                principalAmount = currentPrincipal,
+                interestText = interestText,
+                onInterestChange = { interestText = it },
+            )
+
+            // 6. Note (Ergonomic Input Row)
+            ErgonomicInputRow(
+                label = "GHI CHÚ",
+                value = note,
+                onValueChange = { note = it },
+                placeholder = "vd: Thanh toán sao kê thẻ tín dụng",
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
+                iconTintColor = Color(0xFF6366F1),
+                onClear = { note = "" },
+            )
+
+            // Warning for Insufficient Balance or Custom Errors
+            val effectiveError = validationError ?: if (isInsufficientBalance) {
+                "Số dư ví [${selectedWallet?.name}] không đủ để thanh toán"
+            } else null
+
+            if (effectiveError != null) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
+                    border = BorderStroke(1.dp, Color(0xFFF43F5E).copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(walletColor.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = walletIcon(wallet.type),
-                                        contentDescription = null,
-                                        tint = walletColor,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    text = wallet.name,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                            Text(
-                                text = "Số dư: ${wallet.balance.value.toVnd()}",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (isSelected) walletColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFE11D48),
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            text = effectiveError,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = Color(0xFFE11D48),
+                        )
                     }
                 }
             }
 
-            Spacer(Modifier.height(18.dp))
+            // 7. Sticky Bottom Action Button
+            val canConfirm = !isSubmitting && selectedWallet != null && currentAmount > 0L && !isInsufficientBalance
 
-            // Payment Amount
-            com.finlux.app.core.designsystem.component.FinluxAmountInputCard(
-                label = "Tổng số tiền trả",
-                amountDigits = amountText,
-                onAmountChange = { amountText = it },
-                showQuickChips = false,
-                primaryColor = tokens.primary,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            // Quick Amount Chips
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (debt.minimumPayment.value > 0L) {
-                    QuickChip(
-                        label = "Tối thiểu",
-                        onClick = { amountText = debt.minimumPayment.value.toString() },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                QuickChip(
-                    label = "50% nợ",
-                    onClick = { amountText = (debt.remainingBalance.value / 2).toString() },
-                    modifier = Modifier.weight(1f),
-                )
-                QuickChip(
-                    label = "Tất toán hết",
-                    onClick = { amountText = debt.remainingBalance.value.toString() },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // Split: Principal vs Interest
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                OutlinedTextField(
-                    value = currentPrincipal.toString(),
-                    onValueChange = { /* Auto-computed */ },
-                    label = { Text("Trừ tiền gốc") },
-                    readOnly = true,
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                )
-
-                OutlinedTextField(
-                    value = interestText,
-                    onValueChange = { interestText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Tiền lãi phát sinh") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // Note
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Ghi chú (tùy chọn)") },
-                placeholder = { Text("vd: Thanh toán sao kê tháng 8") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-            )
-
-            if (validationError != null) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = validationError!!,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // Confirm Button
             Button(
                 onClick = {
                     val wallet = wallets.find { it.id == selectedWalletId }
@@ -348,8 +318,8 @@ fun DebtPaymentSheet(
                         validationError = "Số tiền thanh toán phải lớn hơn 0"
                         return@Button
                     }
-                    if (wallet.type != com.finlux.app.domain.model.WalletType.CARD && wallet.balance.value < currentAmount) {
-                        validationError = "Số dư ví không đủ (${wallet.balance.value.toVnd()})"
+                    if (wallet.type != WalletType.CARD && wallet.balance.value < currentAmount) {
+                        validationError = "Số dư ví không đủ (${formatVndAmount(wallet.balance.value)})"
                         return@Button
                     }
 
@@ -362,23 +332,36 @@ fun DebtPaymentSheet(
                         note,
                     )
                 },
-                enabled = !isSubmitting,
+                enabled = canConfirm,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = FinluxBlue),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = tokens.primary,
+                    disabledContainerColor = if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0),
+                ),
             ) {
-                Icon(imageVector = Icons.Default.Payments, contentDescription = null)
+                Icon(imageVector = Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Xác nhận thanh toán (${currentAmount.toVnd()})",
+                    text = if (currentAmount > 0L) "Xác nhận thanh toán • ${formatVndAmount(currentAmount)}" else "Xác nhận thanh toán",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = if (canConfirm) Color.White else (if (tokens.isDark) Color(0xFF64748B) else Color(0xFF94A3B8)),
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
         }
+    }
+
+    if (showWalletPicker) {
+        SimpleWalletPickerSheet(
+            wallets = wallets,
+            selectedWalletId = selectedWalletId,
+            onSelectWallet = { wallet -> selectedWalletId = wallet.id },
+            onDismiss = { showWalletPicker = false },
+        )
     }
 }
 
@@ -388,11 +371,14 @@ private fun QuickChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
+
     Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(12.dp),
+        color = tokens.surfaceSoft,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
     ) {
         Box(
@@ -401,9 +387,12 @@ private fun QuickChip(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = tokens.onSurface,
+                textAlign = TextAlign.Center,
             )
         }
     }

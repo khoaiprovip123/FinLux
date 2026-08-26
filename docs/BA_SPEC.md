@@ -307,7 +307,25 @@ Main flow:
 Business rule:
   BR-SALARY-01: Chu kỳ tính từ [00:00:00 ngày nhận lương của tháng này] đến [23:59:59.999 của ngày trước ngày nhận lương tháng sau].
   BR-SALARY-02: Nếu tháng sau có số ngày ít hơn ngày nhận lương đã chọn (ví dụ chọn ngày 31 mà tháng sau chỉ có 28 hoặc 30 ngày), ngày nhận lương tự động điều chỉnh về ngày cuối cùng của tháng đó.
-  BR-SALARY-03: Báo cáo tài chính (Reports) hỗ trợ chế độ xem `SALARY_CYCLE` truy vấn chính xác dải giao dịch `[start, endExclusive)`.
+### UC-28: Trung tâm thông báo & Tương tác cử chỉ điều hướng (Notification Center Hub)
+```
+Actor: User
+Precondition: Đã đăng nhập
+Main flow:
+  1. Người dùng mở icon Chuông thông báo trên Trang chủ để vào /notifications.
+  2. Xem danh sách thông báo được phân loại: Tất cả, Hóa đơn, Ngân sách, Mục tiêu, Báo cáo, Hệ thống.
+  3. Tương tác cử chỉ:
+     - Kéo sang trái (Swipe Left):
+       * Cảnh báo ngân sách -> Điều hướng mở màn hình Ngân sách (/budget)
+       * Cột mốc mục tiêu -> Điều hướng mở màn hình Mục tiêu (/goals)
+       * Báo cáo tài chính -> Điều hướng mở màn hình Báo cáo (/reports)
+       * Hạn nợ / Thẻ tín dụng -> Điều hướng mở màn hình Quản lý nợ (/debts)
+       * Nhắc hóa đơn & Hệ thống -> Xóa thông báo khỏi danh sách
+     - Chạm vào thân thẻ (Card Tap): Đánh dấu đã đọc (isRead = true).
+     - Chạm vào hóa đơn chưa trả hoặc nút [Thanh toán ngay]: Mở QuickPayBottomSheet (chọn ví, danh mục, số tiền) -> Trừ số dư ví, ghi giao dịch EXPENSE vào Sổ cái với ghi chú "Thanh toán: [Tên]" và chuyển sang trạng thái [Đã thanh toán].
+     - Chạm vào hóa đơn đã trả: Mở PaidNotificationDetailSheet xem chi tiết số tiền, ví, danh mục, thời gian và ghi chú Sổ cái đã ghi.
+Business rule:
+  BR-NOTI-01: Thanh toán hóa đơn từ thông báo bắt buộc thực thi qua Firestore Atomic Transaction (trừ ví, ghi giao dịch EXPENSE, cập nhật isPaid = true).
 ```
 
 ---

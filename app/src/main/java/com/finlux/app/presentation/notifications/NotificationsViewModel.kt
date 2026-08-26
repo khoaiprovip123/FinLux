@@ -140,6 +140,12 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 
+    fun deleteNotification(id: String) {
+        viewModelScope.launch {
+            notificationRepository.deleteNotification(id)
+        }
+    }
+
     fun clearAll() {
         viewModelScope.launch {
             notificationRepository.clearAll()

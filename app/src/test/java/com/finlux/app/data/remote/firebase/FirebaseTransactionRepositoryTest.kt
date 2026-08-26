@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.ZoneId
 import java.util.Date
 
 class FirebaseTransactionRepositoryTest {
@@ -571,15 +572,32 @@ class FirebaseTransactionRepositoryTest {
         assertTrue((result as AppResult.Error).message.contains("Số dư ví nguồn không đủ"))
     }
 
+    @Test
+    fun `budgetRef generates standard period format matching cloud functions`() {
+        val uid = "test_uid"
+        val sampleTx = sampleTransaction(categoryId = "cat_food")
+        val userDocRef: DocumentReference = mockk()
+        val budgetsColl: CollectionReference = mockk()
+        val budgetDocRef: DocumentReference = mockk()
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("budgets") } returns budgetsColl
+        every { budgetsColl.document("cat_food_month:2026-08") } returns budgetDocRef
+
+        val ref = sampleTx.budgetRef(firestore, uid, ZoneId.of("Asia/Ho_Chi_Minh"))
+        assertEquals(budgetDocRef, ref)
+    }
+
     private fun sampleTransaction(
         id: String = "",
+        categoryId: String = "cat_food",
         walletId: String = "wallet_1",
         amount: Long = 100_000L,
     ) = FinanceTransaction(
         id = id,
         amount = Money(amount),
         type = TransactionType.EXPENSE,
-        categoryId = "cat_food",
+        categoryId = categoryId,
         walletId = walletId,
         note = "Ăn trưa",
         date = fixedInstant,

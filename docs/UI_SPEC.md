@@ -13,6 +13,7 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
 - **System bar insets:** mọi màn edge-to-edge phải chừa `statusBars`/`navigationBars` theo thiết bị. `GlassBottomNav`
   không ép chiều cao tổng; vùng nội dung 80dp được cộng thêm navigation inset để không bị ba phím Android che.
 - **Component chuẩn cần build:** `GlassCard`, `GlassTopBar`, `GlassBottomNav`, `GlassBottomSheet`, `GlassDialog`, `GlassFAB` — dùng chung 1 base `LiquidGlassSurface` composable.
+- **Quy chuẩn Form & Pickers tiêu chuẩn:** Xem tài liệu đặc tả chi tiết tại [`docs/FORM_COMPONENTS_SPEC.md`](file:///d:/Sources/FinLux/docs/FORM_COMPONENTS_SPEC.md) cho các component `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`, `ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxAmountInputCard`.
 
 > **Đã xác nhận theo visual reference 12/08/2026:** màu chủ đạo xanh `#3478F6`, phối tím
 > `#7758F6` và cyan `#47C8FF` trong hero/CTA gradient. Nền sáng `#F5F7FC`, card sáng gần đặc
@@ -374,7 +375,32 @@ LAYOUT: ModalBottomSheet chuẩn Liquid Glass / Finlux Prism bo góc 28dp, hiệ
   - Quy tắc xử lý tiền dư cuối kỳ (Giữ lại / Nhắc nhở / Gợi ý ví tiết kiệm)
   - Căn cứ kỳ ngân sách (Tháng dương lịch / Theo kỳ lương)
   - Nút bấm: "Đóng" và "Lưu cấu hình"
-THEME: Đồng bộ 100% màu động từ LocalFinluxTokens.current (Dark/Light).
+## 18. SCREEN: Trung tâm Thông báo (Notification Center)
+```
+Route: /notifications
+LAYOUT:
+  - GlassTopBar: Tiêu đề "Thông báo", nút Quay lại (<-), nút Xóa tất cả (DeleteSweep).
+  - Dải Filter Chips ngang (LazyRow): Tất cả, Hóa đơn (Tím), Ngân sách (Đỏ/Vàng), Mục tiêu (Vàng cam), Báo cáo (Xanh ngọc), Hệ thống (Xanh dương).
+  - Danh sách thẻ thông báo (NotificationItemCard): Thiết kế Liquid Glass / Prism bo góc 18dp, icon badge tròn, thời gian gửi, tiêu đề, nội dung tóm tắt, số tiền và nút hành động.
+INTERACTIONS & GESTURES:
+  1. Kéo sang trái (Swipe Left / SwipeToDismissBox):
+     - Cảnh báo ngân sách (BUDGET_ALERT): Kéo sang trái -> Action nền đỏ + icon ArrowForward -> Điều hướng sang /budget.
+     - Cột mốc mục tiêu (GOAL_MILESTONE): Kéo sang trái -> Action nền vàng cam -> Điều hướng sang /goals.
+     - Báo cáo tài chính (TRANSACTION_SUMMARY): Kéo sang trái -> Action nền xanh ngọc -> Điều hướng sang /reports.
+     - Hạn nợ / Thẻ tín dụng (DEBT_DUE_ALERT): Kéo sang trái -> Action nền tím -> Điều hướng sang /debts.
+     - Nhắc hóa đơn & Hệ thống: Kéo sang trái -> Action nền đỏ + icon Delete -> Xóa thông báo khỏi danh sách.
+  2. Chạm vào thân thẻ (Card Tap):
+     - Tự động đánh dấu đã đọc (isRead = true).
+     - Nếu là Nhắc hóa đơn CHƯA thanh toán: Mở QuickPayBottomSheet để thanh toán nhanh.
+     - Nếu là Nhắc hóa đơn ĐÃ thanh toán: Mở PaidNotificationDetailSheet hiển thị chi tiết lịch sử thanh toán.
+  3. QuickPayBottomSheet:
+     - FinluxAmountInputCard: Nhập và chỉnh sửa số tiền thực chi + Quick Chips.
+     - ErgonomicFormRow + FinluxWalletPickerBottomSheet: Chọn ví nguồn thanh toán.
+     - ErgonomicFormRow + FinluxCategoryPickerBottomSheet: Chọn danh mục chi tiêu.
+     - Nút "Ghi nhận thanh toán": Trừ tiền ví, ghi transaction EXPENSE vào Sổ cái với ghi chú "Thanh toán: [Tên]" và cập nhật isPaid = true.
+  4. PaidNotificationDetailSheet:
+     - Badge tích xanh + Trạng thái "Đã thanh toán thành công".
+     - Số tiền thực chi (IncomeGreen) + Tên khoản chi + Danh mục + Ví nguồn + Thời gian + Ghi chú Sổ cái.
 ```
 
 ---

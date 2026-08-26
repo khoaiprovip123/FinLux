@@ -40,12 +40,16 @@ class DebtViewModelTest {
     private val fakeCategoryRepository = FakeCategoryRepo()
     private val fakeDebtPreferenceRepository = FakeDebtPreferenceRepo()
 
+    private val fakeReminderRepository = FakeReminderRepo()
+    private val fakeReminderScheduler = FakeReminderScheduler()
+    private val syncDebtReminderUseCase = com.finlux.app.domain.usecase.SyncDebtReminderUseCase(fakeReminderRepository, fakeReminderScheduler)
+
     private val getDebtsUseCase = GetDebtsUseCase(fakeDebtRepository)
     private val getDebtPaymentHistoryUseCase = com.finlux.app.domain.usecase.GetDebtPaymentHistoryUseCase(fakeDebtRepository)
     private val analyzeDebtCashflowUseCase = com.finlux.app.domain.usecase.AnalyzeDebtCashflowUseCase()
     private val calculatePayoffStrategyUseCase = CalculatePayoffStrategyUseCase()
-    private val saveDebtAccountUseCase = SaveDebtAccountUseCase(fakeDebtRepository)
-    private val deleteDebtAccountUseCase = DeleteDebtAccountUseCase(fakeDebtRepository)
+    private val saveDebtAccountUseCase = SaveDebtAccountUseCase(fakeDebtRepository, syncDebtReminderUseCase)
+    private val deleteDebtAccountUseCase = DeleteDebtAccountUseCase(fakeDebtRepository, syncDebtReminderUseCase)
     private val processDebtPaymentUseCase = ProcessDebtPaymentUseCase(fakeDebtRepository)
 
     private lateinit var viewModel: DebtViewModel
@@ -261,4 +265,15 @@ private class FakeCategoryRepo : com.finlux.app.domain.repository.CategoryReposi
     override fun observeCategories(): Flow<List<com.finlux.app.domain.model.Category>> = flowOf(emptyList())
     override suspend fun upsertCategory(category: com.finlux.app.domain.model.Category): AppResult<String> = AppResult.Success(category.id)
     override suspend fun deleteCategory(category: com.finlux.app.domain.model.Category): AppResult<Unit> = AppResult.Success(Unit)
+}
+
+private class FakeReminderRepo : com.finlux.app.domain.repository.ReminderRepository {
+    override fun observeReminders(): Flow<List<com.finlux.app.domain.model.Reminder>> = flowOf(emptyList())
+    override suspend fun upsertReminder(reminder: com.finlux.app.domain.model.Reminder): AppResult<String> = AppResult.Success(reminder.id)
+    override suspend fun deleteReminder(reminder: com.finlux.app.domain.model.Reminder): AppResult<Unit> = AppResult.Success(Unit)
+}
+
+private class FakeReminderScheduler : com.finlux.app.domain.repository.ReminderScheduler {
+    override fun schedule(reminder: com.finlux.app.domain.model.Reminder) {}
+    override fun cancel(reminderId: String) {}
 }
