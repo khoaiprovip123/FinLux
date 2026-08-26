@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.10.6] - 2026-08-26
+### Fixed
+- **Bảo mật & Xác thực Google Sign-In**: Cấu hình Release Keystore chính thức cho luồng CI/CD Release trên GitHub Actions, đăng ký SHA-1 và SHA-256 fingerprint đồng bộ với Firebase Console & Google Cloud Console.
+- **An toàn CI Release Fallback**: Sửa fallback trong `.github/workflows/release.yml` để sử dụng `debug.keystore` chuẩn thay vì sinh keystore ngẫu nhiên trên máy ảo runner.
+- **Dọn dẹp môi trường**: Khắc phục lỗi cú pháp `.gitignore` cho thư mục `jdk/`.
+
 ## [1.10.5] - 2026-08-25
 ### Changed
 - **Nâng cấp `versionCode = 117` và `versionName = "1.10.5"`.

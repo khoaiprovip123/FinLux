@@ -93,20 +93,11 @@ jobs:
             echo "FINLUX_KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
             echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
           else
-            echo "GitHub release secrets not found. Generating release keystore on the fly..."
-            keytool -genkeypair -v \
-              -keystore /tmp/release.keystore \
-              -alias finlux-release \
-              -keypass finlux123456 \
-              -storepass finlux123456 \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=FinLux, OU=Mobile, O=FinLux, L=Hanoi, ST=Hanoi, C=VN"
-            echo "FINLUX_KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
-            echo "FINLUX_KEYSTORE_PASSWORD=finlux123456" >> $GITHUB_ENV
-            echo "FINLUX_KEY_ALIAS=finlux-release" >> $GITHUB_ENV
-            echo "FINLUX_KEY_PASSWORD=finlux123456" >> $GITHUB_ENV
+            echo "GitHub release secrets not found. Falling back to embedded gradle/debug.keystore..."
+            echo "FINLUX_KEYSTORE_PATH=gradle/debug.keystore" >> $GITHUB_ENV
+            echo "FINLUX_KEYSTORE_PASSWORD=android" >> $GITHUB_ENV
+            echo "FINLUX_KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
+            echo "FINLUX_KEY_PASSWORD=android" >> $GITHUB_ENV
             echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
           fi
 

@@ -1,8 +1,18 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.5 (versionCode 117)
+- **Phiên bản hiện tại:** v1.10.6 (versionCode 118)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-RELEASE-1.10.6] - Official Release Keystore & Google Sign-In CI Configuration
+- **Status**: `[DONE]`
+- **Goal**: Cấu hình chuẩn hóa Production Release Keystore cho CI/CD GitHub Actions, đăng ký SHA-1/SHA-256 fingerprint đồng bộ với Firebase Console & Google Cloud OAuth 2.0 Client IDs, tối ưu hóa fallback an toàn trong `release.yml`.
+- **Files Modified**:
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `.github/workflows/release.yml`
+  - `.gitignore`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Phiên bản v1.10.6 sẵn sàng phát hành.
 
 ### [Task-HOTFIX-GoogleSignIn] - Fix Google Sign-In with Credential Manager & Fallbacks
 - **Status**: `[DONE]`
