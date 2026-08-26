@@ -118,6 +118,14 @@
   - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
 - **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Build và Streamed Install APK thành công vào thiết bị Android `192.168.17.153:37989`.
 
+### [Task-RELEASE-1.10.7] - Optimize Credential Manager Google Account Chooser
+- **Status**: `[DONE]`
+- **Goal**: Loại bỏ tùy chọn gây xung đột tài khoản ủy quyền `signInWithGoogleOption`, sử dụng chuẩn `GetGoogleIdOption(filterByAuthorizedAccounts = false)` để mở bottom sheet chọn bất kỳ tài khoản Google nào trên thiết bị.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/auth/AuthViewModel.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**.
 
 ### [Task-RELEASE-1.10.6] - Official Release Keystore & Google Sign-In CI Configuration
 - **Status**: `[DONE]`

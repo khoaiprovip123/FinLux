@@ -124,10 +124,9 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly([
             'name', 'type', 'balance', 'color', 'isDefault', 'createdAt', 'status', 'archivedAt', 'lastTransactionId'
           ])
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
-          && request.resource.data.balance is int
-          && request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other']
+          && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() > 0))
+          && (!('balance' in request.resource.data) || request.resource.data.balance is int)
+          && (!('type' in request.resource.data) || request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other'])
           && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived'])
           && (!('archivedAt' in request.resource.data) || request.resource.data.archivedAt is timestamp)
           && (
@@ -135,18 +134,7 @@ service cloud.firestore {
             || (
               'lastTransactionId' in request.resource.data
               && request.resource.data.lastTransactionId is string
-              && request.resource.data.lastTransactionId != ""
-              && (
-                // Calculate the delta of the transaction in this batch
-                let txId = request.resource.data.lastTransactionId;
-                let txPath = /databases/$(database)/documents/users/$(uid)/transactions/$(txId);
-                let txAfter = existsAfter(txPath) ? getAfter(txPath).data : null;
-                let txBefore = exists(txPath) ? get(txPath).data : null;
-                let txAfterDelta = txAfter != null && txAfter.walletId == docId ? transactionDelta(txAfter) : 0;
-                let txBeforeDelta = txBefore != null && txBefore.walletId == docId ? transactionDelta(txBefore) : 0;
-                let delta = txAfterDelta - txBeforeDelta;
-                request.resource.data.balance == resource.data.balance + delta
-              )
+              && request.resource.data.lastTransactionId.size() > 0
             )
           );
       }
@@ -155,16 +143,26 @@ service cloud.firestore {
       match /budgets/{docId} {
         allow read: if isOwner(uid);
         allow delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
+        allow create: if isOwner(uid)
           && request.resource.data.keys().hasOnly([
             'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
           ])
-          && request.resource.data.categoryId is string
-          && request.resource.data.categoryId.size() > 0
-          && request.resource.data.month is string
-          && request.resource.data.spentAmount is int
-          && request.resource.data.notified80 is bool
-          && request.resource.data.notified100 is bool
+          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
+          && (!('month' in request.resource.data) || request.resource.data.month is string)
+          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount is int)
+          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
+          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
+          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
+
+        allow update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
+          ])
+          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
+          && (!('month' in request.resource.data) || request.resource.data.month is string)
+          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount)
+          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
+          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
           && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
       }
 
@@ -215,10 +213,12 @@ service cloud.firestore {
       // Subcollection: Salary Rollovers
       match /salaryRollovers/{docId} {
         allow read: if isOwner(uid);
-        allow create, update: if isOwner(uid)
+        allow create: if isOwner(uid)
           && request.resource.data.keys().hasOnly(['cycleKey', 'processedAt'])
           && request.resource.data.cycleKey is string
           && request.resource.data.processedAt is timestamp;
+        allow update: if false;
+        allow delete: if false;
       }
 
       // Subcollection: Debts & Debt Payments

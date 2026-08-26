@@ -48,6 +48,8 @@
 - **Đồng bộ Key Ngân sách (`budgetRef`)**: Sửa format document ID trong `FirebaseTransactionRepository.kt` thành `"${catId}_month:${month}"` khớp 100% với Cloud Functions `reconcileBudget`, đảm bảo `spentAmount` được cập nhật chính xác trong Firestore Atomic Transaction.
 - **Khôi phục Hộp thư Thông báo (`Notification Center Sync`)**: Khôi phục lưu `AppNotification` trong `AlarmReminderScheduler.kt` (`ReminderReceiver`) khi báo thức kích hoạt, giải quyết triệt để lỗi màn hình `NotificationsScreen` bị trống sau commit `431abd7`.
 - **Cập nhật Báo thức Kế tiếp**: Cập nhật `nextTriggerDate` vào Database ngay khi báo thức reo để duy trì tính toàn vẹn của lịch nhắc nhở.
+- **Tối ưu hóa Google Sign-In Credential Manager**: Loại bỏ xung đột cấu hình `signInWithGoogleOption` và sử dụng thuần túy `GetGoogleIdOption` với `setFilterByAuthorizedAccounts(false)` để hiển thị đầy đủ danh sách tất cả tài khoản Google trên thiết bị người dùng.
+- **Thời gian chờ & Thông báo**: Mở rộng timeout kết nối Google lên 25s và làm rõ thông báo lỗi khi thiết bị chưa có tài khoản.
 
 ### Added
 - **Cảnh báo Ngân sách Tức thì (Local Budget Alert)**: Tích hợp cơ chế kiểm tra ngân sách ngay trong `AddTransactionUseCase.kt`. Tự động bắn thông báo hệ thống (Status Bar Notification) và ghi `AppNotification` (loại `BUDGET_ALERT`) khi chi tiêu đạt 80% (cảnh báo) hoặc 100% (vượt hạn mức).
