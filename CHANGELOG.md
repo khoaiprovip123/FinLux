@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.7] - 2026-08-26
+### Fixed
+- **Tối ưu hóa Google Sign-In Credential Manager**: Loại bỏ xung đột cấu hình `signInWithGoogleOption` và sử dụng thuần túy `GetGoogleIdOption` với `setFilterByAuthorizedAccounts(false)` để hiển thị đầy đủ danh sách tất cả tài khoản Google trên thiết bị người dùng.
+- **Thời gian chờ & Thông báo**: Mở rộng timeout kết nối Google lên 25s và làm rõ thông báo lỗi khi thiết bị chưa có tài khoản.
+
 ## [1.10.6] - 2026-08-26
 ### Fixed
 - **Bảo mật & Xác thực Google Sign-In**: Cấu hình Release Keystore chính thức cho luồng CI/CD Release trên GitHub Actions, đăng ký SHA-1 và SHA-256 fingerprint đồng bộ với Firebase Console & Google Cloud Console.

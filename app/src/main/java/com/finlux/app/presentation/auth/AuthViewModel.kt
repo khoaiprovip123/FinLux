@@ -109,11 +109,8 @@ class AuthViewModel @Inject constructor(
             val targetContext = context.findActivity() ?: context
 
             try {
-                val timedOut = kotlinx.coroutines.withTimeoutOrNull(20_000L) {
+                val timedOut = kotlinx.coroutines.withTimeoutOrNull(25_000L) {
                     val credentialManager = androidx.credentials.CredentialManager.create(targetContext)
-
-                    val signInWithGoogleOption = com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption.Builder(webClientId)
-                        .build()
 
                     val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
                         .setFilterByAuthorizedAccounts(false)
@@ -122,7 +119,6 @@ class AuthViewModel @Inject constructor(
                         .build()
 
                     val request = androidx.credentials.GetCredentialRequest.Builder()
-                        .addCredentialOption(signInWithGoogleOption)
                         .addCredentialOption(googleIdOption)
                         .build()
 
@@ -160,20 +156,20 @@ class AuthViewModel @Inject constructor(
                 }
 
                 if (timedOut == null) {
-                    android.util.Log.e("GoogleSignIn", "Google Sign-In timed out after 20s")
+                    android.util.Log.e("GoogleSignIn", "Google Sign-In timed out after 25s")
                     mutableState.update { it.copy(error = "Kết nối Google quá thời gian, vui lòng thử lại") }
                 }
             } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
                 android.util.Log.d("GoogleSignIn", "User cancelled Google Sign-In picker")
                 mutableState.update { it.copy(error = null) }
             } catch (e: androidx.credentials.exceptions.NoCredentialException) {
-                android.util.Log.e("GoogleSignIn", "NoCredentialException (${e.javaClass.simpleName}): ${e.message}", e)
-                mutableState.update { it.copy(error = "Không tìm thấy tài khoản Google trên thiết bị hoặc đã hủy chọn") }
+                android.util.Log.e("GoogleSignIn", "NoCredentialException: ${e.message}", e)
+                mutableState.update { it.copy(error = "Không tìm thấy tài khoản Google nào trên thiết bị. Vui lòng đăng nhập tài khoản Google vào máy.") }
             } catch (e: androidx.credentials.exceptions.GetCredentialException) {
-                android.util.Log.e("GoogleSignIn", "GetCredentialException (${e.javaClass.simpleName}): ${e.message}", e)
+                android.util.Log.e("GoogleSignIn", "GetCredentialException: ${e.message}", e)
                 mutableState.update { it.copy(error = e.localizedMessage ?: "Đăng nhập Google thất bại. Vui lòng thử lại.") }
             } catch (e: Exception) {
-                android.util.Log.e("GoogleSignIn", "Google Sign-In Exception (${e.javaClass.simpleName}): ${e.message}", e)
+                android.util.Log.e("GoogleSignIn", "Google Sign-In Exception: ${e.message}", e)
                 mutableState.update { it.copy(error = e.localizedMessage ?: "Đăng nhập Google thất bại") }
             } finally {
                 mutableState.update { it.copy(isLoading = false) }
