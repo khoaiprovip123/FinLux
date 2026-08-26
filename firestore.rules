@@ -124,10 +124,9 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly([
             'name', 'type', 'balance', 'color', 'isDefault', 'createdAt', 'status', 'archivedAt', 'lastTransactionId'
           ])
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
-          && request.resource.data.balance is int
-          && request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other']
+          && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() > 0))
+          && (!('balance' in request.resource.data) || request.resource.data.balance is int)
+          && (!('type' in request.resource.data) || request.resource.data.type in ['cash', 'bank', 'ewallet', 'card', 'investment', 'other'])
           && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived'])
           && (!('archivedAt' in request.resource.data) || request.resource.data.archivedAt is timestamp)
           && (
