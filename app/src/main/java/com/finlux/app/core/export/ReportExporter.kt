@@ -8,18 +8,20 @@ import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
-import com.finlux.app.presentation.home.toVnd
 import com.finlux.app.presentation.reports.CategoryExpense
 import com.finlux.app.presentation.reports.ReportRange
 import java.io.File
 import java.io.FileOutputStream
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 object ReportExporter {
 
@@ -83,7 +85,7 @@ object ReportExporter {
         // Title & Metadata
         sb.append("BÁO CÁO TÀI CHÍNH CÁ NHÂN FINLUX\n")
         sb.append("Khoảng thời gian:,Từ ${range.start.format(dateFormatter)} đến ${range.end.format(dateFormatter)}\n")
-        sb.append("Ngày xuất báo cáo:,${java.time.LocalDate.now().format(dateFormatter)}\n\n")
+        sb.append("Ngày xuất báo cáo:,${LocalDate.now().format(dateFormatter)}\n\n")
 
         // Section 1: Summary KPI
         sb.append("1. TỔNG QUAN DÒNG TIỀN\n")
@@ -100,7 +102,7 @@ object ReportExporter {
         expensesByCategory.forEach { item ->
             val catName = item.category?.name ?: "Khác"
             val ratio = if (totalExpense > 0) (item.amount * 100.0 / totalExpense) else 0.0
-            sb.append("\"${catName}\",${item.amount},${String.format("%.1f%%", ratio)}\n")
+            sb.append("\"${catName}\",${item.amount},${String.format(Locale.US, "%.1f%%", ratio)}\n")
         }
         sb.append("\n")
 
@@ -129,7 +131,8 @@ object ReportExporter {
     }
 
     /**
-     * Generates a beautifully formatted Multi-page PDF Report with Visual KPI and Category Distribution Bars.
+     * Generates a beautifully formatted Multi-page PDF Report with Visual KPI,
+     * Category Distribution Progress Bars, and Financial Statement Tabular Layout.
      */
     fun exportToPdf(
         context: Context,
@@ -156,41 +159,133 @@ object ReportExporter {
         var page = document.startPage(pageInfo)
         var canvas = page.canvas
 
+        // Palette & Paints
         val paintTitle = Paint().apply {
-            color = Color.rgb(30, 64, 175) // Rich Blue
-            textSize = 18f
+            color = Color.rgb(30, 58, 138) // Deep Blue #1E3A8A
+            textSize = 17f
             isFakeBoldText = true
             isAntiAlias = true
         }
 
-        val paintHeader = Paint().apply {
-            color = Color.rgb(30, 41, 59) // Slate 800
-            textSize = 12f
+        val paintSubtitle = Paint().apply {
+            color = Color.rgb(100, 116, 139) // Slate 500 #64748B
+            textSize = 8.5f
+            isAntiAlias = true
+        }
+
+        val paintSectionHeader = Paint().apply {
+            color = Color.rgb(15, 23, 42) // Slate 900 #0F172A
+            textSize = 11f
             isFakeBoldText = true
             isAntiAlias = true
         }
 
-        val paintBody = Paint().apply {
-            color = Color.rgb(71, 85, 105) // Slate 600
-            textSize = 9.5f
+        val paintTableHeaderBg = Paint().apply {
+            color = Color.rgb(241, 245, 249) // Slate 100 #F1F5F9
+            style = Paint.Style.FILL
             isAntiAlias = true
         }
 
-        val paintLine = Paint().apply {
-            color = Color.rgb(226, 232, 240) // Slate 200
-            strokeWidth = 1f
+        val paintTableHeaderText = Paint().apply {
+            color = Color.rgb(71, 85, 105) // Slate 600 #475569
+            textSize = 8.5f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        val paintZebraRowBg = Paint().apply {
+            color = Color.rgb(248, 250, 252) // Slate 50 #F8FAFC
+            style = Paint.Style.FILL
+        }
+
+        val paintRowLine = Paint().apply {
+            color = Color.rgb(226, 232, 240) // Slate 200 #E2E8F0
+            strokeWidth = 0.5f
             style = Paint.Style.STROKE
         }
 
         val paintCard = Paint().apply {
             color = Color.rgb(248, 250, 252) // Slate 50
             style = Paint.Style.FILL
+            isAntiAlias = true
         }
 
-        val paintIncome = Paint(paintHeader).apply { color = Color.rgb(16, 185, 129) } // Emerald 500
-        val paintExpense = Paint(paintHeader).apply { color = Color.rgb(239, 68, 68) } // Red 500
+        val paintCardBorder = Paint().apply {
+            color = Color.rgb(226, 232, 240) // Slate 200
+            strokeWidth = 0.8f
+            style = Paint.Style.STROKE
+            isAntiAlias = true
+        }
 
-        val categoryColors = listOf(
+        val paintKpiLabel = Paint().apply {
+            color = Color.rgb(100, 116, 139) // Slate 500
+            textSize = 8f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        val paintIncome = Paint().apply {
+            color = Color.rgb(22, 163, 74) // Emerald 600 #16A34A
+            textSize = 11.5f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        val paintExpense = Paint().apply {
+            color = Color.rgb(220, 38, 38) // Red 600 #DC2626
+            textSize = 11.5f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        val paintCatName = Paint().apply {
+            color = Color.rgb(30, 41, 59) // Slate 800 #1E293B
+            textSize = 9f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+
+        val paintCatNote = Paint().apply {
+            color = Color.rgb(100, 116, 139) // Slate 500 #64748B
+            textSize = 7.8f
+            isAntiAlias = true
+        }
+
+        val paintDate = Paint().apply {
+            color = Color.rgb(71, 85, 105) // Slate 600
+            textSize = 8.2f
+            isAntiAlias = true
+        }
+
+        val paintWallet = Paint().apply {
+            color = Color.rgb(71, 85, 105) // Slate 600
+            textSize = 8.5f
+            isAntiAlias = true
+        }
+
+        val paintAmountIncome = Paint().apply {
+            color = Color.rgb(22, 163, 74) // Emerald 600 #16A34A
+            textSize = 9f
+            isFakeBoldText = true
+            isAntiAlias = true
+            textAlign = Paint.Align.RIGHT
+        }
+
+        val paintAmountExpense = Paint().apply {
+            color = Color.rgb(220, 38, 38) // Red 600 #DC2626
+            textSize = 9f
+            isFakeBoldText = true
+            isAntiAlias = true
+            textAlign = Paint.Align.RIGHT
+        }
+
+        val paintProgressBarBg = Paint().apply {
+            color = Color.rgb(226, 232, 240) // Slate 200 #E2E8F0
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+
+        val defaultCategoryColors = listOf(
             Color.rgb(99, 102, 241),  // Indigo
             Color.rgb(16, 185, 129),  // Emerald
             Color.rgb(245, 158, 11),  // Amber
@@ -198,36 +293,46 @@ object ReportExporter {
             Color.rgb(14, 165, 233),  // Sky
         )
 
-        var y = 45f
+        var y = 42f
 
-        // Draw Header
+        // 1. Header Banner
         canvas.drawText("FINLUX - BÁO CÁO TÀI CHÍNH CÁ NHÂN", 40f, y, paintTitle)
-        y += 20f
-        paintBody.color = Color.rgb(100, 116, 139)
-        canvas.drawText("Khoảng thời gian: ${range.start.format(dateFormatter)} - ${range.end.format(dateFormatter)} | Ngày xuất: ${java.time.LocalDate.now().format(dateFormatter)}", 40f, y, paintBody)
-        y += 20f
-        canvas.drawLine(40f, y, pageWidth - 40f, y, paintLine)
-        y += 22f
+        y += 16f
+        val subtitleText = "Khoảng thời gian: ${range.start.format(dateFormatter)} - ${range.end.format(dateFormatter)}   |   Ngày xuất báo cáo: ${LocalDate.now().format(dateFormatter)}"
+        canvas.drawText(subtitleText, 40f, y, paintSubtitle)
+        y += 14f
+        canvas.drawLine(40f, y, 555f, y, paintRowLine)
+        y += 16f
 
-        // KPI Summary Box
-        canvas.drawRoundRect(40f, y, pageWidth - 40f, y + 68f, 10f, 10f, paintCard)
-        canvas.drawText("TỔNG THU NHẬP", 55f, y + 22f, paintBody)
-        canvas.drawText("+${summary.income.value.toVnd()}", 55f, y + 46f, paintIncome)
+        // 2. Summary KPI Box
+        val kpiBoxHeight = 62f
+        canvas.drawRoundRect(40f, y, 555f, y + kpiBoxHeight, 8f, 8f, paintCard)
+        canvas.drawRoundRect(40f, y, 555f, y + kpiBoxHeight, 8f, 8f, paintCardBorder)
 
-        canvas.drawText("TỔNG CHI TIÊU", 230f, y + 22f, paintBody)
-        canvas.drawText("-${summary.expense.value.toVnd()}", 230f, y + 46f, paintExpense)
+        // Col 1: Tổng Thu Nhập
+        canvas.drawText("TỔNG THU NHẬP", 55f, y + 20f, paintKpiLabel)
+        canvas.drawText("+${formatVndAmount(summary.income.value)}", 55f, y + 43f, paintIncome)
 
-        canvas.drawText("THU RÒNG (DƯ / THÂM HỤT)", 400f, y + 22f, paintBody)
-        val paintNet = Paint(paintHeader).apply {
-            color = if (summary.net >= 0) Color.rgb(16, 185, 129) else Color.rgb(239, 68, 68)
+        // Col 2: Tổng Chi Tiêu
+        canvas.drawText("TỔNG CHI TIÊU", 225f, y + 20f, paintKpiLabel)
+        canvas.drawText("-${formatVndAmount(summary.expense.value)}", 225f, y + 43f, paintExpense)
+
+        // Col 3: Thu Ròng (Dư/Thâm hụt)
+        canvas.drawText("THU RÒNG (DƯ / THÂM HỤT)", 395f, y + 20f, paintKpiLabel)
+        val paintNet = Paint().apply {
+            color = if (summary.net >= 0) Color.rgb(22, 163, 74) else Color.rgb(220, 38, 38)
+            textSize = 11.5f
+            isFakeBoldText = true
+            isAntiAlias = true
         }
         val netPrefix = if (summary.net > 0) "+" else ""
-        canvas.drawText("${netPrefix}${summary.net.toVnd()}", 400f, y + 46f, paintNet)
-        y += 90f
+        canvas.drawText("${netPrefix}${formatVndAmount(summary.net)}", 395f, y + 43f, paintNet)
 
-        // Top Category Breakdown with Visual Progress Bars
-        canvas.drawText("CƠ CẤU CHI TIÊU THEO DANH MỤC", 40f, y, paintHeader)
-        y += 18f
+        y += kpiBoxHeight + 22f
+
+        // 3. Top Category Breakdown with Separated Y coordinates & Progress Bars
+        canvas.drawText("CƠ CẤU CHI TIÊU THEO DANH MỤC", 40f, y, paintSectionHeader)
+        y += 14f
         val totalExpense = summary.expense.value
         val topCategories = expensesByCategory.take(5)
 
@@ -235,115 +340,140 @@ object ReportExporter {
             topCategories.forEachIndexed { index, item ->
                 val catName = item.category?.name ?: "Khác"
                 val ratio = (item.amount * 100.0 / totalExpense)
-                val color = categoryColors[index % categoryColors.size]
+                val fallbackColor = defaultCategoryColors[index % defaultCategoryColors.size]
+                val catColorInt = parseColorHex(item.category?.colorHex, fallbackColor)
 
-                val paintCatColor = Paint().apply {
-                    this.color = color
+                val paintDot = Paint().apply {
+                    color = catColorInt
                     isAntiAlias = true
-                }
-
-                // Category Dot
-                canvas.drawCircle(46f, y - 4f, 4.5f, paintCatColor)
-
-                // Category Label & Amount
-                paintBody.color = Color.rgb(30, 41, 59)
-                paintBody.isFakeBoldText = true
-                canvas.drawText(catName, 58f, y, paintBody)
-                paintBody.isFakeBoldText = false
-
-                paintBody.color = Color.rgb(100, 116, 139)
-                val amountAndRatioText = "${item.amount.toVnd()} (${String.format("%.1f%%", ratio)})"
-                canvas.drawText(amountAndRatioText, pageWidth - 160f, y, paintBody)
-
-                // Visual Progress Bar
-                y += 6f
-                val barBgPaint = Paint().apply {
-                    this.color = Color.rgb(241, 245, 249)
                     style = Paint.Style.FILL
                 }
-                val barFillPaint = Paint().apply {
-                    this.color = color
+
+                // Line 1: Dot + Category Name (Left) & Amount + Ratio (Right Align at 555f)
+                canvas.drawCircle(46f, y + 6.5f, 3.5f, paintDot)
+
+                val truncatedCatName = smartEllipsize(paintCatName, catName, 280f)
+                canvas.drawText(truncatedCatName, 56f, y + 10f, paintCatName)
+
+                val amountAndRatioText = "${formatVndAmount(item.amount)} (${String.format(Locale.US, "%.1f%%", ratio)})"
+                val paintStats = Paint().apply {
+                    color = Color.rgb(71, 85, 105)
+                    textSize = 8.8f
+                    isAntiAlias = true
+                    textAlign = Paint.Align.RIGHT
+                }
+                canvas.drawText(amountAndRatioText, 555f, y + 10f, paintStats)
+
+                // Line 2: Progress Bar
+                val barTop = y + 16f
+                val barBottom = y + 21f
+                val totalBarWidth = 515f // from x=40 to x=555
+                val fillWidth = (totalBarWidth * (ratio.toFloat() / 100f)).coerceIn(4f, totalBarWidth)
+
+                canvas.drawRoundRect(40f, barTop, 555f, barBottom, 2.5f, 2.5f, paintProgressBarBg)
+
+                val paintBarFill = Paint().apply {
+                    color = catColorInt
+                    isAntiAlias = true
                     style = Paint.Style.FILL
                 }
-                val barWidth = (pageWidth - 80f)
-                val fillWidth = (barWidth * (ratio.toFloat() / 100f)).coerceIn(4f, barWidth)
+                canvas.drawRoundRect(40f, barTop, 40f + fillWidth, barBottom, 2.5f, 2.5f, paintBarFill)
 
-                canvas.drawRoundRect(40f, y, 40f + barWidth, y + 5f, 2.5f, 2.5f, barBgPaint)
-                canvas.drawRoundRect(40f, y, 40f + fillWidth, y + 5f, 2.5f, 2.5f, barFillPaint)
-
-                y += 18f
+                y += 27f
             }
         } else {
-            paintBody.color = Color.rgb(100, 116, 139)
-            canvas.drawText("Không có dữ liệu chi tiêu trong kỳ", 50f, y, paintBody)
+            canvas.drawText("Không có dữ liệu chi tiêu trong kỳ", 40f, y + 10f, paintSubtitle)
             y += 18f
         }
 
         y += 10f
-        canvas.drawLine(40f, y, pageWidth - 40f, y, paintLine)
-        y += 22f
+        canvas.drawLine(40f, y, 555f, y, paintRowLine)
+        y += 20f
 
-        // Transactions Table Header
-        canvas.drawText("DANH SÁCH GIAO DỊCH (${transactions.size} giao dịch)", 40f, y, paintHeader)
-        y += 18f
+        // Helper to draw clean table header
+        fun drawTableHeader(c: Canvas, startY: Float, isContinued: Boolean = false) {
+            var curY = startY
+            val titleText = if (isContinued) "DANH SÁCH GIAO DỊCH (TIẾP THEO)" else "DANH SÁCH GIAO DỊCH (${transactions.size} giao dịch)"
+            c.drawText(titleText, 40f, curY, paintSectionHeader)
+            curY += 13f
 
-        paintHeader.color = Color.rgb(100, 116, 139)
-        paintHeader.textSize = 10f
-        canvas.drawText("Ngày", 40f, y, paintHeader)
-        canvas.drawText("Danh mục / Ghi chú", 110f, y, paintHeader)
-        canvas.drawText("Ví", 340f, y, paintHeader)
-        canvas.drawText("Số tiền", 450f, y, paintHeader)
-        y += 8f
-        canvas.drawLine(40f, y, pageWidth - 40f, y, paintLine)
-        y += 16f
+            val headerHeight = 22f
+            c.drawRoundRect(40f, curY, 555f, curY + headerHeight, 4f, 4f, paintTableHeaderBg)
 
-        // Draw Transactions Rows
-        transactions.forEach { tx ->
-            if (y > pageHeight - 55f) {
+            val textY = curY + 14.5f
+            // Col 1: Thời gian (Ngày & Giờ: dd/MM/yyyy HH:mm)
+            c.drawText("THỜI GIAN", 46f, textY, paintTableHeaderText)
+            // Col 2: Danh mục & Ghi chú
+            c.drawText("DANH MỤC & GHI CHÚ", 142f, textY, paintTableHeaderText)
+            // Col 3: Ví
+            c.drawText("VÍ THANH TOÁN", 355f, textY, paintTableHeaderText)
+            // Col 4: Số tiền (Align Right at 547f)
+            val paintCol4Header = Paint(paintTableHeaderText).apply { textAlign = Paint.Align.RIGHT }
+            c.drawText("SỐ TIỀN", 547f, textY, paintCol4Header)
+        }
+
+        // Draw initial table header
+        drawTableHeader(canvas, y, isContinued = false)
+        y += 40f
+
+        // 4. Draw Transactions Rows with Zebra Striping & 2-Line Category/Note
+        val rowHeight = 28f
+
+        transactions.forEachIndexed { index, tx ->
+            // Check page overflow
+            if (y + rowHeight > pageHeight - 45f) {
                 document.finishPage(page)
                 pageNumber++
                 pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
                 page = document.startPage(pageInfo)
                 canvas = page.canvas
-                y = 45f
+                y = 42f
 
-                // Re-draw table header on next page
-                paintHeader.color = Color.rgb(30, 41, 59)
-                paintHeader.textSize = 12f
-                canvas.drawText("DANH SÁCH GIAO DỊCH (tiếp theo)", 40f, y, paintHeader)
-                y += 20f
-                paintHeader.color = Color.rgb(100, 116, 139)
-                paintHeader.textSize = 10f
-                canvas.drawText("Ngày", 40f, y, paintHeader)
-                canvas.drawText("Danh mục / Ghi chú", 110f, y, paintHeader)
-                canvas.drawText("Ví", 340f, y, paintHeader)
-                canvas.drawText("Số tiền", 450f, y, paintHeader)
-                y += 8f
-                canvas.drawLine(40f, y, pageWidth - 40f, y, paintLine)
-                y += 16f
+                drawTableHeader(canvas, y, isContinued = true)
+                y += 40f
             }
 
-            val dateStr = tx.date.atZone(ZoneId.systemDefault()).format(dateFormatter)
-            val catName = if (tx.categoryId == "debt_payment") "Trả nợ & Tín dụng" else tx.categoryId?.let { categoryMap[it]?.name } ?: "Giao dịch"
-            val noteSnippet = if (tx.note.isNotBlank()) " (${tx.note.take(15)})" else ""
-            val walletName = walletMap[tx.walletId]?.name?.take(12) ?: "Ví"
-
-            paintBody.color = Color.rgb(71, 85, 105)
-            canvas.drawText(dateStr, 40f, y, paintBody)
-            canvas.drawText("${catName}${noteSnippet}".take(32), 110f, y, paintBody)
-            canvas.drawText(walletName, 340f, y, paintBody)
-
-            val amountPaint = when (tx.type) {
-                TransactionType.INCOME, TransactionType.TRANSFER_IN -> paintIncome
-                TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> paintExpense
+            // Zebra Striping Background
+            if (index % 2 == 1) {
+                canvas.drawRect(40f, y, 555f, y + rowHeight, paintZebraRowBg)
             }
-            val prefix = when (tx.type) {
-                TransactionType.INCOME, TransactionType.TRANSFER_IN -> "+"
-                TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> "-"
-            }
-            canvas.drawText("${prefix}${tx.amount.value.toVnd()}", 450f, y, amountPaint)
 
-            y += 16f
+            // Bottom Border Line
+            canvas.drawLine(40f, y + rowHeight, 555f, y + rowHeight, paintRowLine)
+
+            // Col 1: Date & Time (dd/MM/yyyy HH:mm)
+            val dateTimeStr = tx.date.atZone(ZoneId.systemDefault()).format(dateTimeFormatter)
+            canvas.drawText(dateTimeStr, 46f, y + 16f, paintDate)
+
+            // Col 2: Category & Note (2 lines in 1 cell)
+            val catName = if (tx.categoryId == "debt_payment") "Trả nợ & Tín dụng" else tx.categoryId?.let { categoryMap[it]?.name } ?: "Khác"
+            val truncatedCatName = smartEllipsize(paintCatName, catName, 202f)
+
+            if (tx.note.isNotBlank()) {
+                // Line 1: Category Name
+                canvas.drawText(truncatedCatName, 142f, y + 11.5f, paintCatName)
+                // Line 2: Note Snippet
+                val truncatedNote = smartEllipsize(paintCatNote, tx.note.trim(), 202f)
+                canvas.drawText(truncatedNote, 142f, y + 21.5f, paintCatNote)
+            } else {
+                // Single vertically centered line
+                canvas.drawText(truncatedCatName, 142f, y + 16f, paintCatName)
+            }
+
+            // Col 3: Wallet (Smart Ellipsize max 88pt)
+            val rawWalletName = walletMap[tx.walletId]?.name ?: "Ví không xác định"
+            val truncatedWalletName = smartEllipsize(paintWallet, rawWalletName, 88f)
+            canvas.drawText(truncatedWalletName, 355f, y + 16f, paintWallet)
+
+            // Col 4: Amount (Align Right at 547f)
+            val (amountPaint, prefix) = when (tx.type) {
+                TransactionType.INCOME, TransactionType.TRANSFER_IN -> Pair(paintAmountIncome, "+")
+                TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> Pair(paintAmountExpense, "-")
+            }
+            val amountFormatted = "${prefix}${formatVndAmount(tx.amount.value)}"
+            canvas.drawText(amountFormatted, 547f, y + 16f, amountPaint)
+
+            y += rowHeight
         }
 
         document.finishPage(page)
@@ -354,6 +484,34 @@ object ReportExporter {
         document.close()
 
         return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }
+
+    /**
+     * Smart text ellipsize based on Paint text width measurement.
+     * Prevents text truncation issues by adding an ellipsis '…' when text exceeds maxWidth.
+     */
+    private fun smartEllipsize(paint: Paint, text: String, maxWidth: Float): String {
+        if (paint.measureText(text) <= maxWidth) return text
+        val ellipsis = "…"
+        val ellipsisWidth = paint.measureText(ellipsis)
+        if (maxWidth <= ellipsisWidth) return ellipsis
+
+        val availableWidth = maxWidth - ellipsisWidth
+        val count = paint.breakText(text, true, availableWidth, null)
+        return text.substring(0, count).trimEnd() + ellipsis
+    }
+
+    /**
+     * Safe Color Hex parser with fallback.
+     */
+    private fun parseColorHex(hex: String?, fallbackColor: Int): Int {
+        if (hex.isNullOrBlank()) return fallbackColor
+        return try {
+            val cleanHex = if (hex.startsWith("#")) hex else "#$hex"
+            Color.parseColor(cleanHex)
+        } catch (_: Exception) {
+            fallbackColor
+        }
     }
 
     fun shareExportedFile(context: Context, fileUri: Uri, mimeType: String, title: String) {

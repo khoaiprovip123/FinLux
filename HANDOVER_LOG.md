@@ -1,8 +1,35 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.14 (versionCode 126)
+- **Phiên bản hiện tại:** v1.10.15 (versionCode 127)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-FEAT-PDF-Statement-Exporter-v1.10.15] - Tích Hợp Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng A4 & Tối Ưu CI Pipeline
+- **Status**: `[DONE]`
+- **Goal**:
+  1. **Tái Cấu Trúc Bảng Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng (`ReportExporter.kt`)**:
+     - Thiết kế A4 chuẩn với Header Slate `#F1F5F9` bo góc 4pt, viền mảnh `0.5pt` `#E2E8F0`, phân chia nền Zebra Striping `#F8FAFC` và `#FFFFFF` xen kẽ.
+     - Phân bổ 4 cột dữ liệu: Cột 1 Thời gian `dd/MM/yyyy HH:mm`, Cột 2 Danh mục & Ghi chú (2 dòng có `smartEllipsize`), Cột 3 Ví thanh toán (smartEllipsize max 88pt), Cột 4 Số tiền (+ xanh / - đỏ, `formatVndAmount`, Align.RIGHT).
+     - Phân tách độc lập tọa độ Y dòng Text và thanh Progress Bar của mục "Cơ Cấu Chi Tiêu Theo Danh Mục", lấy màu chuẩn qua `parseColorHex`.
+     - Hộp KPI Summary Card và tự động phân trang đa trang (Multi-page Pagination).
+  2. **Tối Ưu Cấu Hình Build & CI Pipeline**:
+     - Nâng cấp JVM args trong `gradle.properties`: `-Xmx4g -XX:MaxMetaspaceSize=1g`.
+     - Xác minh 100% Unit Tests (`testDebugUnitTest`) và Android Lint (`lintDebug`) PASS.
+  3. **Đồng Bộ Tài Liệu Quy Chuẩn**:
+     - Bổ sung `UC-17` & `BR-11` vào `docs/BA_SPEC.md`.
+     - Bổ sung `SCREEN 19` vào `docs/UI_SPEC.md`.
+- **Files Modified/Created**:
+  - `app/src/main/java/com/finlux/app/core/export/ReportExporter.kt` (MODIFIED)
+  - `gradle.properties` (MODIFIED)
+  - `docs/BA_SPEC.md` (MODIFIED)
+  - `docs/UI_SPEC.md` (MODIFIED)
+  - `app/build.gradle.kts` (MODIFIED - Bump versionCode 127, versionName 1.10.15)
+  - `CHANGELOG.md` (MODIFIED)
+  - `HANDOVER_LOG.md` (MODIFIED)
+- **Verification**:
+  - `./gradlew.bat testDebugUnitTest` -> 100% PASS (34 actionable tasks).
+  - `./gradlew.bat lintDebug` -> 100% PASS (BUILD SUCCESSFUL).
+
 
 ### [Task-FEAT-Vietnamese-Banks-EWallets-Presets-v1.10.14] - Bộ Nhận Diện Ngân Hàng & Ví Điện Tử Việt Nam (35+ Tổ Chức Tài Chính) & Chọn Nhanh Thiết Lập Ví
 - **Status**: `[DONE]`

@@ -211,6 +211,25 @@ Business rule:
 
 ---
 
+### UC-17: Xuất báo cáo tài chính Excel / PDF (Financial Statement Exporter)
+```
+Actor: User
+Precondition: Đã đăng nhập, màn hình Báo cáo có dữ liệu trong khoảng thời gian đã chọn.
+Main flow:
+  1. Người dùng vào tab Báo cáo (/reports), chọn khoảng thời gian (Kỳ lương, Tháng, Quý, Năm, Tùy chọn).
+  2. Bấm vào nút "Xuất file" (Export) trên thanh tiêu đề báo cáo -> Hệ thống hiển thị hộp thoại chọn định dạng:
+     - Excel Workbook (.xlsx - Chuẩn OpenXML 2 Sheet: Chi tiết giao dịch + Tổng hợp danh mục KPI).
+     - Báo cáo PDF (.pdf - Chuẩn sao kê tài chính ngân hàng A4, có KPI Box, biểu đồ thanh tiến độ cơ cấu danh mục và bảng giao dịch Zebra Striping).
+     - File CSV (.csv - UTF-8 BOM tương thích Excel).
+  3. Khi chọn định dạng:
+     - Hệ thống sinh file trong thư mục cache `exports/` qua `ReportExporter`.
+     - Gọi `Intent.ACTION_SEND` (FileProvider) để người dùng lưu vào máy hoặc chia sẻ qua Zalo, Telegram, Email, Google Drive...
+Business rule:
+  BR-11: Báo cáo PDF bắt buộc tuân thủ chuẩn sao kê A4 (Header Slate, Zebra striping, đường kẻ viền 0.5pt, Cột 1 Thời gian dd/MM/yyyy HH:mm, Cột 2 Danh mục/Ghi chú 2 dòng, Cột 3 Ví có smartEllipsize, Cột 4 Số tiền Align.RIGHT khớp mép bảng); Excel xuất chuẩn OpenXML 2 sheet.
+```
+
+---
+
 ### UC-21: Tùy biến giao diện Liquid Glass
 ```
 Actor: User

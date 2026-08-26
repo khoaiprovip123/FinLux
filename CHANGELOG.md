@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.10.15] - 2026-08-26
+### Added & Enhanced
+- **Tích Hợp & Nâng Cấp Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng A4 (`ReportExporter.kt`)**:
+  - **Bảng Sao Kê Tài Chính Tabular Layout**: Header Slate `#F1F5F9` bo góc 4pt, viền mảnh `0.5pt` `#E2E8F0`, phân chia nền Zebra Striping `#F8FAFC` và `#FFFFFF` xen kẽ.
+  - **Phân Bổ 4 Cột Dữ Liệu Tối Ưu**:
+    * Cột 1 (Thời gian): Hiển thị ngày và giờ chính xác `dd/MM/yyyy HH:mm` theo múi giờ hệ thống.
+    * Cột 2 (Danh mục & Ghi chú): Bố cục 2 dòng trong 1 ô (Tên danh mục bold `#1E293B` + Ghi chú font nhỏ `#64748B` có `smartEllipsize` chống tràn chữ).
+    * Cột 3 (Ví thanh toán): Căn trái kèm hàm `smartEllipsize` max 88pt chống lỗi cắt cụt chữ.
+    * Cột 4 (Số tiền): Căn lề phải (Align.RIGHT) khớp lề bảng, màu xanh `#16A34A` cho Thu và đỏ `#DC2626` cho Chi với hàm `formatVndAmount`.
+  - **Tối Ưu Phân Bổ Thanh Tiến Độ "Cơ Cấu Chi Tiêu Theo Danh Mục"**:
+    * Tách biệt độc lập tọa độ Y dòng Text và thanh Progress Bar (cao 5pt bo góc 2.5pt), triệt tiêu hoàn toàn hiện tượng thanh bar đè lên chân chữ.
+    * Tự động nhận diện và vẽ màu sắc chủ đạo theo danh mục (`parseColorHex`).
+  - **Summary KPI Card**: Bo góc 8pt với viền mảnh 0.8pt, hiển thị Tổng Thu Nhập, Tổng Chi Tiêu, và Thu Ròng (Dư/Thâm hụt).
+  - **Tự Động Phân Trang Đa Trang (Multi-page Pagination)**: Tự động ngắt trang khi vượt quá chiều cao A4 và vẽ lại Header bảng trên trang tiếp theo.
+- **Tối Ưu Hóa Cấu Hình Build & CI Pipeline**:
+  - Nâng cấp JVM args trong `gradle.properties`: `-Xmx4g -XX:MaxMetaspaceSize=1g`.
+  - Đảm bảo 100% Unit Tests (`testDebugUnitTest`) và Android Lint (`lintDebug`) vượt qua tất cả kiểm thử trên CI GitHub Actions.
+- **Đồng Bộ Tài Liệu Đặc Tả Quy Chuẩn**:
+  - Bổ sung `UC-17: Xuất báo cáo tài chính Excel / PDF` và quy tắc nghiệp vụ `BR-11` vào `docs/BA_SPEC.md`.
+  - Bổ sung `SCREEN 19: Bản In Báo Cáo PDF Chuẩn Sao Kê Tài Chính` vào `docs/UI_SPEC.md`.
+
 ## [1.10.14] - 2026-08-26
 ### Added
 - **Bộ nhận diện Ngân hàng & Ví điện tử Việt Nam (35+ Tổ chức Tài chính)**:
