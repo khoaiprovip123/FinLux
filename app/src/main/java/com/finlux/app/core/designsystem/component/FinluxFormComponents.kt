@@ -65,6 +65,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.finlux.app.core.designsystem.FinancialInstitutionLogo
+import com.finlux.app.core.designsystem.findInstitutionForWallet
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -181,7 +183,7 @@ fun ErgonomicInputRow(
     icon: ImageVector,
     iconBgColor: Color,
     iconTintColor: Color,
-    onClear: () -> Unit,
+    onClear: () -> Unit = {},
     modifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
@@ -639,20 +641,12 @@ fun FinluxWalletPickerBottomSheet(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(walletColor.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = walletIcon(wallet.type),
-                                        contentDescription = null,
-                                        tint = walletColor,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
+                                FinancialInstitutionLogo(
+                                    institution = findInstitutionForWallet(wallet.name),
+                                    walletType = wallet.type,
+                                    customColorHex = wallet.colorHex,
+                                    size = 38.dp,
+                                )
 
                                 Column {
                                     Text(

@@ -81,14 +81,14 @@ fun FinluxAmountInputCard(
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
                 ),
                 color = tokens.onSurfaceVariant,
             )
@@ -115,7 +115,7 @@ fun FinluxAmountInputCard(
                             }
                         },
                         textStyle = TextStyle(
-                            fontSize = 30.sp,
+                            fontSize = 38.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = primaryColor,
                             letterSpacing = (-0.5).sp,
@@ -128,9 +128,10 @@ fun FinluxAmountInputCard(
                                 Text(
                                     text = "0",
                                     style = TextStyle(
-                                        fontSize = 30.sp,
+                                        fontSize = 38.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = tokens.onSurfaceVariant.copy(alpha = 0.4f),
+                                        letterSpacing = (-0.5).sp,
                                     ),
                                 )
                             }
@@ -141,11 +142,11 @@ fun FinluxAmountInputCard(
                     Text(
                         text = " ₫",
                         style = TextStyle(
-                            fontSize = 26.sp,
+                            fontSize = 32.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = primaryColor,
                         ),
-                        modifier = Modifier.padding(start = 2.dp),
+                        modifier = Modifier.padding(start = 4.dp),
                     )
                 }
 
@@ -155,7 +156,7 @@ fun FinluxAmountInputCard(
                         color = tokens.surface,
                         border = BorderStroke(1.dp, tokens.border),
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .clip(CircleShape)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
@@ -168,7 +169,7 @@ fun FinluxAmountInputCard(
                                 imageVector = androidx.compose.material.icons.Icons.Default.Close,
                                 contentDescription = "Xóa số tiền",
                                 tint = tokens.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
@@ -189,11 +190,11 @@ fun FinluxAmountInputCard(
                             else -> "+$chipAmount"
                         }
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color = tokens.surface,
                             border = BorderStroke(1.dp, tokens.border),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(12.dp))
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = ripple(bounded = true),
@@ -205,14 +206,14 @@ fun FinluxAmountInputCard(
                                 ),
                         ) {
                             Box(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     text = chipText,
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp,
                                     ),
                                     color = tokens.onSurface,
                                 )

@@ -236,7 +236,19 @@ fun DebtPaymentSheet(
                 }
             }
 
-            // 4. Source Wallet Selector Row (Compact & Ergonomic)
+            // 4. Note (Placed right beneath Amount Input)
+            ErgonomicInputRow(
+                label = "GHI CHÚ",
+                value = note,
+                onValueChange = { note = it },
+                placeholder = "vd: Thanh toán sao kê thẻ tín dụng",
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
+                iconTintColor = Color(0xFF6366F1),
+                onClear = { note = "" },
+            )
+
+            // 5. Source Wallet Selector Row (Compact & Ergonomic)
             val walletIcon = selectedWallet?.type?.let { walletIcon(it) } ?: Icons.Default.AccountBalanceWallet
             val walletAccent = selectedWallet?.let { colorFromHex(it.colorHex, tokens.primary) } ?: tokens.primary
 
@@ -250,23 +262,11 @@ fun DebtPaymentSheet(
                 onClick = { showWalletPicker = true },
             )
 
-            // 5. Principal vs Interest Split Inputs (Ergonomic 2-Column Card)
+            // 6. Principal vs Interest Split Inputs (Ergonomic 2-Column Card)
             PrincipalInterestSplitCard(
                 principalAmount = currentPrincipal,
                 interestText = interestText,
                 onInterestChange = { interestText = it },
-            )
-
-            // 6. Note (Ergonomic Input Row)
-            ErgonomicInputRow(
-                label = "GHI CHÚ",
-                value = note,
-                onValueChange = { note = it },
-                placeholder = "vd: Thanh toán sao kê thẻ tín dụng",
-                icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
-                iconTintColor = Color(0xFF6366F1),
-                onClear = { note = "" },
             )
 
             // Warning for Insufficient Balance or Custom Errors

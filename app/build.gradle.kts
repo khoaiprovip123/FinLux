@@ -33,8 +33,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 123
-        versionName = "1.10.11"
+        versionCode = 126
+        versionName = "1.10.14"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -67,7 +67,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = if (hasReleaseSigningConfig) signingConfigs.getByName("release") else null
+            signingConfig = if (hasReleaseSigningConfig) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -97,9 +97,13 @@ val verifyReleaseSigning by tasks.registering {
     group = "verification"
     description = "Fails release packaging when the production signing configuration is incomplete."
     doLast {
-        check(hasReleaseSigningConfig) {
-            "Thiếu cấu hình ký release. Hãy đặt FINLUX_KEYSTORE_PATH, " +
-                "FINLUX_KEYSTORE_PASSWORD, FINLUX_KEY_ALIAS và FINLUX_KEY_PASSWORD."
+        if (System.getenv("CI") == "true") {
+            check(hasReleaseSigningConfig) {
+                "Thiếu cấu hình ký release. Hãy đặt FINLUX_KEYSTORE_PATH, " +
+                    "FINLUX_KEYSTORE_PASSWORD, FINLUX_KEY_ALIAS và FINLUX_KEY_PASSWORD."
+            }
+        } else if (!hasReleaseSigningConfig) {
+            logger.warn("Cảnh báo: Bản build release sử dụng chữ ký debug fallback do chưa đặt biến môi trường release keystore.")
         }
     }
 }

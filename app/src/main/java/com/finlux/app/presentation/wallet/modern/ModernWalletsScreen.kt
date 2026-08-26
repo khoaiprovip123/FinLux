@@ -67,6 +67,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.finlux.app.core.designsystem.FinancialInstitutionLogo
+import com.finlux.app.core.designsystem.InstitutionSelectorSection
+import com.finlux.app.core.designsystem.findInstitutionForWallet
 import com.finlux.app.core.designsystem.FinanceAccentHexes
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.walletIcon
@@ -247,15 +250,13 @@ fun ModernWalletsScreen(
                                         .padding(vertical = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(46.dp)
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .background(accent.copy(alpha = 0.18f)),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Icon(walletIcon(wallet.type), wallet.name, tint = accent, modifier = Modifier.size(24.dp))
-                                    }
+                                    FinancialInstitutionLogo(
+                                        institution = findInstitutionForWallet(wallet.name),
+                                        walletType = wallet.type,
+                                        customColorHex = wallet.colorHex,
+                                        size = 46.dp,
+                                        shape = RoundedCornerShape(14.dp),
+                                    )
                                     Spacer(Modifier.width(14.dp))
                                     Column(Modifier.weight(1f)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -403,16 +404,23 @@ private fun WalletEditor(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                Box(
-                    Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(colorFromHex(color).copy(alpha = 0.18f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(walletIcon(type), null, tint = colorFromHex(color), modifier = Modifier.size(24.dp))
-                }
+                FinancialInstitutionLogo(
+                    institution = findInstitutionForWallet(name),
+                    walletType = type,
+                    customColorHex = color,
+                    size = 46.dp,
+                )
             }
+
+            // Mẫu Ngân hàng & Ví điện tử
+            InstitutionSelectorSection(
+                selectedInstitution = findInstitutionForWallet(name),
+                onSelectInstitution = { inst ->
+                    name = inst.shortName
+                    type = inst.type
+                    color = inst.colorHex
+                },
+            )
 
             OutlinedTextField(
                 value = name,

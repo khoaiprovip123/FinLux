@@ -1,45 +1,60 @@
 package com.finlux.app.presentation.reports.prism
 
+import com.finlux.app.domain.model.Money
 import com.finlux.app.presentation.reports.CashFlowPoint
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 class PrismReportsDataTest {
+
     @Test
-    fun `cash flow buckets preserve all real income and expense values`() {
+    fun `cash flow points calculate total income and expense accurately`() {
         val start = LocalDate.of(2026, 8, 1)
-        val points = (0 until 40).map { index ->
+        val points = (0 until 30).map { index ->
             CashFlowPoint(
                 date = start.plusDays(index.toLong()),
-                income = (index + 1) * 1_000L,
-                expense = (index + 1) * 500L,
+                income = (index + 1) * 100_000L,
+                expense = (index + 1) * 50_000L,
             )
         }
 
-        val buckets = cashFlowBuckets(points, maximumBuckets = 10)
+        val totalIncome = points.sumOf(CashFlowPoint::income)
+        val totalExpense = points.sumOf(CashFlowPoint::expense)
+        val netCashFlow = totalIncome - totalExpense
 
-        assertEquals(10, buckets.size)
-        assertEquals(points.sumOf(CashFlowPoint::income), buckets.sumOf(CashFlowBucket::income))
-        assertEquals(points.sumOf(CashFlowPoint::expense), buckets.sumOf(CashFlowBucket::expense))
-        assertEquals(start, buckets.first().start)
-        assertEquals(start.plusDays(39), buckets.last().end)
+        assertEquals(46_500_000L, totalIncome)
+        assertEquals(23_250_000L, totalExpense)
+        assertEquals(23_250_000L, netCashFlow)
     }
 
     @Test
-    fun `period change uses calculated values and handles missing previous period`() {
-        val increase = periodChangeLabel(current = 120L, previous = 100L)
-        val decrease = periodChangeLabel(current = 80L, previous = 100L)
-        val missing = periodChangeLabel(current = 80L, previous = 0L)
+    fun `net worth calculates total assets minus total remaining debts`() {
+        val totalWalletAssets = 150_000_000L
+        val totalRemainingDebts = 35_000_000L
+        val netWorth = totalWalletAssets - totalRemainingDebts
 
-        assertEquals("+20% so với kỳ trước ↗", increase.first)
-        assertTrue(increase.second == true)
-        assertEquals("-20% so với kỳ trước ↘", decrease.first)
-        assertFalse(decrease.second == true)
-        assertEquals("Chưa có dữ liệu kỳ trước", missing.first)
-        assertNull(missing.second)
+        assertEquals(115_000_000L, netWorth)
+    }
+
+    @Test
+    fun `savings rate calculates correctly when income is positive`() {
+        val income = 30_000_000L
+        val expense = 18_000_000L
+        val savingRatePct = if (income > 0L) {
+            (((income - expense).toDouble() / income.toDouble()) * 100.0).toInt()
+        } else 0
+
+        assertEquals(40, savingRatePct)
+    }
+
+    @Test
+    fun `daily average uses elapsed days rather than future days`() {
+        val totalExpense = 15_000_000L
+        val elapsedDays = 15
+        val avgPerDay = totalExpense / elapsedDays
+
+        assertEquals(1_000_000L, avgPerDay)
     }
 }

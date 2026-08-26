@@ -77,6 +77,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinanceAccentHexes
 import com.finlux.app.core.designsystem.FinluxTextStyles
+import com.finlux.app.core.designsystem.FinancialInstitutionLogo
+import com.finlux.app.core.designsystem.InstitutionSelectorSection
+import com.finlux.app.core.designsystem.findInstitutionForWallet
 import com.finlux.app.core.designsystem.GlassBottomSheet
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
@@ -227,20 +230,12 @@ fun PrismWalletsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                                 modifier = Modifier.weight(1f),
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(46.dp)
-                                        .clip(CircleShape)
-                                        .background(getWalletColor(wallet.type).copy(alpha = 0.14f)),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = getWalletIcon(wallet.type),
-                                        contentDescription = null,
-                                        tint = getWalletColor(wallet.type),
-                                        modifier = Modifier.size(24.dp),
-                                    )
-                                }
+                                FinancialInstitutionLogo(
+                                    institution = findInstitutionForWallet(wallet.name),
+                                    walletType = wallet.type,
+                                    customColorHex = wallet.colorHex,
+                                    size = 46.dp,
+                                )
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         text = wallet.name,
@@ -494,13 +489,16 @@ fun PrismWalletsScreen(
                     }
                 }
 
-                OutlinedTextField(
+                // Ergonomic Note Input Row
+                com.finlux.app.core.designsystem.component.ErgonomicInputRow(
+                    label = "Ghi chú chuyển khoản",
                     value = note,
                     onValueChange = { note = it.take(120) },
-                    label = { Text("Ghi chú chuyển khoản (Tùy chọn)") },
-                    placeholder = { Text("Chuyển tiền tiết kiệm...") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(tokens.radius.input),
+                    placeholder = "Chuyển tiền tiết kiệm...",
+                    icon = Icons.Default.Edit,
+                    iconTintColor = tokens.primary,
+                    iconBgColor = tokens.primary.copy(alpha = 0.12f),
+                    onClear = { note = "" },
                 )
 
                 Button(
@@ -639,21 +637,23 @@ private fun PrismWalletEditor(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(colorFromHex(color).copy(alpha = 0.18f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = walletIcon(type),
-                        contentDescription = null,
-                        tint = colorFromHex(color),
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
+                FinancialInstitutionLogo(
+                    institution = findInstitutionForWallet(name),
+                    walletType = type,
+                    customColorHex = color,
+                    size = 46.dp,
+                )
             }
+
+            // Chọn nhanh Mẫu Ngân hàng / Ví điện tử
+            InstitutionSelectorSection(
+                selectedInstitution = findInstitutionForWallet(name),
+                onSelectInstitution = { inst ->
+                    name = inst.shortName
+                    type = inst.type
+                    color = inst.colorHex
+                },
+            )
 
             // Tên ví / ngân hàng
             OutlinedTextField(
