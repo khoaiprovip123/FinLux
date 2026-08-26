@@ -1,8 +1,22 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.10 (versionCode 122)
+- **Phiên bản hiện tại:** v1.10.11 (versionCode 123)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-FEAT-PDF-Exporter-Redesign] - Tái Thiết Kế Bảng Báo Cáo PDF Chuẩn Sao Kê & Sửa Lỗi Biểu Đồ Cơ Cấu Chi Tiêu
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Tái cấu trúc bảng giao dịch trong `ReportExporter.kt`: Table Header bo góc nền `#F1F5F9`, Zebra striping xen kẽ kèm đường kẻ ngang mỏng `0.5pt`, ô Danh mục/Ghi chú 2 dòng, `smartEllipsize` chống tràn cột Ví và căn lề phải tuyệt đối cho cột Số tiền.
+  2. Sửa lỗi vẽ thanh tiến độ Cơ cấu chi tiêu: Tách biệt rõ ràng tọa độ dòng chữ và thanh progress bar (cao 5pt bo góc 2.5pt), lấy đúng mã màu thực tế của danh mục.
+  3. Tối ưu Header KPI Box với border và typography sắc nét.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/export/ReportExporter.kt`
+  - `app/build.gradle.kts`
+  - `gradle.properties`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Phiên bản v1.10.11 (versionCode 123) sẵn sàng nạp lên thiết bị.
 
 ### [Task-FEAT-Notification-SwipeNavigation] - Phân Tách Cử Chỉ Vuốt Trái Điều Hướng (Ngân Sách, Mục Tiêu, Báo Cáo, Nợ) & Chạm Đánh Dấu Đọc
 - **Status**: `[DONE]`

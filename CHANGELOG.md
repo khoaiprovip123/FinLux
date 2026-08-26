@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.10.11] - 2026-08-26
+### Changed
+- **Nâng cấp `versionCode = 123` và `versionName = "1.10.11"`.**
+- **Tái Cấu Trúc Bảng Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng (`ReportExporter.kt`)**:
+  - **Table Header Banner**: Nền xám `#F1F5F9` bo góc 4pt với text SemiBold viết hoa màu `#475569`.
+  - **Zebra Striping & Border**: Nền trắng và xám siêu nhẹ `#F8FAFC` xen kẽ, kẻ viền ngang mỏng `0.5pt` (`#E2E8F0`) giữa các hàng.
+  - **Phân Bổ 4 Cột Dữ Liệu Tối Ưu**:
+    * Cột 1 (Ngày - 18%): Căn trái định dạng gọn `dd/MM/yyyy`.
+    * Cột 2 (Danh mục & Ghi chú - 42%): Bố cục 2 dòng (Dòng 1: Tên danh mục đậm `#1E293B`; Dòng 2: Ghi chú font nhỏ `#64748B`).
+    * Cột 3 (Ví - 18%): Căn trái kèm hàm `smartEllipsize` chống tràn và chống lỗi cắt cụt chữ.
+    * Cột 4 (Số tiền - 22%): Căn lề phải (Align Right) khớp sát lề bảng, màu xanh `#16A34A` cho Thu và đỏ `#DC2626` cho Chi.
+- **Sửa Lỗi Vẽ Thanh Tiến Độ "Cơ Cấu Chi Tiêu Theo Danh Mục"**:
+  - Tách biệt độc lập tọa độ dòng Text và thanh Progress Bar (cao 5pt bo góc 2.5pt), triệt tiêu hoàn toàn hiện tượng thanh bar đè lên chân chữ hoặc lấn sang danh mục kế tiếp.
+  - Tự động lấy mã màu chuẩn của từng danh mục (`item.category?.colorHex`).
+  - Tối ưu cấu trúc KPI Header Box với đường viền bo góc sắc nét.
+
 ## [1.10.10] - 2026-08-26
 ### Changed
 - **Nâng cấp `versionCode = 122` và `versionName = "1.10.10"`.**

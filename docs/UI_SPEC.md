@@ -378,7 +378,7 @@ LAYOUT: ModalBottomSheet chuẩn Liquid Glass / Finlux Prism bo góc 28dp, hiệ
 ## 18. SCREEN: Trung tâm Thông báo (Notification Center)
 ```
 Route: /notifications
-LAYOUT:
+LAY-OUT:
   - GlassTopBar: Tiêu đề "Thông báo", nút Quay lại (<-), nút Xóa tất cả (DeleteSweep).
   - Dải Filter Chips ngang (LazyRow): Tất cả, Hóa đơn (Tím), Ngân sách (Đỏ/Vàng), Mục tiêu (Vàng cam), Báo cáo (Xanh ngọc), Hệ thống (Xanh dương).
   - Danh sách thẻ thông báo (NotificationItemCard): Thiết kế Liquid Glass / Prism bo góc 18dp, icon badge tròn, thời gian gửi, tiêu đề, nội dung tóm tắt, số tiền và nút hành động.
@@ -401,6 +401,44 @@ INTERACTIONS & GESTURES:
   4. PaidNotificationDetailSheet:
      - Badge tích xanh + Trạng thái "Đã thanh toán thành công".
      - Số tiền thực chi (IncomeGreen) + Tên khoản chi + Danh mục + Ví nguồn + Thời gian + Ghi chú Sổ cái.
+```
+
+---
+
+## 19. SCREEN: Bản In Báo Cáo PDF Chuẩn Sao Kê Tài Chính (Financial Statement PDF Export)
+
+```
+Trình xuất: ReportExporter.exportToPdf()
+Kích thước trang chuẩn: A4 (595pt x 842pt), lề 40pt (vùng khả dụng 515pt từ x=40pt đến x=555pt).
+
+CẤU TRÚC TRANG BÁO CÁO:
+1. Header Banner & Metadata:
+   - Tiêu đề: "FINLUX - BÁO CÁO TÀI CHÍNH CÁ NHÂN" (Font 17pt Bold #1E3A8A).
+   - Metadata: Dải thời gian [Từ ngày - Đến ngày] + Ngày xuất báo cáo (Font 8.5pt #64748B).
+   - Đường viền phân cách mỏng #E2E8F0.
+
+2. KPI Summary Box:
+   - Box bo góc 8pt với nền #F8FAFC và viền mảnh 0.8pt #E2E8F0.
+   - 3 Cột chỉ số:
+     * Cột 1: TỔNG THU NHẬP (Label 8pt #64748B, Giá trị +VNĐ 11.5pt Bold #16A34A).
+     * Cột 2: TỔNG CHI TIÊU (Label 8pt #64748B, Giá trị -VNĐ 11.5pt Bold #DC2626).
+     * Cột 3: THU RÒNG (DƯ/THÂM HỤT) (Label 8pt #64748B, Giá trị VNĐ 11.5pt Bold #16A34A / #DC2626).
+
+3. Cơ Cấu Chi Tiêu Theo Danh Mục:
+   - Tiêu đề mục: "CƠ CẤU CHI TIÊU THEO DANH MỤC" (Font 11pt Bold #0F172A).
+   - Mỗi danh mục chiếm khối cao 28pt:
+     * Dòng 1: Icon chấm tròn (radius 3.5pt theo colorHex danh mục) + Tên danh mục (Font 9pt Bold #1E293B, căn trái) + Số tiền & Tỷ trọng % (Font 8.8pt #475569, căn phải tại x=555pt).
+     * Dòng 2: Thanh tiến độ Progress Bar (cao 5pt bo góc 2.5pt, nền track xám #E2E8F0, phần fill màu danh mục tương ứng với tỷ lệ %).
+
+4. Bảng Danh Sách Giao Dịch Chi Tiết (Financial Statement Table):
+   - Table Header: Banner nền xám #F1F5F9 bo góc 4pt, text 8.5pt SemiBold viết hoa màu #475569.
+   - Phân bổ 4 cột dữ liệu:
+     * Cột 1 (THỜI GIAN - x=46pt): Căn lề trái, hiển thị Ngày & Giờ `dd/MM/yyyy HH:mm` theo ZoneId.systemDefault() (Font 8.2pt #475569).
+     * Cột 2 (DANH MỤC & GHI CHÚ - x=142pt): Bố cục 2 dòng (Dòng 1: Tên danh mục Font 9pt Bold #1E293B; Dòng 2: Ghi chú Font 7.8pt #64748B có smartEllipsize chống tràn).
+     * Cột 3 (VÍ THANH TOÁN - x=355pt): Căn lề trái kèm smartEllipsize max 88pt chống cắt cụt chữ (Font 8.5pt #475569).
+     * Cột 4 (SỐ TIỀN - x=547pt Align.RIGHT): Căn lề phải khớp lề bảng, màu xanh #16A34A cho Thu nhập (+) và đỏ #DC2626 cho Chi tiêu (-).
+   - Zebra Striping: Hàng lẻ nền trắng #FFFFFF, hàng chẵn nền xám siêu nhẹ #F8FAFC, kèm viền ngang mỏng 0.5pt #E2E8F0 giữa các hàng.
+   - Phân trang tự động (Multi-page Pagination): Tự động ngắt trang khi y > 797pt và vẽ lại Header bảng trên trang tiếp theo.
 ```
 
 ---
