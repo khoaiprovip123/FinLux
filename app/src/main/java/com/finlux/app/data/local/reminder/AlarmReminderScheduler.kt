@@ -128,7 +128,7 @@ class ReminderReceiver : BroadcastReceiver() {
                                     amount = Money(fallbackAmount),
                                     categoryId = fallbackCategoryId.ifBlank { null },
                                     walletId = fallbackWalletId,
-                                    note = "Thanh toán nhắc nhở: $fallbackTitle",
+                                    note = "Thanh toán: $fallbackTitle",
                                     date = Instant.now(),
                                 )
                             )

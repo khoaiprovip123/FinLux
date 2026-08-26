@@ -93,6 +93,12 @@ class FirebaseNotificationRepository(
         Unit
     }
 
+    override suspend fun deleteNotification(id: String): AppResult<Unit> = firebaseResult("Không thể xóa thông báo") {
+        val uid = requireUid()
+        firestore.collection("users").document(uid).collection("notifications").document(id).delete().await()
+        Unit
+    }
+
     override suspend fun clearAll(): AppResult<Unit> = firebaseResult("Không thể xóa thông báo") {
         val uid = requireUid()
         val snapshot = firestore.collection("users").document(uid).collection("notifications").get().await()

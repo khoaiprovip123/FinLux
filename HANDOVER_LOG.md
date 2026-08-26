@@ -1,8 +1,104 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.7 (versionCode 119)
+- **Phiên bản hiện tại:** v1.10.10 (versionCode 122)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-FEAT-Notification-SwipeNavigation] - Phân Tách Cử Chỉ Vuốt Trái Điều Hướng (Ngân Sách, Mục Tiêu, Báo Cáo, Nợ) & Chạm Đánh Dấu Đọc
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Điều chỉnh cử chỉ vuốt sang trái (`EndToStart`) trên từng thẻ thông báo theo đúng nghiệp vụ:
+     - Cảnh báo ngân sách: Kéo sang trái ➡️ Tự động điều hướng sang màn hình Ngân sách (`budget`) (hiển thị action nền màu tím/đỏ và icon `ArrowForward` + "Xem ngân sách").
+     - Cột mốc mục tiêu: Kéo sang trái ➡️ Tự động điều hướng sang màn hình Mục tiêu (`goals`) (nền vàng cam + "Xem mục tiêu").
+     - Báo cáo tài chính: Kéo sang trái ➡️ Tự động điều hướng sang màn hình Báo cáo (`reports`) (nền xanh ngọc + "Xem báo cáo").
+     - Hạn nợ / Thẻ tín dụng: Kéo sang trái ➡️ Tự động điều hướng sang màn hình Quản lý nợ (`debts`) (nền tím + "Quản lý nợ").
+     - Nhắc hóa đơn / Thông báo khác: Kéo sang trái ➡️ Xóa thông báo khỏi danh sách (nền đỏ + "Xóa").
+  2. Đặt `positionalThreshold = { it * 0.30f }` để cử chỉ vuốt nhạy và mượt mà hơn trên mọi màn hình cảm ứng, sau khi điều hướng thì thẻ tự động snap trở lại vị trí ban đầu.
+  3. Hành vi chạm vào thân thẻ (Tap): Chỉ đánh dấu đã đọc (`markAsRead`), mở modal thanh toán / chi tiết thanh toán cho hóa đơn, không tự ý chuyển màn hình khi chỉ chạm nhẹ.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Build và nạp APK v1.10.10 (versionCode 122) thành công lên thiết bị Android.
+
+### [Task-FEAT-Notification-SwipeDelete-PaidDetailSheet] - Vuốt Xóa Thông Báo, Modal Lịch Sử Thanh Toán & Điều Hướng Thông Minh
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Thêm cử chỉ vuốt từ phải sang trái (`SwipeToDismissBox`) để xóa thông báo kèm hiệu ứng nền đỏ và icon `Delete`.
+  2. Bổ sung `PaidNotificationDetailSheet`: Khi chạm vào thẻ nhắc nhở đã thanh toán (`isPaid = true`), mở BottomSheet xem chi tiết lịch sử thanh toán (Tên, Số tiền, Danh mục, Ví, Thời gian, Ghi chú Sổ cái).
+  3. Giữ nguyên chức năng chạm vào thân thẻ để đánh dấu đã đọc (`markAsRead`), đồng thời điều hướng chính xác theo loại thông báo (Ngân sách -> `budget`, Mục tiêu -> `goals`, Báo cáo -> `reports`, Nhắc nhở chưa trả -> mở `QuickPayBottomSheet`).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/domain/repository/NotificationRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseNotificationRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/notifications/NotificationsViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Build và nạp APK v1.10.9 (versionCode 121) thành công lên thiết bị Android.
+
+### [Task-FEAT-Reminder-TimePicker-StandardControls-DebtSync] - Nâng Cấp Bộ Chọn Giờ Nhắc Nhở, 3 Form Control Tiêu Chuẩn & Đồng Bộ Nhắc Nợ
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Thêm bộ chọn Giờ/Phút (`TimePicker`) cho nhắc nhở định kỳ, kết hợp ngày + giờ chính xác từng phút theo múi giờ hệ thống `ZoneId.systemDefault()`.
+  2. Thay thế toàn bộ control cũ trong `RemindersScreen.kt` bằng 3 Form Control Tiêu Chuẩn dùng chung: `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet` và `ErgonomicCompactAmountCard` (kèm dải chip `.000`).
+  3. Đồng bộ ghi chú giao dịch khi bấm "Đã thanh toán" trên cả thanh thông báo hệ thống (`AlarmReminderScheduler.kt`) lẫn In-App thành chuẩn: `"Thanh toán: " + [Tên nhắc nhở]`.
+  4. Bổ sung banner giải thích thời gian nhắc nợ trong `AddEditDebtSheet.kt` và tạo `SyncDebtReminderUseCase` tự động liên kết với `AlarmReminderScheduler` để bắn thông báo thực tế khi đến hạn.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SaveDebtAccountUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/DeleteDebtAccountUseCase.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Build và nạp APK v1.10.8 (versionCode 120) thành công lên thiết bị Android.
+
+### [Task-FEAT-Budget-History-Modal-LongPress-Edit] - Thêm Lịch Sử Chi Tiêu Danh Mục khi Chạm Thẻ & Nhấn Giữ để Sửa Ngân Sách
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Thay đổi hành vi tương tác trực quan trên thẻ ngân sách: **Nhấn 1 chạm (Single Tap)** mở BottomSheet xem chi tiết **Lịch sử các khoản giao dịch** thuộc danh mục đó trong kỳ; **Nhấn giữ (Long Press)** mở Modal **Sửa ngân sách**.
+  2. Bổ sung luồng dữ liệu giao dịch chi tiêu (`state.transactions: List<FinanceTransaction>`) vào `BudgetUiState` & `BudgetViewModel.kt`.
+  3. Thiết kế Modal Lịch sử chi tiêu: Thẻ tóm tắt tiến độ hạn mức (Icon + Tên danh mục + Thanh tiến độ + Tổng đã chi / Hạn mức) + Danh sách các khoản giao dịch chi tiết (`FinluxTransactionRow`) + Nút CTA "Chỉnh sửa ngân sách này".
+  4. Bổ sung `onLongClick` (dùng `Modifier.combinedClickable`) cho `FinluxSoftCard` trong `FinluxCardComponents.kt`.
+  5. Đồng bộ tính năng trên cả 3 giao diện: Prism (`PrismBudgetScreen.kt`), Classic (`ClassicBudgetScreen.kt`), Modern (`ModernBudgetScreen.kt`).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt`
+  - `docs/FORM_COMPONENTS_SPEC.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Build và nạp APK thành công lên thiết bị Android `192.168.17.153:41369`.
+
+### [Task-UI-Compact-Sheet-Polish] - Tái Cấu Trúc UI/UX DebtPaymentSheet, QuickPayBottomSheet & Đồng Bộ Thẻ Thông Báo
+- **Status**: `[DONE]`
+- **Goal**: 
+  1. Trích xuất `FinluxFormComponents.kt` (`ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`) làm component tiêu chuẩn dùng chung toàn dự án.
+  2. Chuẩn hóa Bộ chọn danh mục (`FinluxCategoryPickerBottomSheet`): Grid 4 cột có thanh tìm kiếm, màu sắc icon động, badge checkmark khi chọn và nút tạo mới danh mục. Sử dụng đồng bộ cho "Thêm chi" và modal xác nhận thanh toán thông báo.
+  3. Chuẩn hóa Bộ chọn ví tài khoản (`FinluxWalletPickerBottomSheet`): Dạng danh sách bo góc với icon tròn, tên ví, số dư khả dụng và checkmark chọn. Sử dụng đồng bộ cho "Thêm chi", "Thanh toán nợ" và modal xác nhận thanh toán thông báo.
+  4. Tái cấu trúc `DebtPaymentSheet.kt`: Hero amount input 32sp + Quick Chips [Tối thiểu | 50% nợ | Tất toán hết] + Selector Row ví thu gọn + `PrincipalInterestSplitCard` phân tách Gốc/Lãi phẳng + `ErgonomicInputRow` cho Ghi chú.
+  5. Đồng bộ style thẻ thông báo `NotificationItemCard` chuẩn Prism UI / Liquid Glass (commit `c4d17d9e151de0973998fc33b89be1113d2ad73a`), icon badge tròn sắc nét và nút [Thanh toán ngay] dạng Compact Glass Button.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt`
+  - `docs/FORM_COMPONENTS_SPEC.md`
+  - `docs/UI_SPEC.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Build và nạp APK thành công lên thiết bị Android `192.168.17.153:41369`. Áp dụng `ErgonomicCompactAmountCard` cho ô nhập hạn mức ngân sách và tài liệu quy chuẩn `docs/FORM_COMPONENTS_SPEC.md`.
 
 ### [Task-BUGFIX-Notification-Budget-Sync] - Fix Budget Alert Key Mismatch & In-App Notification Center Sync
 - **Status**: `[DONE]`

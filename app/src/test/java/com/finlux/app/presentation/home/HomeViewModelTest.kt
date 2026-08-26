@@ -161,6 +161,7 @@ private class FakeHomeNotificationRepository : NotificationRepository {
     override suspend fun markAsPaid(id: String): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun markAsPaidWithAmount(id: String, amount: Money, newBody: String?): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun deleteNotification(id: String): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun clearAll(): AppResult<Unit> = AppResult.Success(Unit)
 }
 

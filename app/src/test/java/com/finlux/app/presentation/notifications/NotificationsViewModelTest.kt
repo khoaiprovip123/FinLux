@@ -123,4 +123,12 @@ class NotificationsViewModelTest {
         coVerify(exactly = 0) { addTransactionUseCase.invoke(any()) }
         coVerify(exactly = 0) { notificationRepository.markAsPaidWithAmount(any(), any(), any()) }
     }
+
+    @Test
+    fun deleteNotification_callsRepositoryDelete() = runTest {
+        viewModel.deleteNotification("noti_delete_001")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { notificationRepository.deleteNotification("noti_delete_001") }
+    }
 }

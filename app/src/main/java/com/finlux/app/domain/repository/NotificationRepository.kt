@@ -12,5 +12,6 @@ interface NotificationRepository {
     suspend fun markAsPaid(id: String): AppResult<Unit>
     suspend fun markAsPaidWithAmount(id: String, amount: Money, newBody: String? = null): AppResult<Unit>
     suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit>
+    suspend fun deleteNotification(id: String): AppResult<Unit>
     suspend fun clearAll(): AppResult<Unit>
 }

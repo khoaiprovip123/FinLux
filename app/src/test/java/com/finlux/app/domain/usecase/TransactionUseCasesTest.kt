@@ -233,6 +233,10 @@ private class FakeNotificationRepository : com.finlux.app.domain.repository.Noti
     override suspend fun markAsPaid(id: String): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun markAsPaidWithAmount(id: String, amount: Money, newBody: String?): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun deleteNotification(id: String): AppResult<Unit> {
+        savedNotifications.removeIf { it.id == id }
+        return AppResult.Success(Unit)
+    }
     override suspend fun clearAll(): AppResult<Unit> {
         savedNotifications.clear()
         return AppResult.Success(Unit)

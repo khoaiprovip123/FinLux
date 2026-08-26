@@ -207,6 +207,11 @@ class DemoFinluxRepository @Inject constructor(
         AppResult.Success(Unit)
     }
 
+    override suspend fun deleteNotification(id: String): AppResult<Unit> = mutationMutex.withLock {
+        notificationState.value = notificationState.value.filterNot { it.id == id }
+        AppResult.Success(Unit)
+    }
+
     override suspend fun clearAll(): AppResult<Unit> = mutationMutex.withLock {
         notificationState.value = emptyList()
         AppResult.Success(Unit)

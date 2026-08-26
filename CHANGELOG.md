@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.10.10] - 2026-08-26
+### Changed
+- **Nâng cấp `versionCode = 122` và `versionName = "1.10.10"`.**
+- **Chuẩn Hóa Cử Chỉ Vuốt Trái Điều Hướng Màn Hình (Swipe-to-Navigate)**:
+  - Cảnh báo ngân sách (`BUDGET_ALERT`): Kéo sang trái ➡️ Tự động điều hướng sang màn hình Ngân sách (`budget`) (hiển thị action nền đỏ/tím + icon `ArrowForward` + "Xem ngân sách").
+  - Cột mốc mục tiêu (`GOAL_MILESTONE`): Kéo sang trái ➡️ Tự động điều hướng sang màn hình Mục tiêu (`goals`) (nền vàng cam + "Xem mục tiêu").
+  - Báo cáo tài chính (`TRANSACTION_SUMMARY`): Kéo sang trái ➡️ Tự động điều hướng sang màn hình Báo cáo (`reports`) (nền xanh ngọc + "Xem báo cáo").
+  - Hạn nợ / Thẻ tín dụng (`DEBT_DUE_ALERT`): Kéo sang trái ➡️ Tự động điều hướng sang màn hình Quản lý nợ (`debts`) (nền tím + "Quản lý nợ").
+  - Nhắc hóa đơn & Khác: Kéo sang trái ➡️ Xóa thông báo khỏi danh sách (nền đỏ + icon `Delete` + "Xóa").
+- **Tối Ưu Độ Nhạy Cử Chỉ Vuốt**: Đặt `positionalThreshold = 30%` giúp vuốt nhẹ là kích hoạt mượt mà, sau khi điều hướng thì thẻ tự động snap lại vị trí ban đầu.
+- **Tách Biệt Hành Vi Chạm Thẻ**: Chạm vào thân thẻ chỉ đánh dấu đã đọc (`markAsRead`), mở modal thanh toán hóa đơn (`QuickPayBottomSheet`) hoặc chi tiết thanh toán (`PaidNotificationDetailSheet`), không tự ý nhảy màn hình khi chỉ chạm nhẹ.
+
+## [1.10.9] - 2026-08-26
+### Added
+- **Cử Chỉ Vuốt Xóa Thông Báo (`SwipeToDismissBox`)**: Hỗ trợ vuốt thẻ thông báo từ phải sang trái để xóa tức thì với hiệu ứng nền đỏ và icon `Delete` thùng rác.
+- **Modal Chi Tiết Thanh Toán Hóa Đơn (`PaidNotificationDetailSheet`)**: Khi chạm vào thẻ nhắc nhở đã thanh toán (`isPaid = true`), mở BottomSheet xem chi tiết số tiền, ví nguồn, danh mục, thời gian và ghi chú Sổ cái đã ghi.
+- **Xóa Từng Thông Báo (`deleteNotification`)**: Bổ sung API xóa thông báo đơn lẻ trong `NotificationRepository`, `FirebaseNotificationRepository` và `NotificationsViewModel`.
+
+### Changed
+- **Nâng cấp `versionCode = 121` và `versionName = "1.10.9"`.**
+- **Điều Hướng Thông Minh Khi Chạm Thẻ**: Chạm vào thẻ tự động đánh dấu đã đọc (`markAsRead`), đồng thời phân luồng hành động chuẩn xác:
+  - Nhắc hóa đơn chưa thanh toán ➡️ Mở modal `QuickPayBottomSheet` (Thanh toán ngay).
+  - Nhắc hóa đơn đã thanh toán ➡️ Mở modal `PaidNotificationDetailSheet` (Xem chi tiết).
+  - Cảnh báo ngân sách ➡️ Điều hướng sang màn hình Ngân sách (`budget`).
+  - Cột mốc mục tiêu ➡️ Điều hướng sang màn hình Mục tiêu (`goals`).
+  - Báo cáo ➡️ Điều hướng sang màn hình Báo cáo (`reports`).
+  - Hạn nợ / Thẻ ➡️ Điều hướng sang màn hình Quản lý nợ (`debts`).
+
+## [1.10.8] - 2026-08-26
+### Added
+- **Bộ chọn Giờ/Phút (`TimePicker`) cho Nhắc nhở định kỳ**: Tích hợp chọn giờ nhắc cụ thể (ví dụ 09:00, 20:00) kết hợp chính xác Ngày + Giờ theo múi giờ hệ thống `ZoneId.systemDefault()`, ngăn chặn lệch giờ thông báo.
+- **Tự Động Đồng Bộ & Lên Lịch Nhắc Hạn Nợ (`SyncDebtReminderUseCase`)**: Tự động liên kết các khoản nợ & thẻ tín dụng có bật nhắc nhở vào `AlarmReminderScheduler` và `ReminderRepository`. Thông báo sẽ tự động gửi vào lúc 09:00 sáng trước ngày đến hạn theo cấu hình.
+- **Banner Mô Tả Lịch Nhắc Nợ**: Hiển thị trực quan ngày giờ cụ thể hệ thống sẽ gửi thông báo trong `AddEditDebtSheet.kt`.
+
+### Changed
+- **Nâng cấp `versionCode = 120` và `versionName = "1.10.8"`.**
+- **Chuẩn Hóa 3 Form Control Tiêu Chuẩn Trong `RemindersScreen.kt`**:
+  - `FinluxCategoryPickerBottomSheet`: Grid 4 cột có thanh tìm kiếm, icon màu động và checkmark chọn.
+  - `FinluxWalletPickerBottomSheet`: Dạng danh sách bo góc với số dư khả dụng và checkmark.
+  - `ErgonomicCompactAmountCard`: Typography 16sp Bold, tự format VNĐ thời gian thực, dải chip gợi ý `.000` thông minh và inline `₫` suffix.
+  - `ErgonomicInputRow`: Tên nhắc nhở với icon `NotificationsActive` và nút xóa nhanh.
+- **Đồng Bộ Ghi Chú Giao Dịch Khi Nhấn "Đã Thanh Toán"**: Thống nhất định dạng ghi chú trên cả thanh thông báo hệ thống Android (`AlarmReminderScheduler.kt`) và In-App Notification Center thành `"Thanh toán: " + [Tên nhắc nhở]`.
+
 ## [1.10.7] - 2026-08-26
 ### Fixed
 - **Đồng bộ Key Ngân sách (`budgetRef`)**: Sửa format document ID trong `FirebaseTransactionRepository.kt` thành `"${catId}_month:${month}"` khớp 100% với Cloud Functions `reconcileBudget`, đảm bảo `spentAmount` được cập nhật chính xác trong Firestore Atomic Transaction.

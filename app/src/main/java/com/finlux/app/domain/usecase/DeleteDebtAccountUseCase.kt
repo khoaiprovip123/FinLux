@@ -7,11 +7,16 @@ import javax.inject.Inject
 
 class DeleteDebtAccountUseCase @Inject constructor(
     private val repository: DebtRepository,
+    private val syncDebtReminderUseCase: SyncDebtReminderUseCase,
 ) {
     suspend operator fun invoke(debt: DebtAccount): AppResult<Unit> {
         if (debt.id.isBlank()) {
             return AppResult.Error("ID khoản nợ không hợp lệ")
         }
-        return repository.deleteDebt(debt)
+        val result = repository.deleteDebt(debt)
+        if (result is AppResult.Success) {
+            syncDebtReminderUseCase.removeDebtReminder(debt.id)
+        }
+        return result
     }
 }
