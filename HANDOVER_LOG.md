@@ -4,6 +4,13 @@
 - **Phiên bản hiện tại:** v1.10.5 (versionCode 117)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
 
+### [Task-HOTFIX-GoogleSignIn] - Fix Google Sign-In with Credential Manager & Fallbacks
+- **Status**: `[DONE]`
+- **Goal**: Khắc phục lỗi không đăng nhập được Google bằng cách unwrap Activity context cho CredentialManager, hỗ trợ song song `GetSignInWithGoogleOption` và `GetGoogleIdOption`, xử lý timeout 20s và chuẩn hóa thông báo lỗi.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/auth/AuthViewModel.kt`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Đăng nhập Google hoạt động ổn định trên cả tài khoản mới và tài khoản đã liên kết.
+
 ### [Task-UI-IncomeScreen-Style-Sync] - Đồng Bộ Giao Diện & Thẻ Thu Nhập Chuẩn FinluxPanel Khớp Chi Tiêu
 - **Status**: `[DONE]`
 - **Goal**: Cập nhật toàn bộ thẻ và component trong `IncomeScreen.kt` (MonthPicker, IncomeHero, 4 Statistic Cards, Theo danh mục, Danh sách thu nhập) sử dụng `FinluxPanel` với đường viền mỏng và đổ bóng (border & shadow elevation 5dp) đồng bộ 100% với giao diện màn hình `ExpenseScreen.kt`.
