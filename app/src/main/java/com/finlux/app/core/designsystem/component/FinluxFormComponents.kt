@@ -197,13 +197,13 @@ fun ErgonomicInputRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = iconBgColor,
-                modifier = Modifier.size(42.dp),
+                modifier = Modifier.size(44.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, null, tint = iconTintColor, modifier = Modifier.size(22.dp))
@@ -214,12 +214,12 @@ fun ErgonomicInputRow(
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                     ),
@@ -229,7 +229,7 @@ fun ErgonomicInputRow(
                     value = value,
                     onValueChange = onValueChange,
                     textStyle = TextStyle(
-                        fontSize = 15.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.onSurface,
                     ),
@@ -241,7 +241,7 @@ fun ErgonomicInputRow(
                             Text(
                                 text = placeholder,
                                 style = TextStyle(
-                                    fontSize = 14.sp,
+                                    fontSize = 14.5.sp,
                                     color = Color(0xFF9CA3AF),
                                 ),
                             )

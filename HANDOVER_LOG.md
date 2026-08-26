@@ -1,8 +1,22 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.10 (versionCode 122)
+- **Phiên bản hiện tại:** v1.10.11 (versionCode 123)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-UI-AddTransactionSheet-Enhancements] - Tối Ưu UI Nhập Số Tiền & Chuyển Ô Ghi Chú Dưới Phần Tiền
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Tăng kích thước khu vực nhập số tiền (Font size 38sp, ₫ 32sp) và các phím tắt nhanh (+10k, +50k, +100k, +500k) to rõ, dễ nhìn, dễ bấm.
+  2. Đưa mục **Ghi chú giao dịch** lên ngay bên dưới phần Số tiền để người dùng dễ dàng điền nội dung lý do thanh toán ngay khi vừa nhập tiền xong.
+  3. Mở rộng kích thước, padding và font chữ của `ErgonomicInputRow` để nhập liệu thuận tiện hơn.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**.
 
 ### [Task-FEAT-Notification-SwipeNavigation] - Phân Tách Cử Chỉ Vuốt Trái Điều Hướng (Ngân Sách, Mục Tiêu, Báo Cáo, Nợ) & Chạm Đánh Dấu Đọc
 - **Status**: `[DONE]`

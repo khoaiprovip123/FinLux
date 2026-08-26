@@ -309,17 +309,18 @@ fun AddTransactionSheet(
                 shape = RoundedCornerShape(22.dp),
                 color = if (tokens.isDark) Color(0xFF1E1E2D) else Color(0xFFF9FAFB),
                 border = BorderStroke(1.dp, tokens.onSurface.copy(alpha = 0.06f)),
+                shadowElevation = 1.dp,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
                         text = "Số tiền",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
                         ),
                         color = Color(0xFF6B7280),
                     )
@@ -346,7 +347,7 @@ fun AddTransactionSheet(
                                     }
                                 },
                                 textStyle = TextStyle(
-                                    fontSize = 32.sp,
+                                    fontSize = 38.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = amountColor,
                                     letterSpacing = (-0.5).sp,
@@ -359,9 +360,10 @@ fun AddTransactionSheet(
                                         Text(
                                             text = "0",
                                             style = TextStyle(
-                                                fontSize = 32.sp,
+                                                fontSize = 38.sp,
                                                 fontWeight = FontWeight.ExtraBold,
                                                 color = Color(0xFF9CA3AF),
+                                                letterSpacing = (-0.5).sp,
                                             ),
                                         )
                                     }
@@ -372,11 +374,11 @@ fun AddTransactionSheet(
                             Text(
                                 text = " ₫",
                                 style = TextStyle(
-                                    fontSize = 28.sp,
+                                    fontSize = 32.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = amountColor,
                                 ),
-                                modifier = Modifier.padding(start = 2.dp),
+                                modifier = Modifier.padding(start = 4.dp),
                             )
                         }
 
@@ -386,7 +388,7 @@ fun AddTransactionSheet(
                                 shape = CircleShape,
                                 color = tokens.surfaceSoft,
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(38.dp)
                                     .clip(CircleShape)
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -399,7 +401,7 @@ fun AddTransactionSheet(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Xóa số tiền",
                                         tint = tokens.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(20.dp),
                                     )
                                 }
                             }
@@ -427,12 +429,12 @@ fun AddTransactionSheet(
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
                                     ),
                                     color = tokens.onSurface,
                                     textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(vertical = 7.dp),
+                                    modifier = Modifier.padding(vertical = 9.dp),
                                 )
                             }
                         }
@@ -476,7 +478,19 @@ fun AddTransactionSheet(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                // Hàng 1: Danh mục
+                // Hàng 1 (ĐƯA LÊN NGAY DƯỚI SỐ TIỀN): Ghi chú giao dịch
+                ErgonomicInputRow(
+                    label = "GHI CHÚ GIAO DỊCH",
+                    value = state.note,
+                    onValueChange = viewModel::setNote,
+                    placeholder = if (isExpense) "Nhập ghi chú chi tiêu..." else "Nhập nguồn tiền, lý do...",
+                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                    iconBgColor = Color(0xFF06B6D4).copy(alpha = 0.14f),
+                    iconTintColor = Color(0xFF0891B2),
+                    onClear = { viewModel.setNote("") },
+                )
+
+                // Hàng 2: Danh mục
                 val categoryAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: Color(0xFFF43F5E)
                 ErgonomicFormRow(
                     label = "DANH MỤC",
@@ -488,7 +502,7 @@ fun AddTransactionSheet(
                     onClick = { showCategoryPicker = true },
                 )
 
-                // Hàng 2: Ví thanh toán / Tài khoản
+                // Hàng 3: Ví thanh toán / Tài khoản
                 val walletIcon = activeWallet?.type?.let { walletIcon(it) } ?: Icons.Default.AccountBalanceWallet
                 ErgonomicFormRow(
                     label = if (isExpense) "VÍ THANH TOÁN" else "VÍ NHẬN TIỀN",
@@ -500,7 +514,7 @@ fun AddTransactionSheet(
                     onClick = { showWalletPicker = true },
                 )
 
-                // Hàng 3: Thời gian giao dịch
+                // Hàng 4: Thời gian giao dịch
                 ErgonomicFormRow(
                     label = "THỜI GIAN GIAO DỊCH",
                     primaryValue = formattedDate,
@@ -509,18 +523,6 @@ fun AddTransactionSheet(
                     iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
                     iconTintColor = Color(0xFF6366F1),
                     onClick = { showDatePicker = true },
-                )
-
-                // Hàng 4: Ghi chú
-                ErgonomicInputRow(
-                    label = "GHI CHÚ GIAO DỊCH",
-                    value = state.note,
-                    onValueChange = viewModel::setNote,
-                    placeholder = if (isExpense) "Nhập ghi chú chi tiêu..." else "Nhập nguồn tiền, lý do...",
-                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                    iconBgColor = Color(0xFF06B6D4).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF0891B2),
-                    onClear = { viewModel.setNote("") },
                 )
 
                 // Hàng 5: Đính kèm hóa đơn / chứng từ

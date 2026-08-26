@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.11] - 2026-08-26
+### Changed
+- **Tối ưu trải nghiệm Form Thêm/Sửa Giao Dịch**:
+  - Tăng kích thước vùng nhập số tiền (Font size 38sp, ₫ 32sp) và các phím tắt nhanh (+10k, +50k, +100k, +500k) to rõ, dễ quan sát và nhập liệu thuận tiện.
+  - Chuyển ô **Ghi chú giao dịch** lên ngay bên dưới phần Số tiền để người dùng dễ dàng điền lý do/nội dung thanh toán tức thì.
+  - Nâng cấp kích thước và padding ô nhập liệu `ErgonomicInputRow` thoáng đãng, dễ thao tác.
+
 ## [1.10.10] - 2026-08-26
 ### Changed
 - **Nâng cấp `versionCode = 122` và `versionName = "1.10.10"`.**
