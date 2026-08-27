@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.domain.model.Category
@@ -242,7 +243,7 @@ fun TransactionFilterBottomSheet(
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = isSelected,
-                                borderColor = if (isSelected) Color(0xFF6366F1) else tokens.border,
+                                borderColor = if (isSelected) tokens.primary else tokens.border,
                                 borderWidth = if (isSelected) 1.5.dp else 1.dp,
                             ),
                             shape = RoundedCornerShape(12.dp),
@@ -260,7 +261,7 @@ fun TransactionFilterBottomSheet(
                     Icon(
                         imageVector = Icons.Default.Wallet,
                         contentDescription = null,
-                        tint = Color(0xFF3B82F6),
+                        tint = tokens.primary,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
@@ -270,7 +271,7 @@ fun TransactionFilterBottomSheet(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
                         ),
-                        color = Color(0xFF6B7280),
+                        color = tokens.onSurfaceVariant,
                     )
                 }
 
@@ -288,16 +289,16 @@ fun TransactionFilterBottomSheet(
                                 { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
                             } else null,
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF3B82F6).copy(alpha = 0.16f),
-                                selectedLabelColor = Color(0xFF3B82F6),
-                                selectedLeadingIconColor = Color(0xFF3B82F6),
+                                selectedContainerColor = tokens.primary.copy(alpha = 0.16f),
+                                selectedLabelColor = tokens.primary,
+                                selectedLeadingIconColor = tokens.primary,
                                 containerColor = tokens.surfaceSoft,
                                 labelColor = tokens.onSurface,
                             ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = isAllSelected,
-                                borderColor = if (isAllSelected) Color(0xFF3B82F6) else tokens.border,
+                                borderColor = if (isAllSelected) tokens.primary else tokens.border,
                                 borderWidth = if (isAllSelected) 1.5.dp else 1.dp,
                             ),
                             shape = RoundedCornerShape(12.dp),
@@ -306,7 +307,7 @@ fun TransactionFilterBottomSheet(
 
                     items(wallets) { wallet ->
                         val isSelected = tempWalletId == wallet.id
-                        val walletColor = colorFromHex(wallet.colorHex, Color(0xFF3B82F6))
+                        val walletColor = colorFromHex(wallet.colorHex, tokens.primary)
                         FilterChip(
                             selected = isSelected,
                             onClick = { tempWalletId = if (isSelected) null else wallet.id },
@@ -347,7 +348,7 @@ fun TransactionFilterBottomSheet(
                     Icon(
                         imageVector = Icons.Default.Category,
                         contentDescription = null,
-                        tint = Color(0xFFF43F5E),
+                        tint = FinluxColors.ExpenseRed,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
@@ -357,7 +358,7 @@ fun TransactionFilterBottomSheet(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
                         ),
-                        color = Color(0xFF6B7280),
+                        color = tokens.onSurfaceVariant,
                     )
                 }
 
@@ -375,16 +376,16 @@ fun TransactionFilterBottomSheet(
                                 { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
                             } else null,
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFFF43F5E).copy(alpha = 0.16f),
-                                selectedLabelColor = Color(0xFFF43F5E),
-                                selectedLeadingIconColor = Color(0xFFF43F5E),
+                                selectedContainerColor = FinluxColors.ExpenseRed.copy(alpha = 0.16f),
+                                selectedLabelColor = FinluxColors.ExpenseRed,
+                                selectedLeadingIconColor = FinluxColors.ExpenseRed,
                                 containerColor = tokens.surfaceSoft,
                                 labelColor = tokens.onSurface,
                             ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = isAllSelected,
-                                borderColor = if (isAllSelected) Color(0xFFF43F5E) else tokens.border,
+                                borderColor = if (isAllSelected) FinluxColors.ExpenseRed else tokens.border,
                                 borderWidth = if (isAllSelected) 1.5.dp else 1.dp,
                             ),
                             shape = RoundedCornerShape(12.dp),

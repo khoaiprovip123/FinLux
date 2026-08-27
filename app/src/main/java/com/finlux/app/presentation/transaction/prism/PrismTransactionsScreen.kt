@@ -130,7 +130,6 @@ fun PrismTransactionsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(tokens.background)
                     .statusBarsPadding()
                     .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -186,7 +185,7 @@ fun PrismTransactionsScreen(
                 }
             }
         },
-        containerColor = tokens.background,
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(
@@ -205,7 +204,7 @@ fun PrismTransactionsScreen(
                     label = "Tất cả",
                     icon = Icons.Default.GridView,
                     isSelected = filter == TransactionFilter.ALL,
-                    activeColor = Color(0xFF3B5DF8),
+                    activeColor = tokens.primary,
                     onClick = { viewModel.filter.value = TransactionFilter.ALL },
                     modifier = Modifier.weight(1f),
                 )
@@ -214,7 +213,7 @@ fun PrismTransactionsScreen(
                     label = "Thu nhập",
                     icon = Icons.Default.ArrowDownward,
                     isSelected = filter == TransactionFilter.INCOME,
-                    activeColor = Color(0xFF16A34A),
+                    activeColor = FinluxColors.IncomeGreen,
                     onClick = { viewModel.filter.value = TransactionFilter.INCOME },
                     modifier = Modifier.weight(1f),
                 )
@@ -223,7 +222,7 @@ fun PrismTransactionsScreen(
                     label = "Chi tiêu",
                     icon = Icons.Default.ArrowUpward,
                     isSelected = filter == TransactionFilter.EXPENSE,
-                    activeColor = Color(0xFFDC2626),
+                    activeColor = FinluxColors.ExpenseRed,
                     onClick = { viewModel.filter.value = TransactionFilter.EXPENSE },
                     modifier = Modifier.weight(1f),
                 )
@@ -238,7 +237,7 @@ fun PrismTransactionsScreen(
                     start = 20.dp,
                     end = 20.dp,
                     top = 8.dp,
-                    bottom = if (isRootTab) 140.dp else 24.dp,
+                    bottom = if (isRootTab) 96.dp else 24.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -847,6 +846,7 @@ private fun PrismTransactionCardItem(
         TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví"}" else wallet?.name ?: "Ví chính"
         else -> wallet?.name ?: "Ví chính"
     }
+    val subtitleText = "$dateText • $walletDisplayName"
 
     val amountFormatted = when (transaction.type) {
         TransactionType.INCOME -> "+${formatVndAmount(transaction.amount.value)}"
@@ -878,14 +878,14 @@ private fun PrismTransactionCardItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 15.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Category / Transfer Icon
+            // Column 1: Category / Transfer Icon (Fixed 44dp)
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
-                modifier = Modifier.size(46.dp),
+                modifier = Modifier.size(44.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -897,12 +897,12 @@ private fun PrismTransactionCardItem(
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
-
-            // Center Column: Title + Date
+            // Column 2: Title + Subtitle (weight 1f, padding start 12dp, end 8dp)
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp, end = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = title,
@@ -912,53 +912,31 @@ private fun PrismTransactionCardItem(
                     ),
                     color = tokens.onSurface,
                     maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
 
                 Text(
-                    text = dateText,
+                    text = subtitleText,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 12.sp,
                         color = tokens.onSurfaceVariant,
                     ),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
 
-            Spacer(Modifier.width(8.dp))
-
-            // Right Column: Amount + Wallet
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    text = amountFormatted,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = amountColor,
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(
-                        imageVector = if (isTransfer) Icons.Default.SwapHoriz else Icons.Default.AccountBalanceWallet,
-                        contentDescription = null,
-                        tint = tokens.onSurfaceVariant,
-                        modifier = Modifier.size(13.dp),
-                    )
-                    Text(
-                        text = walletDisplayName,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 12.sp,
-                            color = tokens.onSurfaceVariant,
-                        ),
-                        maxLines = 1,
-                    )
-                }
-            }
+            // Column 3: Amount ONLY (wrapContentWidth, End)
+            Text(
+                text = amountFormatted,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = amountColor,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                maxLines = 1,
+            )
         }
     }
 }

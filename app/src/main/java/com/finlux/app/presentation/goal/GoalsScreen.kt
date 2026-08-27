@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
@@ -78,13 +80,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.navigationBarsPadding
 import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.WaterGlassCard
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Wallet
@@ -360,8 +367,10 @@ private fun GoalDepositWithdrawSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp)
-                .imePadding(),
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Header Sheet
@@ -376,9 +385,9 @@ private fun GoalDepositWithdrawSheet(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .background(
-                                (if (isDeposit) FinluxPurple else Color(0xFFE11D48)).copy(alpha = 0.16f),
+                                (if (isDeposit) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed).copy(alpha = 0.16f),
                                 CircleShape,
                             ),
                         contentAlignment = Alignment.Center,
@@ -386,7 +395,7 @@ private fun GoalDepositWithdrawSheet(
                         Icon(
                             imageVector = if (isDeposit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
                             contentDescription = null,
-                            tint = if (isDeposit) FinluxPurple else Color(0xFFE11D48),
+                            tint = if (isDeposit) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -426,12 +435,12 @@ private fun GoalDepositWithdrawSheet(
                     val isSelected = wallet.id == state.selectedWalletId
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) FinluxPurple.copy(alpha = 0.16f) else tokens.surfaceSoft,
+                        color = if (isSelected) tokens.primary.copy(alpha = 0.16f) else tokens.surfaceSoft,
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .border(
                                 width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) FinluxPurple else tokens.onSurface.copy(alpha = 0.12f),
+                                color = if (isSelected) tokens.primary else tokens.border,
                                 shape = RoundedCornerShape(14.dp),
                             )
                             .clickable { onSelectWallet(wallet.id) },
@@ -444,14 +453,14 @@ private fun GoalDepositWithdrawSheet(
                             Icon(
                                 imageVector = Icons.Default.AccountBalanceWallet,
                                 contentDescription = null,
-                                tint = if (isSelected) FinluxPurple else tokens.onSurfaceVariant,
+                                tint = if (isSelected) tokens.primary else tokens.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp),
                             )
                             Column {
                                 Text(
                                     text = wallet.name,
                                     style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
-                                    color = if (isSelected) FinluxPurple else tokens.onSurface,
+                                    color = if (isSelected) tokens.primary else tokens.onSurface,
                                 )
                                 Text(
                                     text = formatVndAmount(wallet.balance.value),
@@ -464,63 +473,15 @@ private fun GoalDepositWithdrawSheet(
                 }
             }
 
-            // Amount Input
-            OutlinedTextField(
-                value = state.amountInput,
-                onValueChange = onAmountChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Số tiền thực hiện (đ)") },
-                placeholder = { Text("0") },
-                supportingText = {
-                    val amountLong = state.amountInput.toLongOrNull() ?: 0L
-                    Text(formatVndAmount(amountLong))
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isDeposit) FinluxPurple else Color(0xFFE11D48),
-                    focusedLabelColor = if (isDeposit) FinluxPurple else Color(0xFFE11D48),
-                ),
+            // Amount Input with ErgonomicCompactAmountCard
+            ErgonomicCompactAmountCard(
+                label = "Số tiền thực hiện",
+                amountText = state.amountInput,
+                onAmountChange = onAmountChange,
+                placeholder = "0",
+                amountColor = if (isDeposit) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
+                showSuggestions = true,
             )
-
-            // Quick Amount Suggestion Chips
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                val suggestions = if (isDeposit) {
-                    listOf(
-                        500_000L to "500k",
-                        1_000_000L to "1 triệu",
-                        2_000_000L to "2 triệu",
-                        5_000_000L to "5 triệu",
-                    )
-                } else {
-                    listOf(
-                        500_000L to "500k",
-                        1_000_000L to "1 triệu",
-                        goal.savedAmount.value to "Toàn bộ (${formatVndAmount(goal.savedAmount.value)})",
-                    )
-                }
-
-                items(suggestions) { (amt, label) ->
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = tokens.surfaceSoft,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { onAmountChange(amt.toString()) },
-                    ) {
-                        Text(
-                            text = label,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.SemiBold),
-                            color = tokens.onSurface,
-                        )
-                    }
-                }
-            }
 
             // Note Input
             OutlinedTextField(
@@ -531,6 +492,10 @@ private fun GoalDepositWithdrawSheet(
                 placeholder = { Text(if (isDeposit) "VD: Thưởng lương tháng này" else "VD: Rút tiền chi tiêu") },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = tokens.primary,
+                    unfocusedBorderColor = tokens.border,
+                ),
             )
 
             state.error?.let {
@@ -550,7 +515,7 @@ private fun GoalDepositWithdrawSheet(
                 shape = RoundedCornerShape(14.dp),
                 enabled = !state.isSubmitting,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isDeposit) FinluxPurple else Color(0xFFE11D48),
+                    containerColor = if (isDeposit) tokens.primary else FinluxColors.ExpenseRed,
                     contentColor = Color.White,
                 ),
             ) {

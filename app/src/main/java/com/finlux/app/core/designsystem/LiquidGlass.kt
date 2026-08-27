@@ -159,6 +159,7 @@ fun GlassTopBar(
         navigationIcon = navigationIcon,
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
     )
 }
 

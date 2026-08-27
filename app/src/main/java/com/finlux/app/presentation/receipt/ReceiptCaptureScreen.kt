@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,7 +43,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.FinluxCyan
 import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
@@ -52,6 +56,7 @@ import java.io.File
 @Composable
 fun ReceiptCaptureScreen(onDismiss: () -> Unit, onCaptured: (String) -> Unit) {
     val context = LocalContext.current
+    val tokens = LocalFinluxTokens.current
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { it?.let { uri -> onCaptured(uri.toString()) } }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved -> if (saved) cameraUri?.let { onCaptured(it.toString()) } }
@@ -62,30 +67,37 @@ fun ReceiptCaptureScreen(onDismiss: () -> Unit, onCaptured: (String) -> Unit) {
     BackHandler(onBack = onDismiss)
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
-        Column(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 18.dp), verticalArrangement = Arrangement.SpaceBetween) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 22.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onDismiss) { Icon(Icons.Default.Close, "Đóng") }
-                Text("Quét hóa đơn", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Icon(Icons.Default.Bolt, null, tint = FinluxCyan)
+                IconButton(onDismiss) { Icon(Icons.Default.Close, "Đóng", tint = tokens.onSurface) }
+                Text("Quét hóa đơn", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = tokens.onSurface)
+                Icon(Icons.Default.Bolt, null, tint = tokens.primary)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Box(
                     Modifier.fillMaxWidth().size(300.dp).clip(RoundedCornerShape(28.dp))
-                        .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.surface.copy(alpha = .26f), Color.Black.copy(alpha = .30f))))
-                        .border(2.dp, Brush.linearGradient(listOf(FinluxCyan, FinluxPurple)), RoundedCornerShape(28.dp)),
+                        .background(Brush.verticalGradient(listOf(tokens.surface.copy(alpha = .36f), tokens.surfaceSoft.copy(alpha = .60f))))
+                        .border(2.dp, Brush.linearGradient(listOf(tokens.primary, tokens.primary.copy(alpha = 0.5f))), RoundedCornerShape(28.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.CameraAlt, null, Modifier.size(72.dp), tint = Color.White.copy(alpha = .82f))
-                        Text("Đưa toàn bộ hóa đơn vào khung", color = Color.White, fontWeight = FontWeight.Bold)
-                        Text("Giữ điện thoại ổn định và đủ sáng", color = Color.White.copy(alpha = .72f))
+                        Icon(Icons.Default.CameraAlt, null, Modifier.size(72.dp), tint = tokens.primary)
+                        Text("Đưa toàn bộ hóa đơn vào khung", color = tokens.onSurface, fontWeight = FontWeight.Bold)
+                        Text("Giữ điện thoại ổn định và đủ sáng", color = tokens.onSurfaceVariant)
                     }
                 }
-                Text("Sau khi chụp, ảnh được đính kèm vào form Thêm chi để anh kiểm tra và nhập số tiền chính xác.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Sau khi chụp, ảnh được đính kèm vào form Thêm chi để anh kiểm tra và nhập số tiền chính xác.", color = tokens.onSurfaceVariant)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                WaterGlassCard(Modifier.size(60.dp), tint = FinluxCyan, onClick = { gallery.launch("image/*") }, padding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.PhotoLibrary, "Thư viện") } }
-                Box(Modifier.size(82.dp).background(Brush.linearGradient(listOf(FinluxPurple, FinluxCyan)), CircleShape).border(3.dp, Color.White.copy(alpha = .7f), CircleShape).let { base -> base }, contentAlignment = Alignment.Center) {
+                WaterGlassCard(Modifier.size(60.dp), tint = tokens.primary, onClick = { gallery.launch("image/*") }, padding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.PhotoLibrary, "Thư viện", tint = tokens.primary) } }
+                Box(Modifier.size(82.dp).background(Brush.linearGradient(listOf(tokens.primary, tokens.primary.copy(alpha = 0.8f))), CircleShape).border(3.dp, tokens.border, CircleShape), contentAlignment = Alignment.Center) {
                     IconButton(onClick = { if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera() else permission.launch(Manifest.permission.CAMERA) }, modifier = Modifier.fillMaxSize()) { Icon(Icons.Default.CameraAlt, "Chụp", Modifier.size(36.dp), tint = Color.White) }
                 }
                 Box(Modifier.size(60.dp))

@@ -189,19 +189,16 @@ fun FinluxNavHost(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         modifier = Modifier
             .fillMaxSize()
             .then(mainSwipeModifier),
-    ) { scaffoldPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = scaffoldPadding.calculateBottomPadding()),
-        ) {
-            NavHost(
+    ) { _ ->
+        NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
+            modifier = Modifier.fillMaxSize(),
             enterTransition = {
                 val from = MainSwipeRoutes.indexOf(initialState.destination.route)
                 val to = MainSwipeRoutes.indexOf(targetState.destination.route)
@@ -437,7 +434,6 @@ fun FinluxNavHost(
             onInstallDownloaded = { updateViewModel.installDownloadedApk(it) },
             onDismiss = { updateViewModel.dismissUpdate() },
         )
-        }
     }
 }
 

@@ -109,7 +109,6 @@ fun ClassicBudgetScreen(
                 actions = { IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm ngân sách") } },
             )
         },
-        bottomBar = { MainBottomBar(Route.Budget.value, onNavigate, onAdd) },
         snackbarHost = { SnackbarHost(snackbar) },
         containerColor = Color.Transparent,
     ) { padding ->

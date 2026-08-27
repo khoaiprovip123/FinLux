@@ -111,7 +111,7 @@ fun ModernHomeScreen(
         ) { scaffoldPadding ->
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(bottom = scaffoldPadding.calculateBottomPadding()),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 96.dp),
                 verticalArrangement = Arrangement.spacedBy(13.dp),
             ) {
                 item {
@@ -200,7 +200,7 @@ fun ModernHomeScreen(
 @Composable
 private fun ReferenceHeader(name: String, photoUrl: String?, onNotifications: () -> Unit, onProfile: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().statusBarsPadding().padding(top = 24.dp, bottom = 2.dp),
+        Modifier.fillMaxWidth().statusBarsPadding().padding(top = 10.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         FinluxBrandMark(size = 46.dp, framed = false)

@@ -144,11 +144,6 @@ fun ClassicWalletsScreen(
                     },
                 )
             },
-            bottomBar = {
-                if (onNavigate != null && onAdd != null) {
-                    MainBottomBar(Route.Wallets.value, onNavigate, onAdd)
-                }
-            },
             snackbarHost = { SnackbarHost(snackbar) },
             containerColor = Color.Transparent,
         ) { padding ->
@@ -156,7 +151,7 @@ fun ClassicWalletsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {

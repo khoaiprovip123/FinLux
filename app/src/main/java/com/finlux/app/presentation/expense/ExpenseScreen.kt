@@ -54,8 +54,10 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.navigation.Route
-import com.finlux.app.presentation.components.MainBottomBar
+import com.finlux.app.core.designsystem.FinluxStyleBackdrop
+import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
@@ -63,7 +65,15 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val ExpenseChartColors = listOf(ExpenseRed, Color(0xFFFF7188), WarningAmber, FinluxBlue, IncomeGreen, FinluxPurple, FinluxCyan)
+private val ExpenseChartColors = listOf(
+    FinluxColors.ExpenseRed,
+    FinluxColors.WarningAmber,
+    FinluxColors.PrimaryBlue,
+    FinluxColors.PrimaryViolet,
+    FinluxColors.PrimaryCyan,
+    FinluxColors.IncomeGreen,
+    FinluxColors.NeutralGray,
+)
 
 @Composable
 fun ExpenseScreen(
@@ -76,57 +86,84 @@ fun ExpenseScreen(
     viewModel: ExpenseViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
-    Scaffold(
-        topBar = {
-            GlassTopBar(
-                title = { Text("Chi tiêu", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
-                actions = {
-                    TextButton(onAddExpense) {
-                        Icon(Icons.Default.Add, null, Modifier.size(18.dp))
-                        Text("Thêm", Modifier.padding(start = 3.dp), fontWeight = FontWeight.Bold)
-                    }
-                },
-            )
-        },
-        bottomBar = { MainBottomBar(Route.Expense.value, onNavigate, onAddExpense) },
-        containerColor = Color.Transparent,
-    ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
-            contentPadding = PaddingValues(16.dp, padding.calculateTopPadding() + 4.dp, 16.dp, 28.dp),
-            verticalArrangement = Arrangement.spacedBy(13.dp),
-        ) {
-            item { MonthPicker(state.month.toString(), viewModel::previousMonth, viewModel::nextMonth, state.month < java.time.YearMonth.now()) }
-            item { ExpenseHero(state.total, state.changePercent) }
-            item { ExpenseCategoryCard(state) }
-            item { DailyExpenseCard(state.dailyStats) }
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Giao dịch gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Xem tất cả", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                }
-            }
-            if (state.transactions.isEmpty()) item { GlassCard(Modifier.fillMaxWidth(), onClick = onAddExpense) { Text("Chưa có chi tiêu trong tháng này. Chạm để thêm mới.") } }
-            else items(state.transactions.take(12), key = { it.id }) { transaction ->
-                val category = state.categories[transaction.categoryId]
-                val accent = category?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { onSelectTransaction?.invoke(transaction) },
-                    onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.TrendingDown, null, tint = accent) }
-                        Column(Modifier.weight(1f).padding(horizontal = 11.dp)) {
-                            Text(transaction.note.ifBlank { category?.name ?: "Chi tiêu" }, fontWeight = FontWeight.Bold)
-                            Text("${category?.name ?: "Khác"} · ${transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val tokens = LocalFinluxTokens.current
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        FinluxStyleBackdrop(Modifier.fillMaxSize())
+
+        Scaffold(
+            topBar = {
+                GlassTopBar(
+                    title = { Text("Chi tiêu", fontWeight = FontWeight.Bold) },
+                    navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
+                    actions = {
+                        TextButton(onAddExpense) {
+                            Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+                            Text("Thêm", Modifier.padding(start = 3.dp), fontWeight = FontWeight.Bold)
                         }
-                        Text("-${transaction.amount.value.toVnd()}", color = ExpenseRed, fontWeight = FontWeight.Bold)
+                    },
+                )
+            },
+            containerColor = Color.Transparent,
+        ) { padding ->
+            LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(13.dp),
+            ) {
+                item { MonthPicker(state.month.toString(), viewModel::previousMonth, viewModel::nextMonth, state.month < java.time.YearMonth.now()) }
+                item { ExpenseHero(state.total, state.changePercent) }
+                item { ExpenseCategoryCard(state) }
+                item { DailyExpenseCard(state.dailyStats) }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Giao dịch gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Xem tất cả", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+                if (state.transactions.isEmpty()) {
+                    item {
+                        FinluxEmptyState(
+                            title = "Chưa có chi tiêu trong tháng này",
+                            description = "Chạm vào nút bên dưới để thêm khoản chi tiêu mới.",
+                            icon = Icons.Default.TrendingDown,
+                            actionLabel = "+ Thêm chi tiêu",
+                            onActionClick = onAddExpense,
+                            modifier = Modifier.padding(top = 16.dp),
+                        )
+                    }
+                } else {
+                    items(state.transactions.take(12), key = { it.id }) { transaction ->
+                        val category = state.categories[transaction.categoryId]
+                        val accent = category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.ExpenseRed
+                        GlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onSelectTransaction?.invoke(transaction) },
+                            onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.TrendingDown, null, tint = accent) }
+                                Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        text = transaction.note.ifBlank { category?.name ?: "Chi tiêu" },
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        text = "${category?.name ?: "Khác"} · ${transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = tokens.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    )
+                                }
+                                Text("-${transaction.amount.value.toVnd()}", color = FinluxColors.ExpenseRed, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             }
-            item { Spacer(Modifier.height(4.dp)) }
         }
     }
 }

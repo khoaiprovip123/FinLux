@@ -307,7 +307,7 @@ fun PrismSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 28.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             item {
@@ -527,7 +527,7 @@ private fun SettingsTitle() {
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(top = 18.dp, bottom = 10.dp),
+            .padding(top = 14.dp, bottom = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(

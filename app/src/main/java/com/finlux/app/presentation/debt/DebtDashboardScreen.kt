@@ -58,6 +58,7 @@ import com.finlux.app.core.designsystem.FinluxCyan
 import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.LiquidGlassSurface
+import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxScreenHeader
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DebtAccount
@@ -182,7 +183,7 @@ fun DebtDashboardScreen(
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                 // Overview Hero Card
@@ -256,18 +257,13 @@ fun DebtDashboardScreen(
 
                 if (filteredDebts.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "Chưa có khoản nợ nào trong danh mục này",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        FinluxEmptyState(
+                            title = if (uiState.debts.isEmpty()) "Chưa có khoản nợ nào" else "Không có khoản nợ trong danh mục này",
+                            description = if (uiState.debts.isEmpty()) "Thêm khoản nợ hoặc thẻ tín dụng để theo dõi lộ trình trả nợ tối ưu." else "Hãy chọn danh mục khác hoặc thêm khoản nợ mới.",
+                            icon = Icons.Default.CreditScore,
+                            actionLabel = if (uiState.debts.isEmpty()) "+ Thêm khoản nợ" else null,
+                            onActionClick = if (uiState.debts.isEmpty()) { { editingDebt = null; showAddEditSheet = true } } else null,
+                        )
                     }
                 } else {
                     items(filteredDebts, key = { it.id }) { debt ->
@@ -285,10 +281,6 @@ fun DebtDashboardScreen(
                             },
                         )
                     }
-                }
-
-                item {
-                    Spacer(Modifier.height(40.dp))
                 }
             }
 

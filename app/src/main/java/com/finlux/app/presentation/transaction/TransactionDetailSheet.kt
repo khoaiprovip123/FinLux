@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -84,6 +85,7 @@ fun TransactionDetailSheet(
     onEdit: (FinanceTransaction) -> Unit = {},
     onDelete: (FinanceTransaction) -> Unit = {},
 ) {
+    val tokens = LocalFinluxTokens.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -331,8 +333,8 @@ fun TransactionDetailSheet(
                 // Sửa Card
                 Surface(
                     shape = RoundedCornerShape(18.dp),
-                    color = Color(0xFF2563EB).copy(alpha = 0.06f),
-                    border = BorderStroke(1.dp, Color(0xFF2563EB).copy(alpha = 0.18f)),
+                    color = tokens.primary.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.22f)),
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(18.dp))
@@ -351,14 +353,14 @@ fun TransactionDetailSheet(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF2563EB).copy(alpha = 0.14f),
+                            color = tokens.primary.copy(alpha = 0.14f),
                             modifier = Modifier.size(36.dp),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Sửa",
-                                    tint = Color(0xFF2563EB),
+                                    tint = tokens.primary,
                                     modifier = Modifier.size(17.dp),
                                 )
                             }
@@ -371,7 +373,7 @@ fun TransactionDetailSheet(
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = Color(0xFF2563EB),
+                                color = tokens.primary,
                                 maxLines = 1,
                             )
                             Text(

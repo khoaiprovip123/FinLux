@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.categoryIcon
@@ -42,6 +45,7 @@ import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.TransactionType
+import com.finlux.app.domain.model.Wallet
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.time.Instant
@@ -185,6 +189,8 @@ fun FinluxTransactionRow(
     transaction: FinanceTransaction,
     category: Category?,
     modifier: Modifier = Modifier,
+    wallet: Wallet? = null,
+    relatedWallet: Wallet? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onMoreClick: (() -> Unit)? = null,
@@ -193,14 +199,18 @@ fun FinluxTransactionRow(
     val isIncome = transaction.type == TransactionType.INCOME
     val semanticAmountColor = getTransactionSemanticColor(transaction.type)
     val categoryAccent = category?.let { colorFromHex(it.colorHex) } ?: tokens.primary
-    val icon = category?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
+    val icon = category?.let { categoryIcon(it.icon) } ?: when (transaction.type) {
+        TransactionType.INCOME -> Icons.Default.ArrowDownward
+        TransactionType.EXPENSE -> Icons.Default.Payments
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
+    }
 
     val title = transaction.note.ifBlank {
         category?.name ?: when (transaction.type) {
             TransactionType.INCOME -> "Thu nhập"
             TransactionType.EXPENSE -> "Chi tiêu"
-            TransactionType.TRANSFER_OUT -> "Chuyển tiền đi"
-            TransactionType.TRANSFER_IN -> "Nhận tiền chuyển"
+            TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "Chuyển tiền đến ${relatedWallet.name}" else "Chuyển tiền đi"
+            TransactionType.TRANSFER_IN -> if (relatedWallet != null) "Nhận tiền từ ${relatedWallet.name}" else "Nhận tiền chuyển"
         }
     }
 
@@ -209,6 +219,18 @@ fun FinluxTransactionRow(
     }
     val dateText = remember(transaction.date) {
         dateFormatter.format(transaction.date.atZone(ZoneId.systemDefault()))
+    }
+
+    val walletDisplayName = when (transaction.type) {
+        TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "${wallet?.name ?: "Ví"} ➔ ${relatedWallet.name}" else wallet?.name
+        TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví"}" else wallet?.name
+        else -> wallet?.name
+    }
+
+    val subtitle = if (!walletDisplayName.isNullOrBlank()) {
+        "$dateText · $walletDisplayName"
+    } else {
+        dateText
     }
 
     FinluxSoftCard(
@@ -221,7 +243,7 @@ fun FinluxTransactionRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // Category Icon with subtle soft container
+            // Column 1: Category Icon with subtle soft container (Fixed 42dp)
             Surface(
                 shape = RoundedCornerShape(tokens.radius.smallChip),
                 color = categoryAccent.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
@@ -237,11 +259,11 @@ fun FinluxTransactionRow(
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Note & Date
+            // Column 2: Note & Subtitle (weight 1f, padding start 12dp, end 8dp)
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp, end = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
@@ -250,40 +272,27 @@ fun FinluxTransactionRow(
                     color = tokens.onSurface,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = dateText,
+                    text = subtitle,
                     style = FinluxTextStyles.Caption,
                     color = tokens.onSurfaceVariant,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Semantic Amount Text (Always correct color)
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                FinluxAmountText(
-                    amount = transaction.amount.value,
-                    type = transaction.type,
-                    explicitColor = semanticAmountColor,
-                    textStyle = FinluxTextStyles.CardTitle,
-                )
-
-                if (category != null && transaction.note.isNotBlank()) {
-                    Text(
-                        text = category.name,
-                        style = FinluxTextStyles.MicroLabel,
-                        color = tokens.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-            }
+            // Column 3: Semantic Amount Text ONLY (wrapContentWidth, End)
+            FinluxAmountText(
+                amount = transaction.amount.value,
+                type = transaction.type,
+                explicitColor = semanticAmountColor,
+                textStyle = FinluxTextStyles.CardTitle,
+            )
 
             if (onMoreClick != null) {
+                Spacer(modifier = Modifier.width(4.dp))
                 IconButton(
                     onClick = onMoreClick,
                     modifier = Modifier.size(28.dp),

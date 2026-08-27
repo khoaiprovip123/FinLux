@@ -144,7 +144,7 @@ fun PrismReportsScreen(
                 onExportClick = { showExportDialog = true },
             )
         },
-        containerColor = tokens.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -154,7 +154,7 @@ fun PrismReportsScreen(
                 start = 18.dp,
                 end = 18.dp,
                 top = 6.dp,
-                bottom = 120.dp,
+                bottom = 96.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

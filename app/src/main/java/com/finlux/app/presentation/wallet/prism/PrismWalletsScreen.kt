@@ -82,6 +82,9 @@ import com.finlux.app.core.designsystem.InstitutionSelectorSection
 import com.finlux.app.core.designsystem.findInstitutionForWallet
 import com.finlux.app.core.designsystem.GlassBottomSheet
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxDialog
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
@@ -150,7 +153,7 @@ fun PrismWalletsScreen(
                 start = tokens.spacing.lg,
                 end = tokens.spacing.lg,
                 top = tokens.spacing.sm,
-                bottom = 32.dp,
+                bottom = 24.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(tokens.spacing.md),
         ) {
@@ -691,36 +694,14 @@ private fun PrismWalletEditor(
             }
 
             // Số dư ban đầu / Số dư hiện tại
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = balance,
-                    onValueChange = { balance = it.filter(Char::isDigit).take(15) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(if (!isEditing) "Số dư ban đầu" else "Số dư hiện tại") },
-                    supportingText = {
-                        Text(
-                            text = (balance.toLongOrNull() ?: 0L).toVnd(),
-                            fontWeight = FontWeight.SemiBold,
-                            color = tokens.primary,
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf(500_000L, 1_000_000L, 2_000_000L, 5_000_000L, 10_000_000L)) { preset ->
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                val current = balance.toLongOrNull() ?: 0L
-                                balance = (current + preset).toString()
-                            },
-                            label = { Text("+${preset.toShortVnd()}") },
-                        )
-                    }
-                }
-            }
+            ErgonomicCompactAmountCard(
+                label = if (!isEditing) "Số dư ban đầu" else "Số dư hiện tại",
+                amountText = balance,
+                onAmountChange = { balance = it },
+                placeholder = "0",
+                amountColor = tokens.primary,
+                showSuggestions = true,
+            )
 
             // Màu thẻ
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -737,10 +718,10 @@ private fun PrismWalletEditor(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(CircleShape)
-                                .background(colorFromHex(hex))
+                                .background(colorFromHex(hex, tokens.primary))
                                 .border(
                                     width = if (isSelected) 3.dp else 1.dp,
-                                    color = if (isSelected) tokens.onSurface else Color.White.copy(alpha = 0.4f),
+                                    color = if (isSelected) tokens.onSurface else tokens.border,
                                     shape = CircleShape,
                                 )
                                 .clickable { color = hex },

@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -70,6 +72,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.BudgetPeriodBasis
 import com.finlux.app.domain.model.CycleRolloverRule
@@ -84,18 +88,22 @@ fun SalaryCycleSettingsSheet(
     onDismiss: () -> Unit,
     viewModel: SalaryCycleViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val tokens = LocalFinluxTokens.current
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
+    val state = viewModel.uiState.collectAsStateWithLifecycle().value
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    var expectedSalaryText by remember(state.config.expectedSalary?.value) {
-        mutableStateOf(state.config.expectedSalary?.value?.let { if (it > 0) it.toString() else "" } ?: "")
+    var expectedSalaryText by remember(state.config.expectedSalary) {
+        mutableStateOf(state.config.expectedSalary?.toString().orEmpty())
     }
 
     LaunchedEffect(state.successMessage) {
-        state.successMessage?.let {
-            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
+        state.successMessage?.let { msg ->
+            android.widget.Toast.makeText(
+                context,
+                msg,
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
             viewModel.clearMessages()
             onDismiss()
         }
@@ -117,6 +125,8 @@ fun SalaryCycleSettingsSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState()),
@@ -136,13 +146,13 @@ fun SalaryCycleSettingsSheet(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF10B981).copy(alpha = 0.14f)),
+                            .background(tokens.primary.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
                             contentDescription = null,
-                            tint = Color(0xFF10B981),
+                            tint = tokens.primary,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -412,43 +422,19 @@ fun SalaryCycleSettingsSheet(
                     }
 
                     // 5. Expected Salary Input
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = "Mức lương dự kiến mỗi kỳ (Tùy chọn)",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            color = tokens.onSurface,
-                        )
-                        OutlinedTextField(
-                            value = expectedSalaryText,
-                            onValueChange = { input ->
-                                val digitsOnly = input.filter { it.isDigit() }.take(15)
-                                expectedSalaryText = digitsOnly
-                                val parsed = digitsOnly.toLongOrNull()
-                                viewModel.setExpectedSalary(parsed)
-                            },
-                            placeholder = { Text("Ví dụ: 20.000.000") },
-                            trailingIcon = {
-                                val amount = expectedSalaryText.toLongOrNull() ?: 0L
-                                if (amount > 0) {
-                                    Text(
-                                        text = amount.toVnd(),
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF10B981),
-                                        fontSize = 12.sp,
-                                        modifier = Modifier.padding(end = 12.dp),
-                                    )
-                                }
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF10B981),
-                            ),
-                        )
-                    }
+                    ErgonomicCompactAmountCard(
+                        label = "Mức lương dự kiến mỗi kỳ",
+                        amountText = expectedSalaryText,
+                        onAmountChange = { input ->
+                            val digitsOnly = input.filter { it.isDigit() }.take(15)
+                            expectedSalaryText = digitsOnly
+                            val parsed = digitsOnly.toLongOrNull()
+                            viewModel.setExpectedSalary(parsed)
+                        },
+                        placeholder = "20.000.000",
+                        amountColor = tokens.primary,
+                        showSuggestions = true,
+                    )
 
                     // 6. End-of-Cycle Leftover Handling
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

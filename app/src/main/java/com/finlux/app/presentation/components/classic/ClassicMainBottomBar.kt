@@ -37,6 +37,7 @@ import com.finlux.app.core.designsystem.FinluxTextSecondary
 import com.finlux.app.core.designsystem.GlassBottomNav
 import com.finlux.app.core.designsystem.GlassFab
 import com.finlux.app.core.designsystem.LocalUiPreferences
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.navigation.Route
 import com.finlux.app.domain.model.VisualStyle
 
@@ -72,17 +73,10 @@ private fun RowScope.DestinationItem(
     unselectedIcon: ImageVector,
 ) {
     val style = LocalUiPreferences.current.visualStyle
+    val tokens = LocalFinluxTokens.current
     val selected = selectedRoute == route.value
-    val selectedColor = when (style) {
-        VisualStyle.MODERN_DARK -> FinluxBlue
-        VisualStyle.GLASSMORPHISM -> Color.White
-        VisualStyle.DYNAMIC_GRADIENT -> FinluxBlue
-    }
-    val unselectedColor = when (style) {
-        VisualStyle.MODERN_DARK -> Color(0xFF7890AA)
-        VisualStyle.GLASSMORPHISM -> Color.White.copy(alpha = .58f)
-        VisualStyle.DYNAMIC_GRADIENT -> FinluxTextSecondary
-    }
+    val selectedColor = tokens.primary
+    val unselectedColor = tokens.onSurfaceVariant.copy(alpha = if (tokens.isDark) 0.7f else 0.85f)
     NavigationBarItem(
         selected = selected,
         onClick = { onNavigate(route.value) },

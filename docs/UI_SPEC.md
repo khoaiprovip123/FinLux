@@ -61,7 +61,21 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
   tiêu đề giao dịch và danh sách phẳng ngay bên dưới.
 - Aura động toàn màn hình được loại bỏ; nền trắng-xanh sạch với ambient light rất nhẹ.
 - Liquid Glass chỉ dùng có chủ đích ở KPI/bottom bar; hero giữ water highlight và lensing tinh tế.
-- Khoảng cách, bo góc và chiều cao navigation được thu gọn theo tỷ lệ màn hình mẫu.
+### Viewport Edge-to-Edge & Transaction Row Architecture (27/08/2026)
+- **Chuẩn hóa Viewport 100% Full Screen Edge-to-Edge**:
+  * Duy nhất 1 Root Scaffold tại `FinluxNavHost.kt` với `containerColor = Color.Transparent` và `contentWindowInsets = WindowInsets(0, 0, 0, 0)`.
+  * `NavHost(modifier = Modifier.fillMaxSize())` không gắn padding, cho phép `FinluxStyleBackdrop` trong từng màn hình phủ kín 100% từ mép trên cùng đến mép đáy màn hình, xóa bỏ hoàn toàn vệt trắng của Android Activity Window.
+  * Mọi TopBar / Greeting Header gắn `.statusBarsPadding()` để nội dung bắt đầu dưới tai thỏ trong khi background tràn viền.
+  * 4 Tab chính có BottomBar (`Home`, `Transactions`, `Reports`, `Settings`): LazyColumn áp dụng `contentPadding` đáy `96.dp` để cuộn trôi qua thanh điều hướng đáy.
+  * Toàn bộ màn hình con/chi tiết: LazyColumn áp dụng `contentPadding` đáy `24.dp`.
+- **Chuẩn Layout 3 Cột cho Dòng Giao Dịch (`FinluxTransactionRow`, `PrismRecentTransactionItem`, `PrismTransactionCardItem`)**:
+  * **Cột 1**: Icon danh mục / chuyển tiền (kích thước cố định 42dp-44dp).
+  * **Cột 2 (`Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)`)**:
+    - Dòng 1: Tiêu đề giao dịch (`title`, `maxLines = 1`, `overflow = TextOverflow.Ellipsis`, `fontWeight = SemiBold`, `fontSize = 15.sp`).
+    - Dòng 2: Ngày giờ và Tuyến ví liên quan (`"$dateText · $sourceWallet ➔ $targetWallet"` hoặc `"$dateText · $walletName"`, `maxLines = 1`, `overflow = TextOverflow.Ellipsis`, `fontSize = 12.sp`, màu `tokens.onSurfaceVariant`).
+  * **Cột 3 (Số tiền - `wrapContentWidth(Alignment.End)`)**:
+    - Chỉ hiển thị duy nhất Chuỗi Số tiền (+/- Amount), font 15sp đậm, màu semantic (xanh cho Thu/Nhận, đỏ cho Chi/Chuyển).
+    - Tuyệt đối không để chuỗi tên ví ở cột phải dưới số tiền để tránh phình to đè lấn co cụm tiêu đề.
 
 ---
 

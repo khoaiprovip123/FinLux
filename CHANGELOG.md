@@ -1,5 +1,65 @@
 # Changelog
 
+## [1.10.21] - 2026-08-27
+### Fixed & Refactored (Transaction Row 3-Column Layout & Text Collision Fix)
+- **Tái cấu trúc Chuẩn Layout 3 Cột cho Dòng Giao Dịch (`PrismHomeScreen`, `PrismTransactionsScreen`, `FinluxTransactionRow`)**:
+  * **Cột 1 (Icon tròn 42dp-44dp)**: Icon danh mục / chuyển tiền với nền màu tương ứng.
+  * **Cột 2 (`Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)`)**:
+    + Dòng 1: Tiêu đề giao dịch (`title`, `maxLines = 1`, `overflow = TextOverflow.Ellipsis`, `fontWeight = SemiBold`).
+    + Dòng 2: Ngày tháng và Tuyến ví chuyển khoản (`"$dateText · $sourceWallet ➔ $targetWallet"` hoặc `"$dateText · $walletName"`, `maxLines = 1`, `overflow = TextOverflow.Ellipsis`, `fontSize = 12.sp`, màu `onSurfaceVariant`).
+  * **Cột 3 (Số tiền - `wrapContentWidth`, căn phải `Alignment.End`)**:
+    + Chỉ hiển thị duy nhất Chuỗi Số tiền (+/- Amount), font 15sp đậm, màu semantic (xanh cho Thu/Nhận, đỏ cho Chi/Chuyển).
+    + Chuyển toàn bộ chuỗi tên ví dài ra khỏi cột bên phải, triệt tiêu 100% hiện tượng cột phải phình to đè lấn làm co cụm tiêu đề ("Chuyển ti...").
+- **Tối ưu Row Giao Dịch tại `ExpenseScreen` & `IncomeScreen`**:
+  * Chuyển `Column` tiêu đề sang `Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)` kèm `verticalArrangement = Arrangement.spacedBy(2.dp)` giúp văn bản hiển thị thanh thoát và không bị ép chữ.
+
+## [1.10.20] - 2026-08-27
+### Fixed & Hardened (NavHost Full Viewport Edge-to-Edge & Insets Polish)
+- **Gỡ bỏ Padding trên NavHost & Chuẩn hóa Viewport Edge-to-Edge (`FinluxNavHost.kt`)**:
+  * Khai báo `NavHost(modifier = Modifier.fillMaxSize())` phủ kín 100% màn hình, gỡ bỏ hoàn toàn việc áp `scaffoldPadding` lên NavHost để triệt tiêu dứt điểm lỗi bóp nghẹt khung nhìn để lộ nền Window trắng ở đáy.
+- **Tái tích hợp `.statusBarsPadding()` cho toàn bộ Header & TopBar**:
+  * Đặt `.statusBarsPadding()` trên `FinluxScreenHeader`, `GlassTopBar` (`LiquidGlass.kt`, `ModernLiquidGlass.kt`), `PrismHomeTopHeader`, `ReferenceHeader`, `PrismReportsHeader`, `SettingsTitle` và Header Row tại `PrismTransactionsScreen.kt` để nội dung luôn bắt đầu an toàn dưới camera/tai thỏ trong khi nền kính `FinluxStyleBackdrop` trải dài Edge-to-Edge.
+- **Chuẩn hóa Bottom Scroll Clearance chuẩn xác**:
+  * 4 Tab chính có BottomBar (`Home`, `Transactions`, `Reports`, `Settings`): Đặt `contentPadding` đáy `bottom = 96.dp` để cuộn trôi hoàn toàn qua khỏi thanh điều hướng kính.
+  * Toàn bộ màn hình con/chi tiết (`Expense`, `Income`, `DebtDashboard`, `Wallets`, `Budget`, `Categories`, `Goals`): Đặt `contentPadding` đáy `bottom = 24.dp` tự nhiên.
+- **Triệt tiêu 100% mảng trắng rỗng & Đảm bảo Card co giãn tự nhiên**:
+  * Rà soát `StrategySelectorCard.kt`, `DebtDashboardScreen.kt`, `ExpenseScreen.kt`, xóa sạch các khối nền trắng thừa, bảo đảm thẻ Chiến lược nợ và biểu đồ Burndown co giãn tự nhiên theo nội dung.
+
+## [1.10.19] - 2026-08-27
+### Fixed & Refactored (Root Scaffold & Insets Architecture Overhaul)
+- **Chuẩn hóa Kiến trúc Root Scaffold & Insets (`FinluxNavHost.kt`)**:
+  * Chuyển `scaffoldPadding` truyền trực tiếp vào `NavHost(Modifier.fillMaxSize().padding(scaffoldPadding))`, loại bỏ Box lồng trung gian và xử lý triệt để phân phối an toàn cho toàn bộ cây giao diện.
+  * Thiết lập `containerColor = Color.Transparent` cho Root Scaffold để các hiệu ứng kính Liquid Glass hiển thị đồng nhất.
+- **Triệt tiêu hoàn toàn lỗi Double Status Bars Insets (Đè Header & Hero Card)**:
+  * Xóa bỏ `.statusBarsPadding()` thừa trong `FinluxScreenHeader.kt`, `GlassTopBar` (`LiquidGlass.kt`, `ModernLiquidGlass.kt`), `PrismHomeTopHeader` (`PrismHomeScreen.kt`), `PrismReportsHeader` (`PrismReportsScreen.kt`), `SettingsTitle` (`PrismSettingsScreen.kt`), `ReferenceHeader` (`ModernHomeScreen.kt`, `ClassicHomeScreen.kt`) và Header Row tại `PrismTransactionsScreen.kt`.
+  * Top Bar và Greeting Header hiển thị thanh thoát, không còn bị xô lệch hay đè lên thẻ tổng tài sản.
+- **Chuẩn hóa Bottom Scroll Clearance (16dp)**:
+  * Loại bỏ toàn bộ khoảng đệm đáy cứng 140dp/120dp/40dp, đồng bộ `contentPadding` đáy của các LazyColumn trên toàn bộ màn hình (`PrismHomeScreen`, `PrismTransactionsScreen`, `PrismReportsScreen`, `PrismWalletsScreen`, `ModernHomeScreen`, `ClassicHomeScreen`, `ExpenseScreen`, `IncomeScreen`, `DebtDashboardScreen`, `PrismBudgetScreen`, `PrismSettingsScreen`) về chuẩn `PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)` (hoặc horizontal 20.dp).
+  * Xóa sạch khoảng trắng khổng lồ cắt cụt ở chân trang.
+- **Xóa mảng trắng rỗng cắt cụt & Chuẩn hóa Empty State**:
+  * Nâng cấp `DebtDashboardScreen.kt`: Thay thế Box text trần bằng `FinluxEmptyState` bo góc hoàn chỉnh khi không có nợ, bảo đảm hiển thị trọn vẹn thẻ Chiến lược nợ (Slider + Burndown Chart).
+  * Nâng cấp `ExpenseScreen.kt` và `IncomeScreen.kt` hiển thị `FinluxEmptyState` liền mạch.
+- **Khắc phục triệt để lỗi co ép text trên các Row**:
+  * Tối ưu layout Carousel danh mục (`PrismHomeScreen.kt` - `PrismBreakdownPageContent`): Sử dụng `Modifier.weight(1f, fill = false)` cho tên danh mục kèm `overflow = TextOverflow.Ellipsis` và compact amount format, giúp các chữ dài như "Ăn uống", "Phương tiện" hiển thị trọn vẹn, không bị bóp nghẹt.
+  * Tối ưu text weights và ellipsis cho các dòng giao dịch tại `PrismHomeScreen`, `ExpenseScreen`, `IncomeScreen`.
+
+## [1.10.18] - 2026-08-27
+### Fixed & Hardened (Full UI/UX & Runtime Hardening Sprint)
+- **Triệt tiêu hoàn toàn Bug Duplicate Stacked Bottom Bar (Critical)**:
+  * Xóa bỏ triệt để các `bottomBar` lồng nhau trong Scaffold con tại `IncomeScreen`, `ExpenseScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`, `ModernBudgetScreen`, `ClassicBudgetScreen`.
+  * Chuẩn hóa duy nhất Root NavHost (`FinluxNavHost.kt`) quản lý Bottom Navigation Bar cho 4 tab chính, các màn hình con có nút Back tự động ẩn thanh điều hướng đáy.
+- **Xử lý Runtime & System Insets Toàn Diện**:
+  * Bổ sung `.navigationBarsPadding()` và `.imePadding()` cho toàn bộ các ModalBottomSheet: `DebtPaymentSheet`, `AddEditDebtSheet`, `GoalDepositWithdrawSheet`, `SalaryCycleSettingsSheet`, `CategoriesScreen` (GlassBottomSheet).
+  * Bổ sung `.statusBarsPadding()` cho Top Row và `.navigationBarsPadding()` cho Bottom Actions trên `ReceiptCaptureScreen.kt`, triệt tiêu lỗi nút chụp bị thanh điều hướng hệ thống che khuất.
+- **Khắc phục triệt để State Leaks & Xung đột Runtime**:
+  * Tích hợp `key(debt.id)` cho các state `remember` trong `DebtPaymentSheet.kt` chống rò rỉ số tiền thanh toán giữa các khoản nợ.
+  * Bổ sung `TextOverflow.Ellipsis` và `maxLines` cho `DebtCard`, `FinluxTransactionRow` và `FinluxHeroCard` chống vỡ bố cục khi dữ liệu văn bản dài.
+- **Đồng bộ Hệ thống Màu Động & Form Controls Chuẩn Liquid Glass**:
+  * Nâng cấp `GoalsScreen.kt`, `PrismWalletsScreen.kt`, `SalaryCycleSettingsSheet.kt` sang `ErgonomicCompactAmountCard` đồng bộ chuẩn 100%.
+  * Nâng cấp `CategoriesScreen.kt` bọc `FinluxStyleBackdrop`, bổ sung `FinluxEmptyState`, căn giữa chữ FilterChips và chuyển Dialog cũ sang `GlassBottomSheet`.
+  * Loại bỏ toàn bộ mã màu tĩnh hardcode trong `TransactionDetailSheet.kt`, `TransactionFilterBottomSheet.kt`, `PrismTransactionsScreen.kt`, `PrismReportsScreen.kt`, `ClassicMainBottomBar.kt` và `FinluxFormComponents.kt` chuyển sang sử dụng `LocalFinluxTokens.current` và `FinluxColors`.
+  * Set `containerColor = Color.Transparent` cho Scaffold tại các màn hình con để nền kính `FinluxStyleBackdrop` hiển thị đồng nhất.
+
 ## [1.10.17] - 2026-08-27
 ### Enhanced
 - **Tối ưu trải nghiệm gợi ý số tiền ErgonomicCompactAmountCard (`FinluxFormComponents.kt`)**:

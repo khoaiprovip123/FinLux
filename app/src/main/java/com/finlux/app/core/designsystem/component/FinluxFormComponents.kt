@@ -99,9 +99,9 @@ fun ErgonomicFormRow(
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFF3F4F6)),
-        shadowElevation = 1.5.dp,
+        color = tokens.surfaceSoft,
+        border = BorderStroke(1.dp, tokens.border),
+        shadowElevation = 1.dp,
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
@@ -140,7 +140,7 @@ fun ErgonomicFormRow(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                     ),
-                    color = Color(0xFF9CA3AF),
+                    color = tokens.onSurfaceVariant,
                 )
                 Text(
                     text = primaryValue,
@@ -390,14 +390,12 @@ fun ErgonomicCompactAmountCard(
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        color = tokens.surfaceSoft,
         border = BorderStroke(
             1.dp,
-            if (isFocused) amountColor.copy(alpha = 0.5f)
-            else if (tokens.isDark) Color.White.copy(alpha = 0.06f)
-            else Color(0xFFF3F4F6)
+            if (isFocused) amountColor.copy(alpha = 0.5f) else tokens.border,
         ),
-        shadowElevation = 1.5.dp,
+        shadowElevation = 1.dp,
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -412,7 +410,7 @@ fun ErgonomicCompactAmountCard(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp,
                 ),
-                color = Color(0xFF9CA3AF),
+                color = tokens.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

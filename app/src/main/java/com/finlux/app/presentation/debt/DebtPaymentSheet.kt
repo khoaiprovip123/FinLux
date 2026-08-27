@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -75,7 +76,7 @@ fun DebtPaymentSheet(
     val tokens = LocalFinluxTokens.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    var selectedWalletId by remember {
+    var selectedWalletId by remember(debt.id) {
         mutableStateOf(wallets.firstOrNull { it.isDefault }?.id ?: wallets.firstOrNull()?.id.orEmpty())
     }
     var showWalletPicker by remember { mutableStateOf(false) }
@@ -83,15 +84,15 @@ fun DebtPaymentSheet(
     val defaultAmount = if (debt.minimumPayment.value > 0L) debt.minimumPayment.value
     else (debt.remainingBalance.value * 0.05).roundToLong().coerceAtLeast(100_000L).coerceAtMost(debt.remainingBalance.value)
 
-    var amountText by remember { mutableStateOf(defaultAmount.toString()) }
-    var interestText by remember {
+    var amountText by remember(debt.id) { mutableStateOf(defaultAmount.toString()) }
+    var interestText by remember(debt.id) {
         val estMonthlyInterest = if (debt.interestRateApr > 0) {
             ((debt.remainingBalance.value.toDouble() * (debt.interestRateApr / 100.0)) / 12.0).roundToLong()
         } else 0L
         mutableStateOf(estMonthlyInterest.toString())
     }
-    var note by remember { mutableStateOf("") }
-    var validationError by remember { mutableStateOf<String?>(null) }
+    var note by remember(debt.id) { mutableStateOf("") }
+    var validationError by remember(debt.id) { mutableStateOf<String?>(null) }
 
     val currentAmount = amountText.toLongOrNull() ?: 0L
     val currentInterest = interestText.toLongOrNull() ?: 0L
@@ -112,6 +113,7 @@ fun DebtPaymentSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+                .imePadding()
                 .padding(horizontal = 20.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),

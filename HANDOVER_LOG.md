@@ -1,8 +1,110 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.17 (versionCode 129)
-- **Trạng thái Build:** 🟢 100% tests & lint PASS.
+- **Phiên bản hiện tại:** v1.10.21 (versionCode 133)
+- **Trạng thái Build:** 🟢 100% unit tests PASS (`gradlew testDebugUnitTest` 34 tasks successful).
+
+### [Task-FIX-Transaction-Row-Layout-Refactor] - Tái Cấu Trúc Layout Dòng Giao Dịch Chống Tràn & Co Cụm Text
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Cấu trúc lại Row giao dịch chuẩn 3 cột trong `FinluxTransactionComponents.kt`, `PrismHomeScreen.kt`, `PrismTransactionsScreen.kt`, `ExpenseScreen.kt`, `IncomeScreen.kt`:
+     - Cột 1: Icon tròn danh mục / chuyển tiền (kích thước cố định 40dp-44dp).
+     - Cột 2 (`Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)`): Dòng 1 là Tiêu đề giao dịch (`maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = SemiBold`), Dòng 2 là Ngày tháng & Tuyến ví (`"$dateText · $sourceWallet ➔ $targetWallet"` hoặc `"$dateText · $walletName"`, `maxLines = 1, overflow = TextOverflow.Ellipsis`).
+     - Cột 3 (`wrapContentWidth(Alignment.End)`): Chỉ hiển thị duy nhất Số tiền (+/- Amount) căn phải tuyệt đối, không đặt tên ví dưới số tiền.
+  2. Chạy 100% unit tests PASS, bump version lên v1.10.21 (versionCode 133), build APK và nạp lên thiết bị qua ADB.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+- **Files Modified**:
+  - `app/build.gradle.kts` (MODIFIED - Bump version to 1.10.21, versionCode 133)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.10.21)
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt` (MODIFIED - PrismRecentTransactionItem sang chuẩn 3 cột, chuyển walletDisplayName sang cột 2)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (MODIFIED - PrismTransactionCardItem sang chuẩn 3 cột, chuyển walletDisplayName sang cột 2)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt` (MODIFIED - FinluxTransactionRow sang chuẩn 3 cột, hỗ trợ wallet/relatedWallet)
+  - `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt` (MODIFIED - Tối ưu weight 1f và padding dòng giao dịch)
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt` (MODIFIED - Tối ưu weight 1f và padding dòng giao dịch)
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+- **Files Modified**:
+  - `app/build.gradle.kts` (MODIFIED - Bump version to 1.10.20, versionCode 132)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.10.20)
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt` (MODIFIED - NavHost fillMaxSize không padding, root Scaffold contentWindowInsets = 0)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt` (MODIFIED - Thêm statusBarsPadding vào FinluxScreenHeader)
+  - `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt` (MODIFIED - Thêm statusBarsPadding vào GlassTopBar)
+  - `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt` (MODIFIED - Thêm statusBarsPadding vào GlassTopBar)
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt` (MODIFIED - Thêm statusBarsPadding cho PrismHomeTopHeader, bottom contentPadding = 96dp)
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt` (MODIFIED - Thêm statusBarsPadding cho ReferenceHeader, bottom contentPadding = 96dp)
+  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt` (MODIFIED - Thêm statusBarsPadding cho ReferenceHeader, bottom contentPadding = 96dp)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (MODIFIED - Thêm statusBarsPadding cho top header row, bottom contentPadding = 96dp cho root tab / 24dp cho sub tab)
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (MODIFIED - Thêm statusBarsPadding cho PrismReportsHeader, bottom contentPadding = 96dp)
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt` (MODIFIED - Thêm statusBarsPadding cho SettingsTitle, bottom contentPadding = 96dp)
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt` (MODIFIED - bottom contentPadding = 96dp)
+  - `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt` (MODIFIED - bottom contentPadding = 24dp)
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt` (MODIFIED - bottom contentPadding = 24dp)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt` (MODIFIED - bottom contentPadding = 24dp)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt` (MODIFIED - bottom contentPadding = 24dp)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt` (MODIFIED - bottom contentPadding = 24dp)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt` (MODIFIED - bottom contentPadding = 24dp)
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` (MODIFIED - bottom contentPadding = 24dp)
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+- **Files Modified**:
+  - `app/build.gradle.kts` (MODIFIED - Bump version to 1.10.19, versionCode 131)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.10.19)
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt` (MODIFIED - Root Scaffold truyền scaffoldPadding trực tiếp vào NavHost)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt` (MODIFIED - Xóa statusBarsPadding thừa trong FinluxScreenHeader)
+  - `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt` (MODIFIED - Xóa statusBarsPadding trong GlassTopBar, set windowInsets = 0)
+  - `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt` (MODIFIED - Xóa statusBarsPadding trong GlassTopBar)
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt` (MODIFIED - Bỏ statusBarsPadding trong header, chuẩn hóa bottom 16dp, fix co ép text Carousel và recent items)
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt` (MODIFIED - Bỏ statusBarsPadding trong ReferenceHeader, bottom 16dp)
+  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt` (MODIFIED - Bỏ statusBarsPadding trong ReferenceHeader, bottom 16dp)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (MODIFIED - Bỏ statusBarsPadding ở header row, bottom 16dp)
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (MODIFIED - Bỏ statusBarsPadding ở header, bottom 16dp)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt` (MODIFIED - Chuẩn hóa bottom 16dp)
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` (MODIFIED - Chuẩn hóa bottom 16dp)
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt` (MODIFIED - Bỏ statusBarsPadding trong SettingsTitle, bottom 16dp)
+  - `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt` (MODIFIED - Scaffold padding, contentPadding bottom 16dp, row text ellipsis)
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt` (MODIFIED - Scaffold padding, contentPadding bottom 16dp, row text ellipsis)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt` (MODIFIED - FinluxEmptyState chuẩn, bottom 16dp, bỏ spacer 40dp thừa)
+
+### [Task-FEAT-UI-UX-Hardening-Sprint] - Khắc Phục Toàn Diện 21 Hạng Mục Giao Diện & Runtime, Sửa Lỗi Nhân Đôi BottomBar & Đồng Bộ Form Controls
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Xóa bỏ hoàn toàn lỗi Duplicate Stacked Bottom Bar bằng cách loại bỏ bottomBar trong các Scaffold con (Income, Expense, Wallets, Budget) và chỉ để duy nhất 1 Root Scaffold quản lý.
+  2. Bổ sung `statusBarsPadding` & `navigationBarsPadding` cho màn hình Quét hóa đơn (`ReceiptCaptureScreen.kt`).
+  3. Bổ sung `FinluxStyleBackdrop`, `FinluxEmptyState` và nâng cấp Dialog sang `GlassBottomSheet` cho `CategoriesScreen.kt`.
+  4. Đồng bộ `ErgonomicCompactAmountCard` và `FinluxWalletPickerBottomSheet` cho các màn hình Ví, Mục tiêu, Chu kỳ lương, Thêm chi tiêu.
+  5. Loại bỏ 100% mã màu hex hardcode tĩnh ở `TransactionDetailSheet.kt`, `TransactionFilterBottomSheet.kt`, `AddTransactionSheet.kt`, `ClassicMainBottomBar.kt`, `FinluxFormComponents.kt`.
+  6. Bổ sung `FinluxStyleBackdrop` và nâng cấp `FinluxEmptyState` cho `IncomeScreen.kt`, `ExpenseScreen.kt`, `PrismTransactionsScreen.kt`, `PrismReportsScreen.kt`.
+  7. Khắc phục lỗi rò rỉ state `remember(debt.id)` trong `DebtPaymentSheet.kt`, thêm `imePadding()` chống che khuất bàn phím, thêm `Ellipsis` cho dữ liệu dài trên `DebtCard.kt`, `FinluxTransactionRow`, `FinluxHeroCard`.
+  8. Tăng version lên v1.10.18 (versionCode 130), chạy full unit tests 100% PASS và nạp APK lên điện thoại test.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (0 failures, 0 errors).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt` (MODIFIED - Xóa bottomBar, thêm backdrop, empty state và dynamic tokens)
+  - `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt` (MODIFIED - Xóa bottomBar, thêm backdrop, empty state, dynamic tokens và ExpenseChartColors)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt` (MODIFIED - Xóa bottomBar trong Scaffold)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt` (MODIFIED - Xóa bottomBar trong Scaffold)
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt` (MODIFIED - Xóa bottomBar trong Scaffold)
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt` (MODIFIED - Xóa bottomBar trong Scaffold)
+  - `app/src/main/java/com/finlux/app/presentation/receipt/ReceiptCaptureScreen.kt` (MODIFIED - Thêm statusBarsPadding, navigationBarsPadding, FileProvider và dynamic tokens)
+  - `app/src/main/java/com/finlux/app/presentation/category/CategoriesScreen.kt` (MODIFIED - Thêm backdrop, empty state, nâng cấp Dialog sang GlassBottomSheet có insets)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt` (MODIFIED - Thêm imePadding, remember(debt.id) chống rò rỉ state)
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt` (MODIFIED - Thêm imePadding)
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt` (MODIFIED - Thêm Ellipsis cho debt.name, import ImageVector)
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt` (MODIFIED - Tích hợp ErgonomicCompactAmountCard, navigationBarsPadding, imePadding, tokens)
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt` (MODIFIED - Tích hợp ErgonomicCompactAmountCard, insets, fix successMessage)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt` (MODIFIED - Tích hợp ErgonomicCompactAmountCard, tokens.border cho color selector)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (MODIFIED - Thay thế màu hex hardcode bằng tokens.primary)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionFilterBottomSheet.kt` (MODIFIED - Thay thế màu hex hardcode bằng dynamic tokens)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (MODIFIED - Scaffold transparent, dynamic filter pills colors)
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (MODIFIED - Scaffold transparent)
+  - `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt` (MODIFIED - Dynamic tokens cho selected/unselected items)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (MODIFIED - tokens.surfaceSoft cho ErgonomicFormRow & ErgonomicCompactAmountCard)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt` (MODIFIED - Ellipsis cho title và dateText)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt` (MODIFIED - Ellipsis cho DisplayAmount)
+  - `app/build.gradle.kts` (MODIFIED - Bump versionCode 130, versionName 1.10.18)
+  - `CHANGELOG.md` (MODIFIED - Ghi nhận release v1.10.18)
+  - `HANDOVER_LOG.md` (MODIFIED - Cập nhật trạng thái [DONE])
 
 ### [Task-FEAT-ErgonomicCompactAmountCard-Focus-Suggestions] - Chỉ Hiển Thị Gợi Ý Nhanh (Chips) Khi Focus Vào Ô Nhập Tiền
 - **Status**: `[DONE]`

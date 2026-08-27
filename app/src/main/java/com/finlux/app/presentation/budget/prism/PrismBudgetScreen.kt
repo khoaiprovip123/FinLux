@@ -134,7 +134,7 @@ fun PrismBudgetScreen(
                 start = tokens.spacing.lg,
                 end = tokens.spacing.lg,
                 top = tokens.spacing.sm,
-                bottom = 32.dp,
+                bottom = 24.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(tokens.spacing.md),
         ) {

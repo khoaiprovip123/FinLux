@@ -144,7 +144,7 @@ fun PrismHomeScreen(
                 start = 20.dp,
                 end = 20.dp,
                 top = 8.dp,
-                bottom = 140.dp,
+                bottom = 96.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
@@ -1674,20 +1674,11 @@ private fun PrismBreakdownPageContent(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Color Dot
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(color),
-                    )
-                    Spacer(Modifier.width(6.dp))
-
                     // Category Icon
                     Surface(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(22.dp),
                         shape = RoundedCornerShape(6.dp),
-                        color = color.copy(alpha = 0.12f),
+                        color = color.copy(alpha = 0.14f),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -1704,37 +1695,40 @@ private fun PrismBreakdownPageContent(
                     // Category Name
                     Text(
                         text = cat.name,
-                        style = FinluxTextStyles.Caption.copy(fontSize = 12.5.sp),
+                        style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
                         color = tokens.onSurface,
                         maxLines = 1,
-                        modifier = Modifier.weight(1f),
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
+
+                    Spacer(Modifier.width(6.dp))
 
                     // Amount
                     Text(
-                        text = if (showBalance) formatVndAmount(sum) else "••••",
+                        text = if (showBalance) formatVndAmount(sum, isCompact = true) else "••••",
                         style = FinluxTextStyles.Caption.copy(
-                            fontSize = 13.5.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                         ),
                         color = tokens.onSurface,
                     )
 
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(4.dp))
 
                     // Percentage badge
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = tokens.background,
                     ) {
                         Text(
                             text = "$percent%",
                             style = FinluxTextStyles.MicroLabel.copy(
-                                fontSize = 11.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                             ),
                             color = tokens.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.5.dp),
                         )
                     }
                 }
@@ -1843,6 +1837,7 @@ private fun PrismRecentTransactionItem(
         TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví"}" else wallet?.name ?: "Ví chính"
         else -> wallet?.name ?: "Ví chính"
     }
+    val subtitleText = "$dateText · $walletDisplayName"
 
     FinluxSoftCard(
         modifier = modifier
@@ -1860,11 +1855,11 @@ private fun PrismRecentTransactionItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // Category / Transfer Icon
+            // Column 1: Category / Transfer Icon (Fixed 42dp)
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(42.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -1876,11 +1871,11 @@ private fun PrismRecentTransactionItem(
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
-
-            // Center: Note + Date
+            // Column 2: Note + Subtitle (weight 1f, padding start 12dp, end 8dp)
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp, end = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
@@ -1892,58 +1887,37 @@ private fun PrismRecentTransactionItem(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = dateText,
+                    text = subtitleText,
                     style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
                     color = tokens.onSurfaceVariant,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
-            Spacer(Modifier.width(8.dp))
-
-            // Right: Amount + Wallet
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                val amountFormatted = when (transaction.type) {
-                    TransactionType.INCOME -> "+${formatVndAmount(transaction.amount.value)}"
-                    TransactionType.EXPENSE -> "-${formatVndAmount(transaction.amount.value)}"
-                    TransactionType.TRANSFER_OUT -> "-${formatVndAmount(transaction.amount.value)}"
-                    TransactionType.TRANSFER_IN -> "+${formatVndAmount(transaction.amount.value)}"
-                }
-                val amountColor = when (transaction.type) {
-                    TransactionType.INCOME -> FinluxColors.IncomeGreen
-                    TransactionType.EXPENSE -> FinluxColors.ExpenseRed
-                    TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
-                }
-
-                Text(
-                    text = if (showBalance) amountFormatted else "••••",
-                    style = FinluxTextStyles.CardTitle.copy(
-                        fontSize = 16.5.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                    ),
-                    color = amountColor,
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    Text(
-                        text = walletDisplayName,
-                        style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
-                        color = tokens.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                    Icon(
-                        imageVector = if (isTransfer) Icons.Default.SwapHoriz else Icons.Default.AccountBalanceWallet,
-                        contentDescription = null,
-                        tint = tokens.onSurfaceVariant,
-                        modifier = Modifier.size(12.dp),
-                    )
-                }
+            // Column 3: Amount ONLY (wrapContentWidth, End)
+            val amountFormatted = when (transaction.type) {
+                TransactionType.INCOME -> "+${formatVndAmount(transaction.amount.value)}"
+                TransactionType.EXPENSE -> "-${formatVndAmount(transaction.amount.value)}"
+                TransactionType.TRANSFER_OUT -> "-${formatVndAmount(transaction.amount.value)}"
+                TransactionType.TRANSFER_IN -> "+${formatVndAmount(transaction.amount.value)}"
             }
+            val amountColor = when (transaction.type) {
+                TransactionType.INCOME -> FinluxColors.IncomeGreen
+                TransactionType.EXPENSE -> FinluxColors.ExpenseRed
+                TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+            }
+
+            Text(
+                text = if (showBalance) amountFormatted else "••••",
+                style = FinluxTextStyles.CardTitle.copy(
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = amountColor,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                maxLines = 1,
+            )
         }
     }
 }
