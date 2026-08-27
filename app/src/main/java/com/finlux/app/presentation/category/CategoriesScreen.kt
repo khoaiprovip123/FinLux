@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -42,7 +40,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -66,12 +63,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinanceAccentHexes
 import com.finlux.app.core.designsystem.FinanceCategoryIcons
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.component.FinluxLazyColumn
+import com.finlux.app.core.designsystem.component.FinluxListType
+import com.finlux.app.core.designsystem.component.FinluxScreenScaffold
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
@@ -91,29 +90,24 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
         actionState.message?.let { snackbar.showSnackbar(it); viewModel.consumeMessage() }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        FinluxStyleBackdrop(Modifier.fillMaxSize())
+    FinluxScreenScaffold(
+        topBar = {
+            GlassTopBar(
+                title = { Text("Quản lý danh mục", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
+                actions = {
+                    IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm danh mục") }
+                },
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
+    ) { padding ->
+        val filteredCategories = categories.filter { it.type == selectedType }
 
-        Scaffold(
-            topBar = {
-                GlassTopBar(
-                    title = { Text("Quản lý danh mục", fontWeight = FontWeight.Bold) },
-                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
-                    actions = {
-                        IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm danh mục") }
-                    },
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbar) },
-            containerColor = Color.Transparent,
-        ) { padding ->
-            val filteredCategories = categories.filter { it.type == selectedType }
-
-            LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(11.dp),
-            ) {
+        FinluxLazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            listType = FinluxListType.DETAIL,
+        ) {
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CategoryType.entries.forEach { type ->
@@ -186,7 +180,6 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
                             }
                         }
                     }
-                }
             }
         }
     }

@@ -1,8 +1,33 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.21 (versionCode 133)
-- **Trạng thái Build:** 🟢 100% unit tests PASS (`gradlew testDebugUnitTest` 34 tasks successful).
+- **Phiên bản hiện tại:** v1.11.0 (versionCode 134)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Design System Core & Base Screen Scaffolding Architecture (100% Unit Tests PASS, APK installed)
+
+### [Task-DESIGN-SYSTEM-CORE-v1.11.0] — Design System Core & Base Screen Scaffolding Architecture
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Cập nhật `FinluxSpacing` trong `FinluxTokens.kt` (thêm `contentHorizontal`, `screenTop`, `bottomBarClearance`, `compactClearance`, `itemGap`, điều chỉnh `cardGap = 12.dp`).
+  2. Tạo `FinluxScreenScaffold.kt` — khung chuẩn Slot API + FinluxStyleBackdrop + Insets sạch cho toàn bộ màn hình (hỗ trợ `showBackdrop` toggle và `containerColor` cho theme solid).
+  3. Tạo `FinluxLazyColumn.kt` — LazyColumn dùng chung với auto-padding theo `FinluxListType` và slot `emptyState`.
+  4. Refactor thí điểm 5 màn hình: `CategoriesScreen`, `ExpenseScreen`, `IncomeScreen`, `DebtDashboardScreen`, `PrismHomeScreen`.
+  5. Chạy 100% Unit Tests PASS, bump version lên v1.11.0 (versionCode 134), cập nhật tài liệu và build/nạp APK lên thiết bị.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Build & Install: `installDebug` -> **PASS** (Đã nạp thành công lên thiết bị).
+- **Files Modified/Created**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt` (MODIFIED - Bổ sung tokens FinluxSpacing)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxScreenScaffold.kt` (NEW - Base Screen Scaffold với Slot API & Insets sạch)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxLazyColumn.kt` (NEW - LazyColumn tự động tính đệm theo FinluxListType)
+  - `app/src/main/java/com/finlux/app/presentation/category/CategoriesScreen.kt` (MODIFIED - Refactor sang FinluxScreenScaffold + FinluxLazyColumn)
+  - `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt` (MODIFIED - Refactor sang FinluxScreenScaffold + FinluxLazyColumn)
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt` (MODIFIED - Refactor sang FinluxScreenScaffold + FinluxLazyColumn)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt` (MODIFIED - Refactor sang FinluxScreenScaffold + FinluxLazyColumn)
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt` (MODIFIED - Refactor sang FinluxScreenScaffold + FinluxLazyColumn)
+  - `app/build.gradle.kts` (MODIFIED - Bump version lên 1.11.0, versionCode 134)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.0)
+  - `docs/UI_SPEC.md` (MODIFIED - Bổ sung mục 0.1 đặc tả Base Screen Scaffolding & Spacing Tokens)
 
 ### [Task-FIX-Transaction-Row-Layout-Refactor] - Tái Cấu Trúc Layout Dòng Giao Dịch Chống Tràn & Co Cụm Text
 - **Status**: `[DONE]`

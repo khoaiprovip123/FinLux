@@ -56,10 +56,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.FinluxCyan
 import com.finlux.app.core.designsystem.FinluxPurple
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
-import com.finlux.app.core.designsystem.LiquidGlassSurface
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.component.FinluxLazyColumn
+import com.finlux.app.core.designsystem.component.FinluxListType
+import com.finlux.app.core.designsystem.component.FinluxScreenScaffold
 import com.finlux.app.core.designsystem.component.FinluxScreenHeader
+import com.finlux.app.core.designsystem.LiquidGlassSurface
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
@@ -106,86 +108,82 @@ fun DebtDashboardScreen(
 
     val tokens = LocalFinluxTokens.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        FinluxStyleBackdrop(modifier = Modifier.fillMaxSize())
-        Scaffold(
-            containerColor = Color.Transparent,
-            topBar = {
-                FinluxScreenHeader(
-                    title = "Quản lý nợ & Tín dụng",
-                    subtitle = if (uiState.activeDebtsCount > 0) "${uiState.activeDebtsCount} khoản nợ đang hoạt động" else "Chưa có khoản nợ",
-                    onBack = onBack,
-                    actions = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+    FinluxScreenScaffold(
+        topBar = {
+            FinluxScreenHeader(
+                title = "Quản lý nợ & Tín dụng",
+                subtitle = if (uiState.activeDebtsCount > 0) "${uiState.activeDebtsCount} khoản nợ đang hoạt động" else "Chưa có khoản nợ",
+                onBack = onBack,
+                actions = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = tokens.surfaceSoft,
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    historyDebtId = null
+                                    showPaymentHistorySheet = true
+                                },
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = tokens.surfaceSoft,
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .clickable {
-                                        historyDebtId = null
-                                        showPaymentHistorySheet = true
-                                    },
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.History,
-                                        contentDescription = "Lịch sử thanh toán",
-                                        tint = tokens.onSurface,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                            }
-
-                            Surface(
-                                shape = CircleShape,
-                                color = tokens.primary.copy(alpha = 0.12f),
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable {
-                                        editingDebt = null
-                                        showAddEditSheet = true
-                                    },
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                        tint = tokens.primary,
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = "Thêm",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = tokens.primary,
-                                        ),
-                                    )
-                                }
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = "Lịch sử thanh toán",
+                                    tint = tokens.onSurface,
+                                    modifier = Modifier.size(18.dp),
+                                )
                             }
                         }
-                    },
-                )
-            },
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+
+                        Surface(
+                            shape = CircleShape,
+                            color = tokens.primary.copy(alpha = 0.12f),
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable {
+                                    editingDebt = null
+                                    showAddEditSheet = true
+                                },
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = tokens.primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Thêm",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = tokens.primary,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                },
+            )
+        },
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+        ) {
+            FinluxLazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                listType = FinluxListType.DETAIL,
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
                 // Overview Hero Card
                 item {
                     DebtOverviewHeroCard(uiState = uiState)
@@ -356,7 +354,6 @@ fun DebtDashboardScreen(
             },
         )
     }
-}
 }
 
 @Composable

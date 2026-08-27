@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,8 +50,10 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.component.FinluxLazyColumn
+import com.finlux.app.core.designsystem.component.FinluxListType
+import com.finlux.app.core.designsystem.component.FinluxScreenScaffold
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.FinanceTransaction
@@ -76,105 +76,99 @@ fun IncomeScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val tokens = LocalFinluxTokens.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        FinluxStyleBackdrop(Modifier.fillMaxSize())
-
-        Scaffold(
-            topBar = {
-                GlassTopBar(
-                    title = { Text("Thu nhập", fontWeight = FontWeight.Bold) },
-                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
-                    actions = {
-                        TextButton(onClick = onAddIncome) {
-                            Icon(Icons.Default.Add, null, Modifier.size(18.dp))
-                            Text("Thêm", Modifier.padding(start = 3.dp), fontWeight = FontWeight.Bold)
-                        }
-                    },
+    FinluxScreenScaffold(
+        topBar = {
+            GlassTopBar(
+                title = { Text("Thu nhập", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
+                actions = {
+                    TextButton(onClick = onAddIncome) {
+                        Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+                        Text("Thêm", Modifier.padding(start = 3.dp), fontWeight = FontWeight.Bold)
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        FinluxLazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            listType = FinluxListType.DETAIL,
+        ) {
+            item {
+                MonthPicker(
+                    month = state.month.toString(),
+                    previous = viewModel::previousMonth,
+                    next = viewModel::nextMonth,
+                    canNext = state.month < java.time.YearMonth.now(),
                 )
-            },
-            containerColor = Color.Transparent,
-        ) { padding ->
-            LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(13.dp),
-            ) {
+            }
+            item {
+                IncomeHero(
+                    total = state.total,
+                    changePercent = state.changePercent,
+                )
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        IncomeStatistic("Thu bình quân/ngày", state.dailyAverage.toShortVnd(), Icons.Default.ShowChart, FinluxColors.IncomeGreen, Modifier.weight(1f))
+                        IncomeStatistic("Số giao dịch", state.transactions.size.toString(), Icons.Default.ReceiptLong, tokens.primary, Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        IncomeStatistic("Thu cao nhất", state.highest.toShortVnd(), Icons.Default.ArrowUpward, FinluxColors.WarningAmber, Modifier.weight(1f))
+                        IncomeStatistic("Thu thấp nhất", state.lowest.toShortVnd(), Icons.Default.ArrowDownward, tokens.primary, Modifier.weight(1f))
+                    }
+                }
+            }
+            item {
+                IncomeCategoryCard(state = state)
+            }
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Danh sách thu nhập", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("${state.transactions.size} giao dịch", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+            if (state.transactions.isEmpty()) {
                 item {
-                    MonthPicker(
-                        month = state.month.toString(),
-                        previous = viewModel::previousMonth,
-                        next = viewModel::nextMonth,
-                        canNext = state.month < java.time.YearMonth.now(),
+                    FinluxEmptyState(
+                        title = "Chưa có thu nhập trong tháng này",
+                        description = "Chạm vào nút bên dưới để ghi nhận khoản thu nhập mới.",
+                        icon = Icons.Default.ArrowDownward,
+                        actionLabel = "+ Thêm thu nhập",
+                        onActionClick = onAddIncome,
+                        modifier = Modifier.padding(top = 16.dp),
                     )
                 }
-                item {
-                    IncomeHero(
-                        total = state.total,
-                        changePercent = state.changePercent,
-                    )
-                }
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            IncomeStatistic("Thu bình quân/ngày", state.dailyAverage.toShortVnd(), Icons.Default.ShowChart, FinluxColors.IncomeGreen, Modifier.weight(1f))
-                            IncomeStatistic("Số giao dịch", state.transactions.size.toString(), Icons.Default.ReceiptLong, tokens.primary, Modifier.weight(1f))
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            IncomeStatistic("Thu cao nhất", state.highest.toShortVnd(), Icons.Default.ArrowUpward, FinluxColors.WarningAmber, Modifier.weight(1f))
-                            IncomeStatistic("Thu thấp nhất", state.lowest.toShortVnd(), Icons.Default.ArrowDownward, tokens.primary, Modifier.weight(1f))
-                        }
-                    }
-                }
-                item {
-                    IncomeCategoryCard(state = state)
-                }
-                item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Danh sách thu nhập", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("${state.transactions.size} giao dịch", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-                if (state.transactions.isEmpty()) {
-                    item {
-                        FinluxEmptyState(
-                            title = "Chưa có thu nhập trong tháng này",
-                            description = "Chạm vào nút bên dưới để ghi nhận khoản thu nhập mới.",
-                            icon = Icons.Default.ArrowDownward,
-                            actionLabel = "+ Thêm thu nhập",
-                            onActionClick = onAddIncome,
-                            modifier = Modifier.padding(top = 16.dp),
-                        )
-                    }
-                } else {
-                    items(state.transactions, key = { it.id }) { transaction ->
-                        val category = state.categories[transaction.categoryId]
-                        val accent = category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.IncomeGreen
-                        GlassCard(
-                            modifier = Modifier.fillMaxWidth().animateContentSize(),
-                            onClick = { onSelectTransaction?.invoke(transaction) },
-                            onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                                    Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward, null, tint = accent)
-                                }
-                                Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        text = transaction.note.ifBlank { category?.name ?: "Thu nhập" },
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    )
-                                    Text(
-                                        text = "${category?.name ?: "Khác"} · ${transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = tokens.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    )
-                                }
-                                Text("+${transaction.amount.value.toVnd()}", color = FinluxColors.IncomeGreen, fontWeight = FontWeight.Bold)
+            } else {
+                items(state.transactions, key = { it.id }) { transaction ->
+                    val category = state.categories[transaction.categoryId]
+                    val accent = category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.IncomeGreen
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth().animateContentSize(),
+                        onClick = { onSelectTransaction?.invoke(transaction) },
+                        onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                                Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward, null, tint = accent)
                             }
+                            Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = transaction.note.ifBlank { category?.name ?: "Thu nhập" },
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = "${category?.name ?: "Khác"} · ${transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = tokens.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                            }
+                            Text("+${transaction.amount.value.toVnd()}", color = FinluxColors.IncomeGreen, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

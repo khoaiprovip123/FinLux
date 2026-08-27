@@ -25,8 +25,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.finlux.app.core.designsystem.component.FinluxLazyColumn
+import com.finlux.app.core.designsystem.component.FinluxListType
+import com.finlux.app.core.designsystem.component.FinluxScreenScaffold
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,7 +54,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -121,7 +122,9 @@ fun PrismHomeScreen(
     var showBalance by remember { mutableStateOf(true) }
     val tokens = LocalFinluxTokens.current
 
-    Scaffold(
+    FinluxScreenScaffold(
+        showBackdrop = false,
+        containerColor = tokens.background,
         topBar = {
             PrismHomeTopHeader(
                 displayName = state.user?.displayName?.ifBlank { "Văn Khoai" } ?: "Văn Khoai",
@@ -134,19 +137,12 @@ fun PrismHomeScreen(
                     .padding(horizontal = 20.dp),
             )
         },
-        containerColor = tokens.background,
     ) { scaffoldPadding ->
-        LazyColumn(
+        FinluxLazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPadding),
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                top = 8.dp,
-                bottom = 96.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            listType = FinluxListType.TAB_MAIN,
         ) {
             // 1. Main Hero Card (Tài sản ròng = Tổng tài sản - Tổng dư nợ + 3D Wallet illustration)
             item {

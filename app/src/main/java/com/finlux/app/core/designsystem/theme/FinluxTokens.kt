@@ -44,7 +44,18 @@ object FinluxColors {
 }
 
 /**
- * Spacing Token System (FinLux Prism Spec 4)
+ * Spacing Token System (FinLux Design System Core Spec 4 — v1.11.0)
+ *
+ * Quy tắc sử dụng:
+ *  - screenHorizontal  → Header/TopBar padding ngang (FinluxScreenHeader, GlassTopBar)
+ *  - contentHorizontal → LazyColumn contentPadding ngang (FinluxLazyColumn)
+ *  - screenTop         → LazyColumn contentPadding top
+ *  - cardGap           → verticalArrangement.spacedBy() trong FinluxLazyColumn
+ *  - itemGap           → khoảng cách giữa các item nhỏ trong card
+ *  - bottomBarClearance → contentPadding bottom cho 4 Tab chính (TAB_MAIN)
+ *  - compactClearance  → contentPadding bottom cho màn hình con (DETAIL)
+ *
+ *  TUYỆT ĐỐI KHÔNG hardcode các con số padding/spacing rải rác trong màn hình.
  */
 @Immutable
 data class FinluxSpacing(
@@ -56,11 +67,25 @@ data class FinluxSpacing(
     val xl: Dp = 24.dp,
     val xxl: Dp = 32.dp,
     val xxxl: Dp = 40.dp,
-    val screenHorizontal: Dp = 24.dp,
+    // ── Screen-level layout tokens ───────────────────────────────────────────
+    /** Padding ngang của Header/TopBar và FinluxScreenHeader */
+    val screenHorizontal: Dp = 20.dp,
+    /** Padding ngang của nội dung trong LazyColumn (FinluxLazyColumn) */
+    val contentHorizontal: Dp = 16.dp,
+    /** Padding top của item đầu tiên trong LazyColumn */
+    val screenTop: Dp = 8.dp,
+    /** Khoảng cách giữa các Section block */
     val sectionGap: Dp = 24.dp,
-    val cardGap: Dp = 14.dp,
+    /** Khoảng cách verticalArrangement giữa các card/item trong danh sách */
+    val cardGap: Dp = 12.dp,
+    /** Khoảng cách giữa các item nhỏ bên trong card */
+    val itemGap: Dp = 8.dp,
+    /** Padding bên trong GlassCard */
     val cardInnerPadding: Dp = 18.dp,
-    val bottomSafePadding: Dp = 24.dp,
+    /** contentPadding bottom cho 4 Tab chính có BottomBar (FinluxListType.TAB_MAIN) */
+    val bottomBarClearance: Dp = 96.dp,
+    /** contentPadding bottom cho màn hình con/detail (FinluxListType.DETAIL) */
+    val compactClearance: Dp = 24.dp,
 )
 
 /**

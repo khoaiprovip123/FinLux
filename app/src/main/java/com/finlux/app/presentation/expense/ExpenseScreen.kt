@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,7 +26,6 @@ import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,8 +52,10 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.component.FinluxLazyColumn
+import com.finlux.app.core.designsystem.component.FinluxListType
+import com.finlux.app.core.designsystem.component.FinluxScreenScaffold
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.FinanceTransaction
@@ -88,78 +88,72 @@ fun ExpenseScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val tokens = LocalFinluxTokens.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        FinluxStyleBackdrop(Modifier.fillMaxSize())
-
-        Scaffold(
-            topBar = {
-                GlassTopBar(
-                    title = { Text("Chi tiêu", fontWeight = FontWeight.Bold) },
-                    navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
-                    actions = {
-                        TextButton(onAddExpense) {
-                            Icon(Icons.Default.Add, null, Modifier.size(18.dp))
-                            Text("Thêm", Modifier.padding(start = 3.dp), fontWeight = FontWeight.Bold)
-                        }
-                    },
-                )
-            },
-            containerColor = Color.Transparent,
-        ) { padding ->
-            LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(13.dp),
-            ) {
-                item { MonthPicker(state.month.toString(), viewModel::previousMonth, viewModel::nextMonth, state.month < java.time.YearMonth.now()) }
-                item { ExpenseHero(state.total, state.changePercent) }
-                item { ExpenseCategoryCard(state) }
-                item { DailyExpenseCard(state.dailyStats) }
-                item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Giao dịch gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Xem tất cả", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
+    FinluxScreenScaffold(
+        topBar = {
+            GlassTopBar(
+                title = { Text("Chi tiêu", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
+                actions = {
+                    TextButton(onAddExpense) {
+                        Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+                        Text("Thêm", Modifier.padding(start = 3.dp), fontWeight = FontWeight.Bold)
                     }
+                },
+            )
+        },
+    ) { padding ->
+        FinluxLazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            listType = FinluxListType.DETAIL,
+        ) {
+            item { MonthPicker(state.month.toString(), viewModel::previousMonth, viewModel::nextMonth, state.month < java.time.YearMonth.now()) }
+            item { ExpenseHero(state.total, state.changePercent) }
+            item { ExpenseCategoryCard(state) }
+            item { DailyExpenseCard(state.dailyStats) }
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Giao dịch gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Xem tất cả", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
                 }
-                if (state.transactions.isEmpty()) {
-                    item {
-                        FinluxEmptyState(
-                            title = "Chưa có chi tiêu trong tháng này",
-                            description = "Chạm vào nút bên dưới để thêm khoản chi tiêu mới.",
-                            icon = Icons.Default.TrendingDown,
-                            actionLabel = "+ Thêm chi tiêu",
-                            onActionClick = onAddExpense,
-                            modifier = Modifier.padding(top = 16.dp),
-                        )
-                    }
-                } else {
-                    items(state.transactions.take(12), key = { it.id }) { transaction ->
-                        val category = state.categories[transaction.categoryId]
-                        val accent = category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.ExpenseRed
-                        GlassCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { onSelectTransaction?.invoke(transaction) },
-                            onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.TrendingDown, null, tint = accent) }
-                                Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        text = transaction.note.ifBlank { category?.name ?: "Chi tiêu" },
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    )
-                                    Text(
-                                        text = "${category?.name ?: "Khác"} · ${transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = tokens.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    )
-                                }
-                                Text("-${transaction.amount.value.toVnd()}", color = FinluxColors.ExpenseRed, fontWeight = FontWeight.Bold)
+            }
+            if (state.transactions.isEmpty()) {
+                item {
+                    FinluxEmptyState(
+                        title = "Chưa có chi tiêu trong tháng này",
+                        description = "Chạm vào nút bên dưới để thêm khoản chi tiêu mới.",
+                        icon = Icons.Default.TrendingDown,
+                        actionLabel = "+ Thêm chi tiêu",
+                        onActionClick = onAddExpense,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+            } else {
+                items(state.transactions.take(12), key = { it.id }) { transaction ->
+                    val category = state.categories[transaction.categoryId]
+                    val accent = category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.ExpenseRed
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onSelectTransaction?.invoke(transaction) },
+                        onLongClick = { onActionTransaction?.invoke(transaction) ?: onEditTransaction?.invoke(transaction) },
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(42.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(category?.let { categoryIcon(it.icon) } ?: Icons.Default.TrendingDown, null, tint = accent) }
+                            Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = transaction.note.ifBlank { category?.name ?: "Chi tiêu" },
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = "${category?.name ?: "Khác"} · ${transaction.date.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = tokens.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
                             }
+                            Text("-${transaction.amount.value.toVnd()}", color = FinluxColors.ExpenseRed, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

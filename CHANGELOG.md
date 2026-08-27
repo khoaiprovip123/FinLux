@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.11.0] - 2026-08-27
+### Added (Design System Core & Base Screen Scaffolding Architecture)
+- **Token Hóa Toàn Diện Khoảng Cách Semantic (`FinluxSpacing` trong `FinluxTokens.kt`)**:
+  * Bổ sung `contentHorizontal = 16.dp` (khoảng đệm ngang LazyColumn nội dung), `screenTop = 8.dp` (khoảng cách trên danh sách), `bottomBarClearance = 96.dp` (khoảng trống đáy 4 Tab chính cuộn qua BottomBar), `compactClearance = 24.dp` (khoảng trống đáy các màn hình con/chi tiết), `itemGap = 8.dp`, và điều chỉnh `cardGap = 12.dp`.
+  * Triệt tiêu 100% việc hardcode mã pixel/dp padding rải rác.
+- **Khung Chuẩn Màn Hình Cơ Sở Duy Nhất (`FinluxScreenScaffold.kt`)**:
+  * Cung cấp Slot API tiêu chuẩn: `topBar`, `bottomBar`, `floatingActionButton`, `fabPosition`, `snackbarHost`, `content`.
+  * Tích hợp sẵn `FinluxStyleBackdrop` động thích ứng theo Theme với tham số bật/tắt `showBackdrop: Boolean = true` và `containerColor` cho các Theme đặc thù (như Prism Solid).
+  * Khóa insets `contentWindowInsets = WindowInsets(0)` để đảm bảo `PaddingValues` trả về sạch 100%, không bị double statusBarsPadding.
+- **Danh Sách Chuẩn Tự Động Tính Đệm (`FinluxLazyColumn.kt`)**:
+  * Tự động áp dụng `contentPadding` chuẩn từ `FinluxSpacing` tokens dựa theo `listType`:
+    + `FinluxListType.TAB_MAIN`: Đệm đáy `96.dp` để cuộn trôi qua BottomBar.
+    + `FinluxListType.DETAIL`: Đệm đáy `24.dp` cho các màn hình chi tiết.
+  * Tích hợp sẵn slot `emptyState` tự động render khi `isEmpty = true`, giảm boilerplate code tại các màn hình.
+
+### Changed & Refactored (Pilot Screens Modernization)
+- **Chuyển Đổi 5 Màn Hình Thí Điểm Sang Base Scaffolding Mới**:
+  * `CategoriesScreen.kt`: Thay `Box + FinluxStyleBackdrop + Scaffold` bằng `FinluxScreenScaffold` + `FinluxLazyColumn(listType = DETAIL)`.
+  * `ExpenseScreen.kt`: Thay `Box + FinluxStyleBackdrop + Scaffold` bằng `FinluxScreenScaffold` + `FinluxLazyColumn(listType = DETAIL)`.
+  * `IncomeScreen.kt`: Thay `Box + FinluxStyleBackdrop + Scaffold` bằng `FinluxScreenScaffold` + `FinluxLazyColumn(listType = DETAIL)`.
+  * `DebtDashboardScreen.kt`: Thay `Box + FinluxStyleBackdrop + Scaffold` bằng `FinluxScreenScaffold` + `FinluxLazyColumn(listType = DETAIL)` kết hợp `inner Box` cho loading overlay.
+  * `PrismHomeScreen.kt`: Thay `Scaffold` bằng `FinluxScreenScaffold(showBackdrop = false, containerColor = tokens.background)` + `FinluxLazyColumn(listType = TAB_MAIN)`.
+
 ## [1.10.21] - 2026-08-27
 ### Fixed & Refactored (Transaction Row 3-Column Layout & Text Collision Fix)
 - **Tái cấu trúc Chuẩn Layout 3 Cột cho Dòng Giao Dịch (`PrismHomeScreen`, `PrismTransactionsScreen`, `FinluxTransactionRow`)**:

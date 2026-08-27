@@ -15,6 +15,21 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
 - **Component chuẩn cần build:** `GlassCard`, `GlassTopBar`, `GlassBottomNav`, `GlassBottomSheet`, `GlassDialog`, `GlassFAB` — dùng chung 1 base `LiquidGlassSurface` composable.
 - **Quy chuẩn Form & Pickers tiêu chuẩn:** Xem tài liệu đặc tả chi tiết tại [`docs/FORM_COMPONENTS_SPEC.md`](file:///d:/Sources/FinLux/docs/FORM_COMPONENTS_SPEC.md) cho các component `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`, `ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxAmountInputCard`.
 
+### 0.1. Base Screen Scaffolding & Spacing Tokens (v1.11.0+)
+- **`FinluxScreenScaffold`**: Khung chứa chuẩn mực duy nhất cho toàn bộ màn hình trong ứng dụng.
+  * Tích hợp `FinluxStyleBackdrop` nền kính động với cờ `showBackdrop: Boolean = true` (có thể tắt và đặt `containerColor` cho theme solid như Prism).
+  * Khóa `contentWindowInsets = WindowInsets(0)` để loại bỏ double insets; TopBar (`GlassTopBar`/`FinluxScreenHeader`) tự gọi `.statusBarsPadding()`.
+  * Cung cấp các Slot API chuẩn: `topBar`, `bottomBar`, `floatingActionButton`, `fabPosition`, `snackbarHost`, `content`.
+- **`FinluxLazyColumn`**: Danh sách chuẩn thay thế LazyColumn trần, tự động tính toán khoảng đệm từ `LocalFinluxSpacing`:
+  * `FinluxListType.TAB_MAIN`: Đệm đáy `bottomBarClearance = 96.dp` cho 4 Tab chính.
+  * `FinluxListType.DETAIL`: Đệm đáy `compactClearance = 24.dp` cho màn hình con/chi tiết.
+  * Tích hợp slot `emptyState` tự động render khi `isEmpty = true`.
+- **`FinluxSpacing` Tokens (`FinluxTokens.kt`)**:
+  * `contentHorizontal = 16.dp` (đệm ngang danh sách)
+  * `screenHorizontal = 20.dp` (đệm ngang TopBar/Header)
+  * `screenTop = 8.dp`, `cardGap = 12.dp`, `itemGap = 8.dp`
+  * `bottomBarClearance = 96.dp`, `compactClearance = 24.dp`
+
 > **Đã xác nhận theo visual reference 12/08/2026:** màu chủ đạo xanh `#3478F6`, phối tím
 > `#7758F6` và cyan `#47C8FF` trong hero/CTA gradient. Nền sáng `#F5F7FC`, card sáng gần đặc
 > để bảo đảm tương phản; dark theme dùng cùng brand color với surface tối.
