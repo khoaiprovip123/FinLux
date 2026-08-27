@@ -1,7 +1,7 @@
 # Changelog
 
-## [1.11.7] - 2026-08-27
-### Fixed & Enhanced (Financial Month / Salary Cycle Tech Debts Remediation)
+## [1.11.8] - 2026-08-27
+### Fixed & Enhanced (Financial Month / Salary Cycle Tech Debts & VietQR Offline Brand Catalog Integration)
 - **Nợ kỹ thuật 1: Đồng bộ hóa 100% số liệu Trang chủ theo Kỳ tài chính (`HomeViewModel.kt`)**:
   * Chuyển đổi `financialOverviewFlow` sang `flatMapLatest` lắng nghe realtime cấu hình `SalaryCycleConfig`.
   * Khi `enabled == true`: Quan sát giao dịch theo cửa sổ chu kỳ `observePeriod(cycle.start, cycle.endExclusive)`, tính toán lại `DashboardSummary` (Tổng thu, Tổng chi, Dòng tiền ròng) và quan sát ngân sách `observeBudgets(period.key)` đồng bộ 100% với nhãn dải ngày hiển thị trên Badge.
@@ -13,12 +13,24 @@
     - Tự động thực thi `ExecuteSalaryRolloverUseCase` kết chuyển tiền dư sang ví tích lũy nguyên tử nếu cấu hình `MOVE_TO_SAVINGS`.
     - Bắn Notification nhắc nhở nếu cấu hình `ASK_EACH_CYCLE`.
     - Tự động lên lịch kỳ nhận lương tháng tiếp theo.
-  * Đăng ký receiver trong `AndroidManifest.xml` và khôi phục lịch báo trong `BootReceiver.kt`.
+  * Đăng ký receiver trong `AndroidManifest.xml` (`exported=true` kèm `intent-filter`) và khôi phục lịch báo trong `BootReceiver.kt`.
   * Tích hợp gọi `SalaryCycleScheduler` trong `SalaryCycleViewModel.kt` khi lưu cấu hình thành công.
+- **Đồng bộ Catalog Thương hiệu & Logo VietQR Offline (Tích hợp từ upstream)**:
+  * Bộ 65 logo tổ chức tài chính từ VietQR API, đóng gói offline trong `drawable-nodpi`.
+  * Logo và preset cho Payoo, 9Pay, Foxpay, VTC Pay; giữ các preset ZaloPay, VNPAY, ShopeePay, Apple Pay và PayPal.
+  * Mở rộng catalog dùng chung lên tối thiểu 75 ngân hàng/ví/tài khoản và áp dụng tự động cho các màn hình Ví Classic, Modern, Prism.
+  * Tìm kiếm tổ chức hỗ trợ tên, mã ngân hàng, BIN và alias dài nhất; logo dùng màu gốc, viền/chữ kế thừa theme token.
+  * Ngăn tên `Techcombank` bị nhận nhầm thành `MBBank` do alias ngắn `MB` xuất hiện bên trong chuỗi.
+  * Script đồng bộ `tools/sync-financial-institution-icons.ps1` cùng manifest nguồn có ngày cập nhật.
 - **Kiểm thử & Chất lượng**:
   * Cập nhật `HomeViewModelTest.kt` kiểm tra cả 2 kịch bản bật/tắt chu kỳ lương.
   * Viết mới `AlarmSalaryCycleSchedulerTest.kt` kiểm thử 100% logic tính toán mốc kích hoạt báo thức ngày lương.
   * Toàn bộ 34 task Unit Tests đạt 100% PASS.
+
+## [1.11.7] - 2026-08-27
+### Added & Changed (VietQR & Vietnam E-Wallets Offline Brand Catalog)
+- Bộ 65 logo tổ chức tài chính từ VietQR API đóng gói offline trong `drawable-nodpi`.
+- Mở rộng catalog dùng chung lên tối thiểu 75 ngân hàng/ví/tài khoản, hỗ trợ tìm kiếm theo tên, mã ngân hàng, BIN và alias.
 
 ## [1.11.6] - 2026-08-27
 ### Changed (Unified Standard Amount Input to ErgonomicCompactAmountCard)

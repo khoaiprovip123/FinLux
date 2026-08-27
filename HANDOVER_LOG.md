@@ -1,22 +1,22 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.7 (versionCode 141)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Xử lý triệt để 2 Nợ Kỹ Thuật Tính Năng Kỳ Tài Chính & Chu Kỳ Lương (100% Unit Tests PASS)
+- **Phiên bản hiện tại:** v1.11.8 (versionCode 142)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Tích hợp đồng bộ Nợ kỹ thuật Kỳ tài chính & Bộ 65 logo VietQR offline (100% Unit Tests PASS)
 
-### [Task-FINANCIAL-SALARY-CYCLE-TECH-DEBTS-v1.11.7] — Xử Lý Triệt Để 2 Nợ Kỹ Thuật: Đồng Bộ Số Liệu Trang Chủ & Tự Động Hóa Background Scheduler Ngày Lương
+### [Task-FINANCIAL-SALARY-CYCLE-TECH-DEBTS-v1.11.8] — Xử Lý Triệt Để 2 Nợ Kỹ Thuật: Đồng Bộ Số Liệu Trang Chủ & Tự Động Hóa Background Scheduler Ngày Lương
 - **Status**: `[DONE]`
 - **Mục tiêu**:
   1. **Nợ kỹ thuật 1 (HomeViewModel.kt)**: Lắng nghe `SalaryCycleConfig` qua `flatMapLatest`. Khi `enabled == true`, truy vấn theo `observePeriod(cycle.start, cycle.endExclusive)` và tính toán `DashboardSummary` từ các giao dịch trong chu kỳ, đảm bảo số liệu Tổng Thu/Chi/Ròng trên Trang chủ khớp 100% với nhãn dải ngày kỳ lương; khi `enabled == false` giữ nguyên tháng dương lịch.
   2. **Nợ kỹ thuật 2 (Background Scheduler & Notification)**:
      - Tạo `SalaryCycleScheduler` interface và triển khai `AlarmSalaryCycleScheduler` dùng `AlarmManager` (hẹn 09:00 sáng ngày nhận lương theo múi giờ tài chính).
      - Xây dựng `SalaryCycleReceiver`: Bắn Push & In-app Notification chào đón kỳ mới, kích hoạt `ExecuteSalaryRolloverUseCase` nếu là `MOVE_TO_SAVINGS` (hoặc thông báo nhắc nhở nếu `ASK_EACH_CYCLE`), tự động lên lịch cho chu kỳ tiếp theo.
-     - Đăng ký receiver trong `AndroidManifest.xml` và khôi phục lịch trong `BootReceiver.kt`.
+     - Đăng ký receiver trong `AndroidManifest.xml` (`exported=true` kèm `intent-filter`) và khôi phục lịch trong `BootReceiver.kt`.
      - Tích hợp `SalaryCycleScheduler` vào `SalaryCycleViewModel.kt` khi lưu cấu hình.
   3. **Kiểm thử & Đóng gói**:
      - Cập nhật `HomeViewModelTest.kt` và viết mới `AlarmSalaryCycleSchedulerTest.kt`.
      - Chạy `gradlew testDebugUnitTest` đạt 100% PASS (34 tasks completed, 0 failure, 0 error).
-     - Bump version lên `v1.11.7` (versionCode 141), cập nhật `CHANGELOG.md`, `HANDOVER_LOG.md` và nạp APK qua ADB.
+     - Bump version lên `v1.11.8` (versionCode 142), cập nhật `CHANGELOG.md`, `HANDOVER_LOG.md` và nạp APK qua ADB.
 - **Test Results**:
   * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
   * Compile: `compileDebugKotlin` -> **PASS** (0 error).
@@ -32,9 +32,19 @@
   - `app/src/main/AndroidManifest.xml` (MODIFIED)
   - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt` (MODIFIED)
   - `app/src/test/java/com/finlux/app/data/local/salary/AlarmSalaryCycleSchedulerTest.kt` (NEW)
-  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.7, versionCode 141)
-  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.7)
+  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.8, versionCode 142)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.8)
   - `HANDOVER_LOG.md` (MODIFIED - Ghi log hoàn tất)
+
+### [Task-VIETQR-OFFLINE-ASSETS-v1.11.7] — Đồng Bộ 65 Logo VietQR Và Ví Điện Tử Việt Nam Offline
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tích hợp bộ 65 logo ngân hàng từ VietQR API và các ví điện tử Việt Nam vào `drawable-nodpi`.
+  2. Mở rộng catalog dùng chung lên tối thiểu 75 ngân hàng/ví/tài khoản và áp dụng tự động cho các màn hình Ví Classic, Modern, Prism.
+  3. Tìm kiếm tổ chức hỗ trợ tên, mã ngân hàng, BIN và alias dài nhất.
+  4. Fix lỗi nhận diện Techcombank không bị match nhầm MBBank.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS**.
 
 ### [Task-UNIFY-ALL-AMOUNT-INPUTS-v1.11.6] — Đồng Bộ Hóa 100% Ô Nhập Tiền Toàn Ứng Dụng Sang ErgonomicCompactAmountCard
 - **Status**: `[DONE]`
@@ -134,6 +144,9 @@
   - `app/build.gradle.kts` (MODIFIED - Bump version lên 1.11.3, versionCode 137)
   - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.3)
   - `HANDOVER_LOG.md` (MODIFIED - Ghi nhận trạng thái hoàn tất)
+=======
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam (100% Unit Tests PASS)
+>>>>>>> origin/main
 
 ### [Task-CI-FIX-LINT-PDF-v1.11.3] — Sửa Lỗi CI Lint UnusedMaterial3ScaffoldPaddingParameter, Khôi Phục KPI Tổng Chi Tiêu PDF & Dọn Dẹp Conflict Marker
 - **Status**: `[DONE]`
@@ -3055,7 +3068,7 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 4. **Kích hoạt Auth Provider trên Firebase Console:**
    - Vào **Authentication** -> **Sign-in method** -> Bật provider **Email/Password** và **Google**.
 
-## [IN PROGRESS] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam
+## [DONE] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam
 
 **Ngày:** 2026-08-27
 
@@ -3072,7 +3085,35 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 - `tools/sync-financial-institution-icons.ps1`: công cụ đồng bộ lại logo có kiểm tra lỗi.
 - `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `docs/BACKLOG.md`, `docs/UI_SPEC.md`: đồng bộ đặc tả.
 
+### Kết quả thực hiện
+- VietQR API trả về 65 tổ chức; tải và xác thực thành công 65/65 logo.
+- Bổ sung 4 logo app 512×512 (Payoo, 9Pay, Foxpay, VTC Pay), tái sử dụng 5 vector ví đã có.
+- Catalog công khai có 75+ lựa chọn, logo offline đầy đủ cho mọi mục Bank/E-wallet.
+- Sửa thuật toán đối chiếu theo 2 pha (exact trước, alias dài nhất sau), loại lỗi `Techcombank` → `MB`.
+- Component logo lấy viền/chữ từ `LocalFinluxTokens`/`MaterialTheme`, tương thích Light/Dark/Prism/Classic/Modern.
+
+### Kết quả Unit Test, Build & ADB
+- `gradlew testDebugUnitTest`: **183/183 PASS**, 0 fail, 0 error, 0 skipped.
+- `gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+- Cài ADB: **Success** trên thiết bị `2107119DC (lisa)`.
+- Đọc lại package: `com.finlux.app`, `versionCode=140`, `versionName=1.11.6`.
+- Smoke launch: `com.finlux.app/.MainActivity` ở trạng thái `topResumedActivity`, không có AndroidRuntime crash.
+
+### Danh sách file đã thực sự chỉnh sửa
+- `app/src/main/java/com/finlux/app/core/designsystem/FinancialInstitutions.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/VietQrBankCatalog.kt`
+- `app/src/test/java/com/finlux/app/core/designsystem/FinancialInstitutionsTest.kt`
+- `app/src/main/res/drawable-nodpi/ic_vietqr_*.png` (65 file)
+- `app/src/main/res/drawable-nodpi/ic_ewallet_{payoo,9pay,foxpay,vtcpay}.png`
+- `tools/sync-financial-institution-icons.ps1`
+- `docs/data/vietqr-financial-institutions.json`
+- `docs/FINANCIAL_INSTITUTION_ASSETS.md`
+- `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `docs/BACKLOG.md`, `docs/UI_SPEC.md`
+- `CHANGELOG.md`, `HANDOVER_LOG.md`
+
 ### Trạng thái
-`[IN PROGRESS]`
+`[DONE]`
+
+---
 
 ---

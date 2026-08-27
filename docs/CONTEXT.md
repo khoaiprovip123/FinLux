@@ -22,7 +22,7 @@ trong `BA_SPEC.md`, giao diện trong `UI_SPEC.md`, dữ liệu trong `DATA_SPEC
 ```
 app/
  ├─ core/
- │   ├─ designsystem/        -- LiquidGlassSurface, GlassCard, GlassTopBar, theme (Light/Dark tokens)
+ │   ├─ designsystem/        -- LiquidGlassSurface, theme tokens, FinancialInstitutions/VietQrBankCatalog
  │   ├─ navigation/
  │   └─ common/              -- Result wrapper, extensions, utils
  ├─ data/
@@ -53,6 +53,9 @@ functions/                    -- Cloud Functions (TypeScript), xem DATA_SPEC.md 
 - Không gọi trực tiếp Firestore từ ViewModel — luôn qua Repository (domain interface) để dễ test/mock
 - Cập nhật số dư ví BẮT BUỘC qua `FirebaseFirestore.runTransaction {}` (xem BR-14, DATA_SPEC mục 1)
 - Toàn bộ theme màu/kính (Liquid Glass) định nghĩa tập trung ở `core/designsystem`, không hard-code màu trong từng màn hình
+- Logo ngân hàng/ví dùng catalog tập trung `FinancialInstitutions.kt` + snapshot VietQR trong
+  `VietQrBankCatalog.kt`; tài nguyên nằm cục bộ ở `drawable-nodpi` và có thể làm mới bằng
+  `tools/sync-financial-institution-icons.ps1`.
 
 ## File tài liệu liên quan
 | File | Nội dung |

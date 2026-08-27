@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.R
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.WalletType
 
 enum class InstitutionCategory(val label: String) {
@@ -66,12 +67,12 @@ data class FinancialInstitution(
     val code: String,
     val type: WalletType,
     val category: InstitutionCategory,
-    val colorHex: String,
+    val colorHex: String = "#3478F6",
     val iconRes: Int? = null,
     val keywords: List<String> = emptyList(),
 )
 
-val VietnameseFinancialInstitutions = listOf(
+private val CuratedFinancialInstitutionMetadata = listOf(
     // ----------------------------------------------------
     // 1. TIỀN MẶT & TIẾT KIỆM
     // ----------------------------------------------------
@@ -155,6 +156,50 @@ val VietnameseFinancialInstitutions = listOf(
         colorHex = "#EE4D2D",
         iconRes = R.drawable.ic_ewallet_shopeepay,
         keywords = listOf("shopeepay", "shopee pay", "shopee", "airpay"),
+    ),
+    FinancialInstitution(
+        id = "payoo",
+        shortName = "Payoo",
+        fullName = "Ví điện tử Payoo",
+        code = "PAYOO",
+        type = WalletType.EWALLET,
+        category = InstitutionCategory.EWALLET,
+        colorHex = "#1757A6",
+        iconRes = R.drawable.ic_ewallet_payoo,
+        keywords = listOf("payoo", "ví payoo", "vietunion"),
+    ),
+    FinancialInstitution(
+        id = "9pay",
+        shortName = "9Pay",
+        fullName = "Ví điện tử 9Pay",
+        code = "9PAY",
+        type = WalletType.EWALLET,
+        category = InstitutionCategory.EWALLET,
+        colorHex = "#E31D2D",
+        iconRes = R.drawable.ic_ewallet_9pay,
+        keywords = listOf("9pay", "ninepay", "ví 9pay"),
+    ),
+    FinancialInstitution(
+        id = "foxpay",
+        shortName = "Foxpay",
+        fullName = "Ví điện tử Foxpay",
+        code = "FOXPAY",
+        type = WalletType.EWALLET,
+        category = InstitutionCategory.EWALLET,
+        colorHex = "#ED1C24",
+        iconRes = R.drawable.ic_ewallet_foxpay,
+        keywords = listOf("foxpay", "fox pay", "fpt"),
+    ),
+    FinancialInstitution(
+        id = "vtcpay",
+        shortName = "VTC Pay",
+        fullName = "Ví điện tử VTC Pay",
+        code = "VTCPAY",
+        type = WalletType.EWALLET,
+        category = InstitutionCategory.EWALLET,
+        colorHex = "#00ADEF",
+        iconRes = R.drawable.ic_ewallet_vtcpay,
+        keywords = listOf("vtcpay", "vtc pay", "ví vtc"),
     ),
     FinancialInstitution(
         id = "applepay",
@@ -467,17 +512,76 @@ val VietnameseFinancialInstitutions = listOf(
 )
 
 /**
+ * Danh mục dùng chung cho toàn ứng dụng: dữ liệu VietQR hiện hành được ưu tiên,
+ * metadata thủ công chỉ bổ sung từ khóa/màu thương hiệu và các loại ví ngoài VietQR.
+ */
+val VietnameseFinancialInstitutions: List<FinancialInstitution> = buildList {
+    val vietQrAliases = VietQrFinancialInstitutions
+        .flatMap { listOf(it.code.lowercase(), it.shortName.lowercase()) }
+        .toSet()
+
+    addAll(
+        CuratedFinancialInstitutionMetadata.filter { institution ->
+            institution.category != InstitutionCategory.BANK &&
+                institution.category != InstitutionCategory.INVESTMENT &&
+                institution.code.lowercase() !in vietQrAliases &&
+                institution.shortName.lowercase() !in vietQrAliases
+        }
+    )
+
+    addAll(
+        VietQrFinancialInstitutions.map { vietQrInstitution ->
+            val curated = CuratedFinancialInstitutionMetadata.firstOrNull { candidate ->
+                candidate.code.equals(vietQrInstitution.code, ignoreCase = true) ||
+                    candidate.shortName.equals(vietQrInstitution.shortName, ignoreCase = true)
+            }
+            if (curated == null) {
+                vietQrInstitution
+            } else {
+                vietQrInstitution.copy(
+                    colorHex = curated.colorHex,
+                    keywords = (vietQrInstitution.keywords + curated.keywords).distinct(),
+                )
+            }
+        }
+    )
+
+    addAll(
+        CuratedFinancialInstitutionMetadata.filter {
+            it.category == InstitutionCategory.INVESTMENT
+        }
+    )
+}
+
+/**
  * Tìm ngân hàng hoặc ví điện tử dựa theo tên ví người dùng đặt
  */
 fun findInstitutionForWallet(walletName: String): FinancialInstitution? {
     val clean = walletName.trim().lowercase()
     if (clean.isBlank()) return null
 
-    return VietnameseFinancialInstitutions.firstOrNull { inst ->
+    val exactMatch = VietnameseFinancialInstitutions.firstOrNull { inst ->
         clean == inst.shortName.lowercase() ||
         clean == inst.code.lowercase() ||
-        inst.keywords.any { clean.contains(it) || it.contains(clean) }
+        inst.keywords.any { clean == it.lowercase() }
     }
+    if (exactMatch != null) return exactMatch
+
+    // Ưu tiên alias dài nhất để "Techcombank" không bị nhận nhầm thành MB
+    // chỉ vì chuỗi tên có chứa hai ký tự "mb".
+    return VietnameseFinancialInstitutions
+        .mapNotNull { institution ->
+            val bestAliasLength = (
+                institution.keywords + institution.shortName + institution.code
+            )
+                .asSequence()
+                .map { it.lowercase() }
+                .filter { alias -> clean.contains(alias) || alias.contains(clean) }
+                .maxOfOrNull { it.length }
+            bestAliasLength?.let { institution to it }
+        }
+        .maxByOrNull { (_, aliasLength) -> aliasLength }
+        ?.first
 }
 
 /**
@@ -492,6 +596,7 @@ fun FinancialInstitutionLogo(
     shape: androidx.compose.ui.graphics.Shape = CircleShape,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
     val bgHex = customColorHex ?: institution?.colorHex ?: "#3478F6"
     val bgColor = colorFromHex(bgHex)
 
@@ -507,7 +612,7 @@ fun FinancialInstitutionLogo(
                     )
                 )
             )
-            .border(1.dp, Color.White.copy(alpha = 0.25f), shape),
+            .border(1.dp, tokens.border, shape),
         contentAlignment = Alignment.Center,
     ) {
         if (institution?.iconRes != null) {
@@ -522,7 +627,7 @@ fun FinancialInstitutionLogo(
             val monogram = institution.code.take(3).uppercase()
             Text(
                 text = monogram,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontWeight = FontWeight.Black,
                 fontSize = (size.value * 0.32f).sp,
                 letterSpacing = (-0.5).sp,
@@ -532,7 +637,7 @@ fun FinancialInstitutionLogo(
             Icon(
                 imageVector = walletIcon(walletType),
                 contentDescription = null,
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(size * 0.55f),
             )
         }
@@ -548,6 +653,7 @@ fun InstitutionSelectorSection(
     onSelectInstitution: (FinancialInstitution) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
     var selectedCategory by remember { mutableStateOf(InstitutionCategory.ALL) }
     var searchQuery by remember { mutableStateOf("") }
     var showFullListModal by remember { mutableStateOf(false) }
@@ -635,7 +741,7 @@ fun InstitutionSelectorSection(
                         )
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) instColor else Color.White.copy(alpha = 0.12f),
+                            color = if (isSelected) instColor else tokens.border,
                             shape = RoundedCornerShape(14.dp),
                         )
                         .clickable { onSelectInstitution(inst) }
@@ -679,7 +785,7 @@ fun InstitutionSelectorSection(
 }
 
 /**
- * Modal xem và tìm kiếm toàn bộ danh mục 35+ Ngân hàng & Ví điện tử
+ * Modal xem và tìm kiếm toàn bộ danh mục Ngân hàng & Ví điện tử
  */
 @Composable
 fun InstitutionCatalogDialog(
@@ -823,4 +929,3 @@ fun InstitutionCatalogDialog(
         },
     )
 }
-
