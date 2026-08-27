@@ -31,6 +31,13 @@
             android:name=".data.local.reminder.ReminderReceiver"
             android:exported="false" />
         <receiver
+            android:name=".data.local.salary.SalaryCycleReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.finlux.app.ACTION_SALARY_PAYDAY" />
+            </intent-filter>
+        </receiver>
+        <receiver
             android:name=".data.local.reminder.BootReceiver"
             android:exported="true">
             <intent-filter>

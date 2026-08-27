@@ -11,6 +11,7 @@ import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
@@ -85,6 +86,9 @@ class HomeViewModelTest {
             ),
         ) // Total Debt = 12,000,000
 
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+
         val viewModel = HomeViewModel(
             authRepository = FakeAuthRepository(),
             dashboardRepository = FakeDashboardRepository(),
@@ -95,7 +99,8 @@ class HomeViewModelTest {
             notificationRepository = FakeHomeNotificationRepository(),
             debtRepository = FakeHomeDebtRepository(debts),
             salaryCycleRepository = FakeHomeSalaryCycleRepository(),
-            calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator(),
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
             clock = com.finlux.app.core.time.SystemFinanceClock(),
         )
 
@@ -105,6 +110,70 @@ class HomeViewModelTest {
             assertEquals(40_000_000L, state.grossAssets)
             assertEquals(12_000_000L, state.totalDebt)
             assertEquals(28_000_000L, state.netWorth) // 40tr - 12tr = 28tr
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `state reflects salary cycle transactions and summary when salary cycle is enabled`() = runTest(testDispatcher) {
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+        val salaryConfig = com.finlux.app.domain.model.SalaryCycleConfig(
+            enabled = true,
+            paydayDay = 10,
+        )
+
+        val periodTxs = listOf(
+            FinanceTransaction(
+                id = "tx1",
+                type = TransactionType.INCOME,
+                amount = Money(25_000_000L),
+                categoryId = null,
+                walletId = "w1",
+                date = Instant.now(),
+            ),
+            FinanceTransaction(
+                id = "tx2",
+                type = TransactionType.EXPENSE,
+                amount = Money(5_000_000L),
+                categoryId = "cat1",
+                walletId = "w1",
+                date = Instant.now(),
+            ),
+        )
+
+        val transactionRepo = object : TransactionRepository by FakeHomeTransactionRepository() {
+            override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>> =
+                flowOf(periodTxs)
+        }
+
+        val salaryRepo = object : com.finlux.app.domain.repository.SalaryCycleRepository by FakeHomeSalaryCycleRepository() {
+            override fun observeConfig(): Flow<com.finlux.app.domain.model.SalaryCycleConfig> = flowOf(salaryConfig)
+        }
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(emptyList()),
+            transactionRepository = transactionRepo,
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = FakeHomeBudgetRepository(),
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(emptyList()),
+            salaryCycleRepository = salaryRepo,
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            val state = if (initial.summary.income.value == 0L) awaitItem() else initial
+            assertEquals(25_000_000L, state.summary.income.value)
+            assertEquals(5_000_000L, state.summary.expense.value)
+            assertEquals(20_000_000L, state.summary.net)
+            assertEquals(2, state.monthTransactions.size)
+            org.junit.jupiter.api.Assertions.assertNotNull(state.salaryCycleLabel)
             cancelAndIgnoreRemainingEvents()
         }
     }

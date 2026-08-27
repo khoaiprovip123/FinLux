@@ -14,9 +14,12 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import android.util.Log
+
 const val CHANNEL_REMINDERS = "finlux_reminders_v2"
 const val CHANNEL_BUDGET_ALERTS = "finlux_budget_alerts"
 const val CHANNEL_SYSTEM = "finlux_system_notifications"
+private const val TAG = "SystemNotificationHelper"
 
 @Singleton
 class SystemNotificationHelper @Inject constructor(
@@ -122,6 +125,7 @@ class SystemNotificationHelper @Inject constructor(
             "reminders" -> CHANNEL_REMINDERS
             else -> CHANNEL_SYSTEM
         }
+        Log.d(TAG, "postGeneralNotification: id=$notificationId, channel=$channelId, title='$title'")
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -148,7 +152,12 @@ class SystemNotificationHelper @Inject constructor(
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
-        notificationManager?.notify(notificationId, notification)
+        if (notificationManager == null) {
+            Log.w(TAG, "NotificationManager is null! Cannot post notification.")
+        } else {
+            notificationManager.notify(notificationId, notification)
+            Log.d(TAG, "Notification posted successfully to NotificationManager (id=$notificationId)")
+        }
     }
 
     private fun formatVnd(amount: Long): String =
