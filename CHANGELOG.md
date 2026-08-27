@@ -34,7 +34,7 @@
   * Thêm test case `deleteWithBalanceUpdate cascades deletion of transfer pair and restores balances for both wallets` xác nhận toàn vẹn 100% logic xóa cặp.
 
 ## [1.11.3] - 2026-08-27
-### Fixed (Cascade Atomic Transfer Deletion & Transfer Edit Lock)
+### Fixed (Cascade Atomic Transfer Deletion & CI Lint/PDF KPI Recovery)
 - **Xóa đối ứng cả cặp giao dịch chuyển tiền nguyên tử (Cascade Atomic Deletion - `FirebaseTransactionRepository.kt` & `DemoFinluxRepository.kt`)**:
   * Khi xóa bất kỳ 1 trong 2 giao dịch chuyển tiền (`TRANSFER_OUT` hoặc `TRANSFER_IN`), hệ thống tự động tìm bản ghi đối ứng `_in` hoặc `_out` và thực hiện trong 1 Firestore Transaction duy nhất.
   * Tự động hoàn tác số dư cả 2 ví: Cộng lại ví nguồn (`+amount`), trừ thu hồi ví đích (`-amount`), và xóa sạch cả 2 bản ghi, triệt tiêu 100% rủi ro giao dịch mồ côi làm sai lệch tổng tài sản.
@@ -42,11 +42,12 @@
   * Ẩn nút "Chỉnh sửa giao dịch" trong `TransactionDetailSheet.kt` khi xem chi tiết chuyển tiền và bổ sung thẻ thông báo bảo vệ dữ liệu 2 đầu ví.
   * Chặn gọi form sửa tại `FinluxNavHost.kt` và vô hiệu hóa các action vuốt sửa trên `PrismTransactionsScreen`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`.
   * Khóa chặn cập nhật giao dịch chuyển tiền ở tầng repository (`updateWithBalanceAdjustment`).
-  * **Đảm bảo toàn vẹn**: 100% các giao dịch Thu nhập (`INCOME`) và Chi tiêu (`EXPENSE`) thông thường vẫn được chỉnh sửa và xóa bình thường không bị ảnh hưởng.
-- **Nâng cấp Hộp thoại xác nhận xóa cặp (`DeleteTransactionConfirmDialog`)**:
-  * Hiển thị rõ tên ví nhận đối ứng và cảnh báo hoàn lại tiền cho cả 2 ví, nút bấm chuyển thành *"Xóa cả cặp giao dịch"* (màu đỏ).
-- **Quy chuẩn tài liệu đặc tả (`docs/BA_SPEC.md`)**:
-  * Bổ sung quy tắc nghiệp vụ `BR-07.1` (Tính bất biến & Xóa đối ứng nguyên tử).
+- **Khắc phục lỗi CI Lint `UnusedMaterial3ScaffoldPaddingParameter` (`FinluxNavHost.kt`)**:
+  * Thêm `@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")` do Root Scaffold sử dụng kiến trúc trong suốt tràn viền (edge-to-edge full viewport) có chủ đích bỏ qua inner padding.
+- **Khôi phục hiển thị số tiền KPI Tổng Chi Tiêu trên PDF (`ReportExporter.kt`)**:
+  * Khôi phục lệnh vẽ số tiền `-formatVndAmount(summary.expense.value)` trong ô KPI Tổng Chi Tiêu.
+- **Dọn dẹp Git conflict marker (`HANDOVER_LOG.md`)**:
+  * Loại bỏ dòng conflict marker còn sót lại từ commit merge upstream.
 
 ## [1.11.2] - 2026-08-27
 ### Fixed (Theme Synchronization & Zero-Config Theme Inheritance)
