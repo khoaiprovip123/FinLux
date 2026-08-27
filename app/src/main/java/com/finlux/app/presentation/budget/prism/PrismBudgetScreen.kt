@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxTextStyles
+import com.finlux.app.core.designsystem.NotificationPermissionHandler
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
@@ -91,6 +93,7 @@ fun PrismBudgetScreen(
     onBack: (() -> Unit)? = null,
     viewModel: BudgetViewModel = hiltViewModel(),
 ) {
+    NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
     val tokens = LocalFinluxTokens.current
@@ -397,6 +400,96 @@ fun PrismBudgetScreen(
                     amountColor = tokens.primary,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                // Smart Threshold Alert Info Card
+                val limitValue = limitInput.toLongOrNull() ?: 0L
+                val warn80Amount = if (limitValue > 0L) (limitValue * 80L) / 100L else 0L
+
+                FinluxSoftCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    borderColor = tokens.primary.copy(alpha = 0.25f),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = null,
+                                tint = tokens.primary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = "Cảnh Báo Vượt Ngưỡng Tự Động",
+                                style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.onSurface,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(FinluxColors.WarningAmber)
+                                )
+                                Text(
+                                    text = "Cảnh báo vàng (80%)",
+                                    style = FinluxTextStyles.MicroLabel,
+                                    color = tokens.onSurfaceVariant,
+                                )
+                            }
+                            Text(
+                                text = if (warn80Amount > 0) formatVndAmount(warn80Amount) else "0 đ",
+                                style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.SemiBold),
+                                color = FinluxColors.WarningAmber,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(FinluxColors.ExpenseRed)
+                                )
+                                Text(
+                                    text = "Cảnh báo đỏ (100%)",
+                                    style = FinluxTextStyles.MicroLabel,
+                                    color = tokens.onSurfaceVariant,
+                                )
+                            }
+                            Text(
+                                text = if (limitValue > 0) formatVndAmount(limitValue) else "0 đ",
+                                style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.SemiBold),
+                                color = FinluxColors.ExpenseRed,
+                            )
+                        }
+
+                        Text(
+                            text = "Hệ thống sẽ tự động gửi thông báo đến bạn khi chi tiêu chạm các mốc cảnh báo trên (theo chuẩn BR-09).",
+                            style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
+                            color = tokens.onSurfaceVariant.copy(alpha = 0.85f),
+                        )
+                    }
+                }
 
                 Button(
                     onClick = {

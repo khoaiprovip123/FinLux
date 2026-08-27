@@ -58,6 +58,9 @@ import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.FinanceAccentHexes
 import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.Money
@@ -75,6 +78,7 @@ fun AddEditDebtSheet(
     onDelete: ((DebtAccount) -> Unit)? = null,
     isSubmitting: Boolean = false,
 ) {
+    val tokens = LocalFinluxTokens.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val isEditing = debt != null
 
@@ -93,14 +97,14 @@ fun AddEditDebtSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = tokens.surface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
             // Top Bar
@@ -115,7 +119,7 @@ fun AddEditDebtSheet(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 20.sp,
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = tokens.onSurface,
                 )
                 IconButton(onClick = onDismiss) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Đóng")
@@ -128,7 +132,7 @@ fun AddEditDebtSheet(
             Text(
                 text = "Loại khoản nợ",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = tokens.onSurface,
             )
             Spacer(Modifier.height(8.dp))
             Row(
@@ -139,8 +143,8 @@ fun AddEditDebtSheet(
                     val isSelected = type == itemType
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) FinluxBlue else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, FinluxBlue) else null,
+                        color = if (isSelected) tokens.primary else tokens.surfaceSoft,
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, tokens.primary) else null,
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
@@ -154,7 +158,7 @@ fun AddEditDebtSheet(
                             Icon(
                                 imageVector = debtTypeIcon(itemType),
                                 contentDescription = null,
-                                tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (isSelected) Color.White else tokens.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(Modifier.height(4.dp))
@@ -163,7 +167,7 @@ fun AddEditDebtSheet(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) Color.White else tokens.onSurfaceVariant,
                                 ),
                                 maxLines = 1,
                             )
@@ -190,36 +194,24 @@ fun AddEditDebtSheet(
             // Total Amount & Remaining Balance
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                OutlinedTextField(
-                    value = totalAmountText,
-                    onValueChange = { totalAmountText = it.filter(Char::isDigit).trimStart('0') },
-                    label = { Text("Hạn mức / Vay gốc") },
-                    placeholder = { Text("0") },
-                    supportingText = {
-                        val amt = totalAmountText.toLongOrNull() ?: 0L
-                        Text(amt.toVnd(), color = FinluxBlue, fontWeight = FontWeight.SemiBold)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
+                ErgonomicCompactAmountCard(
+                    label = "Hạn mức / Vay gốc",
+                    amountText = totalAmountText,
+                    onAmountChange = { totalAmountText = it },
+                    placeholder = "0",
+                    amountColor = tokens.primary,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
                 )
 
-                OutlinedTextField(
-                    value = remainingBalanceText,
-                    onValueChange = { remainingBalanceText = it.filter(Char::isDigit).trimStart('0') },
-                    label = { Text("Dư nợ hiện tại") },
-                    placeholder = { Text("0") },
-                    supportingText = {
-                        val amt = remainingBalanceText.toLongOrNull() ?: 0L
-                        Text(amt.toVnd(), color = FinluxBlue, fontWeight = FontWeight.SemiBold)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
+                ErgonomicCompactAmountCard(
+                    label = "Dư nợ hiện tại",
+                    amountText = remainingBalanceText,
+                    onAmountChange = { remainingBalanceText = it },
+                    placeholder = "0",
+                    amountColor = FinluxColors.ExpenseRed,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
                 )
             }
 
@@ -228,7 +220,7 @@ fun AddEditDebtSheet(
             // APR & Minimum Payment
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 OutlinedTextField(
                     value = aprText,
@@ -241,19 +233,13 @@ fun AddEditDebtSheet(
                     shape = RoundedCornerShape(16.dp),
                 )
 
-                OutlinedTextField(
-                    value = minimumPaymentText,
-                    onValueChange = { minimumPaymentText = it.filter(Char::isDigit).trimStart('0') },
-                    label = { Text("Trả tối thiểu/tháng") },
-                    placeholder = { Text("0") },
-                    supportingText = {
-                        val amt = minimumPaymentText.toLongOrNull() ?: 0L
-                        Text(amt.toVnd(), color = FinluxBlue, fontWeight = FontWeight.SemiBold)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
+                ErgonomicCompactAmountCard(
+                    label = "Trả tối thiểu / tháng",
+                    amountText = minimumPaymentText,
+                    onAmountChange = { minimumPaymentText = it },
+                    placeholder = "0",
+                    amountColor = FinluxColors.WarningAmber,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
                 )
             }
 
@@ -306,8 +292,8 @@ fun AddEditDebtSheet(
             // Due Date Reminder Section
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+                color = tokens.surfaceSoft,
+                border = androidx.compose.foundation.BorderStroke(1.dp, tokens.border),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -323,14 +309,14 @@ fun AddEditDebtSheet(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = if (isReminderEnabled) FinluxBlue.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                                color = if (isReminderEnabled) tokens.primary.copy(alpha = 0.15f) else tokens.surface,
                                 modifier = Modifier.size(36.dp),
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.NotificationsActive,
                                         contentDescription = null,
-                                        tint = if (isReminderEnabled) FinluxBlue else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = if (isReminderEnabled) tokens.primary else tokens.onSurfaceVariant,
                                         modifier = Modifier.size(18.dp),
                                     )
                                 }
@@ -342,12 +328,12 @@ fun AddEditDebtSheet(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = tokens.onSurface,
                                 )
                                 Text(
                                     text = if (isReminderEnabled) "Gửi thông báo trước ngày đến hạn $reminderDaysBefore ngày" else "Đang tắt thông báo cho khoản nợ này",
                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = tokens.onSurfaceVariant,
                                 )
                             }
                         }
@@ -357,7 +343,7 @@ fun AddEditDebtSheet(
                             onCheckedChange = { isReminderEnabled = it },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
-                                checkedTrackColor = FinluxBlue,
+                                checkedTrackColor = tokens.primary,
                             ),
                         )
                     }
@@ -372,8 +358,8 @@ fun AddEditDebtSheet(
                                 val isSelected = reminderDaysBefore == days
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = if (isSelected) FinluxBlue else MaterialTheme.colorScheme.surface,
-                                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                                    color = if (isSelected) tokens.primary else tokens.surface,
+                                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, tokens.border),
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(10.dp))
@@ -385,7 +371,7 @@ fun AddEditDebtSheet(
                                             fontSize = 11.5.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         ),
-                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                        color = if (isSelected) Color.White else tokens.onSurface,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(vertical = 8.dp),
                                     )
@@ -395,11 +381,15 @@ fun AddEditDebtSheet(
 
                         Spacer(Modifier.height(10.dp))
                         val dueDayInt = dueDateText.toIntOrNull()?.coerceIn(1, 31) ?: 15
-                        val remindDayInt = if (dueDayInt > reminderDaysBefore) dueDayInt - reminderDaysBefore else (30 + dueDayInt - reminderDaysBefore)
+                        val remindDayInt = if (dueDayInt > reminderDaysBefore) {
+                            dueDayInt - reminderDaysBefore
+                        } else {
+                            (30 + dueDayInt - reminderDaysBefore).coerceAtLeast(1)
+                        }
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = FinluxBlue.copy(alpha = 0.08f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, FinluxBlue.copy(alpha = 0.20f)),
+                            color = tokens.primary.copy(alpha = 0.08f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, tokens.primary.copy(alpha = 0.20f)),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(
@@ -410,7 +400,7 @@ fun AddEditDebtSheet(
                                 Icon(
                                     imageVector = Icons.Default.Schedule,
                                     contentDescription = null,
-                                    tint = FinluxBlue,
+                                    tint = tokens.primary,
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Text(
@@ -419,7 +409,7 @@ fun AddEditDebtSheet(
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium,
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = tokens.onSurface,
                                 )
                             }
                         }
@@ -482,7 +472,7 @@ fun AddEditDebtSheet(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = FinluxBlue),
+                colors = ButtonDefaults.buttonColors(containerColor = tokens.primary),
             ) {
                 Text(
                     text = if (isEditing) "Lưu thay đổi" else "Thêm khoản nợ",

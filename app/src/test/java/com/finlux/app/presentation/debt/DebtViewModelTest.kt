@@ -50,7 +50,7 @@ class DebtViewModelTest {
     private val calculatePayoffStrategyUseCase = CalculatePayoffStrategyUseCase()
     private val saveDebtAccountUseCase = SaveDebtAccountUseCase(fakeDebtRepository, syncDebtReminderUseCase)
     private val deleteDebtAccountUseCase = DeleteDebtAccountUseCase(fakeDebtRepository, syncDebtReminderUseCase)
-    private val processDebtPaymentUseCase = ProcessDebtPaymentUseCase(fakeDebtRepository)
+    private val processDebtPaymentUseCase = ProcessDebtPaymentUseCase(fakeDebtRepository, syncDebtReminderUseCase)
 
     private lateinit var viewModel: DebtViewModel
 

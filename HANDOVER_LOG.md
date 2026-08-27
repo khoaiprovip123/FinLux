@@ -1,8 +1,95 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.15 (versionCode 127)
+- **Phiên bản hiện tại:** v1.10.17 (versionCode 129)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
+
+### [Task-FEAT-ErgonomicCompactAmountCard-Focus-Suggestions] - Chỉ Hiển Thị Gợi Ý Nhanh (Chips) Khi Focus Vào Ô Nhập Tiền
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Nâng cấp component `ErgonomicCompactAmountCard` trong `FinluxFormComponents.kt` để quản lý trạng thái `isFocused`.
+  2. Chỉ hiển thị dải Quick Suggestion Chips (kèm hiệu ứng AnimatedVisibility) khi người dùng tap/focus vào ô nhập số tiền.
+  3. Cập nhật viền viền sáng (focus border highlight) tinh tế khi ô nhập đang được active.
+  4. Cập nhật tài liệu quy chuẩn `docs/FORM_COMPONENTS_SPEC.md` và tăng version lên v1.10.17 (versionCode 129).
+  5. Chạy unit test (`gradlew testDebugUnitTest` 100% PASS) và nạp APK lên máy thật qua `build_and_install.ps1`.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (MODIFIED - Tích hợp focus detection & AnimatedVisibility cho suggestion chips)
+  - `docs/FORM_COMPONENTS_SPEC.md` (MODIFIED - Đồng bộ đặc tả ErgonomicCompactAmountCard)
+  - `app/build.gradle.kts` (MODIFIED - Tăng versionCode 129, versionName 1.10.17)
+  - `CHANGELOG.md` (MODIFIED - Ghi nhận v1.10.17)
+  - `HANDOVER_LOG.md` (MODIFIED)
+- **Verification**:
+  - `./gradlew.bat testDebugUnitTest` -> 100% PASS (34/34 tasks).
+  - `build_and_install.ps1` -> Đã nạp thành công APK v1.10.17 vào thiết bị thật qua ADB.
+- **Current Status**: `[DONE]`
+
+### [Task-FEAT-Notification-Swipe-And-Click-Interactions] - Chuyển Toàn Bộ Vuốt Thành Xóa & Chạm Thẻ Để Mở Tính Năng Tương Ứng
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Điều chỉnh tương tác vuốt sang trái (Swipe-to-Dismiss) trên toàn bộ các loại thẻ thông báo thành thao tác **Xóa thông báo (`deleteNotification`)**.
+  2. Điều chỉnh tương tác chạm vào thẻ (Tap/Click on Card) để điều hướng nhanh đến màn hình tương ứng:
+     * Cảnh báo ngân sách ➡️ Mở `/budget`.
+     * Cột mốc mục tiêu ➡️ Mở `/goals`.
+     * Báo cáo tài chính ➡️ Mở `/reports`.
+     * Hạn nợ / Tín dụng ➡️ Mở `/debts`.
+     * Lời nhắc hóa đơn chưa trả ➡️ Mở BottomSheet Thanh toán nhanh.
+     * Lời nhắc hóa đơn đã trả ➡️ Mở BottomSheet Chi tiết thanh toán.
+  3. Cập nhật `DebtViewModelTest.kt` và kiểm thử toàn diện `gradlew testDebugUnitTest` 100% PASS.
+  4. Đóng gói và cài đặt APK v1.10.16 (versionCode 128) lên thiết bị thật qua `build_and_install.ps1`.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt` (MODIFIED - Vuốt để xóa, Chạm để mở tính năng)
+  - `app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt` (MODIFIED - Đồng bộ tham số ProcessDebtPaymentUseCase)
+  - `app/build.gradle.kts` (MODIFIED - Tăng versionCode 128, versionName 1.10.16)
+  - `CHANGELOG.md` (MODIFIED)
+  - `HANDOVER_LOG.md` (MODIFIED)
+- **Verification**:
+  - `./gradlew.bat testDebugUnitTest` -> 100% PASS (34/34 tasks).
+  - `build_and_install.ps1` -> Đã build APK v1.10.16 và nạp thành công vào thiết bị thật.
+- **Current Status**: `[DONE]`
+
+### [Task-FEAT-Debt-UI-Controls-And-Reminder-Fix] - Nâng Cấp Form Nợ Chuẩn Ergonomic, Khôi Phục Reminder Badge Thẻ Nợ & Fix Lỗi Tính Ngày Nhắc Nhở
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Khôi phục Reminder Schedule Chip (Badge thời hạn nhận thông báo nhắc nợ) trên thẻ nợ `DebtCard.kt`.
+  2. Nâng cấp các ô nhập liệu trong `AddEditDebtSheet.kt` sang các control chuẩn `ErgonomicCompactAmountCard` cho Hạn mức/Gốc, Dư nợ, Trả tối thiểu.
+  3. Nâng cấp ô nhập Tổng số tiền trả trong `DebtPaymentSheet.kt` sang `ErgonomicCompactAmountCard`.
+  4. Sửa thuật toán tính ngày nhắc nhở nợ trong `SyncDebtReminderUseCase.kt` và preview trong `AddEditDebtSheet.kt` (loại bỏ clamp 28 ngày, dùng `LocalDate` chính xác cho các tháng 30/31 ngày).
+  5. Cập nhật unit test `SyncDebtReminderUseCaseTest.kt` và kiểm thử toàn bộ `gradlew testDebugUnitTest` 100% PASS.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt` (MODIFIED - Thêm Reminder Schedule Chip hiển thị ngày nhận thông báo)
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt` (MODIFIED - Kế thừa ErgonomicCompactAmountCard, token màu động)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt` (MODIFIED - Kế thừa ErgonomicCompactAmountCard cho tổng số tiền trả)
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt` (MODIFIED - Sửa thuật toán tính ngày nhắc nợ 30/31 ngày)
+  - `app/src/test/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCaseTest.kt` (MODIFIED - Thêm test case cho ngày đến hạn 31)
+  - `HANDOVER_LOG.md` (MODIFIED)
+- **Verification**:
+  - `./gradlew.bat testDebugUnitTest` -> 100% PASS (34/34 tasks).
+  - `./gradlew.bat assembleDebug` -> Build APK thành công, nạp vào `/sdcard/Download/FinLux.apk`.
+- **Current Status**: `[DONE]`
+
+### [Task-FEAT-Budget-Threshold-Alert-System] - Phục Hồi & Tối Ưu Tính Năng Cảnh Báo Vượt Ngưỡng Ngân Sách (80% & 100%)
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Tích hợp khối thông tin trực quan "Cảnh báo vượt ngưỡng tự động (Smart Threshold Alert)" vào Modal Thêm/Sửa ngân sách trên cả 3 giao diện (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`), hiển thị tính động mốc cảnh báo 80% (vàng) và 100% (đỏ) theo số tiền nhập.
+  2. Nâng cấp `SaveBudgetUseCase` và `BudgetViewModel` tự động tính toán lại cờ cảnh báo (`notified80`, `notified100`) theo hạn mức mới, kích hoạt cảnh báo tức thì nếu hạ hạn mức làm chi tiêu vượt ngưỡng.
+  3. Bổ sung kiểm tra và phát cảnh báo ngân sách vào `EditTransactionUseCase` (đồng bộ với `AddTransactionUseCase`).
+  4. Fix lỗi không đồng bộ `periodKey` (`month:YYYY-MM` vs `MONTHLY_YYYY-MM`) và thiếu cập nhật `spentAmount` trong `DemoFinluxRepository.kt`.
+  5. Tích hợp `NotificationPermissionHandler` vào các màn hình Ngân sách để xin quyền `POST_NOTIFICATIONS` trên Android 13+ (Redmi / HyperOS / MIUI).
+  6. Viết Unit Test bổ sung trong `TransactionUseCasesTest.kt` và kiểm thử toàn diện `gradlew testDebugUnitTest` đạt 100% PASS.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (MODIFIED - Sửa format periodKey & đồng bộ spentAmount)
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` (MODIFIED - Smart Alert card & NotificationPermissionHandler)
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/domain/usecase/SaveBudgetUseCase.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/domain/usecase/EditTransactionUseCase.kt` (MODIFIED)
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt` (MODIFIED)
+  - `HANDOVER_LOG.md` (MODIFIED)
+- **Verification**:
+  - `./gradlew.bat testDebugUnitTest` -> 100% PASS (34 actionable tasks).
+  - `./gradlew.bat assembleDebug` -> Build APK thành công, nạp vào `/sdcard/Download/FinLux.apk`.
+- **Current Status**: `[DONE]`
 
 ### [Task-FEAT-PDF-Statement-Exporter-v1.10.15] - Tích Hợp Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng A4 & Tối Ưu CI Pipeline
 - **Status**: `[DONE]`

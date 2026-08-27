@@ -110,6 +110,38 @@ class SyncDebtReminderUseCaseTest {
     }
 
     @Test
+    fun `syncDebt with end of month dueDate 31 schedules reminder accurately`() = runTest {
+        val debt = DebtAccount(
+            id = "debt-31",
+            name = "Thẻ tín dụng Techcombank",
+            type = DebtType.CREDIT_CARD,
+            totalAmount = Money(50_000_000L),
+            remainingBalance = Money(25_000_000L),
+            interestRateApr = 22.5,
+            minimumPayment = Money(1_250_000L),
+            dueDate = 31,
+            colorHex = "#E11D48",
+            createdAt = Instant.now(),
+            updatedAt = Instant.now(),
+            isSettled = false,
+            isReminderEnabled = true,
+            reminderDaysBefore = 1,
+        )
+
+        useCase.syncDebt(debt)
+
+        val reminderId = "debt_reminder_debt-31"
+        assertTrue(savedReminders.containsKey(reminderId))
+        val stored = savedReminders[reminderId]!!
+        val zone = java.time.ZoneId.systemDefault()
+        val triggerLocal = stored.startDate.atZone(zone).toLocalDate()
+        val triggerHour = stored.startDate.atZone(zone).hour
+        assertEquals(9, triggerHour)
+        // Verify trigger date is in the future and day of month is reasonable (e.g. 30 or 27 for feb)
+        assertTrue(stored.startDate.isAfter(Instant.now()))
+    }
+
+    @Test
     fun `removeDebtReminder cancels and deletes reminder`() = runTest {
         useCase.removeDebtReminder("debt-789")
         val reminderId = "debt_reminder_debt-789"

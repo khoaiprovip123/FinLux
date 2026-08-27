@@ -450,7 +450,7 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun upsertBudget(budget: Budget): AppResult<String> = mutationMutex.withLock {
-        val id = budget.id.ifBlank { "${budget.categoryId}_${budget.month}" }
+        val id = budget.id.ifBlank { "${budget.categoryId}_${budget.periodKey.ifBlank { "month:${budget.month}" }}" }
         val stored = budget.copy(id = id)
         budgetState.value = budgetState.value.filterNot { it.id == id } + stored
         AppResult.Success(id)
@@ -497,6 +497,15 @@ class DemoFinluxRepository @Inject constructor(
                 return@withLock AppResult.Error("Không tìm thấy ví")
             }
             transactionState.value = transactionState.value + stored
+            if (stored.type == TransactionType.EXPENSE && !stored.categoryId.isNullOrBlank()) {
+                val month = YearMonth.from(stored.date.atZone(ZoneId.systemDefault()))
+                val periodKey = "month:$month"
+                budgetState.value = budgetState.value.map { b ->
+                    if (b.categoryId == stored.categoryId && (b.periodKey == periodKey || b.periodKey == "MONTHLY_$month")) {
+                        b.copy(spentAmount = Money(b.spentAmount.value + stored.amount.value))
+                    } else b
+                }
+            }
             AppResult.Success(id)
         }
 
@@ -517,6 +526,24 @@ class DemoFinluxRepository @Inject constructor(
         transactionState.value = transactionState.value.map {
             if (it.id == current.id) updated.copy(updatedAt = Instant.now()) else it
         }
+        if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
+            val oldMonth = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
+            val oldPeriodKey = "month:$oldMonth"
+            budgetState.value = budgetState.value.map { b ->
+                if (b.categoryId == current.categoryId && (b.periodKey == oldPeriodKey || b.periodKey == "MONTHLY_$oldMonth")) {
+                    b.copy(spentAmount = Money(b.spentAmount.value - current.amount.value))
+                } else b
+            }
+        }
+        if (updated.type == TransactionType.EXPENSE && !updated.categoryId.isNullOrBlank()) {
+            val newMonth = YearMonth.from(updated.date.atZone(ZoneId.systemDefault()))
+            val newPeriodKey = "month:$newMonth"
+            budgetState.value = budgetState.value.map { b ->
+                if (b.categoryId == updated.categoryId && (b.periodKey == newPeriodKey || b.periodKey == "MONTHLY_$newMonth")) {
+                    b.copy(spentAmount = Money(b.spentAmount.value + updated.amount.value))
+                } else b
+            }
+        }
         AppResult.Success(Unit)
     }
 
@@ -528,6 +555,15 @@ class DemoFinluxRepository @Inject constructor(
                 return@withLock AppResult.Error("Không tìm thấy ví")
             }
             transactionState.value = transactionState.value.filterNot { it.id == current.id }
+            if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
+                val month = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
+                val periodKey = "month:$month"
+                budgetState.value = budgetState.value.map { b ->
+                    if (b.categoryId == current.categoryId && (b.periodKey == periodKey || b.periodKey == "MONTHLY_$month")) {
+                        b.copy(spentAmount = Money(b.spentAmount.value - current.amount.value))
+                    } else b
+                }
+            }
             AppResult.Success(Unit)
         }
 
@@ -672,13 +708,13 @@ class DemoFinluxRepository @Inject constructor(
         )
 
         fun seedBudgets() = listOf(
-            Budget(id = "food_MONTHLY_${YearMonth.now()}", categoryId = "food", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(3_000_000), spentAmount = Money(1_850_000), notified80 = false, notified100 = false),
-            Budget(id = "shopping_MONTHLY_${YearMonth.now()}", categoryId = "shopping", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(4_000_000), spentAmount = Money(2_000_000), notified80 = false, notified100 = false),
-            Budget(id = "transport_MONTHLY_${YearMonth.now()}", categoryId = "transport", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(1_500_000), spentAmount = Money(240_000), notified80 = false, notified100 = false),
-            Budget(id = "bills_MONTHLY_${YearMonth.now()}", categoryId = "bills", periodKey = "MONTHLY_${YearMonth.now()}", limitAmount = Money(1_200_000), spentAmount = Money(820_000), notified80 = false, notified100 = false),
-            Budget(id = "food_MONTHLY_${YearMonth.now().minusMonths(1)}", categoryId = "food", periodKey = "MONTHLY_${YearMonth.now().minusMonths(1)}", limitAmount = Money(2_800_000), spentAmount = Money(2_450_000), notified80 = true, notified100 = false),
-            Budget(id = "shopping_MONTHLY_${YearMonth.now().minusMonths(1)}", categoryId = "shopping", periodKey = "MONTHLY_${YearMonth.now().minusMonths(1)}", limitAmount = Money(3_500_000), spentAmount = Money(3_120_000), notified80 = true, notified100 = false),
-            Budget(id = "food_MONTHLY_${YearMonth.now().minusMonths(2)}", categoryId = "food", periodKey = "MONTHLY_${YearMonth.now().minusMonths(2)}", limitAmount = Money(2_500_000), spentAmount = Money(2_680_000), notified80 = true, notified100 = true),
+            Budget(id = "food_month:${YearMonth.now()}", categoryId = "food", periodKey = "month:${YearMonth.now()}", limitAmount = Money(3_000_000), spentAmount = Money(1_850_000), notified80 = false, notified100 = false),
+            Budget(id = "shopping_month:${YearMonth.now()}", categoryId = "shopping", periodKey = "month:${YearMonth.now()}", limitAmount = Money(4_000_000), spentAmount = Money(2_000_000), notified80 = false, notified100 = false),
+            Budget(id = "transport_month:${YearMonth.now()}", categoryId = "transport", periodKey = "month:${YearMonth.now()}", limitAmount = Money(1_500_000), spentAmount = Money(240_000), notified80 = false, notified100 = false),
+            Budget(id = "bills_month:${YearMonth.now()}", categoryId = "bills", periodKey = "month:${YearMonth.now()}", limitAmount = Money(1_200_000), spentAmount = Money(820_000), notified80 = false, notified100 = false),
+            Budget(id = "food_month:${YearMonth.now().minusMonths(1)}", categoryId = "food", periodKey = "month:${YearMonth.now().minusMonths(1)}", limitAmount = Money(2_800_000), spentAmount = Money(2_450_000), notified80 = true, notified100 = false),
+            Budget(id = "shopping_month:${YearMonth.now().minusMonths(1)}", categoryId = "shopping", periodKey = "month:${YearMonth.now().minusMonths(1)}", limitAmount = Money(3_500_000), spentAmount = Money(3_120_000), notified80 = true, notified100 = false),
+            Budget(id = "food_month:${YearMonth.now().minusMonths(2)}", categoryId = "food", periodKey = "month:${YearMonth.now().minusMonths(2)}", limitAmount = Money(2_500_000), spentAmount = Money(2_680_000), notified80 = true, notified100 = true),
         )
 
         fun seedReminders() = listOf(

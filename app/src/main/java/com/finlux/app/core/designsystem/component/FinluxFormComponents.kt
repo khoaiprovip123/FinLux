@@ -1,5 +1,10 @@
 package com.finlux.app.core.designsystem.component
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -377,6 +383,7 @@ fun ErgonomicCompactAmountCard(
     enabled: Boolean = true,
 ) {
     val tokens = LocalFinluxTokens.current
+    var isFocused by remember { mutableStateOf(false) }
     val cleanDigits = amountText.filter { it.isDigit() }.take(12)
     val formattedDisplay = formatAmountDigitsWithDots(cleanDigits)
     val suggestions = remember(cleanDigits) { generateAmountSuggestions(cleanDigits) }
@@ -384,7 +391,12 @@ fun ErgonomicCompactAmountCard(
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFF3F4F6)),
+        border = BorderStroke(
+            1.dp,
+            if (isFocused) amountColor.copy(alpha = 0.5f)
+            else if (tokens.isDark) Color.White.copy(alpha = 0.06f)
+            else Color(0xFFF3F4F6)
+        ),
         shadowElevation = 1.5.dp,
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -457,7 +469,9 @@ fun ErgonomicCompactAmountCard(
                             }
                             innerTextField()
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { isFocused = it.isFocused },
                     )
                 }
 
@@ -481,37 +495,43 @@ fun ErgonomicCompactAmountCard(
                 }
             }
 
-            // Dynamic quick suggestion chips (.000 format up to millions)
-            if (showSuggestions && !isReadOnly && onAmountChange != null) {
-                Spacer(Modifier.height(3.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    items(suggestions) { (chipLabel, chipValue) ->
-                        Surface(
-                            shape = CircleShape,
-                            color = amountColor.copy(alpha = 0.08f),
-                            border = BorderStroke(
-                                0.75.dp,
-                                amountColor.copy(alpha = 0.22f),
-                            ),
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable {
-                                    onAmountChange(chipValue)
-                                },
-                        ) {
-                            Text(
-                                text = chipLabel,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
+            // Dynamic quick suggestion chips (.000 format up to millions) - Only shown when input field is focused
+            AnimatedVisibility(
+                visible = isFocused && showSuggestions && !isReadOnly && onAmountChange != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                Column {
+                    Spacer(Modifier.height(3.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        items(suggestions) { (chipLabel, chipValue) ->
+                            Surface(
+                                shape = CircleShape,
+                                color = amountColor.copy(alpha = 0.08f),
+                                border = BorderStroke(
+                                    0.75.dp,
+                                    amountColor.copy(alpha = 0.22f),
                                 ),
-                                color = amountColor,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp),
-                            )
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onAmountChange?.invoke(chipValue)
+                                    },
+                            ) {
+                                Text(
+                                    text = chipLabel,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                                    color = amountColor,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp),
+                                )
+                            }
                         }
                     }
                 }

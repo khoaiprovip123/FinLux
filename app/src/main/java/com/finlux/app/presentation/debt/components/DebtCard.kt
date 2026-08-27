@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Icon
@@ -322,37 +323,77 @@ fun DebtCard(
                     }
                 }
 
-                // Due Date Badge
-                if (!isSettled) {
-                    val badgeColor = when {
-                        isOverdue -> FinluxColors.ExpenseRed
-                        isDueSoon -> FinluxColors.WarningAmber
-                        else -> tokens.onSurfaceVariant
-                    }
-                    val badgeBg = when {
-                        isOverdue -> FinluxColors.ExpenseRed.copy(alpha = 0.12f)
-                        isDueSoon -> FinluxColors.WarningAmber.copy(alpha = 0.12f)
-                        else -> tokens.surfaceSoft
-                    }
-                    val label = when {
-                        isOverdue -> "Quá hạn (hạn ngày ${debt.dueDate})"
-                        isDueSoon -> "Sắp đến hạn (${debt.dueDate})"
-                        else -> "Hạn ngày ${debt.dueDate}"
+                // Right badges: Reminder chip + Due date badge
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    if (!isSettled && debt.isReminderEnabled) {
+                        val remindDay = if (debt.dueDate > debt.reminderDaysBefore) {
+                            debt.dueDate - debt.reminderDaysBefore
+                        } else {
+                            (30 + debt.dueDate - debt.reminderDaysBefore).coerceAtLeast(1)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = tokens.primary.copy(alpha = 0.10f),
+                            border = BorderStroke(0.6.dp, tokens.primary.copy(alpha = 0.25f)),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.NotificationsActive,
+                                    contentDescription = null,
+                                    tint = tokens.primary,
+                                    modifier = Modifier.size(11.dp),
+                                )
+                                Text(
+                                    text = "Nhắc ngày $remindDay",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 10.sp,
+                                        color = tokens.primary,
+                                    ),
+                                )
+                            }
+                        }
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = badgeBg,
-                    ) {
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 10.5.sp,
-                                color = badgeColor,
-                            ),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
+                    // Due Date Badge
+                    if (!isSettled) {
+                        val badgeColor = when {
+                            isOverdue -> FinluxColors.ExpenseRed
+                            isDueSoon -> FinluxColors.WarningAmber
+                            else -> tokens.onSurfaceVariant
+                        }
+                        val badgeBg = when {
+                            isOverdue -> FinluxColors.ExpenseRed.copy(alpha = 0.12f)
+                            isDueSoon -> FinluxColors.WarningAmber.copy(alpha = 0.12f)
+                            else -> tokens.surfaceSoft
+                        }
+                        val label = when {
+                            isOverdue -> "Quá hạn (${debt.dueDate})"
+                            isDueSoon -> "Sắp đến hạn (${debt.dueDate})"
+                            else -> "Hạn ngày ${debt.dueDate}"
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = badgeBg,
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 10.5.sp,
+                                    color = badgeColor,
+                                ),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
                     }
                 }
             }

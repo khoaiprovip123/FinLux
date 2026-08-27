@@ -32,20 +32,20 @@ class SyncDebtReminderUseCase @Inject constructor(
 
         val zone = ZoneId.systemDefault()
         val now = LocalDate.now(zone)
-        val dueDay = debt.dueDate.coerceIn(1, 28) // Safe day cap
-        val remindDay = (dueDay - debt.reminderDaysBefore).coerceAtLeast(1)
 
-        // Calculate next trigger date at 09:00 AM
-        var targetDate = now.withDayOfMonth(minOf(remindDay, now.lengthOfMonth()))
-        var triggerDateTime = targetDate.atTime(LocalTime.of(9, 0))
+        // Calculate reminder date in the current month:
+        val curMonthDueDay = minOf(debt.dueDate, now.lengthOfMonth())
+        val curRemindDate = now.withDayOfMonth(curMonthDueDay).minusDays(debt.reminderDaysBefore.toLong())
+        val curTrigger = curRemindDate.atTime(LocalTime.of(9, 0)).atZone(zone).toInstant()
 
-        if (triggerDateTime.atZone(zone).toInstant().isBefore(Instant.now())) {
-            targetDate = targetDate.plusMonths(1)
-            targetDate = targetDate.withDayOfMonth(minOf(remindDay, targetDate.lengthOfMonth()))
-            triggerDateTime = targetDate.atTime(LocalTime.of(9, 0))
+        val triggerInstant = if (curTrigger.isAfter(Instant.now())) {
+            curTrigger
+        } else {
+            val nextMonth = now.plusMonths(1)
+            val nextMonthDueDay = minOf(debt.dueDate, nextMonth.lengthOfMonth())
+            val nextRemindDate = nextMonth.withDayOfMonth(nextMonthDueDay).minusDays(debt.reminderDaysBefore.toLong())
+            nextRemindDate.atTime(LocalTime.of(9, 0)).atZone(zone).toInstant()
         }
-
-        val triggerInstant = triggerDateTime.atZone(zone).toInstant()
         val expectedAmount = if (debt.minimumPayment.value > 0L) debt.minimumPayment else debt.remainingBalance
 
         val reminder = Reminder(

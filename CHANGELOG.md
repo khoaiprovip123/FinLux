@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.10.17] - 2026-08-27
+### Enhanced
+- **Tối ưu trải nghiệm gợi ý số tiền ErgonomicCompactAmountCard (`FinluxFormComponents.kt`)**:
+  * Tự động ẩn dải gợi ý nhân nhanh số tiền (Quick Suggestion Chips) ở trạng thái bình thường để form nhập liệu luôn siêu gọn gàng, tiết kiệm không gian màn hình.
+  * Tích hợp hiệu ứng `AnimatedVisibility` (fade & expand) tự động mở rộng dải chip gợi ý khi người dùng tap/focus vào ô nhập số tiền.
+  * Tự động làm sáng viền thẻ (`amountColor`) khi ô nhập đang được active focus.
+  * Đồng bộ đặc tả chi tiết trong tài liệu quy chuẩn `docs/FORM_COMPONENTS_SPEC.md`.
+
+## [1.10.16] - 2026-08-27
+### Added
+- **Khôi phục Reminder Schedule Chip trên thẻ nợ (`DebtCard.kt`)**: Hiển thị ngày nhận thông báo nhắc nợ định kỳ 09:00 sáng trước hạn thanh toán trực tiếp trên thẻ nợ.
+- **Tự động xóa Reminder khi tất toán nợ (`ProcessDebtPaymentUseCase.kt`)**: Tích hợp `SyncDebtReminderUseCase` vào quy trình thanh toán nợ, tự động xóa lịch nhắc nhở trong `AlarmManager` & `ReminderRepository` ngay khi khoản nợ được tất toán thành công (`isSettled = true`).
+- **Nâng cấp Form Nợ & Thanh Toán sang Control Ergonomic Chuẩn (`AddEditDebtSheet.kt`, `DebtPaymentSheet.kt`)**:
+  * Kế thừa `ErgonomicCompactAmountCard` cho Hạn mức/Khoản vay gốc, Dư nợ hiện tại, Trả tối thiểu hàng tháng và Tổng số tiền thanh toán nợ.
+  * Hỗ trợ tự động phân tách hàng nghìn VNĐ, bộ 3 chip gợi ý nhanh (+000, +00.000, +000.000) và 100% màu động theo `LocalFinluxTokens.current`.
+
+### Fixed
+- **Sửa thuật toán tính ngày nhắc nhở nợ (`SyncDebtReminderUseCase.kt`)**: Khắc phục lỗi ép cứng 28 ngày khiến ngày đến hạn 31 bị đặt nhầm vào ngày 27; hỗ trợ chuẩn xác các tháng 28, 29, 30 và 31 ngày.
+
 ## [1.10.15] - 2026-08-26
 ### Added & Enhanced
 - **Tích Hợp & Nâng Cấp Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng A4 (`ReportExporter.kt`)**:

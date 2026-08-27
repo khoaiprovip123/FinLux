@@ -50,9 +50,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicFormRow
 import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
 import com.finlux.app.core.designsystem.component.PrincipalInterestSplitCard
 import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -201,14 +201,16 @@ fun DebtPaymentSheet(
                 }
             }
 
-            // 3. Hero Amount Input Card & Quick Chips
+            // 3. Compact Ergonomic Amount Input Card & Quick Chips
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FinluxAmountInputCard(
+                ErgonomicCompactAmountCard(
                     label = "TỔNG SỐ TIỀN TRẢ",
-                    amountDigits = amountText,
+                    amountText = amountText,
                     onAmountChange = { amountText = it },
-                    showQuickChips = false,
-                    primaryColor = tokens.primary,
+                    placeholder = "0",
+                    amountColor = tokens.primary,
+                    showSuggestions = false,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 // Quick Chips: Tối thiểu | 50% nợ | Tất toán hết

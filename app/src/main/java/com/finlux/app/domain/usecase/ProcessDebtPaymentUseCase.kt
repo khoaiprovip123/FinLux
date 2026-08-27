@@ -2,11 +2,13 @@ package com.finlux.app.domain.usecase
 
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.repository.DebtRepository
+import kotlinx.coroutines.flow.firstOrNull
 import java.time.Instant
 import javax.inject.Inject
 
 class ProcessDebtPaymentUseCase @Inject constructor(
     private val repository: DebtRepository,
+    private val syncDebtReminderUseCase: SyncDebtReminderUseCase,
 ) {
     suspend operator fun invoke(
         debtId: String,
@@ -33,7 +35,7 @@ class ProcessDebtPaymentUseCase @Inject constructor(
             return AppResult.Error("Tổng tiền gốc và tiền lãi phải bằng tổng số tiền thanh toán")
         }
 
-        return repository.processPayment(
+        val result = repository.processPayment(
             debtId = debtId,
             walletId = walletId,
             amount = amount,
@@ -42,5 +44,15 @@ class ProcessDebtPaymentUseCase @Inject constructor(
             note = note,
             paymentDate = paymentDate,
         )
+
+        if (result is AppResult.Success) {
+            val debts = repository.observeDebts().firstOrNull() ?: emptyList()
+            val updatedDebt = debts.find { it.id == debtId }
+            if (updatedDebt != null) {
+                syncDebtReminderUseCase.syncDebt(updatedDebt)
+            }
+        }
+
+        return result
     }
 }

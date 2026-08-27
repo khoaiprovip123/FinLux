@@ -384,23 +384,49 @@ LAY-OUT:
   - Danh sách thẻ thông báo (NotificationItemCard): Thiết kế Liquid Glass / Prism bo góc 18dp, icon badge tròn, thời gian gửi, tiêu đề, nội dung tóm tắt, số tiền và nút hành động.
 INTERACTIONS & GESTURES:
   1. Kéo sang trái (Swipe Left / SwipeToDismissBox):
-     - Cảnh báo ngân sách (BUDGET_ALERT): Kéo sang trái -> Action nền đỏ + icon ArrowForward -> Điều hướng sang /budget.
-     - Cột mốc mục tiêu (GOAL_MILESTONE): Kéo sang trái -> Action nền vàng cam -> Điều hướng sang /goals.
-     - Báo cáo tài chính (TRANSACTION_SUMMARY): Kéo sang trái -> Action nền xanh ngọc -> Điều hướng sang /reports.
-     - Hạn nợ / Thẻ tín dụng (DEBT_DUE_ALERT): Kéo sang trái -> Action nền tím -> Điều hướng sang /debts.
-     - Nhắc hóa đơn & Hệ thống: Kéo sang trái -> Action nền đỏ + icon Delete -> Xóa thông báo khỏi danh sách.
+     - Áp dụng đồng nhất 100% cho mọi loại thông báo: Kéo sang trái -> Nền chuyển đỏ (ExpenseRed) + Icon Delete -> Xóa thông báo khỏi danh sách.
   2. Chạm vào thân thẻ (Card Tap):
      - Tự động đánh dấu đã đọc (isRead = true).
-     - Nếu là Nhắc hóa đơn CHƯA thanh toán: Mở QuickPayBottomSheet để thanh toán nhanh.
-     - Nếu là Nhắc hóa đơn ĐÃ thanh toán: Mở PaidNotificationDetailSheet hiển thị chi tiết lịch sử thanh toán.
+     - Điều hướng mở màn hình tính năng tương ứng:
+       * Cảnh báo ngân sách (BUDGET_ALERT): Chạm -> Mở nhanh màn hình Ngân sách (/budget).
+       * Cột mốc mục tiêu (GOAL_MILESTONE): Chạm -> Mở nhanh Mục tiêu tài chính (/goals).
+       * Báo cáo tài chính (TRANSACTION_SUMMARY): Chạm -> Mở nhanh Báo cáo thu chi (/reports).
+       * Hạn nợ / Thẻ tín dụng (DEBT_DUE_ALERT): Chạm -> Mở nhanh Quản lý nợ & Tín dụng (/debts).
+       * Lời nhắc hóa đơn CHƯA thanh toán: Mở QuickPayBottomSheet để thanh toán nhanh 1-chạm.
+       * Lời nhắc hóa đơn ĐÃ thanh toán: Mở PaidNotificationDetailSheet hiển thị chi tiết lịch sử thanh toán.
   3. QuickPayBottomSheet:
-     - FinluxAmountInputCard: Nhập và chỉnh sửa số tiền thực chi + Quick Chips.
+     - ErgonomicCompactAmountCard: Nhập và chỉnh sửa số tiền thực chi + Quick Chips (focus-driven).
      - ErgonomicFormRow + FinluxWalletPickerBottomSheet: Chọn ví nguồn thanh toán.
      - ErgonomicFormRow + FinluxCategoryPickerBottomSheet: Chọn danh mục chi tiêu.
      - Nút "Ghi nhận thanh toán": Trừ tiền ví, ghi transaction EXPENSE vào Sổ cái với ghi chú "Thanh toán: [Tên]" và cập nhật isPaid = true.
   4. PaidNotificationDetailSheet:
      - Badge tích xanh + Trạng thái "Đã thanh toán thành công".
      - Số tiền thực chi (IncomeGreen) + Tên khoản chi + Danh mục + Ví nguồn + Thời gian + Ghi chú Sổ cái.
+```
+
+---
+
+## 20. SCREEN: Quản Lý Nợ & Tín Dụng (Debt Freedom & Credit Hub)
+
+```
+Route: /debts
+LAYOUT:
+  - Header: Thẻ KPI Tổng dư nợ, Hạn mức tín dụng, Số tiền cần trả tối thiểu trong tháng.
+  - Bộ chọn chiến lược trả nợ (Debt Snowball vs Debt Avalanche) + Thanh trượt Extra Monthly Payment.
+  - Danh sách Thẻ Nợ (DebtCard):
+    * Icon & Màu sắc theo loại nợ (Thẻ tín dụng, Vay ngân hàng, Trả góp/BNPL).
+    * Tiến độ thanh toán (Progress bar & Tỷ lệ dư nợ / Hạn mức).
+    * Badge ngày đến hạn thanh toán + Chip thông báo nhắc nợ [🔔 Nhắc ngày X] (hiển thị ngày nhận push notification lúc 09:00 sáng).
+    * Nút [Thanh toán nợ]: Mở DebtPaymentSheet.
+  - Modal Thêm / Chỉnh sửa Khoản Nợ (AddEditDebtSheet):
+    * Kế thừa hoàn toàn ErgonomicCompactAmountCard cho Vay gốc/Hạn mức, Dư nợ hiện tại, Trả tối thiểu/tháng.
+    * Toggle "Bật nhắc nhở đến hạn" + Lựa chọn nhắc trước N ngày (1, 2, 3, 5, 7 ngày).
+    * Tự động tính toán ngày nhắc nhở chính xác theo lịch tháng 28, 29, 30, 31 ngày.
+  - Modal Thanh Toán Khoản Nợ (DebtPaymentSheet):
+    * Kế thừa ErgonomicCompactAmountCard cho Tổng số tiền trả + Quick Chips.
+    * Kế thừa PrincipalInterestSplitCard (Thẻ đôi chia tiền Gốc & Lãi).
+    * Bộ chọn ví nguồn thanh toán (FinluxWalletPickerBottomSheet).
+    * Khi thanh toán dứt điểm (dư nợ = 0đ): Tự động xóa lịch nhắc nhở trong ReminderRepository & AlarmManager.
 ```
 
 ---

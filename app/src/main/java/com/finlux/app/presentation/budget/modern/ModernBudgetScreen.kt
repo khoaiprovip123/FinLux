@@ -90,6 +90,7 @@ fun ModernBudgetScreen(
     onBack: (() -> Unit)? = null,
     viewModel: BudgetViewModel = hiltViewModel()
 ) {
+    com.finlux.app.core.designsystem.NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
     var editing by remember { mutableStateOf<BudgetItemUi?>(null) }
@@ -276,6 +277,76 @@ private fun BudgetEditor(categories: List<Category>, period: com.finlux.app.doma
                     amountColor = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                // Smart Threshold Alert Info Card
+                val limitValue = amount.toLongOrNull() ?: 0L
+                val warn80Amount = if (limitValue > 0L) (limitValue * 80L) / 100L else 0L
+
+                com.finlux.app.core.designsystem.component.FinluxSoftCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = "Cảnh Báo Vượt Ngưỡng Tự Động",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "🟡 Cảnh báo vàng (80%)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = if (warn80Amount > 0) com.finlux.app.core.designsystem.component.formatVndAmount(warn80Amount) else "0 đ",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = WarningAmber,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "🔴 Cảnh báo đỏ (100%)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = if (limitValue > 0) com.finlux.app.core.designsystem.component.formatVndAmount(limitValue) else "0 đ",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = ExpenseRed,
+                            )
+                        }
+
+                        Text(
+                            text = "Hệ thống sẽ tự động gửi thông báo khi chi tiêu chạm 80% và vượt 100% hạn mức theo chuẩn BR-09.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                        )
+                    }
+                }
+
                 Button({ onSave(categoryId, amount.toLongOrNull() ?: 0) }, Modifier.fillMaxWidth(), enabled = categoryId.isNotBlank() && amount.toLongOrNull()?.let { it > 0 } == true && !busy) { Text(if (busy) "Đang lưu…" else "Lưu ngân sách") }
             }
         }

@@ -7,7 +7,7 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 ## 📌 [FEATURE PLAN] - Quản Lý Nợ: Lịch Sử Thanh Toán Chi Tiết & Hệ Thống Nhắc Nợ Đến Hạn
 
 > **Tên Kế Hoạch:** `[DEBT ENHANCEMENT] Kế hoạch triển khai Lịch sử thanh toán nợ (History & Filters) và Bật/Tắt thông báo nhắc nợ đến hạn (Due Date Reminders)`  
-> **Trạng thái:** 📋 `[PLANNED] - Sẵn sàng triển khai`  
+> **Trạng thái:** 🟢 `[DONE] - Đã triển khai và tối ưu hoàn tất (v1.10.17)`  
 > **Mức độ ưu tiên:** 🟡 Medium-High / Core Debt Usability  
 > **Ngày lập kế hoạch:** 2026-08-24  
 > **Các module liên quan:**  

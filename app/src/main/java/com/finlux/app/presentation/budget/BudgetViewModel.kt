@@ -124,11 +124,17 @@ class BudgetViewModel @Inject constructor(
     fun save(categoryId: String, limit: Long, existing: Budget?, onSaved: () -> Unit) = viewModelScope.launch {
         action.value = true to null
         val period = currentPeriod.value ?: return@launch
-        val budget = existing?.copy(limitAmount = Money(limit)) ?: Budget(
+        val currentSpent = state.value.items.find { it.budget.categoryId == categoryId }?.budget?.spentAmount?.value
+            ?: existing?.spentAmount?.value ?: 0L
+
+        val budget = existing?.copy(
+            limitAmount = Money(limit),
+            spentAmount = Money(currentSpent),
+        ) ?: Budget(
             id = "${categoryId}_${period.key}", categoryId = categoryId,
             periodKey = period.key, periodStart = period.start, periodEndExclusive = period.endExclusive,
             periodBasis = period.basis.name,
-            limitAmount = Money(limit), spentAmount = Money(0),
+            limitAmount = Money(limit), spentAmount = Money(currentSpent),
             notified80 = false, notified100 = false,
         )
         when (val result = saveBudget(budget)) {

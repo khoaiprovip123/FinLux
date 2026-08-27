@@ -333,16 +333,15 @@ Precondition: Đã đăng nhập
 Main flow:
   1. Người dùng mở icon Chuông thông báo trên Trang chủ để vào /notifications.
   2. Xem danh sách thông báo được phân loại: Tất cả, Hóa đơn, Ngân sách, Mục tiêu, Báo cáo, Hệ thống.
-  3. Tương tác cử chỉ:
-     - Kéo sang trái (Swipe Left):
-       * Cảnh báo ngân sách -> Điều hướng mở màn hình Ngân sách (/budget)
-       * Cột mốc mục tiêu -> Điều hướng mở màn hình Mục tiêu (/goals)
-       * Báo cáo tài chính -> Điều hướng mở màn hình Báo cáo (/reports)
-       * Hạn nợ / Thẻ tín dụng -> Điều hướng mở màn hình Quản lý nợ (/debts)
-       * Nhắc hóa đơn & Hệ thống -> Xóa thông báo khỏi danh sách
-     - Chạm vào thân thẻ (Card Tap): Đánh dấu đã đọc (isRead = true).
-     - Chạm vào hóa đơn chưa trả hoặc nút [Thanh toán ngay]: Mở QuickPayBottomSheet (chọn ví, danh mục, số tiền) -> Trừ số dư ví, ghi giao dịch EXPENSE vào Sổ cái với ghi chú "Thanh toán: [Tên]" và chuyển sang trạng thái [Đã thanh toán].
-     - Chạm vào hóa đơn đã trả: Mở PaidNotificationDetailSheet xem chi tiết số tiền, ví, danh mục, thời gian và ghi chú Sổ cái đã ghi.
+  3. Tương tác cử chỉ & Điều hướng thông minh:
+     - Kéo sang trái (Swipe Left): Xóa thông báo khỏi danh sách (áp dụng đồng nhất 100% cho mọi loại thẻ thông báo).
+     - Chạm vào thân thẻ (Card Tap): Đánh dấu đã đọc (isRead = true) và tự động mở tính năng tương ứng:
+       * Cảnh báo ngân sách -> Mở màn hình Ngân sách (/budget)
+       * Cột mốc mục tiêu -> Mở màn hình Mục tiêu (/goals)
+       * Báo cáo tài chính -> Mở màn hình Báo cáo (/reports)
+       * Hạn nợ / Thẻ tín dụng -> Mở màn hình Quản lý nợ (/debts)
+       * Lời nhắc hóa đơn chưa trả hoặc bấm [Thanh toán ngay] -> Mở QuickPayBottomSheet (chọn ví, danh mục, số tiền) -> Trừ số dư ví, ghi giao dịch EXPENSE vào Sổ cái với ghi chú "Thanh toán: [Tên]" và chuyển sang trạng thái [Đã thanh toán].
+       * Lời nhắc hóa đơn đã trả -> Mở PaidNotificationDetailSheet xem chi tiết số tiền, ví, danh mục, thời gian và ghi chú Sổ cái đã ghi.
 Business rule:
   BR-NOTI-01: Thanh toán hóa đơn từ thông báo bắt buộc thực thi qua Firestore Atomic Transaction (trừ ví, ghi giao dịch EXPENSE, cập nhật isPaid = true).
 ```
@@ -370,6 +369,8 @@ Business rule:
 | BR-DEBT-01 | Phân loại công nợ: Thẻ tín dụng, Vay ngân hàng/cá nhân, Trả góp/BNPL |
 | BR-DEBT-02 | Thuật toán mô phỏng thoát nợ Snowball (nợ nhỏ trước) & Avalanche (lãi cao trước) |
 | BR-DEBT-03 | Thanh toán nợ nguyên tử qua Firestore Transaction (trừ ví, giảm nợ, ghi sổ cái) |
+| BR-DEBT-04 | Tự động hủy/xóa lịch nhắc nhở nợ trong hệ thống khi khoản nợ được tất toán hoàn toàn |
+| BR-DEBT-05 | Thuật toán tính ngày nhắc nợ hỗ trợ chính xác theo lịch tháng 28, 29, 30, 31 ngày |
 | BR-GOAL-01 | Nạp/Rút tích lũy mục tiêu tài chính nguyên tử qua Firestore Transaction (trừ/cộng ví, cập nhật mục tiêu, ghi sổ cái) |
 | BR-SALARY-01 | Dải chu kỳ lương tính chính xác [start, endExclusive) theo múi giờ tài chính |
 | BR-SALARY-02 | Tự động xử lý ngày cuối tháng ngắn hơn (leap year, 28/30/31 ngày) |

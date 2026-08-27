@@ -271,41 +271,12 @@ fun NotificationsScreen(
                         items = filteredList,
                         key = { it.id },
                     ) { noti ->
-                        val (swipeBgColor, swipeIcon, swipeText) = when (noti.type) {
-                            NotificationType.BUDGET_ALERT -> Triple(ExpenseRed, Icons.AutoMirrored.Filled.ArrowForward, "Xem ngân sách")
-                            NotificationType.GOAL_MILESTONE -> Triple(WarningAmber, Icons.AutoMirrored.Filled.ArrowForward, "Xem mục tiêu")
-                            NotificationType.TRANSACTION_SUMMARY -> Triple(FinluxCyan, Icons.AutoMirrored.Filled.ArrowForward, "Xem báo cáo")
-                            NotificationType.DEBT_DUE_ALERT -> Triple(FinluxPurple, Icons.AutoMirrored.Filled.ArrowForward, "Quản lý nợ")
-                            else -> Triple(Color(0xFFE11D48), Icons.Default.Delete, "Xóa")
-                        }
-
                         val dismissState = rememberSwipeToDismissBoxState(
                             positionalThreshold = { distance -> distance * 0.30f },
                             confirmValueChange = { value ->
                                 if (value == SwipeToDismissBoxValue.EndToStart) {
-                                    viewModel.markAsRead(noti.id)
-                                    when (noti.type) {
-                                        NotificationType.BUDGET_ALERT -> {
-                                            onNavigate?.invoke("budget")
-                                            false
-                                        }
-                                        NotificationType.GOAL_MILESTONE -> {
-                                            onNavigate?.invoke(noti.targetRoute?.ifBlank { "goals" } ?: "goals")
-                                            false
-                                        }
-                                        NotificationType.TRANSACTION_SUMMARY -> {
-                                            onNavigate?.invoke("reports")
-                                            false
-                                        }
-                                        NotificationType.DEBT_DUE_ALERT -> {
-                                            onNavigate?.invoke("debts")
-                                            false
-                                        }
-                                        else -> {
-                                            viewModel.deleteNotification(noti.id)
-                                            true
-                                        }
-                                    }
+                                    viewModel.deleteNotification(noti.id)
+                                    true
                                 } else {
                                     false
                                 }
@@ -320,7 +291,7 @@ fun NotificationsScreen(
                                 val isSwiping = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
                                 Surface(
                                     shape = RoundedCornerShape(18.dp),
-                                    color = if (isSwiping) swipeBgColor else Color.Transparent,
+                                    color = if (isSwiping) ExpenseRed else Color.Transparent,
                                     modifier = Modifier.fillMaxSize(),
                                 ) {
                                     Row(
@@ -331,14 +302,14 @@ fun NotificationsScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Icon(
-                                            imageVector = swipeIcon,
-                                            contentDescription = swipeText,
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Xóa",
                                             tint = Color.White,
                                             modifier = Modifier.size(24.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
                                         Text(
-                                            text = swipeText,
+                                            text = "Xóa",
                                             style = MaterialTheme.typography.titleMedium.copy(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 15.sp,
@@ -353,11 +324,32 @@ fun NotificationsScreen(
                                 notification = noti,
                                 onCardClick = {
                                     viewModel.markAsRead(noti.id)
-                                    if (noti.type == NotificationType.REMINDER) {
-                                        if (noti.isPaid) {
-                                            selectedNotificationForDetail = noti
-                                        } else if (noti.amount.value > 0L) {
-                                            selectedNotificationForPay = noti
+                                    when (noti.type) {
+                                        NotificationType.BUDGET_ALERT -> {
+                                            onNavigate?.invoke("budget")
+                                        }
+                                        NotificationType.GOAL_MILESTONE -> {
+                                            onNavigate?.invoke(noti.targetRoute?.ifBlank { "goals" } ?: "goals")
+                                        }
+                                        NotificationType.TRANSACTION_SUMMARY -> {
+                                            onNavigate?.invoke("reports")
+                                        }
+                                        NotificationType.DEBT_DUE_ALERT -> {
+                                            onNavigate?.invoke("debts")
+                                        }
+                                        NotificationType.REMINDER -> {
+                                            if (noti.isPaid) {
+                                                selectedNotificationForDetail = noti
+                                            } else if (noti.amount.value > 0L) {
+                                                selectedNotificationForPay = noti
+                                            } else {
+                                                onNavigate?.invoke("reminders")
+                                            }
+                                        }
+                                        NotificationType.SYSTEM -> {
+                                            if (!noti.targetRoute.isNullOrBlank()) {
+                                                onNavigate?.invoke(noti.targetRoute)
+                                            }
                                         }
                                     }
                                 },

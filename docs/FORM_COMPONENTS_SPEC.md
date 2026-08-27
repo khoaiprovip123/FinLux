@@ -141,18 +141,20 @@ ErgonomicInputRow(
 
 ---
 
-### 5️⃣ `ErgonomicCompactAmountCard` — Thẻ Ô Nhập / Hiển Thị Tiền Gọn Gàng (Custom Color & Quick Chips)
-Thẻ Surface bo góc 18dp độc lập, dùng để hiển thị hoặc nhập số tiền thu gọn với typography 16sp Bold, tự động preview định dạng phân tách hàng nghìn VNĐ trong thời gian thực, có chữ mờ (placeholder), dải chip gợi ý nhân số tiền thông minh (vd: gõ 3 -> [3k, 30k, 300k, 3000k]) và cho phép tùy biến màu sắc số tiền theo từng màn hình. Không có dòng chữ phụ bên dưới.
+### 5️⃣ `ErgonomicCompactAmountCard` — Thẻ Ô Nhập / Hiển Thị Tiền Gọn Gàng (Custom Color & Focus-driven Quick Chips)
+Thẻ Surface bo góc 18dp độc lập, dùng để hiển thị hoặc nhập số tiền thu gọn với typography 16sp Bold, tự động preview định dạng phân tách hàng nghìn VNĐ trong thời gian thực, có chữ mờ (placeholder), dải chip gợi ý nhân số tiền thông minh (vd: gõ 3 -> [3k, 30k, 300k, 3000k]) **chỉ hiển thị mượt mà khi người dùng focus vào ô nhập**, viền sáng highlight tinh tế khi active và cho phép tùy biến màu sắc số tiền theo từng màn hình. Không có dòng chữ phụ bên dưới.
 
 * **Đặc điểm thiết kế:**
-  - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)`.
+  - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)` (tự động chuyển sang viền sáng `amountColor` khi ô nhập được focus).
   - **Label ở trên:** Chữ viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt).
   - **Ô nhập / hiển thị tiền:** Typography 16sp Bold, tự format VNĐ khi gõ (vd: `15.000 ₫`), có placeholder xám mờ khi chưa nhập.
-  - **Dải Chip Gợi Ý Thông Minh (`showSuggestions = true` mặc định):**
+  - **Dải Chip Gợi Ý Thông Minh Theo Focus (`AnimatedVisibility` khi `isFocused = true`):**
+    * Khi chưa focus vào ô nhập: Card giữ kích thước siêu gọn gàng, không hiển thị dải chip chiếm diện tích.
+    * Khi người dùng tap/focus vào ô nhập: Dải chip mượt mà mở rộng với hiệu ứng fade & expand.
     * Khi gõ số (vd: gõ `3`), hệ thống tự sinh dải chip nhân hàng nghìn `[3k, 30k, 300k, 3000k]`.
     * Khi bấm vào chip, số tiền trong ô nhập được thay thế tức thì (`300000` -> `300.000 ₫`).
     * Khi chưa gõ số nào, gợi ý các mốc phổ biến `[50k, 100k, 200k, 500k, 1000k, 2000k, 5000k]`.
-    * Cho phép tùy biến ẩn/hiện (`showSuggestions = false` khi nằm trong layout hẹp 2 cột).
+    * Cho phép tùy biến ẩn hoàn toàn gợi ý (`showSuggestions = false` khi nằm trong layout hẹp 2 cột).
   - **Tùy biến màu (`amountColor: Color`):** Hỗ trợ truyền bất kỳ màu nào (Xanh dương cho gốc, Tím cho lãi, Đỏ cho chi tiêu, Xanh lá cho thu nhập...).
   - **Chế độ Read-only hoặc Input:** Tự động chuyển sang chế độ chỉ đọc nếu không truyền `onAmountChange` hoặc set `isReadOnly = true`.
   - **Linh hoạt bố cục:** Dùng độc lập 1 card full width hoặc xếp 2 card cạnh nhau trong `Row` bằng `Modifier.weight(1f)`.
