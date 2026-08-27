@@ -84,8 +84,8 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
 import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.formatVndAmount
@@ -874,12 +874,13 @@ private fun QuickPayBottomSheet(
             }
 
             // 1. Amount Input Card
-            FinluxAmountInputCard(
+            ErgonomicCompactAmountCard(
                 label = "SỐ TIỀN THANH TOÁN",
-                amountDigits = amountText,
+                amountText = amountText,
                 onAmountChange = { amountText = it },
-                showQuickChips = true,
-                primaryColor = tokens.primary,
+                placeholder = "0",
+                amountColor = tokens.primary,
+                showSuggestions = true,
             )
 
             // 2. Source Wallet Selector Row

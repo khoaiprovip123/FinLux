@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
@@ -87,7 +88,6 @@ fun TransactionDetailSheet(
 ) {
     val tokens = LocalFinluxTokens.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
     val isIncome = transaction.type == TransactionType.INCOME
@@ -325,96 +325,75 @@ fun TransactionDetailSheet(
                 }
             }
 
-            // 4. Action Cards (Sửa & Xóa side-by-side)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                // Sửa Card
+            // 4. Action Cards (Khóa Sửa với Chuyển tiền / Đầy đủ Sửa & Xóa với Thu & Chi)
+            if (isTransfer) {
+                // Info Banner giải thích tính toàn vẹn 2 đầu ví
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = FinluxColors.TransferBlue.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, FinluxColors.TransferBlue.copy(alpha = 0.22f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = FinluxColors.TransferBlue.copy(alpha = 0.16f),
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = FinluxColors.TransferBlue,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Giao dịch chuyển tiền liên kết 2 ví",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = FinluxColors.TransferBlue,
+                            )
+                            Text(
+                                text = "Không thể chỉnh sửa đơn lẻ để bảo toàn số dư hai đầu ví. Bạn có thể xóa để hoàn tác cả cặp.",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.5.sp,
+                                    lineHeight = 14.sp,
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+
+                // Nút Xóa toàn chiều rộng cho Chuyển tiền
                 Surface(
                     shape = RoundedCornerShape(18.dp),
-                    color = tokens.primary.copy(alpha = 0.08f),
-                    border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.22f)),
+                    color = ExpenseRed.copy(alpha = 0.06f),
+                    border = BorderStroke(1.dp, ExpenseRed.copy(alpha = 0.18f)),
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxWidth()
                         .clip(RoundedCornerShape(18.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = ripple(bounded = true),
                         ) {
                             onDismiss()
-                            onEdit(transaction)
+                            onDelete(transaction)
                         },
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = tokens.primary.copy(alpha = 0.14f),
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Sửa",
-                                    tint = tokens.primary,
-                                    modifier = Modifier.size(17.dp),
-                                )
-                            }
-                        }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Chỉnh sửa giao dịch",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                color = tokens.primary,
-                                maxLines = 1,
-                            )
-                            Text(
-                                text = "Thay đổi số tiền, danh mục, ví, ngày...",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
-                                    lineHeight = 13.sp,
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
-                            )
-                        }
-
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(15.dp),
-                        )
-                    }
-                }
-
-                // Xóa Card
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = ExpenseRed.copy(alpha = 0.06f),
-                    border = BorderStroke(1.dp, ExpenseRed.copy(alpha = 0.18f)),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(18.dp))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(bounded = true),
-                        ) {
-                            showDeleteConfirm = true
-                        },
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Surface(
                             shape = CircleShape,
@@ -433,18 +412,18 @@ fun TransactionDetailSheet(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Xóa giao dịch này",
+                                text = "Xóa giao dịch chuyển tiền này",
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 12.5.sp,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
                                 color = ExpenseRed,
                                 maxLines = 1,
                             )
                             Text(
-                                text = "Xóa vĩnh viễn giao dịch khỏi FinLux",
+                                text = "Xóa cả cặp giao dịch và hoàn lại số dư cho cả hai ví",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
+                                    fontSize = 10.5.sp,
                                     lineHeight = 13.sp,
                                 ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -458,6 +437,144 @@ fun TransactionDetailSheet(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.size(15.dp),
                         )
+                    }
+                }
+            } else {
+                // Giao dịch Thu / Chi thông thường: Hiển thị đầy đủ cả 2 nút Sửa và Xóa
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Sửa Card
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = tokens.primary.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.22f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(bounded = true),
+                            ) {
+                                onDismiss()
+                                onEdit(transaction)
+                            },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = tokens.primary.copy(alpha = 0.14f),
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Sửa",
+                                        tint = tokens.primary,
+                                        modifier = Modifier.size(17.dp),
+                                    )
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Chỉnh sửa giao dịch",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    color = tokens.primary,
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    text = "Thay đổi số tiền, danh mục, ví, ngày...",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        lineHeight = 13.sp,
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                )
+                            }
+
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.size(15.dp),
+                            )
+                        }
+                    }
+
+                    // Xóa Card
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = ExpenseRed.copy(alpha = 0.06f),
+                        border = BorderStroke(1.dp, ExpenseRed.copy(alpha = 0.18f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(bounded = true),
+                            ) {
+                                onDismiss()
+                                onDelete(transaction)
+                            },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = ExpenseRed.copy(alpha = 0.14f),
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.DeleteOutline,
+                                        contentDescription = "Xóa",
+                                        tint = ExpenseRed,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Xóa giao dịch này",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    color = ExpenseRed,
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    text = "Xóa vĩnh viễn giao dịch khỏi FinLux",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        lineHeight = 13.sp,
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                )
+                            }
+
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.size(15.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -487,18 +604,6 @@ fun TransactionDetailSheet(
                 )
             }
         }
-    }
-
-    if (showDeleteConfirm) {
-        DeleteTransactionConfirmDialog(
-            transaction = transaction,
-            onDismiss = { showDeleteConfirm = false },
-            onConfirm = {
-                showDeleteConfirm = false
-                onDismiss()
-                onDelete(transaction)
-            },
-        )
     }
 }
 
@@ -570,23 +675,32 @@ fun TransactionActionDialog(
 }
 
 /**
- * Confirmation dialog before deleting a transaction
+ * Confirmation dialog before deleting a transaction (with atomic cascade support for transfers)
  */
 @Composable
 fun DeleteTransactionConfirmDialog(
     transaction: FinanceTransaction,
+    relatedWallet: Wallet? = null,
     onDismiss: () -> Unit,
     onConfirm: (FinanceTransaction) -> Unit,
 ) {
+    val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
+    val titleText = if (isTransfer) "Xóa giao dịch chuyển tiền?" else "Xác nhận xóa giao dịch?"
+    val messageText = if (isTransfer) {
+        val destName = relatedWallet?.name ?: "ví liên kết"
+        "Bạn có chắc muốn xóa giao dịch chuyển tiền này? Thao tác này sẽ đồng thời xóa giao dịch đối ứng tại ví $destName và hoàn lại số dư cho cả hai ví."
+    } else {
+        "Giao dịch sẽ bị xóa khỏi hệ thống. Số dư ví liên quan sẽ được tự động hoàn lại tương ứng. Thao tác này không thể hoàn tác."
+    }
+    val confirmText = if (isTransfer) "Xóa cả cặp giao dịch" else "Xóa"
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Xác nhận xóa giao dịch?", fontWeight = FontWeight.Bold) },
-        text = {
-            Text("Giao dịch sẽ bị xóa khỏi hệ thống. Số dư ví liên quan sẽ được tự động hoàn lại tương ứng. Thao tác này không thể hoàn tác.")
-        },
+        title = { Text(titleText, fontWeight = FontWeight.Bold) },
+        text = { Text(messageText) },
         confirmButton = {
             TextButton(onClick = { onConfirm(transaction) }) {
-                Text("Xóa", color = ExpenseRed, fontWeight = FontWeight.Bold)
+                Text(confirmText, color = ExpenseRed, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

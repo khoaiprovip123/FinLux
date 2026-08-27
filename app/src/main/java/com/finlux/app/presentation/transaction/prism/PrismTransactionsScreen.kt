@@ -298,7 +298,9 @@ fun PrismTransactionsScreen(
             onDismiss = { viewingTransaction = null },
             onEdit = {
                 viewingTransaction = null
-                onEditTransaction?.invoke(tx)
+                if (tx.type != TransactionType.TRANSFER_OUT && tx.type != TransactionType.TRANSFER_IN) {
+                    onEditTransaction?.invoke(tx)
+                }
             },
             onDelete = {
                 viewingTransaction = null
@@ -321,7 +323,9 @@ fun PrismTransactionsScreen(
             onDismiss = { actionTransaction = null },
             onEdit = {
                 actionTransaction = null
-                onEditTransaction?.invoke(tx)
+                if (tx.type != TransactionType.TRANSFER_OUT && tx.type != TransactionType.TRANSFER_IN) {
+                    onEditTransaction?.invoke(tx)
+                }
             },
             onDelete = {
                 actionTransaction = null
@@ -352,6 +356,7 @@ fun PrismTransactionsScreen(
     pendingDelete?.let { tx ->
         DeleteTransactionConfirmDialog(
             transaction = tx,
+            relatedWallet = tx.relatedWalletId?.let { wallets[it] },
             onDismiss = { pendingDelete = null },
             onConfirm = {
                 viewModel.delete(tx)

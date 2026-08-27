@@ -515,6 +515,9 @@ class DemoFinluxRepository @Inject constructor(
     ): AppResult<Unit> = mutationMutex.withLock {
         val current = transactionState.value.firstOrNull { it.id == original.id }
             ?: return@withLock AppResult.Error("Không tìm thấy giao dịch")
+        if (current.type == TransactionType.TRANSFER_OUT || current.type == TransactionType.TRANSFER_IN) {
+            return@withLock AppResult.Error("Không thể chỉnh sửa giao dịch chuyển tiền. Vui lòng xóa và tạo lại giao dịch mới.")
+        }
         val walletSnapshot = walletState.value
         if (!changeWalletBalance(current.walletId, -balanceDelta(current)) ||
             !changeWalletBalance(updated.walletId, balanceDelta(updated))
@@ -551,17 +554,46 @@ class DemoFinluxRepository @Inject constructor(
         mutationMutex.withLock {
             val current = transactionState.value.firstOrNull { it.id == transaction.id }
                 ?: return@withLock AppResult.Error("Không tìm thấy giao dịch")
-            if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
-                return@withLock AppResult.Error("Không tìm thấy ví")
-            }
-            transactionState.value = transactionState.value.filterNot { it.id == current.id }
-            if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
-                val month = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
-                val periodKey = "month:$month"
-                budgetState.value = budgetState.value.map { b ->
-                    if (b.categoryId == current.categoryId && (b.periodKey == periodKey || b.periodKey == "MONTHLY_$month")) {
-                        b.copy(spentAmount = Money(b.spentAmount.value - current.amount.value))
-                    } else b
+
+            if (current.type == TransactionType.TRANSFER_OUT || current.type == TransactionType.TRANSFER_IN) {
+                val isOutgoing = current.type == TransactionType.TRANSFER_OUT
+                val sourceWalletId = if (isOutgoing) current.walletId else (current.relatedWalletId ?: return@withLock AppResult.Error("Không tìm thấy ví nguồn"))
+                val destinationWalletId = if (isOutgoing) (current.relatedWalletId ?: return@withLock AppResult.Error("Không tìm thấy ví đích")) else current.walletId
+                val transferAmount = current.amount.value
+
+                val destWallet = walletState.value.find { it.id == destinationWalletId } ?: return@withLock AppResult.Error("Không tìm thấy ví đích")
+                if (destWallet.type != WalletType.CARD && destWallet.balance.value < transferAmount) {
+                    return@withLock AppResult.Error("Số dư ví đích hiện tại không đủ để hoàn tác thu hồi khoản tiền đã nhận")
+                }
+
+                val walletSnapshot = walletState.value
+                if (!changeWalletBalance(sourceWalletId, transferAmount) || !changeWalletBalance(destinationWalletId, -transferAmount)) {
+                    walletState.value = walletSnapshot
+                    return@withLock AppResult.Error("Không thể hoàn tác số dư ví")
+                }
+
+                val counterpartId = if (current.id.endsWith("_out")) {
+                    current.id.removeSuffix("_out") + "_in"
+                } else if (current.id.endsWith("_in")) {
+                    current.id.removeSuffix("_in") + "_out"
+                } else null
+
+                transactionState.value = transactionState.value.filterNot {
+                    it.id == current.id || (counterpartId != null && it.id == counterpartId)
+                }
+            } else {
+                if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
+                    return@withLock AppResult.Error("Không tìm thấy ví")
+                }
+                transactionState.value = transactionState.value.filterNot { it.id == current.id }
+                if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
+                    val month = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
+                    val periodKey = "month:$month"
+                    budgetState.value = budgetState.value.map { b ->
+                        if (b.categoryId == current.categoryId && (b.periodKey == periodKey || b.periodKey == "MONTHLY_$month")) {
+                            b.copy(spentAmount = Money(b.spentAmount.value - current.amount.value))
+                        } else b
+                    }
                 }
             }
             AppResult.Success(Unit)

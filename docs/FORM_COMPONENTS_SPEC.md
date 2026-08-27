@@ -148,12 +148,16 @@ Thẻ Surface bo góc 18dp độc lập, dùng để hiển thị hoặc nhập 
   - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)` (tự động chuyển sang viền sáng `amountColor` khi ô nhập được focus).
   - **Label ở trên:** Chữ viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt).
   - **Ô nhập / hiển thị tiền:** Typography 16sp Bold, tự format VNĐ khi gõ (vd: `15.000 ₫`), có placeholder xám mờ khi chưa nhập.
-  - **Dải Chip Gợi Ý Thông Minh Theo Focus (`AnimatedVisibility` khi `isFocused = true`):**
+  - **Dải Chip Gợi Ý Tiền Tệ Thông Minh Decimal Magnitude Scaling (`AnimatedVisibility` khi `isFocused = true`):**
     * Khi chưa focus vào ô nhập: Card giữ kích thước siêu gọn gàng, không hiển thị dải chip chiếm diện tích.
     * Khi người dùng tap/focus vào ô nhập: Dải chip mượt mà mở rộng với hiệu ứng fade & expand.
-    * Khi gõ số (vd: gõ `3`), hệ thống tự sinh dải chip nhân hàng nghìn `[3k, 30k, 300k, 3000k]`.
-    * Khi bấm vào chip, số tiền trong ô nhập được thay thế tức thì (`300000` -> `300.000 ₫`).
-    * Khi chưa gõ số nào, gợi ý các mốc phổ biến `[50k, 100k, 200k, 500k, 1000k, 2000k, 5000k]`.
+    * **Thuật toán Decimal Magnitude Scaling**: Tự động sinh dải gợi ý $V = N \times 10^k$ từ 1.000đ đến 1.000.000.000đ:
+      - Ô rỗng/số 0: Danh sách 8 mốc mặc định chuẩn `[50k, 100k, 200k, 500k, 1M, 2M, 5M, 10M]`.
+      - Gõ `"3"` $\rightarrow$ `[3.000, 30.000, 300.000, 3.000.000, 30.000.000]`.
+      - Gõ `"35"` $\rightarrow$ `[3.500, 35.000, 350.000, 3.500.000, 35.000.000]` (bao gồm mốc x100 = 3.500).
+      - Gõ `"356"` $\rightarrow$ `[3.560, 35.600, 356.000, 3.560.000, 35.600.000]` (bao gồm mốc x10 = 3.560, x100 = 35.600).
+      - Gõ `"3568"` $\rightarrow$ `[35.680, 356.800, 3.568.000, 35.680.000]`.
+    * Khi bấm vào chip, số tiền trong ô nhập được cập nhật trực tiếp (`onValueChange`).
     * Cho phép tùy biến ẩn hoàn toàn gợi ý (`showSuggestions = false` khi nằm trong layout hẹp 2 cột).
   - **Tùy biến màu (`amountColor: Color`):** Hỗ trợ truyền bất kỳ màu nào (Xanh dương cho gốc, Tím cho lãi, Đỏ cho chi tiêu, Xanh lá cho thu nhập...).
   - **Chế độ Read-only hoặc Input:** Tự động chuyển sang chế độ chỉ đọc nếu không truyền `onAmountChange` hoặc set `isReadOnly = true`.
@@ -185,8 +189,15 @@ ErgonomicCompactAmountCard(
 ```
 
 * **Các màn hình đang kế thừa:**
+  - [`AddTransactionSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt) (Ô nhập số tiền giao dịch chính, hỗ trợ màu động `ExpenseRed` / `IncomeGreen`).
   - [`PrismBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt), [`ClassicBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt), [`ModernBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt) (Ô nhập hạn mức chi tiêu tháng).
-  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Ô trừ tiền gốc & Ô nhập tiền lãi phát sinh qua `PrincipalInterestSplitCard`).
+  - [`PrismWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt), [`ModernWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt), [`ClassicWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt) (Ô nhập số dư ví ban đầu/hiện tại & Ô nhập số tiền chuyển liên ví).
+  - [`GoalsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt) (Nạp/Rút tiền mục tiêu, Mục tiêu cần đạt & Tích lũy tháng trong `GoalEditor`).
+  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Tổng số tiền trả & Ô trừ tiền gốc / Ô nhập tiền lãi phát sinh qua `PrincipalInterestSplitCard`).
+  - [`AddEditDebtSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt) (Hạn mức/Vay gốc, Dư nợ hiện tại, Trả tối thiểu hàng tháng).
+  - [`SalaryCycleSettingsSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt) (Mức lương dự kiến mỗi kỳ).
+  - [`RemindersScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt) (Số tiền dự kiến trong nhắc nhở chi tiêu).
+  - [`NotificationsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt) (Số tiền thanh toán nhanh từ thông báo).
 
 ---
 
@@ -212,32 +223,17 @@ PrincipalInterestSplitCard(
 
 ---
 
-### 7️⃣ `FinluxAmountInputCard` — Hero Amount Input Card
-Card nhập số tiền lớn ở đầu modal với typography 32sp, format phân tách hàng nghìn tức thì và dải Quick Chips (+10k, +50k, +100k, +500k hoặc Tối thiểu, 50% nợ, Tất toán).
-
-* **Khởi tạo & Sử dụng:**
-```kotlin
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
-
-FinluxAmountInputCard(
-    label = "SỐ TIỀN THANH TOÁN",
-    amountDigits = amountText,
-    onAmountChange = { amountText = it },
-    showQuickChips = true,
-    primaryColor = tokens.primary,
-)
-```
-
----
-
 ## 📱 4. DANH SÁCH MÀN HÌNH ĐÃ KẾ THỪA BỘ COMPONENT CHUẨN
 
 | Màn hình / Modal | Component được áp dụng |
 | :--- | :--- |
-| **Thêm Giao Dịch (`AddTransactionSheet.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `FinluxAmountInputCard`, `ErgonomicInputRow` |
-| **Thanh Toán Nợ (`DebtPaymentSheet.kt`)** | `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
-| **Thêm / Sửa Nợ & Tín Dụng (`AddEditDebtSheet.kt`)** | Banner lịch nhắc nhở `Schedule`, `FinluxCategoryPickerBottomSheet` |
-| **Thêm / Sửa Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` (Quick Chips `.000`) |
+| **Thêm Giao Dịch (`AddTransactionSheet.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow` |
+| **Thanh Toán Nợ (`DebtPaymentSheet.kt`)** | `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicCompactAmountCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
+| **Thêm / Sửa Nợ & Tín Dụng (`AddEditDebtSheet.kt`)** | `ErgonomicCompactAmountCard` (3 trường tiền), `FinluxCategoryPickerBottomSheet` |
+| **Thêm / Sửa Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` (Smart Decimal Magnitude Scaling Chips) |
+| **Quản Lý Ví (`PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`)** | `ErgonomicCompactAmountCard` (Số dư ban đầu & Chuyển tiền liên ví), `FinluxWalletPickerBottomSheet` |
+| **Mục Tiêu Tài Chính (`GoalsScreen.kt`)** | `ErgonomicCompactAmountCard` (Nạp/Rút & Mục tiêu / Tích lũy tháng) |
 | **Nhắc Nhở Định Kỳ (`RemindersScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow`, Native `TimePickerDialog` |
-| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, Thẻ `NotificationItemCard` chuẩn Glass |
+| **Cài Đặt Lương (`SalaryCycleSettingsSheet.kt`)** | `ErgonomicCompactAmountCard` (Mức lương dự kiến) |
+| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, Thẻ `NotificationItemCard` chuẩn Glass |
 

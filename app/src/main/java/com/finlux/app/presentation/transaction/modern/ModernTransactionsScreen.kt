@@ -233,8 +233,10 @@ fun ModernTransactionsScreen(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(amountPrefix + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold)
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(onClick = { onEditTransaction?.invoke(transaction) }) {
-                                            Icon(Icons.Default.Edit, "Sửa giao dịch", tint = MaterialTheme.colorScheme.primary)
+                                        if (!isTransfer) {
+                                            IconButton(onClick = { onEditTransaction?.invoke(transaction) }) {
+                                                Icon(Icons.Default.Edit, "Sửa giao dịch", tint = MaterialTheme.colorScheme.primary)
+                                            }
                                         }
                                         IconButton(onClick = { pendingDelete = transaction }) {
                                             Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -273,7 +275,11 @@ fun ModernTransactionsScreen(
             wallet = wallets[tx.walletId],
             relatedWallet = wallets[tx.relatedWalletId],
             onDismiss = { viewingTransaction = null },
-            onEdit = { onEditTransaction?.invoke(it) },
+            onEdit = {
+                if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) {
+                    onEditTransaction?.invoke(it)
+                }
+            },
             onDelete = { pendingDelete = it },
         )
     }
@@ -286,7 +292,11 @@ fun ModernTransactionsScreen(
             relatedWallet = wallets[tx.relatedWalletId],
             onDismiss = { actionTransaction = null },
             onViewDetails = { viewingTransaction = it },
-            onEdit = { onEditTransaction?.invoke(it) },
+            onEdit = {
+                if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) {
+                    onEditTransaction?.invoke(it)
+                }
+            },
             onDelete = { pendingDelete = it },
         )
     }
@@ -294,6 +304,7 @@ fun ModernTransactionsScreen(
     pendingDelete?.let { transaction ->
         DeleteTransactionConfirmDialog(
             transaction = transaction,
+            relatedWallet = wallets[transaction.relatedWalletId],
             onDismiss = { pendingDelete = null },
             onConfirm = {
                 viewModel.delete(it)

@@ -144,6 +144,7 @@ Main flow:
   4. Hệ thống tạo 1 cặp giao dịch nội bộ (transfer_out ở ví nguồn, transfer_in ở ví đích) không tính vào báo cáo Thu/Chi tổng
 Business rule: BR-07: Giao dịch loại "transfer" không được cộng dồn vào tổng Thu/Chi trong báo cáo,
   chỉ ảnh hưởng số dư ví.
+  BR-07.1 (Tính bất biến & Xóa đối ứng nguyên tử): Giao dịch chuyển tiền (transfer_out / transfer_in) KHÔNG cho phép chỉnh sửa đơn lẻ nhằm bảo toàn tính toàn vẹn 2 đầu ví nguồn - đích và mốc thời gian. Khi người dùng xóa 1 giao dịch chuyển tiền, hệ thống bắt buộc thực thi trong 1 Firestore Transaction nguyên tử: xóa cả 2 bản ghi giao dịch (_out và _in), hoàn lại số dư ví nguồn (+amount) và thu hồi số dư ví đích (-amount).
 ```
 
 ### UC-14 & UC-15: Ngân sách & Cảnh báo

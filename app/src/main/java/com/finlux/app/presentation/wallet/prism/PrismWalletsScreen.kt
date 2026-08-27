@@ -474,12 +474,13 @@ fun PrismWalletsScreen(
 
                 // Ô nhập số tiền & Cảnh báo số dư
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    com.finlux.app.core.designsystem.component.FinluxAmountInputCard(
+                    ErgonomicCompactAmountCard(
                         label = "Số tiền chuyển",
-                        amountDigits = transferAmount,
+                        amountText = transferAmount,
                         onAmountChange = { transferAmount = it },
-                        quickAmounts = listOf(100_000L, 200_000L, 500_000L, 1_000_000L, 2_000_000L, 5_000_000L),
-                        primaryColor = tokens.primary,
+                        placeholder = "0",
+                        amountColor = tokens.primary,
+                        showSuggestions = true,
                     )
                     if (isInsufficientFunds && sourceWallet != null) {
                         Text(

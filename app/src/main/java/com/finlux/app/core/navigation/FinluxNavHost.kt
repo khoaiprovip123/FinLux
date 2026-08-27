@@ -246,7 +246,7 @@ fun FinluxNavHost(
                     onNotifications = { navController.navigate(Route.Notifications.value) },
                     onSelectTransaction = { viewingTransaction = it },
                     onActionTransaction = { actionTransaction = it },
-                    onEditTransaction = { editingTransaction = it },
+                    onEditTransaction = { if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) editingTransaction = it },
                 )
             }
             composable(Route.Transactions.value) {
@@ -254,7 +254,7 @@ fun FinluxNavHost(
                     onNavigate = navigateMain,
                     onAdd = { showQuickAdd = true },
                     onBack = navController::popBackStack,
-                    onEditTransaction = { editingTransaction = it },
+                    onEditTransaction = { if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) editingTransaction = it },
                 )
             }
             composable(Route.Reports.value) {
@@ -297,7 +297,7 @@ fun FinluxNavHost(
                     },
                     onSelectTransaction = { viewingTransaction = it },
                     onActionTransaction = { actionTransaction = it },
-                    onEditTransaction = { editingTransaction = it },
+                    onEditTransaction = { if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) editingTransaction = it },
                 )
             }
             composable(Route.Expense.value) {
@@ -310,7 +310,7 @@ fun FinluxNavHost(
                     },
                     onSelectTransaction = { viewingTransaction = it },
                     onActionTransaction = { actionTransaction = it },
-                    onEditTransaction = { editingTransaction = it },
+                    onEditTransaction = { if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) editingTransaction = it },
                 )
             }
             composable(Route.Notifications.value) {
@@ -352,7 +352,9 @@ fun FinluxNavHost(
                 onDismiss = { viewingTransaction = null },
                 onEdit = {
                     viewingTransaction = null
-                    editingTransaction = it
+                    if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) {
+                        editingTransaction = it
+                    }
                 },
                 onDelete = {
                     viewingTransaction = null
@@ -373,7 +375,9 @@ fun FinluxNavHost(
                 },
                 onEdit = {
                     actionTransaction = null
-                    editingTransaction = it
+                    if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) {
+                        editingTransaction = it
+                    }
                 },
                 onDelete = {
                     actionTransaction = null
@@ -384,6 +388,7 @@ fun FinluxNavHost(
         pendingDeleteTransaction?.let { tx ->
             DeleteTransactionConfirmDialog(
                 transaction = tx,
+                relatedWallet = allWallets[tx.relatedWalletId],
                 onDismiss = { pendingDeleteTransaction = null },
                 onConfirm = {
                     transactionsViewModel.delete(it)
