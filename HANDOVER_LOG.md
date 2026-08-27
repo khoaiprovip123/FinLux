@@ -3149,7 +3149,7 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 
 ---
 
-## [IN PROGRESS] Task: Commit và push bộ cải tiến Home/logo v1.11.9
+## [DONE] Task: Commit và push bộ cải tiến Home/logo v1.11.9
 
 **Ngày:** 2026-08-27
 
@@ -3168,9 +3168,11 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 - Unit test: **196 pass, 0 fail, 0 error, 0 skipped**.
 - APK debug: `app/build/outputs/apk/debug/app-debug.apk`.
 - Phạm vi commit loại trừ toàn bộ `graphify-out`.
+- Release commit: `fbba5d918faba55eca952fc293f50f96e74bf94c`.
+- Push `origin/main`: **SUCCESS**; SHA remote đã khớp SHA local sau push.
 
 ### Trạng thái
-`[IN PROGRESS]`
+`[DONE]`
 
 ---
 
