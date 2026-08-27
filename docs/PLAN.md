@@ -20,6 +20,7 @@
 - UC-07/08/09/10 CRUD + danh sách giao dịch (lọc/tìm kiếm)
 - UC-11 Quản lý danh mục
 - UC-12 Quản lý ví, UC-13 Chuyển tiền giữa ví
+- [DONE 2026-08-27] Danh mục 65 tổ chức VietQR + ví bổ sung, logo offline, tìm theo tên/mã/BIN dùng chung mọi theme
 - Đảm bảo BR-06, BR-14 (Firestore Transaction cho balance)
 - **Deliverable:** dùng được vòng đời giao dịch đầy đủ, số dư ví chính xác
 

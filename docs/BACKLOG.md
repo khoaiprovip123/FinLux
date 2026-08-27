@@ -4,6 +4,16 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-08-27] - Danh mục logo ngân hàng và ví điện tử Việt Nam
+
+- Đồng bộ snapshot 65 tổ chức từ VietQR API, gồm ngân hàng nội địa, ngân hàng số, chi nhánh ngân hàng nước ngoài và các ví có BIN VietQR.
+- Bổ sung ZaloPay, VNPAY, ShopeePay, Payoo, 9Pay, Foxpay, VTC Pay, Apple Pay và PayPal.
+- Tải logo về tài nguyên cục bộ, kiểm tra ảnh hợp lệ và dùng chung qua `FinancialInstitutions.kt`.
+- Tìm kiếm theo tên, mã, BIN/alias; đã xử lý xung đột alias ngắn như `MB` trong `Techcombank`.
+- Có script `tools/sync-financial-institution-icons.ps1` và manifest nguồn để làm mới dữ liệu.
+
+---
+
 ## 📌 [FEATURE PLAN] - Quản Lý Nợ: Lịch Sử Thanh Toán Chi Tiết & Hệ Thống Nhắc Nợ Đến Hạn
 
 > **Tên Kế Hoạch:** `[DEBT ENHANCEMENT] Kế hoạch triển khai Lịch sử thanh toán nợ (History & Filters) và Bật/Tắt thông báo nhắc nợ đến hạn (Due Date Reminders)`  

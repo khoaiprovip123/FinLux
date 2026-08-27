@@ -133,6 +133,23 @@ Business rule:
   BR-06: Xóa/sửa giao dịch phải cập nhật lại số dư ví tương ứng (cộng/trừ ngược)
 ```
 
+### UC-12: Quản lý ví/tài khoản và chọn tổ chức tài chính
+```
+Actor: User
+Precondition: Đã đăng nhập
+Main flow:
+  1. Vào Cài đặt → Ví & tài khoản → Thêm ví hoặc chỉnh sửa ví hiện có
+  2. Tìm/chọn ngân hàng, ngân hàng số hoặc ví điện tử trong danh mục tổ chức tài chính
+  3. Hệ thống tự điền tên, loại ví, màu gợi ý và logo thương hiệu cục bộ
+  4. Người dùng nhập số dư và lưu ví theo luồng quản lý ví hiện hành
+Alternative flow:
+  A1. Không chọn mẫu → cho phép nhập tên tùy ý và dùng icon loại ví mặc định
+  A2. Tên ví cũ không khớp hoàn toàn → đối chiếu theo tên ngắn, mã ngân hàng, BIN và alias dài nhất
+Business rule:
+  BR-12A: Danh mục tổ chức tài chính là dữ liệu tham chiếu cục bộ, không làm thay đổi schema/số dư ví.
+  BR-12B: Logo phải có fallback theo WalletType và không phụ thuộc mạng khi hiển thị.
+```
+
 ### UC-13: Chuyển tiền giữa các ví
 ```
 Actor: User

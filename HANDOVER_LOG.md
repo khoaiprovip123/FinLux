@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.3 (versionCode 137)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Fix CI Lint, Khôi Phục KPI PDF & Dọn Dẹp Conflict Marker (100% Unit Tests PASS, lintDebug 0 errors)
+- **Phiên bản hiện tại:** v1.11.7 (versionCode 141)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam (100% Unit Tests PASS)
 
 ### [Task-CI-FIX-LINT-PDF-v1.11.3] — Sửa Lỗi CI Lint UnusedMaterial3ScaffoldPaddingParameter, Khôi Phục KPI Tổng Chi Tiêu PDF & Dọn Dẹp Conflict Marker
 - **Status**: `[DONE]`
@@ -2924,7 +2924,7 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 4. **Kích hoạt Auth Provider trên Firebase Console:**
    - Vào **Authentication** -> **Sign-in method** -> Bật provider **Email/Password** và **Google**.
 
-## [IN PROGRESS] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam
+## [DONE] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam
 
 **Ngày:** 2026-08-27
 
@@ -2941,7 +2941,35 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 - `tools/sync-financial-institution-icons.ps1`: công cụ đồng bộ lại logo có kiểm tra lỗi.
 - `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `docs/BACKLOG.md`, `docs/UI_SPEC.md`: đồng bộ đặc tả.
 
+### Kết quả thực hiện
+- VietQR API trả về 65 tổ chức; tải và xác thực thành công 65/65 logo.
+- Bổ sung 4 logo app 512×512 (Payoo, 9Pay, Foxpay, VTC Pay), tái sử dụng 5 vector ví đã có.
+- Catalog công khai có 75+ lựa chọn, logo offline đầy đủ cho mọi mục Bank/E-wallet.
+- Sửa thuật toán đối chiếu theo 2 pha (exact trước, alias dài nhất sau), loại lỗi `Techcombank` → `MB`.
+- Component logo lấy viền/chữ từ `LocalFinluxTokens`/`MaterialTheme`, tương thích Light/Dark/Prism/Classic/Modern.
+
+### Kết quả Unit Test, Build & ADB
+- `gradlew testDebugUnitTest`: **183/183 PASS**, 0 fail, 0 error, 0 skipped.
+- `gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+- Cài ADB: **Success** trên thiết bị `2107119DC (lisa)`.
+- Đọc lại package: `com.finlux.app`, `versionCode=140`, `versionName=1.11.6`.
+- Smoke launch: `com.finlux.app/.MainActivity` ở trạng thái `topResumedActivity`, không có AndroidRuntime crash.
+
+### Danh sách file đã thực sự chỉnh sửa
+- `app/src/main/java/com/finlux/app/core/designsystem/FinancialInstitutions.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/VietQrBankCatalog.kt`
+- `app/src/test/java/com/finlux/app/core/designsystem/FinancialInstitutionsTest.kt`
+- `app/src/main/res/drawable-nodpi/ic_vietqr_*.png` (65 file)
+- `app/src/main/res/drawable-nodpi/ic_ewallet_{payoo,9pay,foxpay,vtcpay}.png`
+- `tools/sync-financial-institution-icons.ps1`
+- `docs/data/vietqr-financial-institutions.json`
+- `docs/FINANCIAL_INSTITUTION_ASSETS.md`
+- `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `docs/BACKLOG.md`, `docs/UI_SPEC.md`
+- `CHANGELOG.md`, `HANDOVER_LOG.md`
+
 ### Trạng thái
-`[IN PROGRESS]`
+`[DONE]`
+
+---
 
 ---

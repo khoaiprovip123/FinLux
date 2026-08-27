@@ -273,6 +273,13 @@ LAYOUT:
 └─────────────────────────────────────┘
 ACTIONS: Tap hoặc vuốt phải → sửa; vuốt trái → xác nhận xóa; icon chuyển tiền → UC-13.
 Xóa vẫn chặn với ví mặc định hoặc ví đã có giao dịch để bảo toàn lịch sử.
+
+INSTITUTION PICKER:
+  - Dùng chung `InstitutionSelectorSection`/`InstitutionCatalogDialog` cho Classic, Modern và Prism.
+  - Bộ lọc: Tất cả | Ngân hàng | Ví điện tử | Tiền mặt & Tiết kiệm | Đầu tư & Thẻ.
+  - Tìm theo tên thương hiệu, tên pháp nhân, mã ngân hàng hoặc BIN VietQR.
+  - Logo ngân hàng/ví được đóng gói trong `drawable-nodpi`, hiển thị offline; fallback bằng icon WalletType.
+  - Logo giữ màu thương hiệu (`Color.Unspecified`); nền, viền, chữ và trạng thái chọn lấy từ theme token hiện hành.
 ```
 
 ## 8A. SCREEN: Thu nhập (Income)

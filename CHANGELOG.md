@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.11.7] - 2026-08-27
+### Added
+- Bộ 65 logo tổ chức tài chính từ VietQR API, đóng gói offline trong `drawable-nodpi`.
+- Logo và preset cho Payoo, 9Pay, Foxpay, VTC Pay; giữ các preset ZaloPay, VNPAY, ShopeePay, Apple Pay và PayPal.
+- Script đồng bộ `tools/sync-financial-institution-icons.ps1` cùng manifest nguồn có ngày cập nhật.
+
+### Changed
+- Mở rộng catalog dùng chung lên tối thiểu 75 ngân hàng/ví/tài khoản và áp dụng tự động cho các màn hình Ví Classic, Modern, Prism.
+- Tìm kiếm tổ chức hỗ trợ tên, mã ngân hàng, BIN và alias dài nhất; logo dùng màu gốc, viền/chữ kế thừa theme token.
+
+### Fixed
+- Ngăn tên `Techcombank` bị nhận nhầm thành `MBBank` do alias ngắn `MB` xuất hiện bên trong chuỗi.
+
 ## [1.11.6] - 2026-08-27
 ### Changed (Unified Standard Amount Input to ErgonomicCompactAmountCard)
 - **Chuẩn hóa 100% các ô nhập tiền tệ sang `ErgonomicCompactAmountCard` trên toàn bộ ứng dụng**:

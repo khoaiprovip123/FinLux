@@ -24,6 +24,8 @@ users/{uid}
   │    ├─ color: string
   │    ├─ isDefault: boolean
   │    └─ createdAt: timestamp
+  │         -- Logo không lưu vào Firestore. UI đối chiếu wallet.name với catalog VietQR cục bộ;
+  │            ví nhập tự do dùng fallback theo WalletType để giữ tương thích dữ liệu cũ.
   │
   ├─ categories/{categoryId}
   │    ├─ name: string
