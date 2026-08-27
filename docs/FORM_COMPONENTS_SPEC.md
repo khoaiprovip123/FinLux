@@ -148,12 +148,16 @@ Thẻ Surface bo góc 18dp độc lập, dùng để hiển thị hoặc nhập 
   - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)` (tự động chuyển sang viền sáng `amountColor` khi ô nhập được focus).
   - **Label ở trên:** Chữ viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt).
   - **Ô nhập / hiển thị tiền:** Typography 16sp Bold, tự format VNĐ khi gõ (vd: `15.000 ₫`), có placeholder xám mờ khi chưa nhập.
-  - **Dải Chip Gợi Ý Thông Minh Theo Focus (`AnimatedVisibility` khi `isFocused = true`):**
+  - **Dải Chip Gợi Ý Tiền Tệ Thông Minh Decimal Magnitude Scaling (`AnimatedVisibility` khi `isFocused = true`):**
     * Khi chưa focus vào ô nhập: Card giữ kích thước siêu gọn gàng, không hiển thị dải chip chiếm diện tích.
     * Khi người dùng tap/focus vào ô nhập: Dải chip mượt mà mở rộng với hiệu ứng fade & expand.
-    * Khi gõ số (vd: gõ `3`), hệ thống tự sinh dải chip nhân hàng nghìn `[3k, 30k, 300k, 3000k]`.
-    * Khi bấm vào chip, số tiền trong ô nhập được thay thế tức thì (`300000` -> `300.000 ₫`).
-    * Khi chưa gõ số nào, gợi ý các mốc phổ biến `[50k, 100k, 200k, 500k, 1000k, 2000k, 5000k]`.
+    * **Thuật toán Decimal Magnitude Scaling**: Tự động sinh dải gợi ý $V = N \times 10^k$ từ 1.000đ đến 1.000.000.000đ:
+      - Ô rỗng/số 0: Danh sách 8 mốc mặc định chuẩn `[50k, 100k, 200k, 500k, 1M, 2M, 5M, 10M]`.
+      - Gõ `"3"` $\rightarrow$ `[3.000, 30.000, 300.000, 3.000.000, 30.000.000]`.
+      - Gõ `"35"` $\rightarrow$ `[3.500, 35.000, 350.000, 3.500.000, 35.000.000]` (bao gồm mốc x100 = 3.500).
+      - Gõ `"356"` $\rightarrow$ `[3.560, 35.600, 356.000, 3.560.000, 35.600.000]` (bao gồm mốc x10 = 3.560, x100 = 35.600).
+      - Gõ `"3568"` $\rightarrow$ `[35.680, 356.800, 3.568.000, 35.680.000]`.
+    * Khi bấm vào chip, số tiền trong ô nhập được cập nhật trực tiếp (`onValueChange`).
     * Cho phép tùy biến ẩn hoàn toàn gợi ý (`showSuggestions = false` khi nằm trong layout hẹp 2 cột).
   - **Tùy biến màu (`amountColor: Color`):** Hỗ trợ truyền bất kỳ màu nào (Xanh dương cho gốc, Tím cho lãi, Đỏ cho chi tiêu, Xanh lá cho thu nhập...).
   - **Chế độ Read-only hoặc Input:** Tự động chuyển sang chế độ chỉ đọc nếu không truyền `onAmountChange` hoặc set `isReadOnly = true`.

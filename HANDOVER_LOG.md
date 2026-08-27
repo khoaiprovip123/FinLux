@@ -1,8 +1,84 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.2 (versionCode 136)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Zero-Config Theme Inheritance & Theme Synchronization (100% Unit Tests PASS, APK assembleDebug OK)
+- **Phiên bản hiện tại:** v1.11.5 (versionCode 139)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Upgraded Smart Amount Suggestions (Decimal Magnitude Scaling, 100% Unit Tests PASS)
+
+### [Task-SMART-AMOUNT-SUGGESTIONS-v1.11.5] — Nâng Cấp Thuật Toán Gợi Ý Tiền Tệ Thông Minh Cho ErgonomicCompactAmountCard
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. `FinluxFormComponents.kt`:
+     - Cấu trúc lại hàm `generateAmountSuggestions` theo cơ chế Decimal Magnitude Scaling.
+     - Sinh các mốc `V = N * (10^k)` trong khoảng thực tế từ 1.000đ đến 1.000.000.000đ.
+     - Hỗ trợ chính xác các mốc: rỗng/0 -> mảng mặc định 8 mốc; "3" -> 3k..30M; "35" -> 3.5k..35M; "356" -> 3.56k..35.6M; "3568" -> 35.68k..356.8M.
+  2. Viết mới `AmountSuggestionsTest.kt` kiểm thử 100% các kịch bản input.
+  3. Bump version lên `1.11.5` (versionCode 139) trong `app/build.gradle.kts`.
+  4. Chạy `gradlew testDebugUnitTest` đạt 100% PASS và nạp APK lên thiết bị qua ADB.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble & Install: `.\scripts\build_and_install.ps1` -> Đang chuẩn bị nạp.
+- **Files Modified/Created**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (MODIFIED - Cập nhật thuật toán Decimal Magnitude Scaling)
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountSuggestionsTest.kt` (NEW - 6 test cases bao phủ 100% kịch bản)
+  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.5, versionCode 139)
+  - `CHANGELOG.md` (MODIFIED - Ghi log v1.11.5)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi log task)
+
+### [Task-FIX-TRANSFER-DELETION-v1.11.4] — Sửa Lỗi Thứ Tự Đọc/Ghi Firestore Transaction & Tối Ưu Luồng Xóa Cặp
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. `FirebaseTransactionRepository.kt`:
+     - Tuân thủ 100% quy tắc Firestore Transaction (All reads before all writes).
+     - Đưa toàn bộ `atomic.get()` (`sourceDoc`, `destDoc`, `counterpartDoc`) lên trước mọi lệnh `atomic.delete()` và `atomic.update()`.
+  2. `TransactionDetailSheet.kt`:
+     - Dọn sạch mã trùng lặp, tối ưu thao tác xóa chỉ qua 1 Hộp thoại xác nhận duy nhất chứa đầy đủ thông báo hoàn tiền 2 đầu ví.
+  3. `FirebaseTransactionRepositoryTest.kt`:
+     - Thêm Unit Test tự động kiểm thử xóa cặp chuyển tiền và hoàn tác số dư ví.
+  4. Chạy 100% Unit Tests PASS, bump version `1.11.4` (versionCode 138) và nạp APK lên thiết bị.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble & Install: `.\scripts\build_and_install.ps1` -> Đang chuẩn bị nạp.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt` (MODIFIED - Đưa reads lên trước writes)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (MODIFIED - Dọn sạch duplicate và tối ưu nút xóa)
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt` (MODIFIED - Thêm unit test xóa cặp)
+  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.4, versionCode 138)
+  - `CHANGELOG.md` (MODIFIED - Ghi log v1.11.4)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi log task)
+
+### [Task-CASCADE-ATOMIC-TRANSFER-DELETION-v1.11.3] — Xóa Đối Ứng Cả Cặp Giao Dịch Chuyển Tiền & Khóa Sửa Chuyển Tiền
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tầng Repository (`FirebaseTransactionRepository.kt` & `DemoFinluxRepository.kt`):
+     - Khi xóa `TRANSFER_OUT` hoặc `TRANSFER_IN`, tự động tìm và xóa luôn bản ghi đối ứng `_in` hoặc `_out` trong 1 Firestore Transaction duy nhất.
+     - Hoàn tác số dư cả 2 ví: Cộng lại ví nguồn (`+amount`), trừ thu hồi ví đích (`-amount`).
+     - Khóa chặn gọi update đối với giao dịch chuyển tiền.
+  2. Tầng Giao diện (`TransactionDetailSheet.kt`):
+     - Ẩn nút "Chỉnh sửa giao dịch" khi `isTransfer == true`, hiển thị Info Banner bảo vệ số dư.
+     - Cập nhật Confirm Dialog xóa cặp hiển thị tên ví nhận và cảnh báo hoàn tiền cả hai ví.
+     - Bảo đảm 100% các giao dịch Thu nhập (`INCOME`) và Chi tiêu (`EXPENSE`) thông thường vẫn giữ nguyên đầy đủ 2 nút Sửa và Xóa.
+  3. Tầng Điều hướng & Màn hình (`FinluxNavHost.kt`, `PrismTransactionsScreen.kt`, `ModernTransactionsScreen.kt`, `ClassicTransactionsScreen.kt`):
+     - Chặn `onEditTransaction` và ẩn swipe-to-edit với giao dịch chuyển tiền.
+  4. Cập nhật `docs/BA_SPEC.md` bổ sung quy tắc `BR-07.1`, bump version `v1.11.3` (versionCode 137), chạy 100% Unit Tests PASS và nạp APK lên thiết bị.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble & Install: `.\scripts\build_and_install.ps1` -> **SUCCESS** (APK nạp thành công lên thiết bị).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt` (MODIFIED - Xóa cascade cặp nguyên tử và chặn update transfer)
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (MODIFIED - Cập nhật logic xóa cặp và chặn update transfer cho demo)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (MODIFIED - Khóa nút Sửa, Info banner, Confirm dialog xóa cặp)
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt` (MODIFIED - Lọc guard onEditTransaction và pass relatedWallet vào dialog)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (MODIFIED - Guard onEdit và pass relatedWallet)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt` (MODIFIED - Ẩn swipe edit icon và pass relatedWallet)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt` (MODIFIED - Ẩn edit icon và pass relatedWallet)
+  - `docs/BA_SPEC.md` (MODIFIED - Bổ sung BR-07.1)
+  - `app/build.gradle.kts` (MODIFIED - Bump version lên 1.11.3, versionCode 137)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.3)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi nhận trạng thái hoàn tất)
+
 
 ### [Task-ZERO-CONFIG-THEME-INHERITANCE-v1.11.2] — Khắc Phục Triệt Để Lỗi Lệch Theme & Thiết Lập Zero-Config Theme Inheritance
 - **Status**: `[DONE]`

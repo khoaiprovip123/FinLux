@@ -449,6 +449,86 @@ class FirebaseTransactionRepositoryTest {
         verify { atomicTx.delete(transactionDocRef) }
     }
 
+    @Test
+    fun `deleteWithBalanceUpdate cascades deletion of transfer pair and restores balances for both wallets`() = runTest {
+        val uid = "test_uid"
+        every { auth.currentUser } returns user
+        every { user.uid } returns uid
+
+        val userDocRef: DocumentReference = mockk()
+        val transactionsColl: CollectionReference = mockk()
+        val walletsColl: CollectionReference = mockk()
+        val outTxDocRef: DocumentReference = mockk(relaxed = true)
+        val inTxDocRef: DocumentReference = mockk(relaxed = true)
+        val srcWalletRef: DocumentReference = mockk(relaxed = true)
+        val dstWalletRef: DocumentReference = mockk(relaxed = true)
+
+        val outTxSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val inTxSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val srcWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val dstWalletSnapshot: DocumentSnapshot = mockk(relaxed = true)
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("transactions") } returns transactionsColl
+        every { userDocRef.collection("wallets") } returns walletsColl
+        every { transactionsColl.document("tx123_out") } returns outTxDocRef
+        every { transactionsColl.document("tx123_in") } returns inTxDocRef
+        every { walletsColl.document("wallet_src") } returns srcWalletRef
+        every { walletsColl.document("wallet_dst") } returns dstWalletRef
+
+        // Outgoing transfer stored document
+        every { outTxSnapshot.id } returns "tx123_out"
+        every { outTxSnapshot.getLong("amount") } returns 300_000L
+        every { outTxSnapshot.getString("type") } returns "transfer_out"
+        every { outTxSnapshot.getString("categoryId") } returns null
+        every { outTxSnapshot.getString("walletId") } returns "wallet_src"
+        every { outTxSnapshot.getString("relatedWalletId") } returns "wallet_dst"
+        every { outTxSnapshot.getString("note") } returns "Chuyển tiền"
+        every { outTxSnapshot.getString("receiptImageUrl") } returns null
+        every { outTxSnapshot.getTimestamp("date") } returns fixedTimestamp
+        every { outTxSnapshot.getTimestamp("createdAt") } returns fixedTimestamp
+        every { outTxSnapshot.getTimestamp("updatedAt") } returns fixedTimestamp
+
+        every { inTxSnapshot.exists() } returns true
+        every { srcWalletSnapshot.exists() } returns true
+        every { srcWalletSnapshot.getLong("balance") } returns 1_000_000L
+        every { dstWalletSnapshot.exists() } returns true
+        every { dstWalletSnapshot.getLong("balance") } returns 500_000L
+        every { dstWalletSnapshot.getString("type") } returns "cash"
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(outTxDocRef) } returns outTxSnapshot
+        every { atomicTx.get(inTxDocRef) } returns inTxSnapshot
+        every { atomicTx.get(srcWalletRef) } returns srcWalletSnapshot
+        every { atomicTx.get(dstWalletRef) } returns dstWalletSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
+        every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
+            transactionSlot.captured.apply(atomicTx)
+            Tasks.forResult<Any?>(null)
+        }
+
+        val txToDelete = sampleTransaction(
+            id = "tx123_out",
+            type = TransactionType.TRANSFER_OUT,
+            categoryId = null,
+            walletId = "wallet_src",
+            relatedWalletId = "wallet_dst",
+            amount = 300_000L,
+        )
+        val result = repository.deleteWithBalanceUpdate(txToDelete)
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+
+        // Verify source wallet balance refunded: 1_000_000 + 300_000 = 1_300_000
+        verify { atomicTx.update(srcWalletRef, match<Map<String, Any>> { it["balance"] == 1_300_000L }) }
+        // Verify destination wallet balance revoked: 500_000 - 300_000 = 200_000
+        verify { atomicTx.update(dstWalletRef, match<Map<String, Any>> { it["balance"] == 200_000L }) }
+        // Verify BOTH documents are deleted
+        verify { atomicTx.delete(outTxDocRef) }
+        verify { atomicTx.delete(inTxDocRef) }
+    }
+
     // ==========================================
     // TRANSFER BETWEEN WALLETS TESTS
     // ==========================================
@@ -590,15 +670,18 @@ class FirebaseTransactionRepositoryTest {
 
     private fun sampleTransaction(
         id: String = "",
-        categoryId: String = "cat_food",
+        type: TransactionType = TransactionType.EXPENSE,
+        categoryId: String? = "cat_food",
         walletId: String = "wallet_1",
+        relatedWalletId: String? = null,
         amount: Long = 100_000L,
     ) = FinanceTransaction(
         id = id,
         amount = Money(amount),
-        type = TransactionType.EXPENSE,
+        type = type,
         categoryId = categoryId,
         walletId = walletId,
+        relatedWalletId = relatedWalletId,
         note = "Ăn trưa",
         date = fixedInstant,
     )

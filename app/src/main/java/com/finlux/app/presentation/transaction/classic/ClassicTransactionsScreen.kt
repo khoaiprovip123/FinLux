@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.FilterChip
@@ -266,8 +267,8 @@ fun ClassicTransactionsScreen(
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                IconButton(onClick = { actionTransaction = transaction }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Tùy chọn", modifier = Modifier.size(16.dp))
+                                IconButton(onClick = { if (isTransfer) viewingTransaction = transaction else actionTransaction = transaction }, modifier = Modifier.size(28.dp)) {
+                                    Icon(if (isTransfer) Icons.Default.Info else Icons.Default.Edit, contentDescription = if (isTransfer) "Chi tiết" else "Tùy chọn", modifier = Modifier.size(16.dp))
                                 }
                                 IconButton(onClick = { pendingDelete = transaction }, modifier = Modifier.size(28.dp)) {
                                     Icon(Icons.Default.DeleteOutline, contentDescription = "Xóa", modifier = Modifier.size(16.dp))
@@ -304,7 +305,11 @@ fun ClassicTransactionsScreen(
             wallet = wallets[tx.walletId],
             relatedWallet = wallets[tx.relatedWalletId],
             onDismiss = { viewingTransaction = null },
-            onEdit = { onEditTransaction?.invoke(it) },
+            onEdit = {
+                if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) {
+                    onEditTransaction?.invoke(it)
+                }
+            },
             onDelete = { pendingDelete = it },
         )
     }
@@ -317,7 +322,11 @@ fun ClassicTransactionsScreen(
             relatedWallet = wallets[tx.relatedWalletId],
             onDismiss = { actionTransaction = null },
             onViewDetails = { viewingTransaction = it },
-            onEdit = { onEditTransaction?.invoke(it) },
+            onEdit = {
+                if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) {
+                    onEditTransaction?.invoke(it)
+                }
+            },
             onDelete = { pendingDelete = it },
         )
     }
@@ -325,6 +334,7 @@ fun ClassicTransactionsScreen(
     pendingDelete?.let { transaction ->
         DeleteTransactionConfirmDialog(
             transaction = transaction,
+            relatedWallet = wallets[transaction.relatedWalletId],
             onDismiss = { pendingDelete = null },
             onConfirm = {
                 viewModel.delete(it)

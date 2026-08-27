@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.11.5] - 2026-08-27
+### Enhanced (Smart Decimal Magnitude Scaling Amount Suggestions)
+- **Nâng cấp thuật toán gợi ý tiền tệ thông minh (`generateAmountSuggestions` trong `FinluxFormComponents.kt`)**:
+  * Chuyển đổi sang cơ chế **Decimal Magnitude Scaling**, tự động sinh dải gợi ý $V = N \times 10^k$ từ 1.000đ đến 1.000.000.000đ.
+  * Phản ánh chính xác thói quen nhập tiền thực tế tại Việt Nam:
+    - Ô rỗng/số 0: Danh sách 8 mốc mặc định chuẩn `[50k, 100k, 200k, 500k, 1M, 2M, 5M, 10M]`.
+    - Gõ `"3"` $\rightarrow$ `[3.000, 30.000, 300.000, 3.000.000, 30.000.000]`.
+    - Gõ `"35"` $\rightarrow$ `[3.500, 35.000, 350.000, 3.500.000, 35.000.000]` (bao gồm mốc x100 = 3.500).
+    - Gõ `"356"` $\rightarrow$ `[3.560, 35.600, 356.000, 3.560.000, 35.600.000]` (bao gồm mốc x10 = 3.560, x100 = 35.600).
+    - Gõ `"3568"` $\rightarrow$ `[35.680, 356.800, 3.568.000, 35.680.000]`.
+- **Bổ sung bộ Unit Test tự động (`AmountSuggestionsTest.kt`)**:
+  * Kiểm thử toàn diện 100% các kịch bản input từ rỗng, số lẻ, số hàng nghìn đến số lớn chạm ngưỡng 1 tỷ.
+
+## [1.11.4] - 2026-08-27
+### Fixed (Firestore Transaction Read/Write Order & Streamlined Deletion Flow)
+- **Khắc phục triệt để lỗi không xóa được cặp chuyển tiền (`FirebaseTransactionRepository.kt`)**:
+  * Sửa lỗi vi phạm quy tắc Firestore Transaction: Đưa 100% các lệnh đọc `atomic.get()` (ví nguồn, ví đích, bản ghi đối ứng `counterpartDoc`) lên trước toàn bộ các lệnh ghi `atomic.delete()` và `atomic.update()`, triệt tiêu lỗi runtime exception khiến Firestore rollback giao dịch.
+- **Tối ưu luồng xác nhận xóa mượt mà (`TransactionDetailSheet.kt`)**:
+  * Dọn sạch mã nguồn trùng lặp và loại bỏ việc hiện 2 lần hộp thoại xác nhận xóa.
+  * Thao tác bấm nút xóa trên BottomSheet sẽ mở trực tiếp Hộp thoại xác nhận duy nhất với đầy đủ thông tin ví liên kết và hoàn tiền cả hai đầu.
+- **Bổ sung Unit Test tự động (`FirebaseTransactionRepositoryTest.kt`)**:
+  * Thêm test case `deleteWithBalanceUpdate cascades deletion of transfer pair and restores balances for both wallets` xác nhận toàn vẹn 100% logic xóa cặp.
+
+## [1.11.3] - 2026-08-27
+### Fixed (Cascade Atomic Transfer Deletion & Transfer Edit Lock)
+- **Xóa đối ứng cả cặp giao dịch chuyển tiền nguyên tử (Cascade Atomic Deletion - `FirebaseTransactionRepository.kt` & `DemoFinluxRepository.kt`)**:
+  * Khi xóa bất kỳ 1 trong 2 giao dịch chuyển tiền (`TRANSFER_OUT` hoặc `TRANSFER_IN`), hệ thống tự động tìm bản ghi đối ứng `_in` hoặc `_out` và thực hiện trong 1 Firestore Transaction duy nhất.
+  * Tự động hoàn tác số dư cả 2 ví: Cộng lại ví nguồn (`+amount`), trừ thu hồi ví đích (`-amount`), và xóa sạch cả 2 bản ghi, triệt tiêu 100% rủi ro giao dịch mồ côi làm sai lệch tổng tài sản.
+- **Khóa chỉnh sửa giao dịch chuyển tiền giữa các ví (Transfer Edit Lock)**:
+  * Ẩn nút "Chỉnh sửa giao dịch" trong `TransactionDetailSheet.kt` khi xem chi tiết chuyển tiền và bổ sung thẻ thông báo bảo vệ dữ liệu 2 đầu ví.
+  * Chặn gọi form sửa tại `FinluxNavHost.kt` và vô hiệu hóa các action vuốt sửa trên `PrismTransactionsScreen`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`.
+  * Khóa chặn cập nhật giao dịch chuyển tiền ở tầng repository (`updateWithBalanceAdjustment`).
+  * **Đảm bảo toàn vẹn**: 100% các giao dịch Thu nhập (`INCOME`) và Chi tiêu (`EXPENSE`) thông thường vẫn được chỉnh sửa và xóa bình thường không bị ảnh hưởng.
+- **Nâng cấp Hộp thoại xác nhận xóa cặp (`DeleteTransactionConfirmDialog`)**:
+  * Hiển thị rõ tên ví nhận đối ứng và cảnh báo hoàn lại tiền cho cả 2 ví, nút bấm chuyển thành *"Xóa cả cặp giao dịch"* (màu đỏ).
+- **Quy chuẩn tài liệu đặc tả (`docs/BA_SPEC.md`)**:
+  * Bổ sung quy tắc nghiệp vụ `BR-07.1` (Tính bất biến & Xóa đối ứng nguyên tử).
+
 ## [1.11.2] - 2026-08-27
 ### Fixed (Theme Synchronization & Zero-Config Theme Inheritance)
 - **Khắc phục triệt để lỗi Header/TopBar bị biến thành màu trắng đục ở Dark Mode (`StyleBackdrop.kt`)**:

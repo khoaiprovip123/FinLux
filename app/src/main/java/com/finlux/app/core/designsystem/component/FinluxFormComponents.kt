@@ -277,10 +277,15 @@ fun ErgonomicInputRow(
 }
 
 /**
- * Helper to generate smart amount multiplier suggestions based on user raw input.
- * Formats suggestions using .000 (up to millions) e.g., 3 -> [3.000, 30.000, 300.000, 3.000.000, 30.000.000].
+ * Helper to generate smart amount multiplier suggestions based on Decimal Magnitude Scaling.
+ * - Empty / 0: Standard preset list [50.000, 100.000, 200.000, 500.000, 1.000.000, 2.000.000, 5.000.000, 10.000.000]
+ * - Non-zero N: Dynamically scales N * (10^k) within realistic bounds (1.000đ to 1.000.000.000đ), up to 5-6 chips.
+ *   e.g. 3 -> [3.000, 30.000, 300.000, 3.000.000, 30.000.000]
+ *   e.g. 35 -> [3.500, 35.000, 350.000, 3.500.000, 35.000.000]
+ *   e.g. 356 -> [3.560, 35.600, 356.000, 3.560.000, 35.600.000]
+ *   e.g. 3568 -> [35.680, 356.800, 3.568.000, 35.680.000]
  */
-private fun generateAmountSuggestions(rawInput: String): List<Pair<String, String>> {
+internal fun generateAmountSuggestions(rawInput: String): List<Pair<String, String>> {
     val digitsOnly = rawInput.filter { it.isDigit() }
     val baseNumber = digitsOnly.toLongOrNull() ?: 0L
 
@@ -297,28 +302,37 @@ private fun generateAmountSuggestions(rawInput: String): List<Pair<String, Strin
         )
     }
 
-    // Strip trailing zeros if user typed full thousand multiples (e.g. 360000 -> 360)
-    val effectiveBase = when {
-        baseNumber >= 1_000_000L && baseNumber % 1_000_000L == 0L -> baseNumber / 1_000_000L
-        baseNumber >= 100_000L && baseNumber % 1_000L == 0L -> baseNumber / 1_000L
-        baseNumber >= 10_000L && baseNumber % 1_000L == 0L -> baseNumber / 1_000L
-        baseNumber >= 1_000L && baseNumber % 1_000L == 0L -> baseNumber / 1_000L
-        else -> baseNumber
+    val minTarget = 1_000L
+    val maxLimit = 1_000_000_000L // 1 tỷ VNĐ
+    val maxChips = 5
+
+    // Starting power of 10 based on digit length to scale from thousands up to millions/billions
+    val startK = when {
+        baseNumber < 10L -> 3      // e.g. 3 -> 3.000 (3 * 10^3)
+        baseNumber < 100L -> 2     // e.g. 35 -> 3.500 (35 * 10^2)
+        baseNumber < 1_000L -> 1   // e.g. 356 -> 3.560 (356 * 10^1)
+        else -> 1                  // e.g. 3568 -> 35.680 (3568 * 10^1)
     }
 
-    val multipliers = listOf(1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L)
-    val maxLimit = 100_000_000L // Gợi ý tối đa đến hàng triệu / chục triệu
-
     val list = mutableListOf<Pair<String, String>>()
-    for (m in multipliers) {
-        val targetVal = effectiveBase * m
-        if (targetVal <= maxLimit) {
+    var currentMultiplier = 1L
+    for (i in 0 until startK) {
+        currentMultiplier *= 10L
+    }
+
+    while (list.size < maxChips) {
+        // Prevent overflow before multiplying
+        if (maxLimit / currentMultiplier < baseNumber) break
+        val targetVal = baseNumber * currentMultiplier
+        if (targetVal in minTarget..maxLimit) {
             val formatted = formatAmountDigitsWithDots(targetVal.toString())
             list.add(formatted to targetVal.toString())
         }
+        if (maxLimit / 10L < currentMultiplier) break
+        currentMultiplier *= 10L
     }
 
-    if (list.isEmpty()) {
+    if (list.isEmpty() && baseNumber in minTarget..maxLimit) {
         val formatted = formatAmountDigitsWithDots(baseNumber.toString())
         list.add(formatted to baseNumber.toString())
     }
