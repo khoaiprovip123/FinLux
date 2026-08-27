@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.11.3] - 2026-08-27
+### Fixed
+- **Khắc phục lỗi CI Lint `UnusedMaterial3ScaffoldPaddingParameter` (`FinluxNavHost.kt`)**: Thêm `@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")` do Root Scaffold sử dụng kiến trúc trong suốt tràn viền (edge-to-edge full viewport) có chủ đích bỏ qua inner padding.
+- **Khôi phục hiển thị số tiền KPI Tổng Chi Tiêu trên PDF (`ReportExporter.kt`)**: Khôi phục lệnh vẽ số tiền `-formatVndAmount(summary.expense.value)` trong ô KPI Tổng Chi Tiêu.
+- **Dọn dẹp Git conflict marker (`HANDOVER_LOG.md`)**: Loại bỏ dòng conflict marker còn sót lại từ commit merge upstream.
+
 ## [1.11.2] - 2026-08-27
 ### Fixed (Theme Synchronization & Zero-Config Theme Inheritance)
 - **Khắc phục triệt để lỗi Header/TopBar bị biến thành màu trắng đục ở Dark Mode (`StyleBackdrop.kt`)**:

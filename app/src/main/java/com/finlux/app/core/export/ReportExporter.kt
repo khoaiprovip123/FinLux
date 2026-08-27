@@ -315,6 +315,8 @@ object ReportExporter {
 
         // Col 2: Tổng Chi Tiêu
         canvas.drawText("TỔNG CHI TIÊU", 225f, y + 20f, paintKpiLabel)
+        canvas.drawText("-${formatVndAmount(summary.expense.value)}", 225f, y + 43f, paintExpense)
+
         // Col 3: Thu Ròng (Dư/Thâm hụt)
         canvas.drawText("THU RÒNG (DƯ / THÂM HỤT)", 395f, y + 20f, paintKpiLabel)
         val paintNet = Paint().apply {

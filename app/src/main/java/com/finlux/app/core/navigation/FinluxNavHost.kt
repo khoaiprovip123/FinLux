@@ -65,9 +65,11 @@ import com.finlux.app.presentation.components.QuickAddSheet
 import com.finlux.app.presentation.receipt.ReceiptCaptureScreen
 import com.finlux.app.presentation.updater.AppUpdateDialog
 import com.finlux.app.presentation.updater.AppUpdateViewModel
+import android.annotation.SuppressLint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.math.abs
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun FinluxNavHost(
     selectedTheme: ThemePreference,

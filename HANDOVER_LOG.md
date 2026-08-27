@@ -1,8 +1,25 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.2 (versionCode 136)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Zero-Config Theme Inheritance & Theme Synchronization (100% Unit Tests PASS, APK assembleDebug OK)
+- **Phiên bản hiện tại:** v1.11.3 (versionCode 137)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Fix CI Lint, Khôi Phục KPI PDF & Dọn Dẹp Conflict Marker (100% Unit Tests PASS, lintDebug 0 errors)
+
+### [Task-CI-FIX-LINT-PDF-v1.11.3] — Sửa Lỗi CI Lint UnusedMaterial3ScaffoldPaddingParameter, Khôi Phục KPI Tổng Chi Tiêu PDF & Dọn Dẹp Conflict Marker
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thêm `@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")` tại `FinluxNavHost.kt` để giải quyết triệt để lỗi CI `:app:lintDebug` do Scaffold edge-to-edge transparent bỏ qua inner padding.
+  2. Khôi phục dòng `canvas.drawText("-${formatVndAmount(summary.expense.value)}", 225f, y + 43f, paintExpense)` tại `ReportExporter.kt` bị xóa nhầm, hiển thị chuẩn số tiền KPI Tổng Chi Tiêu trên PDF.
+  3. Dọn dẹp conflict marker `>>>>>>> upstream/main` sót lại tại dòng 405 `HANDOVER_LOG.md`.
+  4. Chạy toàn diện `gradlew testDebugUnitTest` & `gradlew lintDebug` bảo đảm 100% PASS, bump version lên v1.11.3 (versionCode 137), commit và push lên `origin/main`.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 actionable tasks, 0 failure, 0 error).
+  * Lint: `gradlew lintDebug` -> **100% PASS** (0 errors, 45 warnings, 1 hint).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/core/export/ReportExporter.kt`
+  - `HANDOVER_LOG.md`
+  - `CHANGELOG.md`
+  - `app/build.gradle.kts`
 
 ### [Task-ZERO-CONFIG-THEME-INHERITANCE-v1.11.2] — Khắc Phục Triệt Để Lỗi Lệch Theme & Thiết Lập Zero-Config Theme Inheritance
 - **Status**: `[DONE]`
@@ -402,7 +419,6 @@
   - `CHANGELOG.md`
   - `HANDOVER_LOG.md`
 - **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**.
->>>>>>> upstream/main
 
 ### [Task-FEAT-Notification-SwipeNavigation] - Phân Tách Cử Chỉ Vuốt Trái Điều Hướng (Ngân Sách, Mục Tiêu, Báo Cáo, Nợ) & Chạm Đánh Dấu Đọc
 - **Status**: `[DONE]`
