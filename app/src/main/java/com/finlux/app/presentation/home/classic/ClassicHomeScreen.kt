@@ -105,7 +105,6 @@ fun ClassicHomeScreen(
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
-            bottomBar = { MainBottomBar(Route.Home.value, onNavigate, onAdd) },
             containerColor = Color.Transparent,
         ) { scaffoldPadding ->
             LazyColumn(

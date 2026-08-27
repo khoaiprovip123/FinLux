@@ -315,9 +315,7 @@ object ReportExporter {
 
         // Col 2: Tổng Chi Tiêu
         canvas.drawText("TỔNG CHI TIÊU", 225f, y + 20f, paintKpiLabel)
-        canvas.drawText("-${formatVndAmount(summary.expense.value)}", 225f, y + 43f, paintExpense)
-
-        // Col 3: Thu Ròng
+        // Col 3: Thu Ròng (Dư/Thâm hụt)
         canvas.drawText("THU RÒNG (DƯ / THÂM HỤT)", 395f, y + 20f, paintKpiLabel)
         val paintNet = Paint().apply {
             color = if (summary.net >= 0) Color.rgb(22, 163, 74) else Color.rgb(220, 38, 38)
@@ -332,7 +330,6 @@ object ReportExporter {
         // 3. Top Category Breakdown with Polished Progress Bars
         canvas.drawText("CƠ CẤU CHI TIÊU THEO DANH MỤC", 40f, y, paintSectionHeader)
         y += 14f
-
         val totalExpense = summary.expense.value
         val topCategories = expensesByCategory.take(5)
 

@@ -81,9 +81,11 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.transaction.DeleteTransactionConfirmDialog
+import com.finlux.app.presentation.transaction.TimePeriodFilter
 import com.finlux.app.presentation.transaction.TransactionActionDialog
 import com.finlux.app.presentation.transaction.TransactionDetailSheet
 import com.finlux.app.presentation.transaction.TransactionFilter
+import com.finlux.app.presentation.transaction.TransactionFilterBottomSheet
 import com.finlux.app.presentation.transaction.TransactionsViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -99,14 +101,24 @@ fun PrismTransactionsScreen(
     val transactions = viewModel.transactions.collectAsStateWithLifecycle().value
     val categories = viewModel.categories.collectAsStateWithLifecycle().value
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
+    val allCategories = viewModel.allCategoriesList.collectAsStateWithLifecycle().value
+    val allWallets = viewModel.allWalletsList.collectAsStateWithLifecycle().value
     val filter = viewModel.filter.collectAsStateWithLifecycle().value
-    val total = transactions.sumOf { it.amount.value }
+    val periodFilter = viewModel.periodFilter.collectAsStateWithLifecycle().value
+    val selectedWalletId = viewModel.walletFilter.collectAsStateWithLifecycle().value
+    val selectedCategoryId = viewModel.categoryFilter.collectAsStateWithLifecycle().value
+    val totalIncome = viewModel.totalIncome.collectAsStateWithLifecycle().value
+    val totalExpense = viewModel.totalExpense.collectAsStateWithLifecycle().value
+    val netCashFlow = viewModel.netCashFlow.collectAsStateWithLifecycle().value
+    val activeFilterCount = viewModel.activeFilterCount.collectAsStateWithLifecycle().value
+
     val snackbar = remember { SnackbarHostState() }
     val tokens = LocalFinluxTokens.current
 
     var viewingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
     var actionTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
     var pendingDelete by remember { mutableStateOf<FinanceTransaction?>(null) }
+    var showFilterSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
 
@@ -133,24 +145,45 @@ fun PrismTransactionsScreen(
                     color = tokens.onSurface,
                 )
 
-                IconButton(
-                    onClick = { /* Filter menu */ },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(tokens.surfaceSoft, CircleShape),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = "Bộ lọc",
-                        tint = tokens.onSurface,
-                        modifier = Modifier.size(20.dp),
-                    )
+                Box {
+                    IconButton(
+                        onClick = { showFilterSheet = true },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.15f) else tokens.surfaceSoft,
+                                CircleShape,
+                            ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Bộ lọc",
+                            tint = if (activeFilterCount > 0) tokens.primary else tokens.onSurface,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+
+                    if (activeFilterCount > 0) {
+                        Surface(
+                            shape = CircleShape,
+                            color = tokens.primary,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(18.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = activeFilterCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                    ),
+                                )
+                            }
+                        }
+                    }
                 }
-            }
-        },
-        bottomBar = {
-            if (isRootTab && onNavigate != null && onAdd != null) {
-                MainBottomBar(Route.Transactions.value, onNavigate, onAdd)
             }
         },
         containerColor = tokens.background,
@@ -213,7 +246,10 @@ fun PrismTransactionsScreen(
                 item {
                     PrismSummaryBentoBanner(
                         filter = filter,
-                        totalAmount = total,
+                        periodFilter = periodFilter,
+                        totalIncome = totalIncome,
+                        totalExpense = totalExpense,
+                        netCashFlow = netCashFlow,
                         itemCount = transactions.size,
                     )
                 }
@@ -295,6 +331,24 @@ fun PrismTransactionsScreen(
         )
     }
 
+    // Filter Bottom Sheet
+    if (showFilterSheet) {
+        TransactionFilterBottomSheet(
+            currentPeriod = periodFilter,
+            selectedWalletId = selectedWalletId,
+            selectedCategoryId = selectedCategoryId,
+            wallets = allWallets,
+            categories = allCategories,
+            onApply = { period, walletId, categoryId ->
+                viewModel.setPeriod(period)
+                viewModel.setWalletFilter(walletId)
+                viewModel.setCategoryFilter(categoryId)
+            },
+            onReset = { viewModel.resetFilters() },
+            onDismiss = { showFilterSheet = false },
+        )
+    }
+
     // Delete Confirmation Dialog
     pendingDelete?.let { tx ->
         DeleteTransactionConfirmDialog(
@@ -364,19 +418,30 @@ private fun PrismFilterPill(
 @Composable
 private fun PrismSummaryBentoBanner(
     filter: TransactionFilter,
-    totalAmount: Long,
+    periodFilter: TimePeriodFilter,
+    totalIncome: Long,
+    totalExpense: Long,
+    netCashFlow: Long,
     itemCount: Int,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
+    val periodSuffix = if (periodFilter == TimePeriodFilter.ALL) "" else " (${periodFilter.label})"
+    
     val summaryTitle = when (filter) {
-        TransactionFilter.ALL -> "Tổng giá trị giao dịch"
-        TransactionFilter.INCOME -> "Tổng thu trong kỳ"
-        TransactionFilter.EXPENSE -> "Tổng chi trong kỳ"
+        TransactionFilter.ALL -> "Dòng tiền ròng$periodSuffix"
+        TransactionFilter.INCOME -> "Tổng thu nhập$periodSuffix"
+        TransactionFilter.EXPENSE -> "Tổng chi tiêu$periodSuffix"
+    }
+
+    val displayAmount = when (filter) {
+        TransactionFilter.ALL -> (if (netCashFlow > 0) "+" else "") + formatVndAmount(netCashFlow)
+        TransactionFilter.INCOME -> "+" + formatVndAmount(totalIncome)
+        TransactionFilter.EXPENSE -> "-" + formatVndAmount(totalExpense)
     }
 
     val amountColor = when (filter) {
-        TransactionFilter.ALL -> Color(0xFF2563EB)
+        TransactionFilter.ALL -> if (netCashFlow >= 0) Color(0xFF2563EB) else Color(0xFFDC2626)
         TransactionFilter.INCOME -> Color(0xFF16A34A)
         TransactionFilter.EXPENSE -> Color(0xFFDC2626)
     }
@@ -428,47 +493,79 @@ private fun PrismSummaryBentoBanner(
                 // Left Column: Text & Amount
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Text(
                         text = summaryTitle,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF6B7280),
                         ),
                     )
 
                     // Extra Bold Amount
                     Text(
-                        text = formatVndAmount(totalAmount),
+                        text = displayAmount,
                         style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 32.sp,
+                            fontSize = 30.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.8).sp,
                         ),
                         color = amountColor,
                     )
 
-                    // Count of items pill
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                            contentDescription = null,
-                            tint = Color(0xFF9CA3AF),
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Text(
-                            text = "$itemCount giao dịch hiển thị",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                            color = Color(0xFF6B7280),
-                        )
+                    // Details Row (Income & Expense sub-pills or Item count)
+                    if (filter == TransactionFilter.ALL) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                text = "Thu: +${formatVndAmount(totalIncome)}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = Color(0xFF16A34A),
+                            )
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = Color(0xFF9CA3AF),
+                            )
+                            Text(
+                                text = "Chi: -${formatVndAmount(totalExpense)}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = Color(0xFFDC2626),
+                            )
+                        }
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                                contentDescription = null,
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Text(
+                                text = "$itemCount ${if (filter == TransactionFilter.INCOME) "khoản thu" else "khoản chi"}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                                color = Color(0xFF6B7280),
+                            )
+                        }
                     }
                 }
 

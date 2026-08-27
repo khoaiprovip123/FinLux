@@ -134,7 +134,6 @@ fun PrismHomeScreen(
                     .padding(horizontal = 20.dp),
             )
         },
-        bottomBar = { MainBottomBar(Route.Home.value, onNavigate, onAdd) },
         containerColor = tokens.background,
     ) { scaffoldPadding ->
         LazyColumn(

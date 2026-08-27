@@ -100,7 +100,6 @@ fun ModernReportsScreen(
                     actions = { IconButton(onClick = { showRangePicker = true }) { Icon(Icons.Default.FilterAlt, "Lọc báo cáo") } },
                 )
             },
-            bottomBar = { MainBottomBar(Route.Reports.value, onNavigate, onAdd) },
             containerColor = Color.Transparent,
         ) { padding ->
             Column(

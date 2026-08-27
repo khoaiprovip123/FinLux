@@ -1,22 +1,154 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.10.11 (versionCode 123)
+- **Phiên bản hiện tại:** v1.10.15 (versionCode 127)
 - **Trạng thái Build:** 🟢 100% tests & lint PASS.
 
-### [Task-FEAT-PDF-Exporter-Redesign] - Tái Thiết Kế Bảng Báo Cáo PDF Chuẩn Sao Kê & Sửa Lỗi Biểu Đồ Cơ Cấu Chi Tiêu
+### [Task-FEAT-PDF-Statement-Exporter-v1.10.15] - Tích Hợp Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng A4 & Tối Ưu CI Pipeline
 - **Status**: `[DONE]`
 - **Goal**:
-  1. Tái cấu trúc bảng giao dịch trong `ReportExporter.kt`: Table Header bo góc nền `#F1F5F9`, Zebra striping xen kẽ kèm đường kẻ ngang mỏng `0.5pt`, ô Danh mục/Ghi chú 2 dòng, `smartEllipsize` chống tràn cột Ví và căn lề phải tuyệt đối cho cột Số tiền.
-  2. Sửa lỗi vẽ thanh tiến độ Cơ cấu chi tiêu: Tách biệt rõ ràng tọa độ dòng chữ và thanh progress bar (cao 5pt bo góc 2.5pt), lấy đúng mã màu thực tế của danh mục.
-  3. Tối ưu Header KPI Box với border và typography sắc nét.
+  1. **Tái Cấu Trúc Bảng Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng (`ReportExporter.kt`)**:
+     - Thiết kế A4 chuẩn với Header Slate `#F1F5F9` bo góc 4pt, viền mảnh `0.5pt` `#E2E8F0`, phân chia nền Zebra Striping `#F8FAFC` và `#FFFFFF` xen kẽ.
+     - Phân bổ 4 cột dữ liệu: Cột 1 Thời gian `dd/MM/yyyy HH:mm`, Cột 2 Danh mục & Ghi chú (2 dòng có `smartEllipsize`), Cột 3 Ví thanh toán (smartEllipsize max 88pt), Cột 4 Số tiền (+ xanh / - đỏ, `formatVndAmount`, Align.RIGHT).
+     - Phân tách độc lập tọa độ Y dòng Text và thanh Progress Bar của mục "Cơ Cấu Chi Tiêu Theo Danh Mục", lấy màu chuẩn qua `parseColorHex`.
+     - Hộp KPI Summary Card và tự động phân trang đa trang (Multi-page Pagination).
+  2. **Tối Ưu Cấu Hình Build & CI Pipeline**:
+     - Nâng cấp JVM args trong `gradle.properties`: `-Xmx4g -XX:MaxMetaspaceSize=1g`.
+     - Xác minh 100% Unit Tests (`testDebugUnitTest`) và Android Lint (`lintDebug`) PASS.
+  3. **Đồng Bộ Tài Liệu Quy Chuẩn**:
+     - Bổ sung `UC-17` & `BR-11` vào `docs/BA_SPEC.md`.
+     - Bổ sung `SCREEN 19` vào `docs/UI_SPEC.md`.
+- **Files Modified/Created**:
+  - `app/src/main/java/com/finlux/app/core/export/ReportExporter.kt` (MODIFIED)
+  - `gradle.properties` (MODIFIED)
+  - `docs/BA_SPEC.md` (MODIFIED)
+  - `docs/UI_SPEC.md` (MODIFIED)
+  - `app/build.gradle.kts` (MODIFIED - Bump versionCode 127, versionName 1.10.15)
+  - `CHANGELOG.md` (MODIFIED)
+  - `HANDOVER_LOG.md` (MODIFIED)
+- **Verification**:
+  - `./gradlew.bat testDebugUnitTest` -> 100% PASS (34 actionable tasks).
+  - `./gradlew.bat lintDebug` -> 100% PASS (BUILD SUCCESSFUL).
+
+
+### [Task-FEAT-Vietnamese-Banks-EWallets-Presets-v1.10.14] - Bộ Nhận Diện Ngân Hàng & Ví Điện Tử Việt Nam (35+ Tổ Chức Tài Chính) & Chọn Nhanh Thiết Lập Ví
+- **Status**: `[DONE]`
+- **Goal**:
+  1. **Tạo bộ tài nguyên biểu tượng Vector Drawable thương hiệu**:
+     - Ngân hàng: Vietcombank, Techcombank, MB Bank, ACB, VPBank, BIDV, VietinBank, TPBank.
+     - Ví điện tử: MoMo, ZaloPay, Viettel Money, VNPay, ShopeePay, PayPal.
+     - Tài sản thông dụng: Tiền mặt, Sổ tiết kiệm.
+  2. **Xây dựng hệ thống dữ liệu & nhận diện tự động (`FinancialInstitutions.kt`)**:
+     - Danh mục 35+ ngân hàng, ví điện tử, tiền mặt, tiết kiệm, crypto, thẻ tín dụng.
+     - Nhận diện thông minh qua tên ví (`findInstitutionForWallet`) hoặc mã viết tắt.
+     - Composable `FinancialInstitutionLogo` hỗ trợ vector drawable hoặc monogram gradient dập nổi.
+     - UI Component `InstitutionSelectorSection` & `InstitutionCatalogDialog` chọn nhanh 1 chạm, tự điền tên, loại ví, màu sắc chủ đạo.
+  3. **Tích hợp đồng bộ toàn bộ màn hình**:
+     - Áp dụng trên 3 giao diện `PrismWalletsScreen`, `ClassicWalletsScreen`, `ModernWalletsScreen`.
+     - Áp dụng vào dialog chọn ví dùng chung `FinluxWalletPickerBottomSheet`.
+  4. **Kiểm thử & Xác minh**:
+     - Thêm bộ kiểm thử `FinancialInstitutionsTest.kt` kiểm tra mapping và danh mục.
+     - Chạy 100% test debug unit test PASS.
+- **Files Modified/Created**:
+  - `app/src/main/res/drawable/ic_bank_vietcombank.xml` (NEW)
+  - `app/src/main/res/drawable/ic_bank_techcombank.xml` (NEW)
+  - `app/src/main/res/drawable/ic_bank_mbbank.xml` (NEW)
+  - `app/src/main/res/drawable/ic_bank_acb.xml` (NEW)
+  - `app/src/main/res/drawable/ic_bank_vpbank.xml` (NEW)
+  - `app/src/main/res/drawable/ic_bank_bidv.xml` (NEW)
+  - `app/src/main/res/drawable/ic_bank_vietinbank.xml` (NEW)
+  - `app/src/main/res/drawable/ic_bank_tpbank.xml` (NEW)
+  - `app/src/main/res/drawable/ic_ewallet_momo.xml` (NEW)
+  - `app/src/main/res/drawable/ic_ewallet_zalopay.xml` (NEW)
+  - `app/src/main/res/drawable/ic_ewallet_viettelmoney.xml` (NEW)
+  - `app/src/main/res/drawable/ic_ewallet_vnpay.xml` (NEW)
+  - `app/src/main/res/drawable/ic_ewallet_shopeepay.xml` (NEW)
+  - `app/src/main/res/drawable/ic_ewallet_paypal.xml` (NEW)
+  - `app/src/main/res/drawable/ic_wallet_cash.xml` (NEW)
+  - `app/src/main/res/drawable/ic_wallet_savings.xml` (NEW)
+  - `app/src/main/java/com/finlux/app/core/designsystem/FinancialInstitutions.kt` (NEW)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (MODIFIED)
+  - `app/src/test/java/com/finlux/app/core/designsystem/FinancialInstitutionsTest.kt` (NEW)
+  - `app/build.gradle.kts` (MODIFIED)
+  - `CHANGELOG.md` (MODIFIED)
+
+### [Task-FEAT-Comprehensive-Reports-FixedBottomNav-v1.10.13] - Báo Cáo Đa Chiều (Vay Nợ, Tiết Kiệm, Ngân Sách, Tài Sản) & Cố Định Bottom Navigation Bar
+- **Status**: `[DONE]`
+- **Goal**:
+  1. **Bổ sung hệ thống báo cáo tài chính đa chiều toàn diện (8 Chuyên mục)**:
+     - **Báo cáo Vay & Nợ (Debts & Loans)**: Tổng dư nợ, tổng nợ gốc, tiền đã trả, tiền gốc/lãi thanh toán trong kỳ, và tiến độ hoàn thành từng khoản nợ.
+     - **Báo cáo Tiết kiệm & Tích lũy (Savings & Goals)**: Tỷ lệ tiết kiệm thực tế, tổng tích lũy, tiến độ hoàn thành các mục tiêu tài chính (`FinancialGoal`).
+     - **Báo cáo Ngân sách (Budgets)**: Tỷ lệ sử dụng hạn mức ngân sách, danh mục an toàn/cảnh báo/vượt hạn mức (đỏ).
+     - **Báo cáo Tài sản & Ví (Wallets & Net Worth)**: Tổng tài sản ròng (Net Worth = Tổng số dư ví - Tổng dư nợ), phân bổ tài sản theo loại ví (Tiền mặt, Ngân hàng, Tiết kiệm, Thẻ tín dụng, Đầu tư), dòng tiền thu/chi theo ví.
+     - **Báo cáo Thu chi, Danh mục và Xu hướng**: Donut chart cơ cấu chi tiêu và nguồn thu nhập.
+  2. **Cố định Bottom Navigation Bar khi vuốt chuyển tab**:
+     - Hoist `MainBottomBar` ra `Scaffold` gốc trong `FinluxNavHost.kt`.
+     - Loại bỏ `bottomBar` cục bộ trong từng màn hình để menu đáy hoàn toàn đứng yên khi vuốt ngang.
+  3. **Chuẩn hóa công thức tính trung bình thu/chi mỗi ngày**:
+     - Tính theo số ngày thực tế đã trôi qua trong kỳ (đến ngày hiện tại) thay vì chia cho cả 30-31 ngày trong tương lai.
 - **Files Modified**:
-  - `app/src/main/java/com/finlux/app/core/export/ReportExporter.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/prism/PrismReportsDataTest.kt`
   - `app/build.gradle.kts`
-  - `gradle.properties`
+  - `CHANGELOG.md`
+- **Test Results**: 100% Unit Tests Passed.
+
+### [Task-FEAT-TransactionHistory-NetCashFlow-Filters-FormEnlarge] - Thay "Tổng giá trị giao dịch" bằng "Dòng tiền ròng", Bộ Lọc Đa Chiều & Mở Rộng Form Nhập Liệu
+- **Status**: `[DONE]`
+- **Goal**:
+  1. **Thay thế "Tổng giá trị giao dịch" bằng "Dòng tiền ròng" (Net Cash Flow = Thu - Chi)**: Hiển thị số tiền ròng (+/-) rõ ràng kèm phân tích chi tiết phụ `Thu: +X • Chi: -Y` và số lượng giao dịch, áp dụng đồng bộ trên cả 3 giao diện `Prism`, `Classic`, `Modern`.
+  2. **Kích hoạt & nâng cấp Icon Bộ lọc trong Lịch sử giao dịch**:
+     - Mở `TransactionFilterBottomSheet` với bộ lọc đa chiều:
+       - **Kỳ báo cáo**: Tất cả, Tuần này, Tháng này, Tháng trước, Năm nay.
+       - **Ví**: Lọc theo từng ví cụ thể hoặc tất cả ví.
+       - **Danh mục**: Lọc theo từng danh mục cụ thể hoặc tất cả danh mục.
+     - Hiển thị Badge đếm số lượng bộ lọc đang kích hoạt trên TopBar.
+  3. **Mở rộng kích thước form nhập liệu và đưa ô Ghi chú xuống ngay dưới Số tiền**:
+     - Tăng cỡ chữ số tiền lên 38sp, ký hiệu ₫ 32sp, padding 18dp, phím tắt nhanh 13.5sp bold.
+     - Di chuyển ô Ghi chú lên vị trí ngay dưới thẻ nhập số tiền tại: `AddTransactionSheet` (Thêm/Sửa thu chi), `DebtPaymentSheet` (Thanh toán nợ), `PrismWalletsScreen` (Chuyển tiền giữa các ví).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionFilterBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `HANDOVER_LOG.md`
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**.
+
+### [Task-UI-AddTransactionSheet-Enhancements] - Tối Ưu UI Nhập Số Tiền & Chuyển Ô Ghi Chú Dưới Phần Tiền
+- **Status**: `[DONE]`
+- **Goal**:
+  1. Tăng kích thước khu vực nhập số tiền (Font size 38sp, ₫ 32sp) và các phím tắt nhanh (+10k, +50k, +100k, +500k) to rõ, dễ nhìn, dễ bấm.
+  2. Đưa mục **Ghi chú giao dịch** lên ngay bên dưới phần Số tiền để người dùng dễ dàng điền nội dung lý do thanh toán ngay khi vừa nhập tiền xong.
+  3. Mở rộng kích thước, padding và font chữ của `ErgonomicInputRow` để nhập liệu thuận tiện hơn.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`
+  - `app/build.gradle.kts`
   - `CHANGELOG.md`
   - `HANDOVER_LOG.md`
-- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**. Phiên bản v1.10.11 (versionCode 123) sẵn sàng nạp lên thiết bị.
+- **Result**: `gradlew testDebugUnitTest` ➡️ **BUILD SUCCESSFUL (100% tests PASS)**.
+>>>>>>> upstream/main
 
 ### [Task-FEAT-Notification-SwipeNavigation] - Phân Tách Cử Chỉ Vuốt Trái Điều Hướng (Ngân Sách, Mục Tiêu, Báo Cáo, Nợ) & Chạm Đánh Dấu Đọc
 - **Status**: `[DONE]`

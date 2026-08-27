@@ -278,7 +278,6 @@ fun SettingsScreen(
                     },
                 )
             },
-            bottomBar = { MainBottomBar("settings", onNavigate, onAdd) },
             containerColor = Color.Transparent,
         ) { padding ->
             LazyColumn(

@@ -1,20 +1,79 @@
 # Changelog
 
+## [1.10.15] - 2026-08-26
+### Added & Enhanced
+- **Tích Hợp & Nâng Cấp Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng A4 (`ReportExporter.kt`)**:
+  - **Bảng Sao Kê Tài Chính Tabular Layout**: Header Slate `#F1F5F9` bo góc 4pt, viền mảnh `0.5pt` `#E2E8F0`, phân chia nền Zebra Striping `#F8FAFC` và `#FFFFFF` xen kẽ.
+  - **Phân Bổ 4 Cột Dữ Liệu Tối Ưu**:
+    * Cột 1 (Thời gian): Hiển thị ngày và giờ chính xác `dd/MM/yyyy HH:mm` theo múi giờ hệ thống.
+    * Cột 2 (Danh mục & Ghi chú): Bố cục 2 dòng trong 1 ô (Tên danh mục bold `#1E293B` + Ghi chú font nhỏ `#64748B` có `smartEllipsize` chống tràn chữ).
+    * Cột 3 (Ví thanh toán): Căn trái kèm hàm `smartEllipsize` max 88pt chống lỗi cắt cụt chữ.
+    * Cột 4 (Số tiền): Căn lề phải (Align.RIGHT) khớp lề bảng, màu xanh `#16A34A` cho Thu và đỏ `#DC2626` cho Chi với hàm `formatVndAmount`.
+  - **Tối Ưu Phân Bổ Thanh Tiến Độ "Cơ Cấu Chi Tiêu Theo Danh Mục"**:
+    * Tách biệt độc lập tọa độ Y dòng Text và thanh Progress Bar (cao 5pt bo góc 2.5pt), triệt tiêu hoàn toàn hiện tượng thanh bar đè lên chân chữ.
+    * Tự động nhận diện và vẽ màu sắc chủ đạo theo danh mục (`parseColorHex`).
+  - **Summary KPI Card**: Bo góc 8pt với viền mảnh 0.8pt, hiển thị Tổng Thu Nhập, Tổng Chi Tiêu, và Thu Ròng (Dư/Thâm hụt).
+  - **Tự Động Phân Trang Đa Trang (Multi-page Pagination)**: Tự động ngắt trang khi vượt quá chiều cao A4 và vẽ lại Header bảng trên trang tiếp theo.
+- **Tối Ưu Hóa Cấu Hình Build & CI Pipeline**:
+  - Nâng cấp JVM args trong `gradle.properties`: `-Xmx4g -XX:MaxMetaspaceSize=1g`.
+  - Đảm bảo 100% Unit Tests (`testDebugUnitTest`) và Android Lint (`lintDebug`) vượt qua tất cả kiểm thử trên CI GitHub Actions.
+- **Đồng Bộ Tài Liệu Đặc Tả Quy Chuẩn**:
+  - Bổ sung `UC-17: Xuất báo cáo tài chính Excel / PDF` và quy tắc nghiệp vụ `BR-11` vào `docs/BA_SPEC.md`.
+  - Bổ sung `SCREEN 19: Bản In Báo Cáo PDF Chuẩn Sao Kê Tài Chính` vào `docs/UI_SPEC.md`.
+
+## [1.10.14] - 2026-08-26
+### Added
+- **Bộ nhận diện Ngân hàng & Ví điện tử Việt Nam (35+ Tổ chức Tài chính)**:
+  - Vector drawables & brand colors cho các ngân hàng: Vietcombank, Techcombank, MB Bank, ACB, VPBank, BIDV, VietinBank, TPBank...
+  - Vector drawables cho ví điện tử phổ biến: MoMo, ZaloPay, Viettel Money, VNPay, ShopeePay, PayPal...
+  - Bộ mẫu Tiền mặt, Sổ tiết kiệm, Thẻ tín dụng, Tài sản đầu tư, Tiền mã hóa (Crypto).
+  - Thanh chọn nhanh mẫu tổ chức tài chính (`InstitutionSelectorSection`) với bộ lọc danh mục và 1-tap autofill thông minh (tên ví, loại ví, màu sắc chủ đạo).
+  - Dialog tra cứu toàn diện 35+ ngân hàng và ví điện tử kèm công cụ tìm kiếm tức thì.
+  - Composable `FinancialInstitutionLogo` tự động nhận diện tên ví để hiển thị logo vector chính hãng hoặc monogram dập nổi Liquid Glass cao cấp.
+- **Tích hợp đồng bộ hệ sinh thái ví**:
+  - Áp dụng trên toàn bộ 3 phong cách giao diện: Prism, Classic, Modern.
+  - Áp dụng vào Modal Bottom Sheet chọn ví giao dịch dùng chung (`FinluxWalletPickerBottomSheet`).
+
+## [1.10.13] - 2026-08-26
+### Added
+- **Hệ thống Báo cáo Tài chính Đa Chiều Toàn Diện (8 Chuyên Mục Chuyên Sâu)**:
+  - **Báo cáo Vay & Nợ (Debts & Loans)**: Theo dõi tổng dư nợ gốc, tổng nợ ban đầu, tổng tiền đã trả, tiền lãi & gốc đã thanh toán trong kỳ, và tiến độ hoàn trả từng khoản nợ.
+  - **Báo cáo Tiết kiệm & Tích lũy (Savings & Goals)**: Tỷ lệ tiết kiệm thực tế (`(Thu - Chi)/Thu`), tổng tài sản đã tích lũy vào các mục tiêu, tiến độ hoàn thành các mục tiêu tài chính.
+  - **Báo cáo Ngân sách (Budgets)**: Tỷ lệ sử dụng hạn mức ngân sách, danh mục an toàn, cảnh báo vàng và cảnh báo đỏ vượt hạn mức.
+  - **Báo cáo Tài sản & Ví (Wallets & Net Worth)**: Tính toán Tài sản ròng (Net Worth = Tổng số dư ví - Tổng dư nợ), phân bổ cơ cấu tài sản theo loại ví (Tiền mặt, Ngân hàng, Tiết kiệm, Thẻ tín dụng, Đầu tư), dòng tiền thu/chi theo ví.
+  - **Báo cáo Thu & Chi & Danh mục**: Donut chart cơ cấu chi tiêu và nguồn thu nhập chi tiết.
+
+### Fixed & Changed
+- **Cố định Bottom Navigation Bar khi vuốt chuyển trang**:
+  - Đưa `MainBottomBar` ra ngoài `Scaffold` gốc trong `FinluxNavHost.kt`.
+  - Khi người dùng vuốt qua lại giữa Trang chủ, Giao dịch, Báo cáo, Cài đặt, thanh điều hướng đáy hoàn toàn đứng yên cố định, chỉ có nội dung trang trượt ngang mượt mà.
+- **Sửa công thức tính trung bình thu/chi mỗi ngày**:
+  - Tính dựa trên số ngày thực tế đã trôi qua trong kỳ (đến ngày hiện tại) thay vì chia cho cả 30-31 ngày trong tương lai làm giảm sai lệch số liệu.
+
+## [1.10.12] - 2026-08-26
+### Added
+- **Modal Bộ Lọc Giao Dịch Đa Chiều (`TransactionFilterBottomSheet`)**:
+  - Lọc theo kỳ thời gian linh hoạt: Tất cả, Tuần này, Tháng này, Tháng trước, Năm nay.
+  - Lọc theo từng Ví tài chính hoặc toàn bộ ví.
+  - Lọc theo từng Danh mục chi tiêu/thu nhập hoặc toàn bộ danh mục.
+  - Hiển thị Badge số lượng bộ lọc đang kích hoạt trên nút Bộ lọc TopBar.
+
+### Changed
+- **Nâng cấp `versionCode = 124` và `versionName = "1.10.12"`.**
+- **Thay thế "Tổng giá trị giao dịch" bằng "Dòng tiền ròng (Net Cash Flow)"**:
+  - Tính toán và hiển thị chính xác Dòng tiền ròng (Thu nhập - Chi tiêu) với màu sắc trực quan (+/-).
+  - Bổ sung thống kê chi tiết phụ: `Thu: +X • Chi: -Y` và tổng số giao dịch hiển thị, đồng bộ trên cả 3 giao diện `Prism`, `Classic`, `Modern`.
+- **Tối ưu trải nghiệm Form Nhập Liệu Toàn Diện**:
+  - Mở rộng kích thước số tiền (38sp, ₫ 32sp) và phím tắt nhanh trên mọi form (`FinluxAmountInputCard`).
+  - Đưa ô Ghi chú lên ngay dưới phần Số tiền ở tất cả các luồng: Thêm/Sửa giao dịch (`AddTransactionSheet`), Thanh toán nợ (`DebtPaymentSheet`), và Chuyển tiền giữa các ví (`PrismWalletsScreen`).
+
 ## [1.10.11] - 2026-08-26
 ### Changed
-- **Nâng cấp `versionCode = 123` và `versionName = "1.10.11"`.**
-- **Tái Cấu Trúc Bảng Báo Cáo PDF Chuẩn Sao Kê Ngân Hàng (`ReportExporter.kt`)**:
-  - **Table Header Banner**: Nền xám `#F1F5F9` bo góc 4pt với text SemiBold viết hoa màu `#475569`.
-  - **Zebra Striping & Border**: Nền trắng và xám siêu nhẹ `#F8FAFC` xen kẽ, kẻ viền ngang mỏng `0.5pt` (`#E2E8F0`) giữa các hàng.
-  - **Phân Bổ 4 Cột Dữ Liệu Tối Ưu**:
-    * Cột 1 (Ngày - 18%): Căn trái định dạng gọn `dd/MM/yyyy`.
-    * Cột 2 (Danh mục & Ghi chú - 42%): Bố cục 2 dòng (Dòng 1: Tên danh mục đậm `#1E293B`; Dòng 2: Ghi chú font nhỏ `#64748B`).
-    * Cột 3 (Ví - 18%): Căn trái kèm hàm `smartEllipsize` chống tràn và chống lỗi cắt cụt chữ.
-    * Cột 4 (Số tiền - 22%): Căn lề phải (Align Right) khớp sát lề bảng, màu xanh `#16A34A` cho Thu và đỏ `#DC2626` cho Chi.
-- **Sửa Lỗi Vẽ Thanh Tiến Độ "Cơ Cấu Chi Tiêu Theo Danh Mục"**:
-  - Tách biệt độc lập tọa độ dòng Text và thanh Progress Bar (cao 5pt bo góc 2.5pt), triệt tiêu hoàn toàn hiện tượng thanh bar đè lên chân chữ hoặc lấn sang danh mục kế tiếp.
-  - Tự động lấy mã màu chuẩn của từng danh mục (`item.category?.colorHex`).
-  - Tối ưu cấu trúc KPI Header Box với đường viền bo góc sắc nét.
+- **Tối ưu trải nghiệm Form Thêm/Sửa Giao Dịch**:
+  - Tăng kích thước vùng nhập số tiền (Font size 38sp, ₫ 32sp) và các phím tắt nhanh (+10k, +50k, +100k, +500k) to rõ, dễ quan sát và nhập liệu thuận tiện.
+  - Chuyển ô **Ghi chú giao dịch** lên ngay bên dưới phần Số tiền để người dùng dễ dàng điền lý do/nội dung thanh toán tức thì.
+  - Nâng cấp kích thước và padding ô nhập liệu `ErgonomicInputRow` thoáng đãng, dễ thao tác.
+>>>>>>> upstream/main
 
 ## [1.10.10] - 2026-08-26
 ### Changed

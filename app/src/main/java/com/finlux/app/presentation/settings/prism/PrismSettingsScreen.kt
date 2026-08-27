@@ -301,9 +301,6 @@ fun PrismSettingsScreen(
 
     Scaffold(
         topBar = { SettingsTitle() },
-        bottomBar = {
-            MainBottomBar(selectedRoute = "settings", onNavigate = onNavigate, onAdd = onAdd)
-        },
         containerColor = tokens.background,
     ) { padding ->
         LazyColumn(

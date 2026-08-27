@@ -11,7 +11,9 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,6 +40,7 @@ import com.finlux.app.presentation.auth.AuthScreen
 import com.finlux.app.presentation.auth.SplashScreen
 import com.finlux.app.presentation.budget.BudgetScreen
 import com.finlux.app.presentation.category.CategoriesScreen
+import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.HomeScreen
 import com.finlux.app.presentation.expense.ExpenseScreen
 import com.finlux.app.presentation.income.IncomeScreen
@@ -174,13 +177,29 @@ fun FinluxNavHost(
         }
     } else Modifier
 
-    Box(
+    val showRootBottomBar = currentRoute in MainSwipeRoutes
+
+    Scaffold(
+        bottomBar = {
+            if (showRootBottomBar && currentRoute != null) {
+                MainBottomBar(
+                    selectedRoute = currentRoute,
+                    onNavigate = navigateMain,
+                    onAdd = { showQuickAdd = true },
+                )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .then(mainSwipeModifier)
-    ) {
-        NavHost(
+            .then(mainSwipeModifier),
+    ) { scaffoldPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = scaffoldPadding.calculateBottomPadding()),
+        ) {
+            NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
             enterTransition = {
@@ -418,6 +437,7 @@ fun FinluxNavHost(
             onInstallDownloaded = { updateViewModel.installDownloadedApk(it) },
             onDismiss = { updateViewModel.dismissUpdate() },
         )
+        }
     }
 }
 
