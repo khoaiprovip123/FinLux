@@ -599,20 +599,30 @@ fun FinancialInstitutionLogo(
     val tokens = LocalFinluxTokens.current
     val bgHex = customColorHex ?: institution?.colorHex ?: "#3478F6"
     val bgColor = colorFromHex(bgHex)
+    val hasBrandLogo = institution?.iconRes != null
+    val backgroundModifier = if (hasBrandLogo) {
+        Modifier.background(tokens.brandLogoSurface)
+    } else {
+        Modifier.background(
+            Brush.linearGradient(
+                colors = listOf(
+                    bgColor.copy(alpha = 0.95f),
+                    bgColor.copy(alpha = 0.75f),
+                )
+            )
+        )
+    }
 
     Box(
         modifier = modifier
             .size(size)
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        bgColor.copy(alpha = 0.95f),
-                        bgColor.copy(alpha = 0.75f),
-                    )
-                )
-            )
-            .border(1.dp, tokens.border, shape),
+            .then(backgroundModifier)
+            .border(
+                width = 1.dp,
+                color = if (hasBrandLogo) tokens.brandLogoBorder else tokens.border,
+                shape = shape,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (institution?.iconRes != null) {

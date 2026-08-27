@@ -272,6 +272,7 @@ Main flow:
      bình quân ngày, cao nhất, thấp nhất, số giao dịch và tỷ trọng từng danh mục
   4. User nhấn "+ Thêm" để mở form giao dịch ở trạng thái Thu nhập
 Business rule: Các giao dịch transfer_in không được tính là thu nhập (BR-07).
+Presentation note: KPI Home chỉ co cỡ chữ theo độ dài chuỗi hiển thị; giá trị và phép tính không bị làm tròn hoặc thay đổi.
 ```
 
 ### UC-23: Xem tổng hợp chi tiêu theo tháng
@@ -329,7 +330,8 @@ Business rule:
 ```
 Actor: User
 Precondition: Đã đăng nhập
-Trigger: User vào Cài đặt -> "Tháng tài chính & Chu kỳ lương" hoặc bấm vào thẻ kỳ lương trên Trang chủ.
+Trigger: User vào Cài đặt -> "Tháng tài chính & Chu kỳ lương". Trang chủ vẫn tính KPI theo
+  cấu hình kỳ tài chính khi bật nhưng không hiển thị thẻ kỳ tài chính riêng.
 Main flow:
   1. App hiển thị màn hình cài đặt:
      - Bật/Tắt chu kỳ lương

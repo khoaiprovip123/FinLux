@@ -186,9 +186,14 @@ LAYOUT:
 ├───────────────────────────────────────────┤
 │ GradientHeroCard "Tổng tài sản": số dư, xu hướng, nút ẩn/hiện │
 ├───────────────────────────────────────────┤
-│ 3 KPI đều nhau: Thu tháng này | Chi tháng này | Ngân sách còn lại │
+│ Prism: 3 KPI đều nhau: Thu tháng này | Chi tháng này | Dòng tiền ròng │
+│   - Cùng chiều cao; icon, nhãn, số tiền và trạng thái căn giữa │
+│   - Số tiền co cỡ chữ theo ngưỡng độ dài nhưng giữ baseline cố định │
+│   - Dùng LiquidGlass REGULAR, chromatic rim và spring 0.975 khi chạm │
+│   - Không hiển thị thẻ "Kỳ tài chính" riêng trên Home │
 ├───────────────────────────────────────────┤
 │ GlassCard donut "Chi tiêu theo danh mục" + chú giải │
+│   - Chú giải mỗi danh mục dùng 2 dòng: tên; số tiền, tỷ trọng tách bên phải │
 │ Danh sách giao dịch gần đây                 │
 │   - Row: [icon danh mục] Tên danh mục | ghi chú | số tiền (+/- màu xanh/đỏ) │
 ├───────────────────────────────────────────┤
@@ -201,7 +206,7 @@ STATES:
 
 ACTIONS:
   - FAB "+" → menu tạo nhanh: Thêm Thu, Thêm Chi, Chuyển tiền, Quét hóa đơn, Thêm mục tiêu
-  - Tap KPI "Thu tháng này" → /income; tap KPI "Ngân sách còn lại" → /budget
+  - Tap KPI "Thu tháng này" → /income; "Chi tháng này" → /expense; "Dòng tiền ròng" → /reports
   - Tap giao dịch → /transaction/{id} (sửa)
   - Tap avatar → /profile
   - Tap thông báo → /notifications

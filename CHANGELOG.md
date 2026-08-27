@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.9] - 2026-08-27
+### Changed
+- Logo ngân hàng/ví có ảnh thương hiệu dùng nền trắng semantic và viền trung tính ở cả theme sáng/tối; monogram và icon dự phòng vẫn dùng accent gradient.
+- Bộ ba KPI Trang chủ Prism có cùng chiều cao, icon, nhãn, số tiền và trạng thái được căn giữa cân đối.
+- KPI và thẻ phân tích Home Prism dùng primitive Liquid Glass REGULAR với chromatic rim, ambient glow và spring khi chạm.
+- Số tiền KPI co cỡ chữ theo độ dài trên baseline cố định; năm lối tắt chia đều chiều rộng và tăng độ rõ của nhãn.
+- Chú giải biểu đồ tách tên danh mục và số tiền thành hai dòng, tỷ trọng hiển thị trong badge riêng.
+
+### Fixed
+- Ẩn thẻ `Kỳ tài chính` khỏi Trang chủ; cách tính KPI theo chu kỳ đã cấu hình vẫn được giữ nguyên.
+- Giảm chi tiết sparkle trên minh họa ví để không bị hiểu nhầm là nút thêm giao dịch.
+
 ## [1.11.8] - 2026-08-27
 ### Fixed & Enhanced (Financial Month / Salary Cycle Tech Debts & VietQR Offline Brand Catalog Integration)
 - **Nợ kỹ thuật 1: Đồng bộ hóa 100% số liệu Trang chủ theo Kỳ tài chính (`HomeViewModel.kt`)**:
@@ -277,8 +289,6 @@
   - Tăng kích thước vùng nhập số tiền (Font size 38sp, ₫ 32sp) và các phím tắt nhanh (+10k, +50k, +100k, +500k) to rõ, dễ quan sát và nhập liệu thuận tiện.
   - Chuyển ô **Ghi chú giao dịch** lên ngay bên dưới phần Số tiền để người dùng dễ dàng điền lý do/nội dung thanh toán tức thì.
   - Nâng cấp kích thước và padding ô nhập liệu `ErgonomicInputRow` thoáng đãng, dễ thao tác.
->>>>>>> upstream/main
-
 ## [1.10.10] - 2026-08-26
 ### Changed
 - **Nâng cấp `versionCode = 122` và `versionName = "1.10.10"`.**

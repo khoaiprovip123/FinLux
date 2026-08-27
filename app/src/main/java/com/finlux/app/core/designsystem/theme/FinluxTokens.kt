@@ -125,6 +125,9 @@ data class FinluxDesignTokens(
     val primary: Color,
     val primaryGradient: List<Color>,
     val heroGradient: List<Color>,
+    val onHero: Color = FinluxColors.SurfacePrimaryLight,
+    val brandLogoSurface: Color = FinluxColors.SurfacePrimaryLight,
+    val brandLogoBorder: Color = FinluxColors.BorderSoftLight,
     val cardRadius: Dp = 20.dp,
     val contentRadius: Dp = 16.dp,
     val glassAlpha: Float = 0.78f,
@@ -139,6 +142,8 @@ data class FinluxDesignTokens(
     val border: Color get() = if (isDark) FinluxColors.BorderSoftDark else FinluxColors.BorderSoftLight
     val textPrimary: Color get() = onSurface
     val textSecondary: Color get() = onSurfaceVariant
+    val onHeroMuted: Color get() = onHero.copy(alpha = 0.82f)
+    val heroGlassSurface: Color get() = onHero.copy(alpha = 0.18f)
 }
 
 // Prism Tokens (Soft Surface + Data-First + Minimal Glass)

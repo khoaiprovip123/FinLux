@@ -49,6 +49,14 @@ class FinluxDesignSystemTest {
     }
 
     @Test
+    fun `brand logos always use a white neutral surface in light and dark themes`() {
+        assertEquals(FinluxColors.SurfacePrimaryLight, PrismLightTokens.brandLogoSurface)
+        assertEquals(FinluxColors.SurfacePrimaryLight, PrismDarkTokens.brandLogoSurface)
+        assertEquals(FinluxColors.BorderSoftLight, PrismLightTokens.brandLogoBorder)
+        assertEquals(FinluxColors.BorderSoftLight, PrismDarkTokens.brandLogoBorder)
+    }
+
+    @Test
     fun `AppUiStyle contains PRISM and preserves enum order`() {
         val styles = com.finlux.app.domain.model.AppUiStyle.entries
         assertTrue(styles.contains(com.finlux.app.domain.model.AppUiStyle.PRISM))

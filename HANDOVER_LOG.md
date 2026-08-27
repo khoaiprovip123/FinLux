@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.8 (versionCode 142)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Tích hợp đồng bộ Nợ kỹ thuật Kỳ tài chính & Bộ 65 logo VietQR offline (100% Unit Tests PASS)
+- **Phiên bản hiện tại:** v1.11.9 (versionCode 143)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Logo rõ nét và Home Prism Liquid Glass dễ đọc (196/196 Unit Tests PASS)
 
 ### [Task-FINANCIAL-SALARY-CYCLE-TECH-DEBTS-v1.11.8] — Xử Lý Triệt Để 2 Nợ Kỹ Thuật: Đồng Bộ Số Liệu Trang Chủ & Tự Động Hóa Background Scheduler Ngày Lương
 - **Status**: `[DONE]`
@@ -144,10 +144,6 @@
   - `app/build.gradle.kts` (MODIFIED - Bump version lên 1.11.3, versionCode 137)
   - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.3)
   - `HANDOVER_LOG.md` (MODIFIED - Ghi nhận trạng thái hoàn tất)
-=======
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam (100% Unit Tests PASS)
->>>>>>> origin/main
-
 ### [Task-CI-FIX-LINT-PDF-v1.11.3] — Sửa Lỗi CI Lint UnusedMaterial3ScaffoldPaddingParameter, Khôi Phục KPI Tổng Chi Tiêu PDF & Dọn Dẹp Conflict Marker
 - **Status**: `[DONE]`
 - **Mục tiêu**:
@@ -3115,5 +3111,103 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 `[DONE]`
 
 ---
+
+---
+## [DONE] Task: Làm rõ logo ngân hàng và cân chỉnh KPI Trang chủ Prism
+
+**Ngày:** 2026-08-27
+
+### Mục tiêu
+- Logo ngân hàng/ví có ảnh thương hiệu phải hiển thị trên nền trắng, không bị chìm trong nền accent gradient.
+- Ẩn thẻ `Kỳ tài chính` khỏi Trang chủ nhưng giữ nguyên cấu hình/thông tin trong Cài đặt.
+- Căn giữa và cân bằng ba thẻ `Thu tháng này`, `Chi tháng này`, `Dòng tiền ròng`.
+
+### Kết quả
+- Logo có ảnh thương hiệu dùng `brandLogoSurface`/`brandLogoBorder`; fallback icon/monogram giữ accent gradient.
+- Đã bỏ thẻ `Kỳ tài chính` khỏi Home Prism và giữ nguyên dữ liệu/cách tính chu kỳ tài chính.
+- Ba KPI `Thu tháng này`, `Chi tháng này`, `Dòng tiền ròng` có cùng chiều cao và nội dung căn giữa.
+- `gradlew testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**, **191 test pass, 0 fail/error, 0 skipped**.
+- APK debug đã tạo tại `app/build/outputs/apk/debug/app-debug.apk`.
+- ADB: chưa cài được bản build này vì thiết bị không xuất hiện trong `adb devices -l` sau khi khởi động lại ADB server.
+
+### Files thực tế đã sửa
+- `app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/FinancialInstitutions.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+- `app/src/test/java/com/finlux/app/core/designsystem/FinluxDesignSystemTest.kt`
+- `docs/BA_SPEC.md`
+- `docs/UI_SPEC.md`
+- `docs/DATA_SPEC.md`
+- `docs/CONTEXT.md`
+- `docs/PLAN.md`
+- `docs/BACKLOG.md`
+- `CHANGELOG.md`
+- `HANDOVER_LOG.md`
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [IN PROGRESS] Task: Commit và push bộ cải tiến Home/logo v1.11.9
+
+**Ngày:** 2026-08-27
+
+### Mục tiêu
+- Chốt bộ thay đổi logo nền trắng, Home Prism cân KPI và tăng khả năng đọc Liquid Glass.
+- Sau khi đồng bộ `origin/main` đã ở v1.11.8, bump `versionCode` 142 → 143 và `versionName` 1.11.8 → 1.11.9.
+- Chạy lại toàn bộ unit test/build sau bump, commit đúng scope và push `origin/main`.
+- Không đưa artifact `graphify-out` ngoài scope vào commit; không tạo PR, tag hoặc GitHub Release.
+
+### Scope dự kiến
+- Toàn bộ source/test/docs của hai task Home/logo đang chờ commit.
+- `app/build.gradle.kts`, `CHANGELOG.md`, `HANDOVER_LOG.md`.
+
+### Kết quả kiểm thử sau khi đồng bộ `origin/main`
+- `gradlew testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**.
+- Unit test: **196 pass, 0 fail, 0 error, 0 skipped**.
+- APK debug: `app/build/outputs/apk/debug/app-debug.apk`.
+- Phạm vi commit loại trừ toàn bộ `graphify-out`.
+
+### Trạng thái
+`[IN PROGRESS]`
+
+---
+
+## [DONE] Task: Tinh chỉnh khả năng đọc và Liquid Glass Trang chủ Prism
+
+**Ngày:** 2026-08-27
+
+### Mục tiêu
+- Giữ ba KPI cân bằng khi số tiền có độ dài khác nhau; tăng độ tương phản nhãn và trạng thái.
+- Làm rõ thẻ hero, giảm chi tiết trang trí dễ bị hiểu nhầm là nút thao tác.
+- Chuẩn hóa năm lối tắt theo cùng bề rộng và tăng khả năng đọc nhãn.
+- Nới bố cục chú giải biểu đồ để tên danh mục, số tiền và tỷ trọng không chèn nhau.
+- Tăng chiều sâu kính bằng component Liquid Glass dùng chung, không blur lớp chữ/icon.
+
+### Kết quả
+- KPI và thẻ phân tích đã chuyển sang `modern.GlassCard` mode `REGULAR`, giữ lớp quang học phía sau nội dung và spring scale 0.975.
+- Ba KPI dùng vùng số tiền cao cố định 24dp và tự co font theo bốn ngưỡng độ dài.
+- Hero dùng semantic token `onHero`, tăng tương phản chip; sparkle thu nhỏ để không giống action `+`.
+- Năm lối tắt dùng cùng trọng số và nhãn 11.5sp SemiBold; chú giải chart dùng bố cục hai dòng.
+- `gradlew testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**, **192 test pass, 0 fail/error, 0 skipped**.
+- `adb install -r`: **Success** trên `2107119DC (lisa)`; đọc lại `versionName=1.11.7`, `versionCode=141`.
+- App không crash (`pidof` hoạt động); chưa chụp QA trực quan được vì thiết bị đang ở trạng thái `Dozing`/NotificationShade.
+
+### Files thực tế đã sửa
+- `app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt`
+- `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+- `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+- `docs/UI_SPEC.md`
+- `docs/BA_SPEC.md`
+- `docs/DATA_SPEC.md`
+- `docs/CONTEXT.md`
+- `docs/PLAN.md`
+- `docs/BACKLOG.md`
+- `CHANGELOG.md`
+- `HANDOVER_LOG.md`
+
+### Trạng thái
+`[DONE]`
 
 ---

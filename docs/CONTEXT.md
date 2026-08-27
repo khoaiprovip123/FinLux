@@ -56,6 +56,10 @@ functions/                    -- Cloud Functions (TypeScript), xem DATA_SPEC.md 
 - Logo ngân hàng/ví dùng catalog tập trung `FinancialInstitutions.kt` + snapshot VietQR trong
   `VietQrBankCatalog.kt`; tài nguyên nằm cục bộ ở `drawable-nodpi` và có thể làm mới bằng
   `tools/sync-financial-institution-icons.ps1`.
+- Logo có tài nguyên thương hiệu dùng semantic token `brandLogoSurface/brandLogoBorder` để luôn có
+  nền nhận diện trắng rõ ràng; chỉ monogram/fallback WalletType mới dùng nền accent gradient.
+- Home Prism tái sử dụng `modern.GlassCard` ở KPI và thẻ phân tích; lớp quang học nằm sau nội dung,
+  số tiền dùng baseline cố định và co cỡ chữ theo độ dài để không tràn trên màn hình hẹp.
 
 ## File tài liệu liên quan
 | File | Nội dung |

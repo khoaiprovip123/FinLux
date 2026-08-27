@@ -36,6 +36,8 @@
 - UC-18 Nhắc nhở giao dịch định kỳ (local notification + WorkManager)
 - UC-19 Đồng bộ đa thiết bị — kiểm thử thực tế 2 thiết bị
 - Hoàn thiện animation/hiệu ứng Liquid Glass toàn app, empty/error states
+- [DONE 2026-08-27] Logo thương hiệu nền trắng + ẩn thẻ kỳ tài chính Home + cân giữa bộ ba KPI Prism
+- [DONE 2026-08-27] Tăng tương phản Home Prism, KPI Liquid Glass co chữ thích ứng và chú giải chart hai dòng
 - Kiểm tra accessibility, contrast trên nền kính mờ
 - Crashlytics + Analytics tích hợp
 

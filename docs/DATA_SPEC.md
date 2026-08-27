@@ -187,5 +187,10 @@ service cloud.firestore {
 Các khóa `visual_style`, `glass_intensity`, `card_density`, `animations_enabled` chỉ lưu cục bộ trên thiết bị.
 Chúng không nằm trong Firestore và không tác động tới số dư, giao dịch hoặc báo cáo.
 
+Việc ẩn thẻ kỳ tài chính trên Home và căn giữa các KPI là presentation-only, không thêm khóa DataStore
+hoặc thay đổi `financialPreferences/salaryCycle`; KPI vẫn dùng chu kỳ đã lưu khi tính toán.
+Quy tắc co cỡ chữ KPI, bố cục hai dòng của chú giải biểu đồ và vật liệu kính REGULAR cũng chỉ thuộc
+presentation layer; số tiền, tỷ trọng và dữ liệu giao dịch vẫn giữ nguyên độ chính xác trong repository.
+
 `visual_style` nhận một trong ba giá trị enum: `MODERN_DARK`, `GLASSMORPHISM`, `DYNAMIC_GRADIENT`;
 giá trị mặc định cho cài mới là `DYNAMIC_GRADIENT`.

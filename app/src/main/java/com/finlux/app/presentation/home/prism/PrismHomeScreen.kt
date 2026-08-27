@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,7 +40,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -89,6 +90,8 @@ import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxSoftCard
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.modern.GlassCard as LiquidGlassCard
+import com.finlux.app.core.designsystem.modern.LiquidGlassMode
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.navigation.Route
@@ -155,49 +158,6 @@ fun PrismHomeScreen(
                     onDebtsClick = { onNavigate(Route.Debt.value) },
                     onWalletsClick = { onNavigate(Route.Wallets.value) },
                 )
-            }
-
-            state.salaryCycleLabel?.let { cycleLabel ->
-                item {
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color(0xFF10B981).copy(alpha = if (tokens.isDark) 0.16f else 0.10f),
-                        border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.30f)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable { onNavigate(Route.Settings.value) },
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CalendarMonth,
-                                    contentDescription = null,
-                                    tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Text(
-                                    text = "Kỳ tài chính: $cycleLabel",
-                                    style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
-                                    color = Color(0xFF10B981),
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = Color(0xFF10B981),
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    }
-                }
             }
 
             // 3. Metric 3-Column Card (Thu tháng này | Chi tháng này | Dòng tiền (ròng))
@@ -457,6 +417,7 @@ private fun PrismHeroNetWorthCard(
     onWalletsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
     val shape = RoundedCornerShape(24.dp)
     val pageCount = if (totalDebt > 0L) 2 else 1
     val pagerState = rememberPagerState(pageCount = { pageCount })
@@ -483,14 +444,14 @@ private fun PrismHeroNetWorthCard(
                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                 )
             )
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)), shape),
+            .border(BorderStroke(1.dp, tokens.onHero.copy(alpha = 0.22f)), shape),
     ) {
         // ── Decorative Background Layer ──────────────────────────────
         Canvas(modifier = Modifier.matchParentSize()) {
             // Large top-right glowing orb
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                    colors = listOf(tokens.onHero.copy(alpha = 0.18f), Color.Transparent),
                     center = Offset(size.width * 0.82f, size.height * 0.0f),
                     radius = size.width * 0.52f,
                 ),
@@ -511,7 +472,7 @@ private fun PrismHeroNetWorthCard(
 
             // Decorative large arc line (top-right)
             drawArc(
-                color = Color.White.copy(alpha = 0.08f),
+                color = tokens.onHero.copy(alpha = 0.08f),
                 startAngle = 160f,
                 sweepAngle = 100f,
                 useCenter = false,
@@ -522,7 +483,7 @@ private fun PrismHeroNetWorthCard(
 
             // Decorative smaller arc
             drawArc(
-                color = Color.White.copy(alpha = 0.12f),
+                color = tokens.onHero.copy(alpha = 0.12f),
                 startAngle = 165f,
                 sweepAngle = 80f,
                 useCenter = false,
@@ -542,7 +503,7 @@ private fun PrismHeroNetWorthCard(
                     val cy = gridStartY + row * dotSpacing
                     if (cx < size.width - 8.dp.toPx()) {
                         drawCircle(
-                            color = Color.White.copy(alpha = 0.18f),
+                            color = tokens.onHero.copy(alpha = 0.18f),
                             radius = dotRadius,
                             center = Offset(cx, cy),
                         )
@@ -583,13 +544,13 @@ private fun PrismHeroNetWorthCard(
                             Text(
                                 text = "Số dư hiện có",
                                 style = FinluxTextStyles.Caption.copy(fontSize = 13.sp),
-                                color = Color.White.copy(alpha = 0.90f),
+                                color = tokens.onHero.copy(alpha = 0.94f),
                                 fontWeight = FontWeight.Medium,
                             )
                             Icon(
                                 imageVector = if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                 contentDescription = "Ẩn/Hiện số dư",
-                                tint = Color.White.copy(alpha = 0.85f),
+                                tint = tokens.onHero.copy(alpha = 0.90f),
                                 modifier = Modifier.size(16.dp),
                             )
                         }
@@ -604,7 +565,7 @@ private fun PrismHeroNetWorthCard(
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = (-0.5).sp,
                             ),
-                            color = Color.White,
+                            color = tokens.onHero,
                         )
 
                         Text(
@@ -613,7 +574,7 @@ private fun PrismHeroNetWorthCard(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Normal,
                             ),
-                            color = Color.White.copy(alpha = 0.80f),
+                            color = tokens.onHeroMuted,
                         )
 
                         Spacer(Modifier.height(14.dp))
@@ -626,7 +587,7 @@ private fun PrismHeroNetWorthCard(
                             // Gross Assets Chip
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(alpha = 0.22f),
+                                color = tokens.heroGlassSurface,
                                 modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onWalletsClick() },
                             ) {
                                 Row(
@@ -640,7 +601,7 @@ private fun PrismHeroNetWorthCard(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 11.sp,
                                         ),
-                                        color = Color(0xFF4ADE80),
+                                        color = tokens.onHero,
                                     )
                                 }
                             }
@@ -663,7 +624,7 @@ private fun PrismHeroNetWorthCard(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp,
                                             ),
-                                            color = Color(0xFFFCA5A5),
+                                            color = tokens.onHero,
                                         )
                                     }
                                 }
@@ -683,13 +644,13 @@ private fun PrismHeroNetWorthCard(
                             Text(
                                 text = "Tài sản ròng (Net Worth)",
                                 style = FinluxTextStyles.Caption.copy(fontSize = 13.sp),
-                                color = Color.White.copy(alpha = 0.90f),
+                                color = tokens.onHero.copy(alpha = 0.94f),
                                 fontWeight = FontWeight.Medium,
                             )
                             Icon(
                                 imageVector = if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                 contentDescription = "Ẩn/Hiện số dư",
-                                tint = Color.White.copy(alpha = 0.85f),
+                                tint = tokens.onHero.copy(alpha = 0.90f),
                                 modifier = Modifier.size(16.dp),
                             )
                         }
@@ -704,7 +665,7 @@ private fun PrismHeroNetWorthCard(
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = (-0.5).sp,
                             ),
-                            color = Color.White,
+                            color = tokens.onHero,
                         )
 
                         Text(
@@ -713,7 +674,7 @@ private fun PrismHeroNetWorthCard(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Normal,
                             ),
-                            color = Color.White.copy(alpha = 0.80f),
+                            color = tokens.onHeroMuted,
                         )
 
                         Spacer(Modifier.height(14.dp))
@@ -725,7 +686,7 @@ private fun PrismHeroNetWorthCard(
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(alpha = 0.22f),
+                                color = tokens.heroGlassSurface,
                                 modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onWalletsClick() },
                             ) {
                                 Row(
@@ -739,7 +700,7 @@ private fun PrismHeroNetWorthCard(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 11.sp,
                                         ),
-                                        color = Color(0xFF4ADE80),
+                                        color = tokens.onHero,
                                     )
                                 }
                             }
@@ -761,7 +722,7 @@ private fun PrismHeroNetWorthCard(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp,
                                             ),
-                                            color = Color(0xFFFCA5A5),
+                                            color = tokens.onHero,
                                         )
                                     }
                                 }
@@ -795,7 +756,7 @@ private fun PrismHeroNetWorthCard(
                             .height(4.dp)
                             .width(if (isSelected) 14.dp else 4.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) Color.White else Color.White.copy(alpha = 0.35f)),
+                            .background(if (isSelected) tokens.onHero else tokens.onHero.copy(alpha = 0.35f)),
                     )
                 }
             }
@@ -808,6 +769,7 @@ private fun PrismHeroNetWorthCard(
  */
 @Composable
 private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
+    val tokens = LocalFinluxTokens.current
     Box(
         modifier = modifier.size(110.dp),
         contentAlignment = Alignment.Center,
@@ -1001,28 +963,28 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
         // 5. Sparkle Accent (Top Left)
         Canvas(
             modifier = Modifier
-                .size(18.dp)
+                .size(12.dp)
                 .align(Alignment.TopStart),
         ) {
             val center = Offset(size.width / 2, size.height / 2)
-            val rayLength = size.width * 0.45f
+            val rayLength = size.width * 0.40f
             drawLine(
-                color = Color.White.copy(alpha = 0.90f),
+                color = tokens.onHero.copy(alpha = 0.58f),
                 start = Offset(center.x, center.y - rayLength),
                 end = Offset(center.x, center.y + rayLength),
-                strokeWidth = 2.dp.toPx(),
+                strokeWidth = 1.2.dp.toPx(),
                 cap = StrokeCap.Round,
             )
             drawLine(
-                color = Color.White.copy(alpha = 0.90f),
+                color = tokens.onHero.copy(alpha = 0.58f),
                 start = Offset(center.x - rayLength, center.y),
                 end = Offset(center.x + rayLength, center.y),
-                strokeWidth = 2.dp.toPx(),
+                strokeWidth = 1.2.dp.toPx(),
                 cap = StrokeCap.Round,
             )
             drawCircle(
-                color = Color.White,
-                radius = 2.dp.toPx(),
+                color = tokens.onHero.copy(alpha = 0.72f),
+                radius = 1.2.dp.toPx(),
                 center = center,
             )
         }
@@ -1044,47 +1006,52 @@ private fun PrismSummaryTrioCard(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(152.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Column 1: Thu tháng này
         PrismTrioMetricCard(
             icon = Icons.Default.ArrowDownward,
-            accentColor = Color(0xFF10B981),
+            accentColor = FinluxColors.IncomeGreen,
             title = "Thu tháng này",
             value = if (showBalance) formatVndAmount(income) else "••••",
             trendText = if (income == 0L) "— 0%" else "▲ Thu nhập",
-            trendSubtext = "so với trước",
             isTrendPositive = if (income == 0L) null else true,
             onClick = onIncomeClick,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
         )
 
         // Column 2: Chi tháng này
         PrismTrioMetricCard(
             icon = Icons.Default.ArrowUpward,
-            accentColor = Color(0xFFF43F5E),
+            accentColor = FinluxColors.ExpenseRed,
             title = "Chi tháng này",
             value = if (showBalance) formatVndAmount(expense) else "••••",
             trendText = if (expense == 0L) "— 0%" else "▼ Chi tiêu",
-            trendSubtext = "so với trước",
             isTrendPositive = if (expense == 0L) null else false,
             onClick = onExpenseClick,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
         )
 
         // Column 3: Dòng tiền (ròng)
         PrismTrioMetricCard(
             icon = Icons.Default.PieChart,
-            accentColor = if (net < 0) Color(0xFFF43F5E) else Color(0xFF6366F1),
-            title = "Dòng tiền (ròng)",
+            accentColor = if (net < 0) FinluxColors.ExpenseRed else FinluxColors.BudgetViolet,
+            title = "Dòng tiền ròng",
             value = if (showBalance) (if (net < 0) "-${formatVndAmount(-net)}" else "+${formatVndAmount(net)}") else "••••",
             trendText = if (net == 0L) "— 0%" else (if (net < 0) "▼ Âm ví" else "▲ Dương"),
-            trendSubtext = "so với trước",
             isTrendPositive = if (net == 0L) null else (net >= 0),
             onClick = onNetClick,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
         )
     }
 }
@@ -1096,7 +1063,6 @@ private fun PrismTrioMetricCard(
     title: String,
     value: String,
     trendText: String,
-    trendSubtext: String,
     isTrendPositive: Boolean?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1104,25 +1070,18 @@ private fun PrismTrioMetricCard(
     val tokens = LocalFinluxTokens.current
     val shape = RoundedCornerShape(20.dp)
 
-    Surface(
+    LiquidGlassCard(
+        mode = LiquidGlassMode.REGULAR,
+        tint = accentColor,
         shape = shape,
-        color = tokens.surface,
-        border = BorderStroke(
-            1.2.dp,
-            if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0x1A5A6EA0),
-        ),
-        shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
-        modifier = modifier
-            .clip(shape)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = true),
-                onClick = onClick,
-            ),
+        modifier = modifier,
+        elevation = if (tokens.isDark) 4.dp else 6.dp,
+        padding = PaddingValues(0.dp),
+        onClick = onClick,
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -1131,8 +1090,9 @@ private fun PrismTrioMetricCard(
                         ),
                     ),
                 )
-                .padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = 8.dp, vertical = 13.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             // Top: Circular Icon
             Box(
@@ -1158,28 +1118,38 @@ private fun PrismTrioMetricCard(
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
                 ),
-                color = tokens.onSurfaceVariant,
+                color = tokens.onSurface.copy(alpha = if (tokens.isDark) 0.78f else 0.72f),
+                modifier = Modifier.fillMaxWidth(),
                 maxLines = 1,
+                textAlign = TextAlign.Center,
             )
 
             // Amount Value
-            Text(
-                text = value,
-                style = FinluxTextStyles.CardTitle.copy(
-                    fontSize = 15.5.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.3).sp,
-                ),
-                color = tokens.onSurface,
-                maxLines = 1,
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = value,
+                    style = FinluxTextStyles.CardTitle.copy(
+                        fontSize = prismMetricAmountFontSizeSp(value).sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.4).sp,
+                    ),
+                    color = tokens.onSurface,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                )
+            }
 
             // Bottom Trend Pill
             Surface(
                 shape = RoundedCornerShape(8.dp),
                 color = when (isTrendPositive) {
-                    true -> Color(0xFF10B981).copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
-                    false -> Color(0xFFF43F5E).copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
+                    true -> FinluxColors.IncomeGreen.copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
+                    false -> FinluxColors.ExpenseRed.copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
                     null -> tokens.surfaceSoft
                 },
             ) {
@@ -1195,8 +1165,8 @@ private fun PrismTrioMetricCard(
                             fontWeight = FontWeight.Bold,
                         ),
                         color = when (isTrendPositive) {
-                            true -> Color(0xFF10B981)
-                            false -> Color(0xFFF43F5E)
+                            true -> FinluxColors.IncomeGreen
+                            false -> FinluxColors.ExpenseRed
                             null -> tokens.onSurfaceVariant
                         },
                     )
@@ -1204,6 +1174,13 @@ private fun PrismTrioMetricCard(
             }
         }
     }
+}
+
+internal fun prismMetricAmountFontSizeSp(value: String): Float = when {
+    value.length >= 15 -> 12.5f
+    value.length >= 13 -> 13.5f
+    value.length >= 11 -> 14.5f
+    else -> 15.5f
 }
 
 /**
@@ -1220,7 +1197,7 @@ private fun PrismQuickActionsRow(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PrismRoundTile(
@@ -1229,6 +1206,7 @@ private fun PrismQuickActionsRow(
             accentColor = Color(0xFF0D9488),
             bgColor = Color(0xFFCCFBF1),
             onClick = onWallets,
+            modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Ngân sách",
@@ -1236,6 +1214,7 @@ private fun PrismQuickActionsRow(
             accentColor = Color(0xFF8B5CF6),
             bgColor = Color(0xFFEDE9FE),
             onClick = onBudget,
+            modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Danh mục",
@@ -1243,6 +1222,7 @@ private fun PrismQuickActionsRow(
             accentColor = Color(0xFF3B82F6),
             bgColor = Color(0xFFDBEAFE),
             onClick = onCategories,
+            modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Mục tiêu",
@@ -1250,6 +1230,7 @@ private fun PrismQuickActionsRow(
             accentColor = Color(0xFFF97316),
             bgColor = Color(0xFFFFEDD5),
             onClick = onGoals,
+            modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Xem thêm",
@@ -1257,6 +1238,7 @@ private fun PrismQuickActionsRow(
             accentColor = Color(0xFFA855F7),
             bgColor = Color(0xFFF3E8FF),
             onClick = onMore,
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -1268,20 +1250,21 @@ private fun PrismRoundTile(
     accentColor: Color,
     bgColor: Color,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = true),
                 onClick = onClick,
             )
-            .padding(horizontal = 4.dp, vertical = 4.dp),
+            .padding(horizontal = 2.dp, vertical = 5.dp),
     ) {
         Box(
             modifier = Modifier
@@ -1301,11 +1284,13 @@ private fun PrismRoundTile(
         Text(
             text = title,
             style = FinluxTextStyles.Caption.copy(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
             ),
             color = tokens.onSurface,
+            modifier = Modifier.fillMaxWidth(),
             maxLines = 1,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -1518,10 +1503,13 @@ private fun PrismCategoryExpenseBreakdownCard(
         }
 
         // Breakdown Card with HorizontalPager
-        FinluxSoftCard(
+        LiquidGlassCard(
             modifier = Modifier.fillMaxWidth(),
-            radius = 22.dp,
-            padding = 18.dp,
+            mode = LiquidGlassMode.REGULAR,
+            tint = tokens.primary,
+            shape = RoundedCornerShape(22.dp),
+            elevation = if (tokens.isDark) 4.dp else 6.dp,
+            padding = PaddingValues(18.dp),
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -1629,7 +1617,7 @@ private fun PrismBreakdownPageContent(
         // Left: Donut Chart
         Box(
             modifier = Modifier
-                .weight(0.44f)
+                .weight(0.40f)
                 .height(130.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -1657,12 +1645,12 @@ private fun PrismBreakdownPageContent(
             }
         }
 
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(10.dp))
 
         // Right: Category legend list
         Column(
-            modifier = Modifier.weight(0.56f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(0.60f),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
             shares.forEachIndexed { index, (cat, sum, percent) ->
                 val color = colors.getOrElse(index) { Color(0xFF6366F1) }
@@ -1670,10 +1658,10 @@ private fun PrismBreakdownPageContent(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Category Icon
+                    // Category icon
                     Surface(
-                        modifier = Modifier.size(22.dp),
-                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.size(26.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = color.copy(alpha = 0.14f),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -1681,41 +1669,46 @@ private fun PrismBreakdownPageContent(
                                 imageVector = categoryIcon(cat.icon),
                                 contentDescription = null,
                                 tint = color,
-                                modifier = Modifier.size(13.dp),
+                                modifier = Modifier.size(15.dp),
                             )
                         }
                     }
 
+                    Spacer(Modifier.width(7.dp))
+
+                    // Name and amount use separate lines so long Vietnamese labels never
+                    // compete with the financial value or percentage badge.
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                    ) {
+                        Text(
+                            text = cat.name,
+                            style = FinluxTextStyles.Caption.copy(
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = tokens.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = if (showBalance) formatVndAmount(sum, isCompact = true) else "••••",
+                            style = FinluxTextStyles.MicroLabel.copy(
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = tokens.onSurface.copy(alpha = if (tokens.isDark) 0.76f else 0.70f),
+                            maxLines = 1,
+                        )
+                    }
+
                     Spacer(Modifier.width(6.dp))
-
-                    // Category Name
-                    Text(
-                        text = cat.name,
-                        style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
-                        color = tokens.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-
-                    Spacer(Modifier.width(6.dp))
-
-                    // Amount
-                    Text(
-                        text = if (showBalance) formatVndAmount(sum, isCompact = true) else "••••",
-                        style = FinluxTextStyles.Caption.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = tokens.onSurface,
-                    )
-
-                    Spacer(Modifier.width(4.dp))
 
                     // Percentage badge
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = tokens.background,
+                        color = color.copy(alpha = if (tokens.isDark) 0.18f else 0.10f),
                     ) {
                         Text(
                             text = "$percent%",
@@ -1723,8 +1716,8 @@ private fun PrismBreakdownPageContent(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                             ),
-                            color = tokens.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.5.dp),
+                            color = tokens.onSurface,
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                         )
                     }
                 }

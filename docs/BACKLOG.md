@@ -4,6 +4,25 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-08-27] - Tinh chỉnh khả năng đọc Home Prism
+
+- KPI dùng Liquid Glass REGULAR và phản hồi spring dùng chung; ba vùng số tiền giữ baseline cố định.
+- Cỡ chữ số tiền tự co theo ngưỡng độ dài để không tràn khi có số dư lớn.
+- Nhãn lối tắt được chia đều năm cột và tăng độ đậm; lớp hero tăng tương phản nội dung.
+- Chú giải biểu đồ tách tên và số tiền thành hai dòng, tỷ trọng có badge riêng để tránh chèn chữ.
+- Thu nhỏ sparkle trên minh họa ví để không còn bị hiểu nhầm là nút thêm.
+
+---
+
+## ✅ [DONE 2026-08-27] - Logo nền trắng và cân bằng KPI Home Prism
+
+- Logo ngân hàng/ví có ảnh thật dùng nền trắng semantic ở mọi theme, không còn bị chìm trong orb màu.
+- Monogram và icon WalletType dự phòng vẫn giữ accent gradient để phân biệt loại tài khoản.
+- Ẩn thẻ `Kỳ tài chính` khỏi Home; cấu hình và cách tính theo chu kỳ vẫn giữ nguyên trong Cài đặt.
+- Ba KPI Thu/Chi/Dòng tiền có cùng chiều cao, toàn bộ icon/nhãn/số tiền/trạng thái được căn giữa.
+
+---
+
 ## ✅ [DONE 2026-08-27] - Danh mục logo ngân hàng và ví điện tử Việt Nam
 
 - Đồng bộ snapshot 65 tổ chức từ VietQR API, gồm ngân hàng nội địa, ngân hàng số, chi nhánh ngân hàng nước ngoài và các ví có BIN VietQR.
