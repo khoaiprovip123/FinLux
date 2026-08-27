@@ -112,7 +112,12 @@ fun ExpenseScreen(
             item { DailyExpenseCard(state.dailyStats) }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Giao dịch gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Giao dịch gần đây",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.onSurface,
+                    )
                     Text("Xem tất cả", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
                 }
             }
@@ -142,6 +147,7 @@ fun ExpenseScreen(
                                 Text(
                                     text = transaction.note.ifBlank { category?.name ?: "Chi tiêu" },
                                     fontWeight = FontWeight.Bold,
+                                    color = tokens.onSurface,
                                     maxLines = 1,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )

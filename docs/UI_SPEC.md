@@ -15,11 +15,16 @@ Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom shee
 - **Component chuẩn cần build:** `GlassCard`, `GlassTopBar`, `GlassBottomNav`, `GlassBottomSheet`, `GlassDialog`, `GlassFAB` — dùng chung 1 base `LiquidGlassSurface` composable.
 - **Quy chuẩn Form & Pickers tiêu chuẩn:** Xem tài liệu đặc tả chi tiết tại [`docs/FORM_COMPONENTS_SPEC.md`](file:///d:/Sources/FinLux/docs/FORM_COMPONENTS_SPEC.md) cho các component `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`, `ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxAmountInputCard`.
 
-### 0.1. Base Screen Scaffolding & Spacing Tokens (v1.11.0+)
-- **`FinluxScreenScaffold`**: Khung chứa chuẩn mực duy nhất cho toàn bộ màn hình trong ứng dụng.
-  * Tích hợp `FinluxStyleBackdrop` nền kính động với cờ `showBackdrop: Boolean = true` (có thể tắt và đặt `containerColor` cho theme solid như Prism).
-  * Khóa `contentWindowInsets = WindowInsets(0)` để loại bỏ double insets; TopBar (`GlassTopBar`/`FinluxScreenHeader`) tự gọi `.statusBarsPadding()`.
+### 0.1. Base Screen Scaffolding, Zero-Config Theme Inheritance & Spacing Tokens (v1.11.2+)
+- **`FinluxScreenScaffold`**: Khung chứa chuẩn mực duy nhất cho toàn bộ màn hình trong ứng dụng với cơ chế **Zero-Config Theme Inheritance**:
+  * Tự động nhận diện `LocalAppUiStyle`: Khi ở `AppUiStyle.PRISM`, tự động sử dụng nền `tokens.background` (Dark `#0E1118` / Light `#F6F8FC`), khi ở `CLASSIC_LIQUID` hoặc `MODERN_LUXURY` tự động kích hoạt `FinluxStyleBackdrop` nền kính Liquid Glass động. Lập trình viên không cần truyền tham số cấu hình thủ công.
+  * Khóa insets `contentWindowInsets = WindowInsets(0)` để loại bỏ double insets; TopBar (`GlassTopBar`/`FinluxScreenHeader`) tự gọi `.statusBarsPadding()`.
+  * Gán `.background(tokens.background)` trực tiếp trên Box ngoài cùng của Scaffold, triệt tiêu 100% hiện tượng lộ nền trắng của Android Window ở Dark Mode.
+  * Tự động phân phối `LocalContentColor provides tokens.textPrimary` xuyên suốt toàn bộ các slots: `topBar`, `bottomBar`, và `content`.
   * Cung cấp các Slot API chuẩn: `topBar`, `bottomBar`, `floatingActionButton`, `fabPosition`, `snackbarHost`, `content`.
+- **`FinluxStyleBackdrop`**: Hệ thống nền kính Aura động đồng bộ sáng/tối:
+  * Khi ở Dark Mode (`tokens.isDark == true`): Tự động render dải màu gradient đêm tối sâu thẳm `listOf(Color(0xFF07101F), Color(0xFF10162B), Color(0xFF07111D))` kết hợp quầng sáng Aura (Cyan/Violet), tuyệt đối không chứa mã màu trắng cứng.
+  * Đồng bộ toàn bộ 3 phong cách `VisualStyle` (`MODERN_DARK`, `GLASSMORPHISM`, `DYNAMIC_GRADIENT`) tương thích 100% với Dark Mode.
 - **`FinluxLazyColumn`**: Danh sách chuẩn thay thế LazyColumn trần, tự động tính toán khoảng đệm từ `LocalFinluxSpacing`:
   * `FinluxListType.TAB_MAIN`: Đệm đáy `bottomBarClearance = 96.dp` cho 4 Tab chính.
   * `FinluxListType.DETAIL`: Đệm đáy `compactClearance = 24.dp` cho màn hình con/chi tiết.

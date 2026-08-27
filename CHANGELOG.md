@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.11.2] - 2026-08-27
+### Fixed (Theme Synchronization & Zero-Config Theme Inheritance)
+- **Khắc phục triệt để lỗi Header/TopBar bị biến thành màu trắng đục ở Dark Mode (`StyleBackdrop.kt`)**:
+  * Sửa lỗi gốc rễ trong `DynamicGradientBackdrop`: Cung cấp dải màu Dark Mode sâu thẳm `listOf(Color(0xFF07101F), Color(0xFF10162B), Color(0xFF07111D))` khi `tokens.isDark == true`, loại bỏ 100% việc hardcode mã màu trắng `#FFFFFF` / `#F9FBFF`.
+  * Đồng bộ toàn bộ 3 nhánh `VisualStyle` (`MODERN_DARK`, `GLASSMORPHISM`, `DYNAMIC_GRADIENT`) đều trả về nền Dark Mode thực thụ khi chuyển sang chế độ tối.
+- **Thiết lập cơ chế "Zero-Config Theme Inheritance" (`FinluxScreenScaffold.kt`)**:
+  * Tự động nhận diện `LocalAppUiStyle`: Khi ở `AppUiStyle.PRISM`, tự động sử dụng nền `tokens.background` (Dark `#0E1118` / Light `#F6F8FC`), khi ở `CLASSIC_LIQUID` hoặc `MODERN_LUXURY` tự động kích hoạt `FinluxStyleBackdrop`.
+  * Gán `.background(tokens.background)` an toàn cho Box ngoài cùng, triệt tiêu 100% hiện tượng lộ nền trắng của Android Window khi ở Dark Mode.
+  * Tự động inject `LocalContentColor provides tokens.textPrimary` cho toàn bộ các slots `topBar`, `bottomBar`, và `content`.
+- **Chuẩn hóa màu chữ và icon TopBar (`LiquidGlass.kt`)**:
+  * Cấu hình tường minh `titleContentColor`, `navigationIconContentColor`, và `actionIconContentColor` bằng `tokens.textPrimary` trong `GlassTopBar`.
+
+## [1.11.1] - 2026-08-27
+### Fixed (Hotfix LocalContentColor Invisibility in FinluxScreenScaffold)
+- **Khắc phục triệt để lỗi chữ bị chìm màu / vô hình trên toàn bộ màn hình (`FinluxScreenScaffold.kt`)**:
+  * Thay thế `contentColor = Color.Transparent` bằng `contentColor = tokens.textPrimary` (hoặc `tokens.onSurface`) trên Scaffold nội bộ.
+  * Bọc nội dung bằng `CompositionLocalProvider(LocalContentColor provides tokens.textPrimary)` để đảm bảo chuỗi phân phối `LocalContentColor` của Jetpack Compose xuyên suốt toàn bộ cây Composable.
+  * Bổ sung tiện ích `textPrimary` & `textSecondary` getters trong `FinluxDesignTokens` (`FinluxTokens.kt`).
+- **Chuẩn hóa màu chữ trên 5 màn hình thí điểm (`CategoriesScreen`, `ExpenseScreen`, `IncomeScreen`, `DebtDashboardScreen`, `PrismHomeScreen`)**:
+  * Thiết lập tường minh `color = tokens.onSurface` cho các tiêu đề Section và nội dung ghi chú giao dịch, bảo đảm độ tương phản và sắc nét 100% trên cả Dark Mode lẫn Light Mode.
+
 ## [1.11.0] - 2026-08-27
 ### Added (Design System Core & Base Screen Scaffolding Architecture)
 - **Token Hóa Toàn Diện Khoảng Cách Semantic (`FinluxSpacing` trong `FinluxTokens.kt`)**:

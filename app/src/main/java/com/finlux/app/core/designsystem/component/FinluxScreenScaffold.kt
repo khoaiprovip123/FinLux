@@ -1,35 +1,45 @@
-﻿package com.finlux.app.core.designsystem.component
+package com.finlux.app.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.FabPosition
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
+import com.finlux.app.core.designsystem.LocalAppUiStyle
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.domain.model.AppUiStyle
 
 /**
- * FinluxScreenScaffold - Khung chuan Slot API duy nhat cho moi man hinh FinLux.
+ * FinluxScreenScaffold - Khung chuẩn Slot API duy nhất với cơ chế "Zero-Config Theme Inheritance".
  *
- * Nguyen tac Insets: Scaffold dung contentWindowInsets = WindowInsets(0) de tra PaddingValues sach.
- * TopBar (GlassTopBar / FinluxScreenHeader) tu goi .statusBarsPadding() ben trong.
+ * **Nguyên tắc Insets:**
+ * - Scaffold sử dụng `contentWindowInsets = WindowInsets(0)` để trả PaddingValues sạch.
+ * - TopBar (GlassTopBar / FinluxScreenHeader) tự gọi `.statusBarsPadding()` bên trong.
  *
- * Backdrop:
- *   showBackdrop = true (mac dinh): Bao gom FinluxStyleBackdrop dong theo Theme.
- *   showBackdrop = false: Dung cho man hinh su dung nen dac tu containerColor (vd: Prism Solid).
+ * **Zero-Config Backdrop & Theme Inheritance:**
+ * - Tự động nhận diện `LocalAppUiStyle`:
+ *   + `AppUiStyle.PRISM`: Tự động áp dụng nền `tokens.background` (Dark `#0E1118` / Light `#F6F8FC`).
+ *   + `CLASSIC_LIQUID` / `MODERN_LUXURY`: Tự động kích hoạt `FinluxStyleBackdrop` nền kính Liquid Glass động.
+ * - Box ngoài cùng luôn được gán `.background(tokens.background)` bảo đảm 100% không bao giờ để lộ nền Window trắng ở Dark Mode.
+ * - Tự động inject `LocalContentColor provides tokens.textPrimary` xuyên suốt toàn bộ các slots (`topBar`, `bottomBar`, `content`).
  *
- * @param modifier Modifier cho Box ngoai cung
+ * @param modifier Modifier cho Box ngoài cùng
  * @param topBar Slot TopBar
  * @param bottomBar Slot BottomBar
  * @param floatingActionButton Slot FAB
- * @param fabPosition Vi tri FAB
+ * @param fabPosition Vị trí FAB
  * @param snackbarHost Slot Snackbar
- * @param showBackdrop Bat/tat FinluxStyleBackdrop nen kinh
- * @param containerColor Mau nen Scaffold noi bo. Chi co hieu luc khi showBackdrop = false.
- * @param content Lambda noi dung chinh nhan PaddingValues sach tu Scaffold
+ * @param showBackdrop Bật/tắt FinluxStyleBackdrop (null = tự động nhận diện theo AppUiStyle)
+ * @param containerColor Màu nền Scaffold nội bộ (null = tự động xác định theo backdrop)
+ * @param content Lambda nội dung chính nhận PaddingValues sạch từ Scaffold
  */
 @Composable
 fun FinluxScreenScaffold(
@@ -39,25 +49,52 @@ fun FinluxScreenScaffold(
     floatingActionButton: @Composable () -> Unit = {},
     fabPosition: FabPosition = FabPosition.End,
     snackbarHost: @Composable () -> Unit = {},
-    showBackdrop: Boolean = true,
-    containerColor: Color = Color.Transparent,
+    showBackdrop: Boolean? = null,
+    containerColor: Color? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        if (showBackdrop) {
+    val tokens = LocalFinluxTokens.current
+    val uiStyle = LocalAppUiStyle.current
+
+    val shouldShowBackdrop = showBackdrop ?: (uiStyle != AppUiStyle.PRISM)
+    val resolvedContainerColor = containerColor ?: if (shouldShowBackdrop) Color.Transparent else tokens.background
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(tokens.background),
+    ) {
+        if (shouldShowBackdrop) {
             FinluxStyleBackdrop(modifier = Modifier.fillMaxSize())
         }
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            topBar = topBar,
-            bottomBar = bottomBar,
+            topBar = {
+                CompositionLocalProvider(
+                    LocalContentColor provides tokens.textPrimary,
+                ) {
+                    topBar()
+                }
+            },
+            bottomBar = {
+                CompositionLocalProvider(
+                    LocalContentColor provides tokens.textPrimary,
+                ) {
+                    bottomBar()
+                }
+            },
             floatingActionButton = floatingActionButton,
             floatingActionButtonPosition = fabPosition,
             snackbarHost = snackbarHost,
-            containerColor = if (showBackdrop) Color.Transparent else containerColor,
-            contentColor = Color.Transparent,
+            containerColor = resolvedContainerColor,
+            contentColor = tokens.textPrimary,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            content = content,
-        )
+        ) { paddingValues ->
+            CompositionLocalProvider(
+                LocalContentColor provides tokens.textPrimary,
+            ) {
+                content(paddingValues)
+            }
+        }
     }
 }

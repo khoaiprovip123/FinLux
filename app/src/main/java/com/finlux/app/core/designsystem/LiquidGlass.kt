@@ -153,12 +153,18 @@ fun GlassTopBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
 ) {
+    val tokens = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current
     TopAppBar(
         modifier = modifier.statusBarsPadding(),
         title = title,
         navigationIcon = navigationIcon,
         actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            titleContentColor = tokens.textPrimary,
+            navigationIconContentColor = tokens.textPrimary,
+            actionIconContentColor = tokens.textPrimary,
+        ),
         windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
     )
 }

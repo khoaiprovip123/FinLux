@@ -1,8 +1,48 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.0 (versionCode 134)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Design System Core & Base Screen Scaffolding Architecture (100% Unit Tests PASS, APK installed)
+- **Phiên bản hiện tại:** v1.11.2 (versionCode 136)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Zero-Config Theme Inheritance & Theme Synchronization (100% Unit Tests PASS, APK assembleDebug OK)
+
+### [Task-ZERO-CONFIG-THEME-INHERITANCE-v1.11.2] — Khắc Phục Triệt Để Lỗi Lệch Theme & Thiết Lập Zero-Config Theme Inheritance
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Sửa lỗi `DynamicGradientBackdrop` trong `StyleBackdrop.kt`: Xử lý dải màu Dark Mode sâu thẳm khi `tokens.isDark == true`, loại bỏ 100% mã màu trắng cứng.
+  2. Nâng cấp `FinluxScreenScaffold.kt`: Tự động nhận diện `LocalAppUiStyle` (Prism dùng `tokens.background`, Classic/Modern dùng `FinluxStyleBackdrop`) và inject `LocalContentColor provides tokens.textPrimary` xuyên suốt các slots.
+  3. Chuẩn hóa `GlassTopBar` & `FinluxScreenHeader`: Đảm bảo `containerColor = Color.Transparent`, màu chữ/icon đọc động từ tokens.
+  4. Rà soát làm sạch nền trên `ExpenseScreen`, `IncomeScreen`, `CategoriesScreen`, `DebtDashboardScreen`, `PrismHomeScreen`.
+  5. Chạy 100% Unit Tests PASS, bump version lên v1.11.2 (versionCode 136), đóng gói và sẵn sàng APK.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble: `assembleDebug` -> **PASS** (`app-debug.apk` sẵn sàng).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/StyleBackdrop.kt` (MODIFIED - Sửa dải màu Dark Mode sâu thẳm, loại bỏ mã màu trắng cứng)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxScreenScaffold.kt` (MODIFIED - Thiết lập Zero-Config Theme Inheritance theo LocalAppUiStyle, inject LocalContentColor)
+  - `app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt` (MODIFIED - Cấu hình title/nav/action icons đọc từ tokens.textPrimary)
+  - `app/build.gradle.kts` (MODIFIED - Bump version lên 1.11.2, versionCode 136)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.2)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi nhận trạng thái hoàn tất)
+
+### [Task-HOTFIX-Text-Color-Invisibility-v1.11.1] — Khắc Phục Lỗi Chữ Bị Chìm Màu Trên Toàn Bộ Màn Hình
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Cập nhật `FinluxScreenScaffold.kt`: Đổi `contentColor = Color.Transparent` thành `contentColor = tokens.textPrimary` và bọc lambda `content(paddingValues)` trong `CompositionLocalProvider(LocalContentColor provides tokens.textPrimary)`.
+  2. Bổ sung `textPrimary` & `textSecondary` getters trong `FinluxDesignTokens` (`FinluxTokens.kt`).
+  3. Rà soát 5 màn hình thí điểm (`CategoriesScreen`, `ExpenseScreen`, `IncomeScreen`, `DebtDashboardScreen`, `PrismHomeScreen`) đảm bảo màu chữ hiển thị sắc nét, tương phản hoàn hảo trên cả Dark & Light Mode.
+  4. Chạy `gradlew testDebugUnitTest` 100% PASS, bump version lên v1.11.1 (versionCode 135), đóng gói APK hoàn tất.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble: `assembleDebug` -> **PASS** (`app-debug.apk` sẵn sàng).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxScreenScaffold.kt` (MODIFIED - Cấu hình contentColor = tokens.textPrimary và cung cấp CompositionLocalProvider)
+  - `app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt` (MODIFIED - Bổ sung textPrimary & textSecondary getters)
+  - `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt` (MODIFIED - Gắn tường minh tokens.onSurface cho Section Header & note)
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt` (MODIFIED - Gắn tường minh tokens.onSurface cho Section Header & note)
+  - `app/build.gradle.kts` (MODIFIED - Bump version lên 1.11.1, versionCode 135)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.1)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi nhận trạng thái hoàn tất)
 
 ### [Task-DESIGN-SYSTEM-CORE-v1.11.0] — Design System Core & Base Screen Scaffolding Architecture
 - **Status**: `[DONE]`

@@ -125,7 +125,12 @@ fun IncomeScreen(
             }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Danh sách thu nhập", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Danh sách thu nhập",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.onSurface,
+                    )
                     Text("${state.transactions.size} giao dịch", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
                 }
             }
@@ -157,6 +162,7 @@ fun IncomeScreen(
                                 Text(
                                     text = transaction.note.ifBlank { category?.name ?: "Thu nhập" },
                                     fontWeight = FontWeight.Bold,
+                                    color = tokens.onSurface,
                                     maxLines = 1,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )

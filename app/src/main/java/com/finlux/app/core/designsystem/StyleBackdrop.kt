@@ -20,12 +20,16 @@ fun FinluxStyleBackdrop(
 ) {
     val tokens = LocalFinluxTokens.current
     if (!tokens.isDark) {
-        LiquidAuraBackdrop(modifier = modifier)
+        when (LocalUiPreferences.current.visualStyle) {
+            VisualStyle.MODERN_DARK -> LiquidAuraBackdrop(modifier)
+            VisualStyle.GLASSMORPHISM -> LiquidAuraBackdrop(modifier)
+            VisualStyle.DYNAMIC_GRADIENT -> DynamicGradientBackdrop(modifier, auth = auth, isDark = false)
+        }
     } else {
         when (LocalUiPreferences.current.visualStyle) {
             VisualStyle.MODERN_DARK -> ModernDarkBackdrop(modifier)
             VisualStyle.GLASSMORPHISM -> LiquidAuraBackdrop(modifier)
-            VisualStyle.DYNAMIC_GRADIENT -> DynamicGradientBackdrop(modifier, auth)
+            VisualStyle.DYNAMIC_GRADIENT -> DynamicGradientBackdrop(modifier, auth = auth, isDark = true)
         }
     }
 }
@@ -33,7 +37,7 @@ fun FinluxStyleBackdrop(
 @Composable
 private fun ModernDarkBackdrop(modifier: Modifier) {
     Box(
-        modifier.fillMaxSize().background(
+        modifier = modifier.fillMaxSize().background(
             Brush.verticalGradient(listOf(Color(0xFF020B19), Color(0xFF031329), Color(0xFF020A16))),
         ),
     ) {
@@ -56,26 +60,51 @@ private fun ModernDarkBackdrop(modifier: Modifier) {
 }
 
 @Composable
-private fun DynamicGradientBackdrop(modifier: Modifier, auth: Boolean) {
+private fun DynamicGradientBackdrop(
+    modifier: Modifier,
+    auth: Boolean,
+    isDark: Boolean,
+) {
     val colors = if (auth) {
         listOf(Color(0xFF922EFF), Color(0xFF5A22FF), Color(0xFF168BFF), Color(0xFF18D4C2))
+    } else if (isDark) {
+        listOf(Color(0xFF07101F), Color(0xFF10162B), Color(0xFF07111D))
     } else {
-        listOf(Color(0xFFF9FBFF), Color(0xFFF3F1FF), Color(0xFFEFFAFF), Color.White)
+        listOf(Color(0xFFF2F7FF), Color(0xFFF9F5FF), Color(0xFFECF9FF))
     }
-    Box(modifier.fillMaxSize().background(Brush.linearGradient(colors))) {
+    Box(modifier = modifier.fillMaxSize().background(Brush.linearGradient(colors))) {
         Canvas(Modifier.fillMaxSize()) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    listOf(Color.White.copy(alpha = if (auth) .22f else .54f), Color.Transparent),
-                ),
-                radius = size.minDimension * .55f,
-                center = Offset(size.width * .18f, size.height * .15f),
-            )
-            drawCircle(
-                brush = Brush.radialGradient(listOf(FinluxCyan.copy(alpha = .16f), Color.Transparent)),
-                radius = size.minDimension * .48f,
-                center = Offset(size.width * .90f, size.height * .76f),
-            )
+            if (isDark) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color(0xFF6F52F5).copy(alpha = if (auth) 0.25f else 0.18f), Color.Transparent),
+                    ),
+                    radius = size.minDimension * 0.55f,
+                    center = Offset(size.width * 0.18f, size.height * 0.15f),
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(FinluxCyan.copy(alpha = if (auth) 0.20f else 0.14f), Color.Transparent),
+                    ),
+                    radius = size.minDimension * 0.48f,
+                    center = Offset(size.width * 0.90f, size.height * 0.76f),
+                )
+            } else {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color.White.copy(alpha = if (auth) 0.22f else 0.54f), Color.Transparent),
+                    ),
+                    radius = size.minDimension * 0.55f,
+                    center = Offset(size.width * 0.18f, size.height * 0.15f),
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(FinluxCyan.copy(alpha = 0.12f), Color.Transparent),
+                    ),
+                    radius = size.minDimension * 0.48f,
+                    center = Offset(size.width * 0.90f, size.height * 0.76f),
+                )
+            }
         }
     }
 }
