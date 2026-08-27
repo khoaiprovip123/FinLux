@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.11.7] - 2026-08-27
+### Fixed & Enhanced (Financial Month / Salary Cycle Tech Debts Remediation)
+- **Nợ kỹ thuật 1: Đồng bộ hóa 100% số liệu Trang chủ theo Kỳ tài chính (`HomeViewModel.kt`)**:
+  * Chuyển đổi `financialOverviewFlow` sang `flatMapLatest` lắng nghe realtime cấu hình `SalaryCycleConfig`.
+  * Khi `enabled == true`: Quan sát giao dịch theo cửa sổ chu kỳ `observePeriod(cycle.start, cycle.endExclusive)`, tính toán lại `DashboardSummary` (Tổng thu, Tổng chi, Dòng tiền ròng) và quan sát ngân sách `observeBudgets(period.key)` đồng bộ 100% với nhãn dải ngày hiển thị trên Badge.
+  * Khi `enabled == false`: Giữ nguyên truy vấn theo tháng dương lịch hiện tại.
+- **Nợ kỹ thuật 2: Tự động hóa Background Scheduler & Push Notification ngày lương**:
+  * Xây dựng `SalaryCycleScheduler` và `AlarmSalaryCycleScheduler` sử dụng `AlarmManager.RTC_WAKEUP` định thời chính xác lúc 09:00 sáng ngày nhận lương theo múi giờ tài chính `Asia/Ho_Chi_Minh`.
+  * Xây dựng `SalaryCycleReceiver`:
+    - Bắn Push Notification & In-app Notification chào đón kỳ tài chính mới.
+    - Tự động thực thi `ExecuteSalaryRolloverUseCase` kết chuyển tiền dư sang ví tích lũy nguyên tử nếu cấu hình `MOVE_TO_SAVINGS`.
+    - Bắn Notification nhắc nhở nếu cấu hình `ASK_EACH_CYCLE`.
+    - Tự động lên lịch kỳ nhận lương tháng tiếp theo.
+  * Đăng ký receiver trong `AndroidManifest.xml` và khôi phục lịch báo trong `BootReceiver.kt`.
+  * Tích hợp gọi `SalaryCycleScheduler` trong `SalaryCycleViewModel.kt` khi lưu cấu hình thành công.
+- **Kiểm thử & Chất lượng**:
+  * Cập nhật `HomeViewModelTest.kt` kiểm tra cả 2 kịch bản bật/tắt chu kỳ lương.
+  * Viết mới `AlarmSalaryCycleSchedulerTest.kt` kiểm thử 100% logic tính toán mốc kích hoạt báo thức ngày lương.
+  * Toàn bộ 34 task Unit Tests đạt 100% PASS.
+
 ## [1.11.6] - 2026-08-27
 ### Changed (Unified Standard Amount Input to ErgonomicCompactAmountCard)
 - **Chuẩn hóa 100% các ô nhập tiền tệ sang `ErgonomicCompactAmountCard` trên toàn bộ ứng dụng**:

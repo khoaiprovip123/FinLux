@@ -11,6 +11,7 @@ import com.finlux.app.domain.model.PaydayRuleType
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.repository.SalaryCycleRepository
+import com.finlux.app.domain.repository.SalaryCycleScheduler
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.usecase.SalaryCycleCalculator
 import com.finlux.app.domain.usecase.ValidateSalaryCycleConfigUseCase
@@ -40,6 +41,7 @@ class SalaryCycleViewModel @Inject constructor(
     private val calculator: SalaryCycleCalculator,
     private val validator: ValidateSalaryCycleConfigUseCase,
     private val clock: FinanceClock,
+    private val scheduler: SalaryCycleScheduler? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SalaryCycleUiState())
@@ -116,6 +118,11 @@ class SalaryCycleViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             when (val result = salaryCycleRepository.saveConfig(currentConfig)) {
                 is com.finlux.app.core.common.AppResult.Success -> {
+                    if (currentConfig.enabled) {
+                        scheduler?.scheduleNextPayday(currentConfig)
+                    } else {
+                        scheduler?.cancel()
+                    }
                     _uiState.update { it.copy(isSaving = false, successMessage = "Đã lưu cấu hình chu kỳ tài chính") }
                     onSuccess?.invoke()
                 }

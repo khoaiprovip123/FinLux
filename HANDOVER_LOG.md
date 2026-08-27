@@ -1,16 +1,147 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.3 (versionCode 137)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Fix CI Lint, Khôi Phục KPI PDF & Dọn Dẹp Conflict Marker (100% Unit Tests PASS, lintDebug 0 errors)
+- **Phiên bản hiện tại:** v1.11.7 (versionCode 141)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Xử lý triệt để 2 Nợ Kỹ Thuật Tính Năng Kỳ Tài Chính & Chu Kỳ Lương (100% Unit Tests PASS)
+
+### [Task-FINANCIAL-SALARY-CYCLE-TECH-DEBTS-v1.11.7] — Xử Lý Triệt Để 2 Nợ Kỹ Thuật: Đồng Bộ Số Liệu Trang Chủ & Tự Động Hóa Background Scheduler Ngày Lương
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. **Nợ kỹ thuật 1 (HomeViewModel.kt)**: Lắng nghe `SalaryCycleConfig` qua `flatMapLatest`. Khi `enabled == true`, truy vấn theo `observePeriod(cycle.start, cycle.endExclusive)` và tính toán `DashboardSummary` từ các giao dịch trong chu kỳ, đảm bảo số liệu Tổng Thu/Chi/Ròng trên Trang chủ khớp 100% với nhãn dải ngày kỳ lương; khi `enabled == false` giữ nguyên tháng dương lịch.
+  2. **Nợ kỹ thuật 2 (Background Scheduler & Notification)**:
+     - Tạo `SalaryCycleScheduler` interface và triển khai `AlarmSalaryCycleScheduler` dùng `AlarmManager` (hẹn 09:00 sáng ngày nhận lương theo múi giờ tài chính).
+     - Xây dựng `SalaryCycleReceiver`: Bắn Push & In-app Notification chào đón kỳ mới, kích hoạt `ExecuteSalaryRolloverUseCase` nếu là `MOVE_TO_SAVINGS` (hoặc thông báo nhắc nhở nếu `ASK_EACH_CYCLE`), tự động lên lịch cho chu kỳ tiếp theo.
+     - Đăng ký receiver trong `AndroidManifest.xml` và khôi phục lịch trong `BootReceiver.kt`.
+     - Tích hợp `SalaryCycleScheduler` vào `SalaryCycleViewModel.kt` khi lưu cấu hình.
+  3. **Kiểm thử & Đóng gói**:
+     - Cập nhật `HomeViewModelTest.kt` và viết mới `AlarmSalaryCycleSchedulerTest.kt`.
+     - Chạy `gradlew testDebugUnitTest` đạt 100% PASS (34 tasks completed, 0 failure, 0 error).
+     - Bump version lên `v1.11.7` (versionCode 141), cập nhật `CHANGELOG.md`, `HANDOVER_LOG.md` và nạp APK qua ADB.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error).
+  * ADB Live Device Test: `adb shell am broadcast -a com.finlux.app.ACTION_SALARY_PAYDAY -n com.finlux.app/.data.local.salary.SalaryCycleReceiver` -> **PASS** (Bắn thành công cả 2 notifications: ID 9925 Welcome Notification & ID 9926 Rollover Notification, lưu In-app Notification và tự động lên lịch kỳ tiếp theo).
+- **Files Modified/Created**:
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleScheduler.kt` (NEW)
+  - `app/src/main/java/com/finlux/app/data/local/salary/AlarmSalaryCycleScheduler.kt` (NEW)
+  - `app/src/main/java/com/finlux/app/data/local/salary/SalaryCycleReceiver.kt` (NEW)
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModel.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/data/local/reminder/BootReceiver.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt` (MODIFIED)
+  - `app/src/main/AndroidManifest.xml` (MODIFIED)
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt` (MODIFIED)
+  - `app/src/test/java/com/finlux/app/data/local/salary/AlarmSalaryCycleSchedulerTest.kt` (NEW)
+  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.7, versionCode 141)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.7)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi log hoàn tất)
+
+### [Task-UNIFY-ALL-AMOUNT-INPUTS-v1.11.6] — Đồng Bộ Hóa 100% Ô Nhập Tiền Toàn Ứng Dụng Sang ErgonomicCompactAmountCard
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. `AddTransactionSheet.kt`: Thay thế khối Hero 38sp tự vẽ bằng `ErgonomicCompactAmountCard` (màu ngữ cảnh động `ExpenseRed` / `IncomeGreen`, chip thông minh Decimal Magnitude Scaling).
+  2. `ModernWalletsScreen.kt` & `ClassicWalletsScreen.kt`: Thay thế toàn bộ `OutlinedTextField` + `LazyRow<FilterChip>` (Số dư ví & Chuyển tiền) bằng `ErgonomicCompactAmountCard`.
+  3. `PrismWalletsScreen.kt`: Thay thế `FinluxAmountInputCard` trong `QuickTransferSheet` bằng `ErgonomicCompactAmountCard`.
+  4. `GoalsScreen.kt`: Thay 2 ô `OutlinedTextField` trong `GoalEditor` (Mục tiêu & Tích lũy tháng) bằng `ErgonomicCompactAmountCard`.
+  5. `NotificationsScreen.kt`: Thay thế `FinluxAmountInputCard` trong `PayNotificationDialog` bằng `ErgonomicCompactAmountCard`.
+  6. Cập nhật `FORM_COMPONENTS_SPEC.md`, bump version lên `1.11.6` (versionCode 140), chạy `gradlew testDebugUnitTest` 100% PASS và nạp APK qua ADB.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `docs/FORM_COMPONENTS_SPEC.md`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-SMART-AMOUNT-SUGGESTIONS-v1.11.5] — Nâng Cấp Thuật Toán Gợi Ý Tiền Tệ Thông Minh Cho ErgonomicCompactAmountCard
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. `FinluxFormComponents.kt`:
+     - Cấu trúc lại hàm `generateAmountSuggestions` theo cơ chế Decimal Magnitude Scaling.
+     - Sinh các mốc `V = N * (10^k)` trong khoảng thực tế từ 1.000đ đến 1.000.000.000đ.
+     - Hỗ trợ chính xác các mốc: rỗng/0 -> mảng mặc định 8 mốc; "3" -> 3k..30M; "35" -> 3.5k..35M; "356" -> 3.56k..35.6M; "3568" -> 35.68k..356.8M.
+  2. Viết mới `AmountSuggestionsTest.kt` kiểm thử 100% các kịch bản input.
+  3. Bump version lên `1.11.5` (versionCode 139) trong `app/build.gradle.kts`.
+  4. Chạy `gradlew testDebugUnitTest` đạt 100% PASS và nạp APK lên thiết bị qua ADB.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble & Install: `.\scripts\build_and_install.ps1` -> Đang chuẩn bị nạp.
+- **Files Modified/Created**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (MODIFIED - Cập nhật thuật toán Decimal Magnitude Scaling)
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountSuggestionsTest.kt` (NEW - 6 test cases bao phủ 100% kịch bản)
+  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.5, versionCode 139)
+  - `CHANGELOG.md` (MODIFIED - Ghi log v1.11.5)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi log task)
+
+### [Task-FIX-TRANSFER-DELETION-v1.11.4] — Sửa Lỗi Thứ Tự Đọc/Ghi Firestore Transaction & Tối Ưu Luồng Xóa Cặp
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. `FirebaseTransactionRepository.kt`:
+     - Tuân thủ 100% quy tắc Firestore Transaction (All reads before all writes).
+     - Đưa toàn bộ `atomic.get()` (`sourceDoc`, `destDoc`, `counterpartDoc`) lên trước mọi lệnh `atomic.delete()` và `atomic.update()`.
+  2. `TransactionDetailSheet.kt`:
+     - Dọn sạch mã trùng lặp, tối ưu thao tác xóa chỉ qua 1 Hộp thoại xác nhận duy nhất chứa đầy đủ thông báo hoàn tiền 2 đầu ví.
+  3. `FirebaseTransactionRepositoryTest.kt`:
+     - Thêm Unit Test tự động kiểm thử xóa cặp chuyển tiền và hoàn tác số dư ví.
+  4. Chạy 100% Unit Tests PASS, bump version `1.11.4` (versionCode 138) và nạp APK lên thiết bị.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble & Install: `.\scripts\build_and_install.ps1` -> Đang chuẩn bị nạp.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt` (MODIFIED - Đưa reads lên trước writes)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (MODIFIED - Dọn sạch duplicate và tối ưu nút xóa)
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt` (MODIFIED - Thêm unit test xóa cặp)
+  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.4, versionCode 138)
+  - `CHANGELOG.md` (MODIFIED - Ghi log v1.11.4)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi log task)
+
+### [Task-CASCADE-ATOMIC-TRANSFER-DELETION-v1.11.3] — Xóa Đối Ứng Cả Cặp Giao Dịch Chuyển Tiền & Khóa Sửa Chuyển Tiền
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tầng Repository (`FirebaseTransactionRepository.kt` & `DemoFinluxRepository.kt`):
+     - Khi xóa `TRANSFER_OUT` hoặc `TRANSFER_IN`, tự động tìm và xóa luôn bản ghi đối ứng `_in` hoặc `_out` trong 1 Firestore Transaction duy nhất.
+     - Hoàn tác số dư cả 2 ví: Cộng lại ví nguồn (`+amount`), trừ thu hồi ví đích (`-amount`).
+     - Khóa chặn gọi update đối với giao dịch chuyển tiền.
+  2. Tầng Giao diện (`TransactionDetailSheet.kt`):
+     - Ẩn nút "Chỉnh sửa giao dịch" khi `isTransfer == true`, hiển thị Info Banner bảo vệ số dư.
+     - Cập nhật Confirm Dialog xóa cặp hiển thị tên ví nhận và cảnh báo hoàn tiền cả hai ví.
+     - Bảo đảm 100% các giao dịch Thu nhập (`INCOME`) và Chi tiêu (`EXPENSE`) thông thường vẫn giữ nguyên đầy đủ 2 nút Sửa và Xóa.
+  3. Tầng Điều hướng & Màn hình (`FinluxNavHost.kt`, `PrismTransactionsScreen.kt`, `ModernTransactionsScreen.kt`, `ClassicTransactionsScreen.kt`):
+     - Chặn `onEditTransaction` và ẩn swipe-to-edit với giao dịch chuyển tiền.
+  4. Cập nhật `docs/BA_SPEC.md` bổ sung quy tắc `BR-07.1`, bump version `v1.11.3` (versionCode 137), chạy 100% Unit Tests PASS và nạp APK lên thiết bị.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error, 0 warning).
+  * Assemble & Install: `.\scripts\build_and_install.ps1` -> **SUCCESS** (APK nạp thành công lên thiết bị).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt` (MODIFIED - Xóa cascade cặp nguyên tử và chặn update transfer)
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (MODIFIED - Cập nhật logic xóa cặp và chặn update transfer cho demo)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (MODIFIED - Khóa nút Sửa, Info banner, Confirm dialog xóa cặp)
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt` (MODIFIED - Lọc guard onEditTransaction và pass relatedWallet vào dialog)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (MODIFIED - Guard onEdit và pass relatedWallet)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt` (MODIFIED - Ẩn swipe edit icon và pass relatedWallet)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt` (MODIFIED - Ẩn edit icon và pass relatedWallet)
+  - `docs/BA_SPEC.md` (MODIFIED - Bổ sung BR-07.1)
+  - `app/build.gradle.kts` (MODIFIED - Bump version lên 1.11.3, versionCode 137)
+  - `CHANGELOG.md` (MODIFIED - Ghi log release v1.11.3)
+  - `HANDOVER_LOG.md` (MODIFIED - Ghi nhận trạng thái hoàn tất)
 
 ### [Task-CI-FIX-LINT-PDF-v1.11.3] — Sửa Lỗi CI Lint UnusedMaterial3ScaffoldPaddingParameter, Khôi Phục KPI Tổng Chi Tiêu PDF & Dọn Dẹp Conflict Marker
 - **Status**: `[DONE]`
 - **Mục tiêu**:
   1. Thêm `@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")` tại `FinluxNavHost.kt` để giải quyết triệt để lỗi CI `:app:lintDebug` do Scaffold edge-to-edge transparent bỏ qua inner padding.
   2. Khôi phục dòng `canvas.drawText("-${formatVndAmount(summary.expense.value)}", 225f, y + 43f, paintExpense)` tại `ReportExporter.kt` bị xóa nhầm, hiển thị chuẩn số tiền KPI Tổng Chi Tiêu trên PDF.
-  3. Dọn dẹp conflict marker `>>>>>>> upstream/main` sót lại tại dòng 405 `HANDOVER_LOG.md`.
-  4. Chạy toàn diện `gradlew testDebugUnitTest` & `gradlew lintDebug` bảo đảm 100% PASS, bump version lên v1.11.3 (versionCode 137), commit và push lên `origin/main`.
+  3. Dọn dẹp conflict marker sót lại trong `HANDOVER_LOG.md`.
+  4. Chạy toàn diện `gradlew testDebugUnitTest` & `gradlew lintDebug` bảo đảm 100% PASS, bump version lên v1.11.3 (versionCode 137).
 - **Test Results**:
   * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 actionable tasks, 0 failure, 0 error).
   * Lint: `gradlew lintDebug` -> **100% PASS** (0 errors, 45 warnings, 1 hint).

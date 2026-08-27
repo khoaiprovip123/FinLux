@@ -96,6 +96,12 @@ abstract class LocalRepositoryModule {
     abstract fun bindFinancialPeriodResolver(
         implementation: DefaultFinancialPeriodResolver,
     ): FinancialPeriodResolver
+
+    @Binds
+    @Singleton
+    abstract fun bindSalaryCycleScheduler(
+        implementation: com.finlux.app.data.local.salary.AlarmSalaryCycleScheduler,
+    ): com.finlux.app.domain.repository.SalaryCycleScheduler
 }
 
 @Module
