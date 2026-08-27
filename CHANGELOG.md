@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.11.6] - 2026-08-27
+### Changed (Unified Standard Amount Input to ErgonomicCompactAmountCard)
+- **Chuẩn hóa 100% các ô nhập tiền tệ sang `ErgonomicCompactAmountCard` trên toàn bộ ứng dụng**:
+  * **Màn hình Thêm/Sửa Giao dịch chính (`AddTransactionSheet.kt`)**: Thay thế khối `Surface` Hero 38sp tự vẽ bằng `ErgonomicCompactAmountCard`, tích hợp màu sắc ngữ cảnh động (`ExpenseRed` / `IncomeGreen`) và dải chip gợi ý Decimal Magnitude Scaling.
+  * **Hệ thống Quản lý Ví (`ModernWalletsScreen.kt`, `ClassicWalletsScreen.kt`, `PrismWalletsScreen.kt`)**: Thay thế triệt để các ô `OutlinedTextField` legacy và dải `FilterChip` thủ công (ở cả ô số dư ban đầu và modal chuyển tiền liên ví) sang `ErgonomicCompactAmountCard`.
+  * **Mục tiêu Tài chính (`GoalsScreen.kt`)**: Nâng cấp 2 trường *"Mục tiêu cần đạt"* và *"Số tiền tích lũy mỗi tháng"* trong `GoalEditor` sang `ErgonomicCompactAmountCard`.
+  * **Trung tâm Thông báo (`NotificationsScreen.kt`)**: Đồng bộ modal thanh toán nhanh sang `ErgonomicCompactAmountCard`.
+- **Cập nhật tài liệu thiết kế (`FORM_COMPONENTS_SPEC.md`)**:
+  * Đồng bộ danh sách kế thừa và quy chuẩn form input trên toàn hệ thống.
+
 ## [1.11.5] - 2026-08-27
 ### Enhanced (Smart Decimal Magnitude Scaling Amount Suggestions)
 - **Nâng cấp thuật toán gợi ý tiền tệ thông minh (`generateAmountSuggestions` trong `FinluxFormComponents.kt`)**:

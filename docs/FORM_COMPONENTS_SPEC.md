@@ -189,8 +189,15 @@ ErgonomicCompactAmountCard(
 ```
 
 * **Các màn hình đang kế thừa:**
+  - [`AddTransactionSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt) (Ô nhập số tiền giao dịch chính, hỗ trợ màu động `ExpenseRed` / `IncomeGreen`).
   - [`PrismBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt), [`ClassicBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt), [`ModernBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt) (Ô nhập hạn mức chi tiêu tháng).
-  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Ô trừ tiền gốc & Ô nhập tiền lãi phát sinh qua `PrincipalInterestSplitCard`).
+  - [`PrismWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt), [`ModernWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt), [`ClassicWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt) (Ô nhập số dư ví ban đầu/hiện tại & Ô nhập số tiền chuyển liên ví).
+  - [`GoalsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt) (Nạp/Rút tiền mục tiêu, Mục tiêu cần đạt & Tích lũy tháng trong `GoalEditor`).
+  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Tổng số tiền trả & Ô trừ tiền gốc / Ô nhập tiền lãi phát sinh qua `PrincipalInterestSplitCard`).
+  - [`AddEditDebtSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt) (Hạn mức/Vay gốc, Dư nợ hiện tại, Trả tối thiểu hàng tháng).
+  - [`SalaryCycleSettingsSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt) (Mức lương dự kiến mỗi kỳ).
+  - [`RemindersScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt) (Số tiền dự kiến trong nhắc nhở chi tiêu).
+  - [`NotificationsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt) (Số tiền thanh toán nhanh từ thông báo).
 
 ---
 
@@ -216,32 +223,17 @@ PrincipalInterestSplitCard(
 
 ---
 
-### 7️⃣ `FinluxAmountInputCard` — Hero Amount Input Card
-Card nhập số tiền lớn ở đầu modal với typography 32sp, format phân tách hàng nghìn tức thì và dải Quick Chips (+10k, +50k, +100k, +500k hoặc Tối thiểu, 50% nợ, Tất toán).
-
-* **Khởi tạo & Sử dụng:**
-```kotlin
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
-
-FinluxAmountInputCard(
-    label = "SỐ TIỀN THANH TOÁN",
-    amountDigits = amountText,
-    onAmountChange = { amountText = it },
-    showQuickChips = true,
-    primaryColor = tokens.primary,
-)
-```
-
----
-
 ## 📱 4. DANH SÁCH MÀN HÌNH ĐÃ KẾ THỪA BỘ COMPONENT CHUẨN
 
 | Màn hình / Modal | Component được áp dụng |
 | :--- | :--- |
-| **Thêm Giao Dịch (`AddTransactionSheet.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `FinluxAmountInputCard`, `ErgonomicInputRow` |
-| **Thanh Toán Nợ (`DebtPaymentSheet.kt`)** | `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
-| **Thêm / Sửa Nợ & Tín Dụng (`AddEditDebtSheet.kt`)** | Banner lịch nhắc nhở `Schedule`, `FinluxCategoryPickerBottomSheet` |
-| **Thêm / Sửa Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` (Quick Chips `.000`) |
+| **Thêm Giao Dịch (`AddTransactionSheet.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow` |
+| **Thanh Toán Nợ (`DebtPaymentSheet.kt`)** | `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicCompactAmountCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
+| **Thêm / Sửa Nợ & Tín Dụng (`AddEditDebtSheet.kt`)** | `ErgonomicCompactAmountCard` (3 trường tiền), `FinluxCategoryPickerBottomSheet` |
+| **Thêm / Sửa Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` (Smart Decimal Magnitude Scaling Chips) |
+| **Quản Lý Ví (`PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`)** | `ErgonomicCompactAmountCard` (Số dư ban đầu & Chuyển tiền liên ví), `FinluxWalletPickerBottomSheet` |
+| **Mục Tiêu Tài Chính (`GoalsScreen.kt`)** | `ErgonomicCompactAmountCard` (Nạp/Rút & Mục tiêu / Tích lũy tháng) |
 | **Nhắc Nhở Định Kỳ (`RemindersScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow`, Native `TimePickerDialog` |
-| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, Thẻ `NotificationItemCard` chuẩn Glass |
+| **Cài Đặt Lương (`SalaryCycleSettingsSheet.kt`)** | `ErgonomicCompactAmountCard` (Mức lương dự kiến) |
+| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, Thẻ `NotificationItemCard` chuẩn Glass |
 

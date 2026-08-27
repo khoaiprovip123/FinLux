@@ -3,6 +3,8 @@ package com.finlux.app.presentation.wallet.modern
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -372,6 +374,7 @@ private fun WalletEditor(
     val isEditing = initial != null
     val isDefaultWallet = initial?.isDefault == true
     val isOnlyWallet = walletsCount <= 1 && isEditing
+    val tokens = LocalFinluxTokens.current
 
     GlassBottomSheet(onDismiss = onDismiss) {
         Column(
@@ -446,30 +449,15 @@ private fun WalletEditor(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = balance,
-                    onValueChange = { balance = it.filter(Char::isDigit).take(15) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(if (!isEditing) "Số dư ban đầu" else "Số dư hiện tại") },
-                    supportingText = { Text((balance.toLongOrNull() ?: 0L).toVnd(), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf(500_000L, 1_000_000L, 2_000_000L, 5_000_000L, 10_000_000L)) { preset ->
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                val current = balance.toLongOrNull() ?: 0L
-                                balance = (current + preset).toString()
-                            },
-                            label = { Text("+${preset.toShortVnd()}") },
-                        )
-                    }
-                }
-            }
+            // Số dư ban đầu / Số dư hiện tại
+            ErgonomicCompactAmountCard(
+                label = if (!isEditing) "Số dư ban đầu" else "Số dư hiện tại",
+                amountText = balance,
+                onAmountChange = { balance = it },
+                placeholder = "0",
+                amountColor = tokens.primary,
+                showSuggestions = true,
+            )
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Màu thẻ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
@@ -632,6 +620,7 @@ private fun TransferEditor(
     val isSourceCard = sourceWallet?.type == com.finlux.app.domain.model.WalletType.CARD
     val parsedAmount = amount.toLongOrNull() ?: 0L
     val isInsufficientFunds = !isSourceCard && sourceWallet != null && parsedAmount > sourceBalance
+    val tokens = LocalFinluxTokens.current
     GlassBottomSheet(onDismiss = onDismiss) {
         Column(
             Modifier
@@ -688,30 +677,15 @@ private fun TransferEditor(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = amount,
-                    onValueChange = { amount = it.filter(Char::isDigit).take(15) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Số tiền chuyển") },
-                    supportingText = { Text((amount.toLongOrNull() ?: 0L).toVnd(), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf(100_000L, 200_000L, 500_000L, 1_000_000L, 2_000_000L)) { preset ->
-                        FilterChip(
-                            selected = false,
-                            onClick = {
-                                val current = amount.toLongOrNull() ?: 0L
-                                amount = (current + preset).toString()
-                            },
-                            label = { Text("+${preset.toShortVnd()}") },
-                        )
-                    }
-                }
-            }
+            // Số tiền chuyển
+            ErgonomicCompactAmountCard(
+                label = "Số tiền chuyển",
+                amountText = amount,
+                onAmountChange = { amount = it },
+                placeholder = "0",
+                amountColor = tokens.primary,
+                showSuggestions = true,
+            )
 
             OutlinedTextField(
                 value = note,

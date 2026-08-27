@@ -1,8 +1,32 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.5 (versionCode 139)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Upgraded Smart Amount Suggestions (Decimal Magnitude Scaling, 100% Unit Tests PASS)
+- **Phiên bản hiện tại:** v1.11.6 (versionCode 140)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Unified All Amount Inputs to ErgonomicCompactAmountCard (100% Unit Tests PASS)
+
+### [Task-UNIFY-ALL-AMOUNT-INPUTS-v1.11.6] — Đồng Bộ Hóa 100% Ô Nhập Tiền Toàn Ứng Dụng Sang ErgonomicCompactAmountCard
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. `AddTransactionSheet.kt`: Thay thế khối Hero 38sp tự vẽ bằng `ErgonomicCompactAmountCard` (màu ngữ cảnh động `ExpenseRed` / `IncomeGreen`, chip thông minh Decimal Magnitude Scaling).
+  2. `ModernWalletsScreen.kt` & `ClassicWalletsScreen.kt`: Thay thế toàn bộ `OutlinedTextField` + `LazyRow<FilterChip>` (Số dư ví & Chuyển tiền) bằng `ErgonomicCompactAmountCard`.
+  3. `PrismWalletsScreen.kt`: Thay thế `FinluxAmountInputCard` trong `QuickTransferSheet` bằng `ErgonomicCompactAmountCard`.
+  4. `GoalsScreen.kt`: Thay 2 ô `OutlinedTextField` trong `GoalEditor` (Mục tiêu & Tích lũy tháng) bằng `ErgonomicCompactAmountCard`.
+  5. `NotificationsScreen.kt`: Thay thế `FinluxAmountInputCard` trong `PayNotificationDialog` bằng `ErgonomicCompactAmountCard`.
+  6. Cập nhật `FORM_COMPONENTS_SPEC.md`, bump version lên `1.11.6` (versionCode 140), chạy `gradlew testDebugUnitTest` 100% PASS và nạp APK qua ADB.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error).
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `docs/FORM_COMPONENTS_SPEC.md`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
 
 ### [Task-SMART-AMOUNT-SUGGESTIONS-v1.11.5] — Nâng Cấp Thuật Toán Gợi Ý Tiền Tệ Thông Minh Cho ErgonomicCompactAmountCard
 - **Status**: `[DONE]`

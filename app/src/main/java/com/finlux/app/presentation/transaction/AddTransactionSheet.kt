@@ -2,6 +2,7 @@ package com.finlux.app.presentation.transaction
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicFormRow
 import com.finlux.app.core.designsystem.component.ErgonomicInputRow
 import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
@@ -304,143 +305,16 @@ fun AddTransactionSheet(
                 )
             }
 
-            // 3. Amount Display & Quick Chips Box (Pixel-Perfect Typography & Alignment)
-            Surface(
-                shape = RoundedCornerShape(22.dp),
-                color = if (tokens.isDark) Color(0xFF1E1E2D) else Color(0xFFF9FAFB),
-                border = BorderStroke(1.dp, tokens.onSurface.copy(alpha = 0.06f)),
-                shadowElevation = 1.dp,
+            // 3. Amount Display & Quick Chips (Standard ErgonomicCompactAmountCard)
+            ErgonomicCompactAmountCard(
+                label = "Số tiền",
+                amountText = state.amountInput,
+                onAmountChange = { viewModel.setAmount(it) },
+                placeholder = "0",
+                amountColor = amountColor,
+                showSuggestions = true,
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(
-                        text = "Số tiền",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                        color = Color(0xFF6B7280),
-                    )
-
-                    // Formatted Amount Row (Grouped Together with ₫ Symbol)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            BasicTextField(
-                                value = TextFieldValue(
-                                    text = formattedAmount,
-                                    selection = TextRange(formattedAmount.length),
-                                ),
-                                onValueChange = { tfv ->
-                                    val digitsOnly = tfv.text.filter { it.isDigit() }
-                                    if (digitsOnly.length <= 12) {
-                                        viewModel.setAmount(digitsOnly)
-                                    }
-                                },
-                                textStyle = TextStyle(
-                                    fontSize = 38.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = amountColor,
-                                    letterSpacing = (-0.5).sp,
-                                ),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                cursorBrush = SolidColor(tokens.primary),
-                                singleLine = true,
-                                decorationBox = { innerTextField ->
-                                    if (formattedAmount.isEmpty()) {
-                                        Text(
-                                            text = "0",
-                                            style = TextStyle(
-                                                fontSize = 38.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = Color(0xFF9CA3AF),
-                                                letterSpacing = (-0.5).sp,
-                                            ),
-                                        )
-                                    }
-                                    innerTextField()
-                                },
-                            )
-
-                            Text(
-                                text = " ₫",
-                                style = TextStyle(
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = amountColor,
-                                ),
-                                modifier = Modifier.padding(start = 4.dp),
-                            )
-                        }
-
-                        // Clear Textbox Button [x]
-                        if (state.amountInput.isNotEmpty() && state.amountInput != "0") {
-                            Surface(
-                                shape = CircleShape,
-                                color = tokens.surfaceSoft,
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = ripple(bounded = true),
-                                        onClick = { viewModel.setAmount("") },
-                                    ),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Xóa số tiền",
-                                        tint = tokens.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Quick Amount Chips (+10k, +50k, +100k, +500k)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        listOf(10_000L to "+10k", 50_000L to "+50k", 100_000L to "+100k", 500_000L to "+500k").forEach { (amount, label) ->
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = tokens.surface,
-                                border = BorderStroke(1.dp, tokens.onSurface.copy(alpha = 0.08f)),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        val currentVal = state.amountInput.toLongOrNull() ?: 0L
-                                        viewModel.setAmount((currentVal + amount).toString())
-                                    },
-                            ) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 13.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                    color = tokens.onSurface,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(vertical = 9.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            )
 
             // Warning Banner for Insufficient Wallet Balance
             if (balanceErrorMessage != null) {
