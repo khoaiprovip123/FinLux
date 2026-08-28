@@ -5,10 +5,15 @@
 - **Trạng thái Build:** 🟢 PASSED — Header Home Prism CLEAR Liquid Glass + thẻ nhóm giao dịch Home/Lịch sử
 
 ### [Task-RELEASE-v1.12.0] — Git checkpoint cải tiến Home/Lịch sử
-- **Status**: `[IN PROGRESS]`
+- **Status**: `[DONE]`
 - **Mục tiêu**: Đóng gói, kiểm thử, commit và push bộ cải tiến Header Home, carousel Thu/Chi/Dòng tiền và thẻ nhóm giao dịch lên `origin/main`.
-- **Scope dự kiến**: Ứng dụng Android, unit test Home, tài liệu đặc tả/kế hoạch/changelog/handover và `app/build.gradle.kts`.
+- **Scope thực tế**: Ứng dụng Android, unit test Home, tài liệu đặc tả/kế hoạch/changelog/handover và `app/build.gradle.kts`.
 - **Version**: `versionCode 147`, `versionName 1.12.0`.
+- **Xác minh**:
+  - `gradlew testDebugUnitTest assembleDebug`: **PASS** — 214/214 tests, 0 failed, 0 errors, 0 skipped.
+  - APK debug: `app/build/outputs/apk/debug/app-debug.apk` (33,583,717 bytes).
+  - Commit tính năng: `e78905d` (`bump(release): v1.12.0 - nang cap Home va lich su giao dich`).
+  - Push: **SUCCESS** — `origin/main` đã nhận commit `e78905d`.
 
 ### [Task-PRISM-HOME-AUTO-SUMMARY-CAROUSEL] — Tổng quan Thu/Chi/Dòng tiền tự chuyển
 - **Status**: `[DONE]`
