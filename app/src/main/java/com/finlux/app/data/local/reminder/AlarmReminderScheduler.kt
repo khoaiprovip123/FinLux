@@ -7,19 +7,20 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.finlux.app.MainActivity
 import com.finlux.app.R
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.AppNotification
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
+import com.finlux.app.domain.model.ReminderUtils
 import com.finlux.app.domain.model.TransactionType
-import com.finlux.app.domain.model.AppNotification
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.ReminderRepository
-import java.util.UUID
 import com.finlux.app.domain.repository.ReminderScheduler
 import com.finlux.app.domain.usecase.AddTransactionUseCase
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,8 +31,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.Instant
-import java.time.ZoneId
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,9 +66,39 @@ class AlarmReminderScheduler @Inject constructor(
 ) : ReminderScheduler {
     override fun schedule(reminder: Reminder) {
         if (!reminder.enabled || reminder.id.isBlank()) return
-        val manager = context.getSystemService(AlarmManager::class.java)
-        val triggerAt = maxOf(reminder.nextTriggerDate.toEpochMilli(), System.currentTimeMillis() + 5_000)
-        manager?.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, reminder.pendingIntent(context))
+        val manager = context.getSystemService(AlarmManager::class.java) ?: return
+        val triggerAt = maxOf(reminder.nextTriggerDate.toEpochMilli(), System.currentTimeMillis() + 1_000)
+
+        val showIntent = PendingIntent.getActivity(
+            context,
+            reminder.id.hashCode(),
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("destination", "reminders")
+                putExtra("reminder_id", reminder.id)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        try {
+            // AlarmClockInfo là cơ chế đánh thức chuẩn xác nhất của Android, vượt qua mọi rào cản Doze mode và Battery Optimization
+            manager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(triggerAt, showIntent),
+                reminder.pendingIntent(context)
+            )
+        } catch (e: SecurityException) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, reminder.pendingIntent(context))
+                } else {
+                    manager.set(AlarmManager.RTC_WAKEUP, triggerAt, reminder.pendingIntent(context))
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun cancel(reminderId: String) {
@@ -101,6 +132,9 @@ class ReminderReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var reminderRepository: ReminderRepository
+
+    @Inject
+    lateinit var reminderScheduler: ReminderScheduler
 
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra("id") ?: return
@@ -164,11 +198,25 @@ class ReminderReceiver : BroadcastReceiver() {
                     snoozeIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                context.getSystemService(AlarmManager::class.java)?.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    snoozeTime,
-                    pendingSnooze
+                val manager = context.getSystemService(AlarmManager::class.java)
+                val showIntent = PendingIntent.getActivity(
+                    context,
+                    id.hashCode(),
+                    Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra("destination", "reminders")
+                        putExtra("reminder_id", id)
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
+                try {
+                    manager?.setAlarmClock(
+                        AlarmManager.AlarmClockInfo(snoozeTime, showIntent),
+                        pendingSnooze
+                    )
+                } catch (e: Exception) {
+                    manager?.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, snoozeTime, pendingSnooze)
+                }
             }
 
             else -> {
@@ -246,7 +294,7 @@ class ReminderReceiver : BroadcastReceiver() {
                             )
                         )
 
-                        // 5. Bắn thông báo Android System Notification
+                        // 5. Bắn thông báo Android System Notification (Heads-up banner)
                         val currentEpochDay = Instant.now().toEpochMilli() / 86400000L
                         val generatedPaymentActionId = "pay_rem_${id}_$currentEpochDay"
 
@@ -325,30 +373,15 @@ class ReminderReceiver : BroadcastReceiver() {
                                 .build(),
                         )
 
-                        // 6. Cập nhật nextTriggerDate vào Database & lên lịch báo thức kế tiếp
-                        val next = nextTrigger(Instant.now(), effectiveRecurrence)
-                        reminderRepository.upsertReminder(activeReminder.copy(nextTriggerDate = next))
-
-                        val nextIntent = Intent(context, ReminderReceiver::class.java).apply {
-                            action = ACTION_TRIGGER
-                            putExtra("id", id)
-                            putExtra("title", effectiveTitle)
-                            putExtra("amount", effectiveAmount)
-                            putExtra("categoryId", effectiveCategoryId)
-                            putExtra("walletId", effectiveWalletId)
-                            putExtra("recurrence", effectiveRecurrence.name)
-                        }
-                        val nextPending = PendingIntent.getBroadcast(
-                            context,
-                            id.hashCode(),
-                            nextIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        // 6. Cập nhật nextTriggerDate vào Database & lên lịch báo thức kế tiếp (Zero Time Drift)
+                        val next = ReminderUtils.computeNextTriggerDate(
+                            startDate = activeReminder.startDate,
+                            recurrence = effectiveRecurrence,
+                            afterInstant = Instant.now(),
                         )
-                        context.getSystemService(AlarmManager::class.java)?.setAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            next.toEpochMilli(),
-                            nextPending
-                        )
+                        val updatedReminder = activeReminder.copy(nextTriggerDate = next)
+                        reminderRepository.upsertReminder(updatedReminder)
+                        reminderScheduler.schedule(updatedReminder)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     } finally {
@@ -378,11 +411,3 @@ private fun Reminder.pendingIntent(context: Context): PendingIntent {
     )
 }
 
-private fun nextTrigger(from: Instant, recurrence: ReminderRecurrence): Instant {
-    val dateTime = from.atZone(ZoneId.systemDefault())
-    return when (recurrence) {
-        ReminderRecurrence.DAILY -> dateTime.plusDays(1)
-        ReminderRecurrence.WEEKLY -> dateTime.plusWeeks(1)
-        ReminderRecurrence.MONTHLY -> dateTime.plusMonths(1)
-    }.toInstant()
-}

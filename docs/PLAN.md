@@ -33,8 +33,9 @@
 - **Deliverable:** ngân sách hoạt động, cảnh báo đúng ngưỡng, xuất file thành công
 
 ## Sprint 4 — Nhắc nhở + Đồng bộ + Polish (1 tuần)
-- UC-18 Nhắc nhở giao dịch định kỳ (local notification + WorkManager)
-- UC-19 Đồng bộ đa thiết bị — kiểm thử thực tế 2 thiết bị
+- UC-18 Nhắc nhở giao dịch định kỳ (Exact Alarm `setAlarmClock`, Zero Time Drift `ReminderUtils`, System Notifications)
+- UC-19 Đồng bộ đa thiết bị — `ReminderSyncObserver` tự động nạp lịch báo thức khi đăng nhập/mở app
+- [DONE 2026-08-28] Nâng cấp Exact Alarm (setAlarmClock), Zero Time Drift Engine và Multi-Device Sync cho Nhắc nhở định kỳ (UC-18, UC-19)
 - Hoàn thiện animation/hiệu ứng Liquid Glass toàn app, empty/error states
 - [DONE 2026-08-27] Logo thương hiệu nền trắng + ẩn thẻ kỳ tài chính Home + cân giữa bộ ba KPI Prism
 - [DONE 2026-08-27] Tăng tương phản Home Prism, KPI Liquid Glass co chữ thích ứng và chú giải chart hai dòng

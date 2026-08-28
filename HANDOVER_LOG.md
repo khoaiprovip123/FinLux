@@ -1,8 +1,50 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.9 (versionCode 143)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Logo rõ nét và Home Prism Liquid Glass dễ đọc (196/196 Unit Tests PASS)
+- **Phiên bản hiện tại:** v1.11.10 (versionCode 144)
+- **Trạng thái Build:** 🟢 READY — Nâng cấp toàn diện hệ thống Nhắc Nhở Thanh Toán (Exact Alarm, Zero Time Drift & Multi-Device Sync)
+
+### [Task-PAYMENT-REMINDER-EXACT-ALARM-SYNC] — Khắc Phục Doze Mode, Chống Trôi Giờ Chu Kỳ & Đồng Bộ Đa Thiết Bị Nhắc Nhở Thanh Toán
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. **Chống Doze Mode & Báo thức chính xác (Exact Alarm)**:
+     - Khai báo các quyền `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `WAKE_LOCK` trong `AndroidManifest.xml`.
+     - Nâng cấp `AlarmReminderScheduler` sang sử dụng `AlarmManager.setAlarmClock()` (kèm fallback `setExactAndAllowWhileIdle`) để nổ thông báo chính xác từng giây ngay cả khi tắt màn hình/chế độ Doze.
+     - Cấu hình Notification với độ ưu tiên cao (`PRIORITY_MAX`, `CATEGORY_REMINDER`, `VISIBILITY_PUBLIC`).
+  2. **Xóa bỏ trôi giờ (Zero Time Drift Engine)**:
+     - Viết mới `ReminderUtils.computeNextTriggerDate` bảo toàn 100% mốc `LocalTime` gốc và ngày trong tháng gốc từ `startDate` của nhắc nhở.
+  3. **Đồng bộ hóa đa thiết bị (ReminderSyncObserver)**:
+     - Tạo `ReminderSyncObserver` tự động lắng nghe Firestore khi đăng nhập/khởi chạy app để tự động nạp toàn bộ nhắc nhở vào `AlarmManager` của thiết bị đó.
+  4. **Kiểm thử & Đóng gói**:
+     - Viết Unit Tests bao phủ Zero Time Drift, AlarmReminderScheduler và ReminderSyncObserver.
+     - Chạy toàn bộ Unit Tests đảm bảo 100% PASS: `./gradlew testDebugUnitTest` (208/208 tests passed).
+     - Nâng version lên `v1.11.10` (versionCode 144), cập nhật `CHANGELOG.md`/`HANDOVER_LOG.md`.
+- **Test Results**:
+  * Unit tests: `gradlew testDebugUnitTest` -> **100% PASS** (34 tasks completed, 0 failure, 0 error, 208 test cases passed).
+  * Compile: `compileDebugKotlin` -> **PASS** (0 error).
+- **Files Modified/Created**:
+  - `app/src/main/AndroidManifest.xml` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/domain/model/ReminderUtils.kt` (NEW)
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/data/local/reminder/ReminderSyncObserver.kt` (NEW)
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt` (MODIFIED)
+  - `app/src/main/java/com/finlux/app/presentation/RootViewModel.kt` (MODIFIED)
+  - `app/src/test/java/com/finlux/app/domain/model/ReminderUtilsTest.kt` (NEW)
+  - `app/src/test/java/com/finlux/app/data/local/reminder/AlarmReminderSchedulerTest.kt` (NEW)
+  - `app/src/test/java/com/finlux/app/data/local/reminder/ReminderSyncObserverTest.kt` (NEW)
+  - `app/src/test/java/com/finlux/app/presentation/RootViewModelTest.kt` (MODIFIED)
+  - `app/build.gradle.kts` (MODIFIED - Bump 1.11.10, versionCode 144)
+  - `CHANGELOG.md` (MODIFIED - Release notes v1.11.10)
+  - `HANDOVER_LOG.md` (MODIFIED - Complete log)
+- **Current Status**: **[DONE]**
+
+### [Task-FIREBASE-CI-MOCHA-TIMEOUT] — Tăng Timeout Mocha Chạy Firebase Firestore Rules & Functions Test Trên CI
+- **Status**: `[DONE]`
+- **Mục tiêu**: Khắc phục lỗi timeout 2000ms trên GitHub Actions runner (`firebase-ci.yml`) khi khởi tạo Firestore Emulator và nạp `firestore.rules`.
+- **Files Modified**:
+  - `functions/package.json`: Tăng timeout Mocha từ mặc định 2000ms lên `--timeout 20000` (20 giây).
+- **Test Results**: Cấu hình Mocha timeout 20s đảm bảo CI runner có đủ thời gian khởi tạo RulesTestEnvironment và nạp rules.
+- **Current Status**: **[DONE]**
 
 ### [Task-FINANCIAL-SALARY-CYCLE-TECH-DEBTS-v1.11.8] — Xử Lý Triệt Để 2 Nợ Kỹ Thuật: Đồng Bộ Số Liệu Trang Chủ & Tự Động Hóa Background Scheduler Ngày Lương
 - **Status**: `[DONE]`
