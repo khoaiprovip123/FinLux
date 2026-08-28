@@ -2,7 +2,15 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.11.9 (versionCode 143)
-- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL — Logo rõ nét và Home Prism Liquid Glass dễ đọc (196/196 Unit Tests PASS)
+- **Trạng thái Build:** 🟢 BUILD SUCCESSFUL (196/196 Unit Tests PASS)
+
+### [Task-FIREBASE-CI-MOCHA-TIMEOUT] — Tăng Timeout Mocha Chạy Firebase Firestore Rules & Functions Test Trên CI
+- **Status**: `[DONE]`
+- **Mục tiêu**: Khắc phục lỗi timeout 2000ms trên GitHub Actions runner (`firebase-ci.yml`) khi khởi tạo Firestore Emulator và nạp `firestore.rules`.
+- **Files Modified**:
+  - `functions/package.json`: Tăng timeout Mocha từ mặc định 2000ms lên `--timeout 20000` (20 giây).
+- **Test Results**: Cấu hình Mocha timeout 20s đảm bảo CI runner có đủ thời gian khởi tạo RulesTestEnvironment và nạp rules.
+- **Current Status**: **[DONE]**
 
 ### [Task-FINANCIAL-SALARY-CYCLE-TECH-DEBTS-v1.11.8] — Xử Lý Triệt Để 2 Nợ Kỹ Thuật: Đồng Bộ Số Liệu Trang Chủ & Tự Động Hóa Background Scheduler Ngày Lương
 - **Status**: `[DONE]`

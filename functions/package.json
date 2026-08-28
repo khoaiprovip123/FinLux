@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "tsx node_modules/mocha/bin/mocha.js \"test/**/*.ts\""
+    "test": "tsx node_modules/mocha/bin/mocha.js --timeout 20000 \"test/**/*.ts\""
   },
   "dependencies": {
     "firebase-admin": "14.3.0",
