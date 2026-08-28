@@ -52,6 +52,7 @@ class RootViewModelTest {
 
     private lateinit var themeRepository: FakeThemePreferenceRepository
     private lateinit var uiPreferencesRepository: FakeUiPreferencesRepository
+    private lateinit var reminderSyncObserver: com.finlux.app.data.local.reminder.ReminderSyncObserver
     private lateinit var viewModel: RootViewModel
 
     @BeforeEach
@@ -59,7 +60,8 @@ class RootViewModelTest {
         Dispatchers.setMain(testDispatcher)
         themeRepository = FakeThemePreferenceRepository()
         uiPreferencesRepository = FakeUiPreferencesRepository()
-        viewModel = RootViewModel(themeRepository, uiPreferencesRepository)
+        reminderSyncObserver = io.mockk.mockk(relaxed = true)
+        viewModel = RootViewModel(themeRepository, uiPreferencesRepository, reminderSyncObserver)
     }
 
     @AfterEach

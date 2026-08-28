@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.11.10] - 2026-08-28
+### Added & Enhanced (Payment Reminder Exact Alarm, Zero Time Drift & Multi-Device Sync)
+- **Chống Doze Mode & Báo thức chính xác từng giây (Exact Alarm Engine)**:
+  * Khai báo các quyền `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `WAKE_LOCK` trong `AndroidManifest.xml`.
+  * Nâng cấp `AlarmReminderScheduler` sang sử dụng `AlarmManager.setAlarmClock()` (vượt qua mọi rào cản Doze mode và Battery Optimization của Android 12+) kèm cơ chế fallback `setExactAndAllowWhileIdle()`.
+  * Cấu hình Android Notification với mức ưu tiên tối đa (`PRIORITY_MAX`, `CATEGORY_REMINDER`, `VISIBILITY_PUBLIC`).
+- **Xóa bỏ triệt để trôi giờ chu kỳ (Zero Time Drift Engine)**:
+  * Xây dựng `ReminderUtils.computeNextTriggerDate` bảo toàn 100% mốc `LocalTime` (giờ, phút, giây) và ngày trong tháng gốc từ `startDate` của nhắc nhở qua mọi chu kỳ lặp lại (Hàng ngày, Hàng tuần, Hàng tháng).
+  * Chuẩn hóa tính toán `triggerInstant` trong `RemindersScreen.kt` và `ReminderReceiver`.
+- **Đồng bộ hóa đa thiết bị tự động (ReminderSyncObserver)**:
+  * Xây dựng `ReminderSyncObserver` tự động lắng nghe `ReminderRepository.observeReminders()` khi mở app/đăng nhập, nạp toàn bộ danh sách nhắc nhở hợp lệ vào `AlarmManager` cục bộ và tự động tịnh tiến các nhắc nhở đã quá hạn.
+  * Tích hợp `ReminderSyncObserver` vào `RootViewModel`.
+- **Kiểm thử & Chất lượng**:
+  * Viết mới `ReminderUtilsTest.kt`, `AlarmReminderSchedulerTest.kt`, `ReminderSyncObserverTest.kt`.
+  * Toàn bộ Unit Tests đạt 100% PASS (208 tests passed, 0 failed).
+
 ## [1.11.9] - 2026-08-27
 ### Changed
 - Logo ngân hàng/ví có ảnh thương hiệu dùng nền trắng semantic và viền trung tính ở cả theme sáng/tối; monogram và icon dự phòng vẫn dùng accent gradient.

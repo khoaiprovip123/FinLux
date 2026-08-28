@@ -96,6 +96,7 @@ import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
+import com.finlux.app.domain.model.ReminderUtils
 import com.finlux.app.domain.model.Wallet
 import java.time.Instant
 import java.time.LocalDate
@@ -628,34 +629,13 @@ private fun ReminderEditorSheet(
                     val amountLong = amountDigits.toLongOrNull() ?: 0L
                     val combinedStartInstant = selectedDate.atTime(selectedTime).atZone(zone).toInstant()
 
-                    // Compute next trigger instant ensuring it is in the future
-                    val triggerInstant = if (combinedStartInstant.isBefore(Instant.now())) {
-                        when (recurrence) {
-                            ReminderRecurrence.DAILY -> {
-                                var dt = selectedDate.atTime(selectedTime)
-                                while (dt.atZone(zone).toInstant().isBefore(Instant.now())) {
-                                    dt = dt.plusDays(1)
-                                }
-                                dt.atZone(zone).toInstant()
-                            }
-                            ReminderRecurrence.WEEKLY -> {
-                                var dt = selectedDate.atTime(selectedTime)
-                                while (dt.atZone(zone).toInstant().isBefore(Instant.now())) {
-                                    dt = dt.plusWeeks(1)
-                                }
-                                dt.atZone(zone).toInstant()
-                            }
-                            ReminderRecurrence.MONTHLY -> {
-                                var dt = selectedDate.atTime(selectedTime)
-                                while (dt.atZone(zone).toInstant().isBefore(Instant.now())) {
-                                    dt = dt.plusMonths(1)
-                                }
-                                dt.atZone(zone).toInstant()
-                            }
-                        }
-                    } else {
-                        combinedStartInstant
-                    }
+                    // Compute next trigger instant ensuring it is in the future and preserves LocalTime
+                    val triggerInstant = ReminderUtils.computeNextTriggerDate(
+                        startDate = combinedStartInstant,
+                        recurrence = recurrence,
+                        afterInstant = Instant.now(),
+                        zoneId = zone,
+                    )
 
                     val reminder = Reminder(
                         id = initial?.id.orEmpty(),

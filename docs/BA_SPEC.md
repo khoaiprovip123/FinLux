@@ -208,10 +208,15 @@ Business rule: BR-11: File Excel gồm 2 sheet (Chi tiết giao dịch, Tổng h
 Actor: User
 Main flow:
   1. Tạo "Giao dịch định kỳ": số tiền, danh mục, ví, chu kỳ (hàng ngày/tuần/tháng), ngày bắt đầu
-  2. Local Notification (AlarmManager/WorkManager) nhắc đúng ngày để user xác nhận nhập giao dịch
-     (không tự động tạo giao dịch để tránh sai số nếu user quên hủy)
-Business rule: BR-12: Nhắc nhở là thông báo local trên thiết bị (không cần server), nhưng cấu hình
-  được đồng bộ cloud để hiển thị nhất quán trên nhiều thiết bị (mỗi thiết bị tự lên lịch local).
+  2. Báo thức chính xác (AlarmManager.setAlarmClock / Exact Alarm): Đánh thức thiết bị và nổ thông báo
+     đúng từng giây ngay cả khi thiết bị rơi vào chế độ ngủ sâu Doze Mode hoặc Battery Optimization.
+  3. Xóa bỏ trôi giờ (Zero Time Drift Engine): Thuật toán ReminderUtils.computeNextTriggerDate bảo toàn
+     100% mốc giờ:phút (LocalTime) gốc và ngày trong tháng gốc từ startDate, không bị sai lệch qua các chu kỳ.
+  4. Local Notification với mức ưu tiên cao (PRIORITY_MAX, CATEGORY_REMINDER, VISIBILITY_PUBLIC) cho phép
+     người dùng chọn: [Đã thanh toán], [Sửa số tiền], [Nhắc lại 1h].
+Business rule: BR-12: Nhắc nhở lưu cấu hình trên Firestore subcollection users/{uid}/reminders.
+  Khi người dùng đăng nhập hoặc mở app trên bất kỳ thiết bị nào, ReminderSyncObserver tự động đồng bộ
+  và nạp toàn bộ lịch báo thức vào AlarmManager cục bộ của thiết bị đó (Multi-Device Auto-Sync).
 ```
 
 ### UC-19: Đồng bộ dữ liệu đa thiết bị

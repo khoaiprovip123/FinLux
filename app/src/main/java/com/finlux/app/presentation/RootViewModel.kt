@@ -2,6 +2,7 @@ package com.finlux.app.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.finlux.app.data.local.reminder.ReminderSyncObserver
 import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.ThemePreference
 import com.finlux.app.domain.model.UiPreferences
@@ -17,7 +18,12 @@ import javax.inject.Inject
 class RootViewModel @Inject constructor(
     private val themeRepository: ThemePreferenceRepository,
     private val uiPreferencesRepository: UiPreferencesRepository,
+    private val reminderSyncObserver: ReminderSyncObserver,
 ) : ViewModel() {
+    init {
+        reminderSyncObserver.startObserving(viewModelScope)
+    }
+
     val theme = themeRepository.preference.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
