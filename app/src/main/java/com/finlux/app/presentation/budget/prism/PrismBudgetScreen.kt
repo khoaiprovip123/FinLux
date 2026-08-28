@@ -164,10 +164,26 @@ fun PrismBudgetScreen(
 
             // Overview Hero Card
             item {
+                val daysRemaining = state.period?.let { p ->
+                    val now = java.time.Instant.now()
+                    if (now.isBefore(p.endExclusive)) {
+                        java.time.temporal.ChronoUnit.DAYS.between(
+                            java.time.LocalDate.now(),
+                            p.endExclusive.atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
+                        ).coerceAtLeast(1)
+                    } else 0L
+                }
+
+                val periodDaysInfo = when {
+                    daysRemaining != null && daysRemaining > 0 -> " • Còn $daysRemaining ngày"
+                    daysRemaining == 0L -> " • Ngày cuối kỳ"
+                    else -> ""
+                }
+
                 FinluxHeroCard(
                     title = "Còn lại trong ngân sách",
                     amountText = formatVndAmount(totalRemaining),
-                    deltaText = "$overallPercent% đã dùng (${formatVndAmount(totalSpent, isCompact = true)} / ${formatVndAmount(totalLimit, isCompact = true)})",
+                    deltaText = "$overallPercent% đã dùng (${formatVndAmount(totalSpent, isCompact = true)} / ${formatVndAmount(totalLimit, isCompact = true)})$periodDaysInfo",
                     isPositiveDelta = overallPercent < 90,
                 )
             }
@@ -182,7 +198,7 @@ fun PrismBudgetScreen(
                     shape = RoundedCornerShape(tokens.radius.input),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = tokens.primary,
-                        contentColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                        contentColor = tokens.onHero,
                     ),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -209,11 +225,14 @@ fun PrismBudgetScreen(
                     val isExceeded = spent > limit
                     val progressFloat = if (limit > 0L) (spent.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
 
+                    // Dynamic Risk Palette (0-70% Green, 70-90% Amber, 90-100% Orange, >100% Red)
                     val statusColor = when {
                         isExceeded -> FinluxColors.ExpenseRed
-                        percent >= 80 -> FinluxColors.WarningAmber
-                        else -> FinluxColors.PrimaryBlue
+                        percent >= 90 -> Color(0xFFF97316)
+                        percent >= 70 -> FinluxColors.WarningAmber
+                        else -> FinluxColors.IncomeGreen
                     }
+                    val percentLabel = if (isExceeded) "Vượt ${percent - 100}%" else "Đã dùng $percent%"
 
                     var showMenu by remember { mutableStateOf(false) }
 
@@ -272,14 +291,20 @@ fun PrismBudgetScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
-                                    Text(
-                                        text = "$percent%",
-                                        style = FinluxTextStyles.CardTitle.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp,
-                                        ),
-                                        color = statusColor,
-                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = statusColor.copy(alpha = if (tokens.isDark) 0.20f else 0.12f),
+                                    ) {
+                                        Text(
+                                            text = percentLabel,
+                                            style = FinluxTextStyles.MicroLabel.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp,
+                                            ),
+                                            color = statusColor,
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                        )
+                                    }
                                     Box {
                                         IconButton(onClick = { showMenu = true }) {
                                             Icon(Icons.Default.MoreVert, contentDescription = "Tùy chọn", tint = tokens.onSurfaceVariant)

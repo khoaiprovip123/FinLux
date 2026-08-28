@@ -101,7 +101,7 @@ fun FinluxEmptyState(
                 shape = RoundedCornerShape(tokens.radius.smallChip),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = tokens.primary,
-                    contentColor = Color.White,
+                    contentColor = tokens.onHero,
                 ),
             ) {
                 Text(actionLabel, style = FinluxTextStyles.Caption, fontWeight = FontWeight.Bold)

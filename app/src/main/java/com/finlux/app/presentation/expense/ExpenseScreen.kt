@@ -106,7 +106,14 @@ fun ExpenseScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             listType = FinluxListType.DETAIL,
         ) {
-            item { MonthPicker(state.month.toString(), viewModel::previousMonth, viewModel::nextMonth, state.month < java.time.YearMonth.now()) }
+            item {
+                PeriodPicker(
+                    label = state.period?.displayLabel ?: "Đang tải kỳ tài chính…",
+                    previous = viewModel::previousPeriod,
+                    next = viewModel::nextPeriod,
+                    canNext = state.canNavigateNext,
+                )
+            }
             item { ExpenseHero(state.total, state.changePercent) }
             item { ExpenseCategoryCard(state) }
             item { DailyExpenseCard(state.dailyStats) }
@@ -124,7 +131,7 @@ fun ExpenseScreen(
             if (state.transactions.isEmpty()) {
                 item {
                     FinluxEmptyState(
-                        title = "Chưa có chi tiêu trong tháng này",
+                        title = "Chưa có chi tiêu trong kỳ này",
                         description = "Chạm vào nút bên dưới để thêm khoản chi tiêu mới.",
                         icon = Icons.Default.TrendingDown,
                         actionLabel = "+ Thêm chi tiêu",
@@ -169,14 +176,13 @@ fun ExpenseScreen(
 }
 
 @Composable
-private fun MonthPicker(month: String, previous: () -> Unit, next: () -> Unit, canNext: Boolean) {
-    val parsed = java.time.YearMonth.parse(month)
+private fun PeriodPicker(label: String, previous: () -> Unit, next: () -> Unit, canNext: Boolean) {
     FinluxPanel(Modifier.fillMaxWidth().height(48.dp), cornerRadius = 24.dp, padding = PaddingValues(horizontal = 5.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Tháng trước") }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                Text(parsed.format(DateTimeFormatter.ofPattern("'Tháng' M, yyyy", Locale.forLanguageTag("vi-VN"))), Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
+                Text(label, Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
             }
             IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Tháng sau") }
         }
@@ -201,7 +207,7 @@ private fun ExpenseHero(total: Long, changePercent: Int) {
             Column(Modifier.align(Alignment.CenterStart), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("Tổng chi", color = Color.White.copy(alpha = .90f))
                 Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("${if (changePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(changePercent)}% so với tháng trước", color = Color.White.copy(alpha = .92f), style = MaterialTheme.typography.bodyMedium)
+                Text("${if (changePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(changePercent)}% so với kỳ trước", color = Color.White.copy(alpha = .92f), style = MaterialTheme.typography.bodyMedium)
             }
             Box(
                 Modifier.align(Alignment.CenterEnd).size(68.dp).background(Color.White.copy(alpha = .15f), CircleShape),
@@ -255,18 +261,40 @@ private fun ExpenseCategoryCard(state: ExpenseUiState) {
 @Composable
 private fun DailyExpenseCard(days: List<ExpenseDayStat>) {
     val max = days.maxOfOrNull { it.amount }?.coerceAtLeast(1L) ?: 1L
+    val average = if (days.isEmpty()) 0L else days.sumOf { it.amount } / days.size
+    val highestDate = days.maxByOrNull { it.amount }?.date
+    val labelIndexes = if (days.isEmpty()) emptyList() else listOf(
+        0,
+        days.lastIndex / 4,
+        days.lastIndex / 2,
+        (days.lastIndex * 3) / 4,
+        days.lastIndex,
+    ).distinct()
     FinluxPanel(Modifier.fillMaxWidth(), padding = PaddingValues(14.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Chi tiêu theo ngày", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Chi tiêu theo ngày", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("TB ${average.toShortVnd()}/ngày", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Canvas(Modifier.fillMaxWidth().height(142.dp)) {
                 val slot = size.width / days.size.coerceAtLeast(1)
+                val averageY = size.height - (average.toFloat() / max * size.height * .88f)
+                drawLine(
+                    color = WarningAmber.copy(alpha = .75f),
+                    start = Offset(0f, averageY),
+                    end = Offset(size.width, averageY),
+                    strokeWidth = 1.dp.toPx(),
+                )
                 days.forEachIndexed { index, item ->
                     val height = item.amount.toFloat() / max * size.height * .88f
-                    drawRoundRect(ExpenseRed.copy(alpha = if (item.amount > 0) .82f else .10f), Offset(index * slot + slot * .19f, size.height - height), Size(slot * .58f, height.coerceAtLeast(2.dp.toPx())), androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
+                    val barColor = if (item.date == highestDate && item.amount > 0L) WarningAmber else ExpenseRed
+                    drawRoundRect(barColor.copy(alpha = if (item.amount > 0) .82f else .10f), Offset(index * slot + slot * .19f, size.height - height), Size(slot * .58f, height.coerceAtLeast(2.dp.toPx())), androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf(1, 5, 10, 15, 20, 25, days.size).distinct().forEach { day -> Text("$day", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                labelIndexes.forEach { index ->
+                    Text(days[index].date.format(DateTimeFormatter.ofPattern("dd/MM")), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

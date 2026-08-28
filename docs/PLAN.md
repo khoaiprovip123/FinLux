@@ -18,6 +18,7 @@
 
 ## Sprint 2 — Giao dịch + Danh mục + Ví (1-1.5 tuần)
 - UC-07/08/09/10 CRUD + danh sách giao dịch (lọc/tìm kiếm)
+- [DONE 2026-08-28] History: kỳ tài chính hiện tại/kỳ trước, search không dấu, khoảng tiền, badge filter và collapse transfer double-entry thành một dòng logic
 - UC-11 Quản lý danh mục
 - UC-12 Quản lý ví, UC-13 Chuyển tiền giữa ví
 - [DONE 2026-08-27] Danh mục 65 tổ chức VietQR + ví bổ sung, logo offline, tìm theo tên/mã/BIN dùng chung mọi theme
@@ -29,6 +30,7 @@
 - Cloud Functions: `onTransactionWrite`, `checkBudgetThreshold`, `monthlyBudgetReset`
 - UC-15 Cảnh báo vượt ngân sách (FCM)
 - UC-16 Báo cáo/biểu đồ (Pie + Bar/Line)
+- [DONE 2026-08-28] Report semantic: tách dòng tiền còn lại/giữ lại/đóng góp mục tiêu, loại CARD khỏi tài sản, CTA empty state và insight dựa dữ liệu
 - UC-17 Xuất Excel/PDF
 - **Deliverable:** ngân sách hoạt động, cảnh báo đúng ngưỡng, xuất file thành công
 
@@ -37,6 +39,7 @@
 - UC-19 Đồng bộ đa thiết bị — `ReminderSyncObserver` tự động nạp lịch báo thức khi đăng nhập/mở app
 - [DONE 2026-08-28] Nâng cấp Exact Alarm (setAlarmClock), Zero Time Drift Engine và Multi-Device Sync cho Nhắc nhở định kỳ (UC-18, UC-19)
 - Hoàn thiện animation/hiệu ứng Liquid Glass toàn app, empty/error states
+- [DONE 2026-08-28] Vuốt bám ngón tay giữa 4 tab chính với spring trả vị trí, edge resistance và bottom dock cố định
 - [DONE 2026-08-27] Logo thương hiệu nền trắng + ẩn thẻ kỳ tài chính Home + cân giữa bộ ba KPI Prism
 - [DONE 2026-08-27] Tăng tương phản Home Prism, KPI Liquid Glass co chữ thích ứng và chú giải chart hai dòng
 - Kiểm tra accessibility, contrast trên nền kính mờ

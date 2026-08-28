@@ -60,6 +60,12 @@ functions/                    -- Cloud Functions (TypeScript), xem DATA_SPEC.md 
   nền nhận diện trắng rõ ràng; chỉ monogram/fallback WalletType mới dùng nền accent gradient.
 - Home Prism tái sử dụng `modern.GlassCard` ở KPI và thẻ phân tích; lớp quang học nằm sau nội dung,
   số tiền dùng baseline cố định và co cỡ chữ theo độ dài để không tràn trên màn hình hẹp.
+- Kỳ tài chính dùng `FinancialPeriodResolver` ở Home/History/Income/Expense/Reports; feature không tự
+  suy diễn mốc tháng khi Salary Cycle đang bật.
+- Các phép diễn giải dùng chung (`collapseInternalTransferPairs`, `assetWallets`,
+  `netGoalContribution`) nằm trong domain model để Home, History và Reports không lệch công thức.
+- Vuốt bốn tab chính được nhận ở root, phần nội dung bám theo ngón tay và có edge resistance; bottom
+  navigation không dịch chuyển cùng trang. Component con đã consume gesture vẫn được ưu tiên.
 
 ## File tài liệu liên quan
 | File | Nội dung |

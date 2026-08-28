@@ -1,8 +1,82 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.10 (versionCode 144)
-- **Trạng thái Build:** 🟢 READY — Nâng cấp toàn diện hệ thống Nhắc Nhở Thanh Toán (Exact Alarm, Zero Time Drift & Multi-Device Sync)
+- **Phiên bản hiện tại:** v1.11.12 (versionCode 146)
+- **Trạng thái Build:** 🟢 PASSED — Chuẩn hóa Thẻ 3 Cột Prism Liquid Glass (Huy hiệu kính Glass Squircle, font số tiền 18sp Black, đổ bóng phát quang màu kép, spring bounce xúc giác)
+
+### [Task-UI-UX-MASTER-PLAN-P0-P1-COMPLETION] — Hoàn thiện các khoảng trống P0/P1 sau audit docs/plan
+- **Status**: `[DONE]`
+- **Mục tiêu & Kết quả hoàn thành**:
+  1. **Triệt tiêu Gesture Collision trong điều hướng tab**: Bổ sung cờ `snapResetSwipe` trong [FinluxNavHost.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt) nhằm snap ngay lập tức `swipeDragOffset` về `0f` khi kích hoạt chuyển tab, loại bỏ hiện tượng animation spring giật kép với `slideHorizontally` của NavHost.
+  2. **Động hóa nhận diện danh mục Tiết kiệm / Mục tiêu (BR-14)**: Bổ sung overload `netGoalContribution(isSavingsCategory: (String?) -> Boolean)` trong [TransactionSemantics.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt) và cập nhật [ReportsViewModel.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt) nhận diện cả category ID mặc định (`"203"`) lẫn từ khóa localization. Bổ sung test case trong [TransactionSemanticsTest.kt](file:///d:/BT/FinLux/app/src/test/java/com/finlux/app/domain/model/TransactionSemanticsTest.kt).
+  3. **Nhóm giao dịch theo ngày đồng bộ Timezone trên mọi Theme**:
+     - Expose `financeZone: StateFlow<ZoneId>` từ `TransactionsViewModel`.
+     - Đồng bộ nhóm theo ngày và header tổng thu/chi ngày sử dụng `financeZone` trên cả 3 theme: [PrismTransactionsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt), [ClassicTransactionsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt), [ModernTransactionsScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt).
+     - Kết nối đầy đủ luồng Undo khi xóa giao dịch và truyền đầy đủ bộ lọc tìm kiếm / khoảng tiền cho `TransactionFilterBottomSheet`.
+  4. **100% Dynamic Theme Colors (Zero Hardcoded Hex)**: Thay thế toàn bộ mã màu tĩnh trong Quick Actions và KPI card của [PrismHomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt) bằng `LocalFinluxTokens.current` (`primary`, `budget`, `secondary`, `saving`, `onSurfaceVariant`, `income`, `expense`).
+  5. **Traceability Matrix**: Bổ sung Mục 8 "Ma trận truy vết nghiệp vụ (Traceability Matrix)" trong [00_FINLUX_UI_UX_MASTER.md](file:///d:/BT/FinLux/docs/plan/00_FINLUX_UI_UX_MASTER.md) đối soát đầy đủ 22 module kế hoạch với các Use Case trong `BA_SPEC.md` và `DATA_SPEC.md`.
+  6. **Thiết kế Thẻ 3 Cột Thu Gọn, Không Viền với Icon 3D Chìm Trong Suốt Tuyệt Đối ([PrismHomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt))**:
+     - Loại bỏ hoàn toàn viền (`border = null`) trong cả 3 thẻ: Thu tháng này, Chi tháng này, Dòng tiền ròng.
+     - Thu gọn kích thước chiều cao xuống `102dp` (~33%).
+     - Thay thế hoàn toàn ảnh raster có khung xám bằng bộ 3 đồ họa 3D Vector Canvas 100% trong suốt: Mũi tên 3D Isometric ngọc lục bảo + đồng xu vàng nổi (Thu), Mũi tên cong 3D đỏ san hô + đồng xu nổi (Chi), Khối cầu pha lê 3D với sóng phân tích sáng (Dòng tiền).
+     - Chữ và số tiền in đậm nổi bật đè trực tiếp lên trên icon 3D chìm, loại bỏ triệt để viền hộp xám.
+  7. **Tăng Cỡ Số Tiền Nổi Bật và Đổ Bóng Nhẹ Cho Thẻ 3 Cột ([PrismHomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt))**:
+     - Nâng cỡ chữ số tiền lên đến `18.sp` (tăng ~24% kích thước), letterSpacing `0.3.sp`, `FontWeight.Black`.
+     - Thêm hiệu ứng `Shadow` đổ bóng nhẹ tương ứng theo màu sắc giúp số tiền nổi bật rõ nét trên cả nền sáng và nền tối.
+     - Đồng bộ và cập nhật toàn bộ test case `PrismHomeLayoutTest.kt` pass 100%.
+  8. **Nâng Cấp Thẻ 3 Cột Nổi Bật, Sang Trọng và Linh Hoạt (Prism Elevation & Tactile Spring) ([PrismHomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt))**:
+     - Độ nổi khối vượt trội với đổ bóng màu kép (`Modifier.shadow` có `spotColor` phát quang xanh/đỏ/xanh dương) và nền phủ nhẹ `Brush.verticalGradient`.
+     - Tích hợp tương tác nảy đàn hồi lò xo (`Spring.StiffnessMediumLow`, scale `0.95f`) khi chạm, tạo cảm giác linh hoạt và sống động.
+  9. **Tinh Chỉnh Thẻ 3 Cột Sang Trọng, Tối Giản, Cân Đối Tuyệt Đối ([PrismHomeScreen.kt](file:///d:/BT/FinLux/app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt))**:
+     - Loại bỏ hoàn toàn hình vẽ watermark góc cắt cụt và đồng xu vàng gây rối mắt, trả lại không gian thoáng đãng sạch sẽ.
+     - Tinh chỉnh huy hiệu kính `PrismMetricMiniBadge` dạng Glass Squircle trong suốt siêu nét đồng màu với thẻ.
+     - Tối ưu bố cục 3 tầng đối xứng hoàn hảo (Huy hiệu kính + Tiêu đề -> Số tiền to bản rõ nét -> Pill xu hướng căn giữa).
+     - Bổ sung viền kính siêu mỏng `0.8.dp` phản quang mềm mại giúp định hình rõ ranh giới thẻ trên màn hình.
+- **Files Modified**:
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/model/TransactionSemanticsTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+  - `docs/plan/00_FINLUX_UI_UX_MASTER.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-UI-UX-MASTER-PLAN-REFINEMENT-v1.11.11] — Cải Tiến Toàn Diện Giao Diện FinLux (docs/plan Master Plan)
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. **Gói 1: Home Quick Actions Liquid Glass & KPI Kỳ tài chính**:
+     - Chuyển 5 nút tính năng tròn từ pastel phẳng sang chất liệu Liquid Glass Frost Tiles (kính khúc xạ, viền sáng phản chiếu đa tầng, radial glow, độ tương phản cao trên mọi theme).
+     - Đồng bộ nhãn 3 thẻ KPI theo dải ngày `FinancialPeriod` khi bật `SalaryCycleConfig` ("Thu kỳ này", "Chi kỳ này", "Dòng tiền kỳ").
+  2. **Gói 2: Tái cấu trúc Report Navigation (4 Tabs tinh gọn)**:
+     - Tái cấu trúc điều hướng Báo cáo: 4 tab chính cố định (`Tổng quan`, `Thu & Chi`, `Danh mục`, `Chuyên sâu`) vừa vặn chiều ngang màn hình, chấm dứt tình trạng cuộn ngang 8 tab.
+     - Tích hợp Secondary Segmented Chips trong tab `Chuyên sâu` cho 5 báo cáo chi tiết (`Vay nợ`, `Tiết kiệm`, `Ngân sách`, `Tài sản`, `Xu hướng`).
+     - Kết nối thông minh chuyển tab tự động từ các card trên tab Tổng quan.
+  3. **Gói 3: Trực quan hóa Ngân sách & Dải màu rủi ro (Budget Risk)**:
+     - Thêm pill nhãn phần trăm trực quan "Đã dùng X%" (hoặc "Vượt X%").
+     - Áp dụng dải màu rủi ro động: Xanh lá (<=70%), Vàng cam (70-90%), Cam đậm (90-100%), Đỏ báo động (>100%).
+     - Bổ sung đếm ngược "Còn X ngày trong kỳ" trên thẻ Hero ngân sách.
+  4. **Gói 4: Gom nhóm Lịch sử giao dịch theo mốc ngày (Date Grouping)**:
+     - Nhóm danh sách giao dịch theo header ngày ("Hôm nay", "Hôm qua", "dd/MM/yyyy") kèm tổng thu/chi ngày rõ ràng.
+  5. **Gói 5: Chuẩn hóa component FinluxEmptyState dùng chung**:
+     - Chuẩn hóa màu chữ và icon trong `FinluxFeedbackComponents.kt`, tuân thủ 100% theme tokens (`tokens.onHero`, `tokens.onSurface`).
+- **Kết quả Kiểm thử**:
+  - `gradlew :app:testDebugUnitTest`: **PASS 100%** (34 actionable tasks, 12 executed, 22 up-to-date, exit code 0).
+- **Files Thực tế Chỉnh sửa**:
+  - `app/build.gradle.kts` (MODIFIED — version bump 1.11.11, versionCode 145)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt` (MODIFIED — Dynamic onHero token)
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt` (MODIFIED — Liquid Glass Frost Tiles & cycle KPI labels)
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (MODIFIED — 4-tab Segmented pill navigation & Deep Dive subtabs)
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` (MODIFIED — Dynamic risk palette, percent pill & days countdown)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (MODIFIED — Daily transaction grouping with day headers and net cashflow)
+  - `CHANGELOG.md` (MODIFIED)
+  - `HANDOVER_LOG.md` (MODIFIED)
 
 ### [Task-PAYMENT-REMINDER-EXACT-ALARM-SYNC] — Khắc Phục Doze Mode, Chống Trôi Giờ Chu Kỳ & Đồng Bộ Đa Thiết Bị Nhắc Nhở Thanh Toán
 - **Status**: `[DONE]`

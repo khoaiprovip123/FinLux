@@ -91,6 +91,7 @@ import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.core.navigation.Route
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.FinanceTransaction
@@ -110,10 +111,14 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-private enum class ReportMainTab(val label: String, val icon: ImageVector) {
+private enum class ReportPrimaryTab(val label: String, val icon: ImageVector) {
     OVERVIEW("Tổng quan", Icons.Default.PieChart),
     CASHFLOW("Thu & Chi", Icons.Default.SwapVert),
     CATEGORIES("Danh mục", Icons.Default.GridView),
+    DEEP_DIVE("Chuyên sâu", Icons.Default.Payments),
+}
+
+private enum class DeepDiveSubTab(val label: String, val icon: ImageVector) {
     DEBTS("Vay nợ", Icons.Default.CreditCard),
     SAVINGS("Tiết kiệm", Icons.Default.Savings),
     BUDGETS("Ngân sách", Icons.Default.AccountBalanceWallet),
@@ -132,7 +137,8 @@ fun PrismReportsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tokens = LocalFinluxTokens.current
 
-    var selectedTab by remember { mutableStateOf(ReportMainTab.OVERVIEW) }
+    var selectedPrimaryTab by remember { mutableStateOf(ReportPrimaryTab.OVERVIEW) }
+    var selectedDeepDiveTab by remember { mutableStateOf(DeepDiveSubTab.DEBTS) }
     var selectedChartIndex by remember { mutableIntStateOf(-1) }
     var showPeriodPickerSheet by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
@@ -158,30 +164,48 @@ fun PrismReportsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Horizontal scrollable Tab Chips Bar
+            // 4 Primary Tabs Row (Tổng quan | Thu & Chi | Danh mục | Chuyên sâu)
             item {
-                PrismReportTabsRow(
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it },
+                PrismReportPrimaryTabsRow(
+                    selectedTab = selectedPrimaryTab,
+                    onTabSelected = { selectedPrimaryTab = it },
                 )
             }
 
-            when (selectedTab) {
-                ReportMainTab.OVERVIEW -> {
+            // Secondary Sub-tabs when "Chuyên sâu" is active
+            if (selectedPrimaryTab == ReportPrimaryTab.DEEP_DIVE) {
+                item {
+                    PrismDeepDiveSubTabsRow(
+                        selectedSubTab = selectedDeepDiveTab,
+                        onSubTabSelected = { selectedDeepDiveTab = it },
+                    )
+                }
+            }
+
+            when (selectedPrimaryTab) {
+                ReportPrimaryTab.OVERVIEW -> {
                     item { PrismReportsHeroBanner(state, onPickMonth = { showPeriodPickerSheet = true }) }
-                    item { PrismOverviewMultiCards(state, onTabSelect = { selectedTab = it }) }
+                    item {
+                        PrismOverviewMultiCards(
+                            state = state,
+                            onNavigateToDeepDive = { subTab ->
+                                selectedPrimaryTab = ReportPrimaryTab.DEEP_DIVE
+                                selectedDeepDiveTab = subTab
+                            },
+                        )
+                    }
                     if (state.expensesByCategory.isNotEmpty()) {
                         item {
                             PrismCategoryOverviewCard(
                                 state = state,
-                                onViewDetail = { selectedTab = ReportMainTab.CATEGORIES },
+                                onViewDetail = { selectedPrimaryTab = ReportPrimaryTab.CATEGORIES },
                             )
                         }
                     }
                     item { PrismDailyAveragesRow(state) }
                 }
 
-                ReportMainTab.CASHFLOW -> {
+                ReportPrimaryTab.CASHFLOW -> {
                     item { PrismReportsHeroBanner(state, onPickMonth = { showPeriodPickerSheet = true }) }
                     item {
                         PrismCashflowChartCard(
@@ -197,104 +221,108 @@ fun PrismReportsScreen(
                     }
                 }
 
-                ReportMainTab.CATEGORIES -> {
+                ReportPrimaryTab.CATEGORIES -> {
                     item { PrismCategoryOverviewCard(state = state, onViewDetail = {}) }
                     if (state.incomeByCategory.isNotEmpty()) {
                         item { PrismIncomeCategoryCard(state = state) }
                     }
                 }
 
-                ReportMainTab.DEBTS -> {
-                    item { PrismDebtsHeroCard(state) }
-                    if (state.debtReportItems.isEmpty()) {
-                        item {
-                            FinluxSoftCard(Modifier.fillMaxWidth()) {
-                                FinluxEmptyState(
-                                    title = "Không có khoản vay nợ nào",
-                                    description = "Quản lý thẻ tín dụng, khoản vay ngân hàng và trả góp dễ dàng tại đây.",
-                                    actionLabel = null,
-                                    onActionClick = null,
-                                )
+                ReportPrimaryTab.DEEP_DIVE -> {
+                    when (selectedDeepDiveTab) {
+                        DeepDiveSubTab.DEBTS -> {
+                            item { PrismDebtsHeroCard(state) }
+                            if (state.debtReportItems.isEmpty()) {
+                                item {
+                                    FinluxSoftCard(Modifier.fillMaxWidth()) {
+                                        FinluxEmptyState(
+                                            title = "Không có khoản vay nợ nào",
+                                            description = "Quản lý thẻ tín dụng, khoản vay ngân hàng và trả góp dễ dàng tại đây.",
+                                            actionLabel = "+ Thêm khoản vay / thẻ tín dụng",
+                                            onActionClick = { onNavigate(Route.Debt.value) },
+                                        )
+                                    }
+                                }
+                            } else {
+                                items(state.debtReportItems, key = { it.debt.id }) { debtItem ->
+                                    PrismDebtItemCard(debtItem)
+                                }
                             }
                         }
-                    } else {
-                        items(state.debtReportItems, key = { it.debt.id }) { debtItem ->
-                            PrismDebtItemCard(debtItem)
-                        }
-                    }
-                }
 
-                ReportMainTab.SAVINGS -> {
-                    item { PrismSavingsHeroCard(state) }
-                    if (state.goalReportItems.isEmpty()) {
-                        item {
-                            FinluxSoftCard(Modifier.fillMaxWidth()) {
-                                FinluxEmptyState(
-                                    title = "Chưa có mục tiêu tiết kiệm",
-                                    description = "Tạo các mục tiêu tài chính như Mua nhà, Mua xe, Du lịch để theo dõi tích lũy.",
-                                    actionLabel = null,
-                                    onActionClick = null,
-                                )
+                        DeepDiveSubTab.SAVINGS -> {
+                            item { PrismSavingsHeroCard(state) }
+                            if (state.goalReportItems.isEmpty()) {
+                                item {
+                                    FinluxSoftCard(Modifier.fillMaxWidth()) {
+                                        FinluxEmptyState(
+                                            title = "Chưa có mục tiêu tiết kiệm",
+                                            description = "Tạo các mục tiêu tài chính như Mua nhà, Mua xe, Du lịch để theo dõi tích lũy.",
+                                            actionLabel = "+ Tạo mục tiêu tài chính",
+                                            onActionClick = { onNavigate(Route.Goals.value) },
+                                        )
+                                    }
+                                }
+                            } else {
+                                items(state.goalReportItems, key = { it.goal.id }) { goalItem ->
+                                    PrismGoalItemCard(goalItem)
+                                }
                             }
                         }
-                    } else {
-                        items(state.goalReportItems, key = { it.goal.id }) { goalItem ->
-                            PrismGoalItemCard(goalItem)
-                        }
-                    }
-                }
 
-                ReportMainTab.BUDGETS -> {
-                    item { PrismBudgetsHeroCard(state) }
-                    if (state.budgetReportItems.isEmpty()) {
-                        item {
-                            FinluxSoftCard(Modifier.fillMaxWidth()) {
-                                FinluxEmptyState(
-                                    title = "Chưa thiết lập ngân sách",
-                                    description = "Đặt hạn mức chi tiêu cho từng danh mục để kiểm soát tài chính tối ưu.",
-                                    actionLabel = null,
-                                    onActionClick = null,
-                                )
+                        DeepDiveSubTab.BUDGETS -> {
+                            item { PrismBudgetsHeroCard(state) }
+                            if (state.budgetReportItems.isEmpty()) {
+                                item {
+                                    FinluxSoftCard(Modifier.fillMaxWidth()) {
+                                        FinluxEmptyState(
+                                            title = "Chưa thiết lập ngân sách",
+                                            description = "Đặt hạn mức chi tiêu cho từng danh mục để kiểm soát tài chính tối ưu.",
+                                            actionLabel = "Thiết lập ngân sách",
+                                            onActionClick = { onNavigate(Route.Budget.value) },
+                                        )
+                                    }
+                                }
+                            } else {
+                                items(state.budgetReportItems, key = { it.budget.id }) { budgetItem ->
+                                    PrismBudgetItemCard(budgetItem)
+                                }
                             }
                         }
-                    } else {
-                        items(state.budgetReportItems, key = { it.budget.id }) { budgetItem ->
-                            PrismBudgetItemCard(budgetItem)
-                        }
-                    }
-                }
 
-                ReportMainTab.WALLETS -> {
-                    item { PrismWalletsHeroCard(state) }
-                    if (state.walletReportItems.isEmpty()) {
-                        item {
-                            FinluxSoftCard(Modifier.fillMaxWidth()) {
-                                FinluxEmptyState(
-                                    title = "Chưa có ví hoạt động",
-                                    description = "Thêm ví tiền mặt, tài khoản ngân hàng hoặc thẻ để xem phân bổ tài sản.",
-                                    actionLabel = null,
-                                    onActionClick = null,
-                                )
+                        DeepDiveSubTab.WALLETS -> {
+                            item { PrismWalletsHeroCard(state) }
+                            if (state.walletReportItems.isEmpty()) {
+                                item {
+                                    FinluxSoftCard(Modifier.fillMaxWidth()) {
+                                        FinluxEmptyState(
+                                            title = "Chưa có ví hoạt động",
+                                            description = "Thêm ví tiền mặt, tài khoản ngân hàng hoặc thẻ để xem phân bổ tài sản.",
+                                            actionLabel = "+ Thêm ví",
+                                            onActionClick = { onNavigate(Route.Wallets.value) },
+                                        )
+                                    }
+                                }
+                            } else {
+                                items(state.walletReportItems, key = { it.wallet.id }) { walletItem ->
+                                    PrismWalletReportCard(walletItem)
+                                }
                             }
                         }
-                    } else {
-                        items(state.walletReportItems, key = { it.wallet.id }) { walletItem ->
-                            PrismWalletReportCard(walletItem)
+
+                        DeepDiveSubTab.TREND -> {
+                            item {
+                                PrismCashflowChartCard(
+                                    state = state,
+                                    selectedIndex = selectedChartIndex,
+                                    onSelectIndex = { selectedChartIndex = it },
+                                    onPickMonth = { showPeriodPickerSheet = true },
+                                )
+                            }
+                            item { PrismDailyAveragesRow(state) }
+                            item { PrismTrendAnalysisCard(state) }
                         }
                     }
-                }
-
-                ReportMainTab.TREND -> {
-                    item {
-                        PrismCashflowChartCard(
-                            state = state,
-                            selectedIndex = selectedChartIndex,
-                            onSelectIndex = { selectedChartIndex = it },
-                            onPickMonth = { showPeriodPickerSheet = true },
-                        )
-                    }
-                    item { PrismDailyAveragesRow(state) }
-                    item { PrismTrendAnalysisCard(state) }
                 }
             }
         }
@@ -436,28 +464,31 @@ private fun PrismReportsHeader(
 }
 
 /**
- * 2. Navigation Scrollable Segmented Tabs Row
+ * 2. Navigation 4 Primary Tabs Row (Tổng quan | Thu & Chi | Danh mục | Chuyên sâu)
  */
 @Composable
-private fun PrismReportTabsRow(
-    selectedTab: ReportMainTab,
-    onTabSelected: (ReportMainTab) -> Unit,
+private fun PrismReportPrimaryTabsRow(
+    selectedTab: ReportPrimaryTab,
+    onTabSelected: (ReportPrimaryTab) -> Unit,
 ) {
     val tokens = LocalFinluxTokens.current
 
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(tokens.surfaceSoft)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        items(ReportMainTab.entries) { tab ->
+        ReportPrimaryTab.entries.forEach { tab ->
             val isSelected = selectedTab == tab
-
             Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = if (isSelected) Color(0xFF5B4DFF) else if (tokens.isDark) Color(0xFF1E1E2D) else Color(0xFFF3F4F6),
-                border = if (!isSelected && tokens.isDark) BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)) else null,
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) tokens.primary else Color.Transparent,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(14.dp))
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(bounded = true),
@@ -465,25 +496,81 @@ private fun PrismReportTabsRow(
                     ),
             ) {
                 Row(
-                    modifier = Modifier.padding(vertical = 9.dp, horizontal = 14.dp),
+                    modifier = Modifier.padding(vertical = 9.dp, horizontal = 4.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = tab.icon,
                         contentDescription = null,
-                        tint = if (isSelected) Color.White else Color(0xFF6B7280),
+                        tint = if (isSelected) tokens.onHero else tokens.onSurfaceVariant,
                         modifier = Modifier.size(15.dp),
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = tab.label,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 12.5.sp,
+                            fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         ),
-                        color = if (isSelected) Color.White else tokens.onSurface.copy(alpha = 0.8f),
+                        color = if (isSelected) tokens.onHero else tokens.onSurfaceVariant,
                         maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 2b. Secondary Sub-tabs for "Chuyên sâu" (Vay nợ, Tiết kiệm, Ngân sách, Tài sản, Xu hướng)
+ */
+@Composable
+private fun PrismDeepDiveSubTabsRow(
+    selectedSubTab: DeepDiveSubTab,
+    onSubTabSelected: (DeepDiveSubTab) -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(DeepDiveSubTab.entries) { subTab ->
+            val isSelected = selectedSubTab == subTab
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) tokens.primary.copy(alpha = if (tokens.isDark) 0.28f else 0.15f) else tokens.surfaceSoft,
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (isSelected) tokens.primary.copy(alpha = 0.5f) else tokens.border.copy(alpha = 0.3f),
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(bounded = true),
+                        onClick = { onSubTabSelected(subTab) },
+                    ),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        imageVector = subTab.icon,
+                        contentDescription = null,
+                        tint = if (isSelected) tokens.primary else tokens.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = subTab.label,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        ),
+                        color = if (isSelected) tokens.primary else tokens.onSurface,
                     )
                 }
             }
@@ -667,7 +754,7 @@ private fun PrismReportsHeroBanner(
 @Composable
 private fun PrismOverviewMultiCards(
     state: ReportsUiState,
-    onTabSelect: (ReportMainTab) -> Unit,
+    onNavigateToDeepDive: (DeepDiveSubTab) -> Unit,
 ) {
     val tokens = LocalFinluxTokens.current
 
@@ -684,7 +771,7 @@ private fun PrismOverviewMultiCards(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
-                    .clickable { onTabSelect(ReportMainTab.WALLETS) },
+                    .clickable { onNavigateToDeepDive(DeepDiveSubTab.WALLETS) },
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -708,7 +795,7 @@ private fun PrismOverviewMultiCards(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
-                    .clickable { onTabSelect(ReportMainTab.DEBTS) },
+                    .clickable { onNavigateToDeepDive(DeepDiveSubTab.DEBTS) },
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -737,7 +824,7 @@ private fun PrismOverviewMultiCards(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
-                    .clickable { onTabSelect(ReportMainTab.BUDGETS) },
+                    .clickable { onNavigateToDeepDive(DeepDiveSubTab.BUDGETS) },
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -765,7 +852,7 @@ private fun PrismOverviewMultiCards(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
-                    .clickable { onTabSelect(ReportMainTab.SAVINGS) },
+                    .clickable { onNavigateToDeepDive(DeepDiveSubTab.SAVINGS) },
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1150,49 +1237,46 @@ private fun PrismDebtItemCard(item: DebtReportItem) {
  */
 @Composable
 private fun PrismSavingsHeroCard(state: ReportsUiState) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF10B981).copy(alpha = 0.3f)),
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = tokens.primary.copy(alpha = 0.3f)),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF059669),
-                            Color(0xFF10B981),
-                            Color(0xFF047857),
-                        ),
+                        colors = tokens.heroGradient,
                     ),
                 )
                 .padding(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("BÁO CÁO TIẾT KIỆM & TÍCH LŨY", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                Text("BÁO CÁO TIẾT KIỆM & TÍCH LŨY", style = MaterialTheme.typography.labelSmall, color = tokens.onHeroMuted)
                 Text(
                     text = formatVndAmount(state.totalGoalSaved),
                     style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
-                Text("Tổng tài sản đã tích lũy vào các mục tiêu", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
+                Text("Tổng đã tích lũy vào các mục tiêu", style = MaterialTheme.typography.bodySmall, color = tokens.onHeroMuted)
 
                 Spacer(Modifier.height(4.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("Tổng mục tiêu cần đạt", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalGoalTarget), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Dòng tiền còn lại", fontSize = 11.5.sp, color = tokens.onHeroMuted)
+                        Text(formatVndAmount(state.unspentCashFlow), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                     Column {
-                        Text("Tiến độ chung", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text("${(state.overallGoalProgress * 100).roundToInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                        Text("Tỷ lệ giữ lại", fontSize = 11.5.sp, color = tokens.onHeroMuted)
+                        Text("${state.savingsRatePercent}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                     Column {
-                        Text("Tỷ lệ tiết kiệm kỳ", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text("${state.savingsRatePercent}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4ADE80))
+                        Text("Vào mục tiêu kỳ này", fontSize = 11.5.sp, color = tokens.onHeroMuted)
+                        Text(formatVndAmount(state.goalContributionInPeriod), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                 }
             }
@@ -1531,6 +1615,23 @@ private fun PrismLargestTransactionsCard(state: ReportsUiState) {
 @Composable
 private fun PrismTrendAnalysisCard(state: ReportsUiState) {
     val tokens = LocalFinluxTokens.current
+    val netChange = state.summary.net - state.previousNet
+    val topExpense = state.expensesByCategory.firstOrNull()
+    val insights = buildList {
+        add(
+            when {
+                netChange > 0L -> "Dòng tiền ròng tăng ${formatVndAmount(netChange)} so với kỳ trước."
+                netChange < 0L -> "Dòng tiền ròng giảm ${formatVndAmount(-netChange)} so với kỳ trước."
+                else -> "Dòng tiền ròng không thay đổi so với kỳ trước."
+            },
+        )
+        topExpense?.let {
+            add("${it.category?.name ?: "Chưa phân loại"} là nhóm chi lớn nhất, chiếm ${(it.percentage * 100).roundToInt()}% tổng chi.")
+        }
+        if (state.goalContributionInPeriod > 0L) {
+            add("Đã phân bổ ròng ${formatVndAmount(state.goalContributionInPeriod)} vào mục tiêu tài chính trong kỳ.")
+        }
+    }
 
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -1540,15 +1641,13 @@ private fun PrismTrendAnalysisCard(state: ReportsUiState) {
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Đánh giá xu hướng tài chính", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
-            Text(
-                if (state.summary.net >= 0) {
-                    "Dòng tiền kỳ này đang dương (+${formatVndAmount(state.summary.net)}). Bạn đang tích lũy tốt và duy trì thói quen chi tiêu thông minh!"
-                } else {
-                    "Chi tiêu trong kỳ đang vượt thu nhập (-${formatVndAmount(-state.summary.net)}). Hãy rà soát lại các danh mục chi tiêu lớn để cân đối tài chính."
-                },
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp),
-                color = tokens.onSurface.copy(alpha = 0.85f),
-            )
+            insights.forEach { insight ->
+                Text(
+                    text = "• $insight",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp),
+                    color = tokens.onSurface.copy(alpha = 0.85f),
+                )
+            }
         }
     }
 }

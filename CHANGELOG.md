@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.11.12] - 2026-08-28
+### Added
+- **Nâng cấp Thẻ 3 Cột Prism Liquid Glass (Thu tháng này, Chi tháng này, Dòng tiền ròng)**:
+  * Tích hợp huy hiệu kính `PrismMetricMiniBadge` dạng Glass Squircle siêu nét với icon vector đồng màu cho từng loại chỉ số.
+  * Tích hợp hiệu ứng nảy đàn hồi lò xo xúc giác (`Spring.StiffnessMediumLow`, scale 0.95f) khi chạm.
+  * Đổ bóng màu phát quang mềm mại (`spotColor` xanh ngọc lục bảo, đỏ san hô, xanh sapphire) tạo độ nổi 3D tách biệt khỏi nền màn hình.
+
+### Changed
+- Bố cục 3 thẻ số liệu chuẩn hóa 3 tầng đối xứng hoàn hảo (Huy hiệu kính + Tiêu đề -> Số tiền lớn in đậm Black 18sp -> Pill xu hướng bo tròn căn giữa).
+- Tăng kích thước số tiền lên 18sp (+24%), font weight Black, giãn cách ký tự và đổ bóng phát sáng màu giúp đọc số liệu tức thì.
+- Chiều cao thẻ thu gọn tinh tế 104dp, viền kính siêu mảnh 0.8dp sắc sảo.
+
+### Fixed
+- Loại bỏ triệt để toàn bộ hình vẽ góc cụt, đồng xu vàng lạc quẻ và các khung viền/hộp xám không đồng bộ ở phiên bản trước.
+
+## [1.11.11] - 2026-08-28
+### Added
+- **Gói hoàn thiện Master Plan P0/P1 (tranche 2026-08-28)**:
+  * Lịch sử hỗ trợ search tiếng Việt không dấu theo ghi chú/danh mục/ví/số tiền, lọc kỳ tài chính hiện tại/kỳ trước, 30 ngày/3 tháng/6 tháng và khoảng tiền.
+  * Thu nhập và Chi tiêu dùng chung `FinancialPeriod`; biểu đồ chi theo ngày có đường trung bình, mốc ngày thật và highlight ngày cao nhất.
+  * Báo cáo có CTA thật cho Vay nợ/Mục tiêu/Ngân sách/Ví và insight dựa trên số liệu hiện tại so với kỳ trước.
+  * Bổ sung unit test cho semantic chuyển tiền, tài sản, đóng góp mục tiêu và tìm kiếm/bộ lọc giao dịch.
+- **Gói 1: Home Quick Actions Liquid Glass Frost Tiles & KPI Kỳ tài chính**:
+  * Chuyển đổi 5 nút tính năng tròn (Chuyển khoản, Ngân sách, Quét mã QR, Báo cáo, Vay nợ) thành **Liquid Glass Frost Tiles** với viền sáng phản chiếu đa lớp `Brush.linearGradient`, nền kính khúc xạ `Brush.radialGradient`, ambient glow và độ tương phản cao trên cả theme sáng/tối.
+  * Thêm hỗ trợ `salaryCycleLabel` trên `PrismSummaryTrioCard`: tự động đổi thành "Thu kỳ này", "Chi kỳ này", "Dòng tiền kỳ" khi bật chu kỳ lương.
+- **Gói 2: Tái cấu trúc Report Navigation (4 Tabs tinh gọn)**:
+  * Tái cấu trúc điều hướng Báo cáo Prism sang 4 tab chính cố định (`Tổng quan`, `Thu & Chi`, `Danh mục`, `Chuyên sâu`), loại bỏ thanh cuộn ngang 8 tab giúp thao tác một chạm nhanh chóng.
+  * Tích hợp hàng secondary chips trong tab `Chuyên sâu` cho 5 phân hệ chi tiết: Vay nợ, Tiết kiệm, Ngân sách, Tài sản, Xu hướng.
+  * Kết nối thông minh: click vào thẻ Tài sản ròng, Dư nợ, Ngân sách, Tiết kiệm trên tab Tổng quan tự động mở đúng tab con tương ứng.
+- **Gói 3: Trực quan hóa Ngân sách & Dải màu cảnh báo rủi ro**:
+  * Thêm nhãn pill tiến độ "Đã dùng X%" (hoặc "Vượt X%") trên từng danh mục ngân sách.
+  * Áp dụng dải màu rủi ro động 4 cấp: Xanh lá (<=70%), Vàng hổ phách (70-90%), Cam đậm (90-100%), Đỏ cảnh báo (>100%).
+  * Bổ sung đếm ngược số ngày còn lại trong kỳ ngân sách ("Còn X ngày trong kỳ" hoặc "Ngày cuối kỳ") trên thẻ Hero ngân sách.
+- **Gói 4: Gom nhóm Lịch sử giao dịch theo mốc ngày**:
+  * Tự động phân nhóm giao dịch theo mốc ngày ("Hôm nay", "Hôm qua", "dd/MM/yyyy").
+  * Hiển thị header ngày với số lượng giao dịch và tổng thu/chi ròng trong ngày.
+
+### Changed
+- Vuốt giữa Trang chủ/Lịch sử/Báo cáo/Hồ sơ bám theo ngón tay, có edge resistance và spring trả vị trí; bottom navigation giữ cố định.
+- Báo cáo Tiết kiệm tách rõ Dòng tiền còn lại, Tỷ lệ giữ lại thu nhập và Đã phân bổ vào mục tiêu trong kỳ.
+- Tổng tài sản Home/Báo cáo chỉ cộng ví hoạt động không phải thẻ tín dụng; Net Worth tiếp tục trừ dư nợ.
+- Chuẩn hóa màu sắc trong `FinluxFeedbackComponents.kt` tuân thủ 100% tokens theme động (`tokens.onHero`, `tokens.onSurface`), xóa bỏ hardcode `Color.White`.
+
+### Fixed
+- Cặp chuyển tiền nội bộ `_out`/`_in` được trình bày thành một dòng logic trên Home và Lịch sử, không còn cảm giác bị ghi nhận hai lần.
+- Reset bộ lọc Lịch sử xóa cả query và khoảng tiền; badge phản ánh đầy đủ mọi điều kiện đang áp dụng.
+- Khắc phục lỗi hiển thị nhãn kỳ tài chính không đồng bộ trên hàng KPI Trang chủ khi cấu hình chu kỳ lương tùy chỉnh.
+
 ## [1.11.10] - 2026-08-28
 ### Added & Enhanced (Payment Reminder Exact Alarm, Zero Time Drift & Multi-Device Sync)
 - **Chống Doze Mode & Báo thức chính xác từng giây (Exact Alarm Engine)**:

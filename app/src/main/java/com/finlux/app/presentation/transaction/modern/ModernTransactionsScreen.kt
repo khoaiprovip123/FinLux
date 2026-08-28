@@ -29,8 +29,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -78,10 +80,14 @@ fun ModernTransactionsScreen(
     val periodFilter = viewModel.periodFilter.collectAsStateWithLifecycle().value
     val selectedWalletId = viewModel.walletFilter.collectAsStateWithLifecycle().value
     val selectedCategoryId = viewModel.categoryFilter.collectAsStateWithLifecycle().value
+    val searchQuery = viewModel.searchQuery.collectAsStateWithLifecycle().value
+    val minimumAmount = viewModel.minimumAmount.collectAsStateWithLifecycle().value
+    val maximumAmount = viewModel.maximumAmount.collectAsStateWithLifecycle().value
     val totalIncome = viewModel.totalIncome.collectAsStateWithLifecycle().value
     val totalExpense = viewModel.totalExpense.collectAsStateWithLifecycle().value
     val netCashFlow = viewModel.netCashFlow.collectAsStateWithLifecycle().value
     val activeFilterCount = viewModel.activeFilterCount.collectAsStateWithLifecycle().value
+    val financeZone = viewModel.financeZone.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
 
     var viewingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
@@ -89,7 +95,18 @@ fun ModernTransactionsScreen(
     var pendingDelete by remember { mutableStateOf<FinanceTransaction?>(null) }
     var showFilterSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
+    LaunchedEffect(Unit) {
+        viewModel.messages.collect { event ->
+            val result = snackbar.showSnackbar(
+                message = event.message,
+                actionLabel = if (event.undoTransaction != null) "Hoàn tác" else null,
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed && event.undoTransaction != null) {
+                viewModel.restore(event.undoTransaction)
+            }
+        }
+    }
 
     val isRootTab = onNavigate != null && onAdd != null
 
@@ -144,6 +161,14 @@ fun ModernTransactionsScreen(
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
+                val groupedTransactions = remember(transactions, financeZone) {
+                    transactions.groupBy { tx ->
+                        tx.date.atZone(financeZone).toLocalDate()
+                    }
+                }
+                val today = remember(financeZone) { java.time.LocalDate.now(financeZone) }
+                val yesterday = remember(today) { today.minusDays(1) }
+
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(11.dp),
@@ -177,69 +202,117 @@ fun ModernTransactionsScreen(
                             }
                         }
                     }
-                    items(transactions, key = { it.id }) { transaction ->
-                        val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
-                        val cat = categories[transaction.categoryId]
-                        val relWallet = wallets[transaction.relatedWalletId]
-                        val curWallet = wallets[transaction.walletId]
-                        val rowAccent = when (transaction.type) {
-                            TransactionType.INCOME -> cat?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
-                            TransactionType.EXPENSE -> cat?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
-                            TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
-                        }
-                        val rowIcon = when (transaction.type) {
-                            TransactionType.INCOME -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
-                            TransactionType.EXPENSE -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
-                            TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
-                        }
-                        val title = transaction.note.ifBlank {
-                            when (transaction.type) {
-                                TransactionType.INCOME -> cat?.name ?: "Thu nhập"
-                                TransactionType.EXPENSE -> cat?.name ?: "Chi tiêu"
-                                TransactionType.TRANSFER_OUT -> if (relWallet != null) "Chuyển đến ${relWallet.name}" else "Chuyển tiền đi"
-                                TransactionType.TRANSFER_IN -> if (relWallet != null) "Nhận từ ${relWallet.name}" else "Nhận tiền chuyển"
+
+                    groupedTransactions.forEach { (date, txList) ->
+                        item(key = "header_$date") {
+                            val headerTitle = when (date) {
+                                today -> "Hôm nay"
+                                yesterday -> "Hôm qua"
+                                else -> date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                            }
+                            val dayIncome = txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
+                            val dayExpense = txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+                            val dayNet = dayIncome - dayExpense
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Text(
+                                        text = headerTitle,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = "(${txList.size})",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                                if (dayExpense > 0L || dayIncome > 0L) {
+                                    Text(
+                                        text = if (dayNet >= 0) "+${dayNet.toVnd()}" else "-${(-dayNet).toVnd()}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (dayNet >= 0) IncomeGreen else ExpenseRed,
+                                    )
+                                }
                             }
                         }
-                        val amountPrefix = when (transaction.type) {
-                            TransactionType.INCOME, TransactionType.TRANSFER_IN -> "+"
-                            TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> "-"
-                        }
 
-                        GlassCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            mode = com.finlux.app.core.designsystem.modern.LiquidGlassMode.REGULAR,
-                            tint = rowAccent,
-                            padding = PaddingValues(14.dp),
-                            onClick = { viewingTransaction = transaction },
-                            onLongClick = { actionTransaction = transaction },
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(shape = RoundedCornerShape(12.dp), color = rowAccent.copy(alpha = .12f)) {
-                                    Icon(
-                                        rowIcon,
-                                        null,
-                                        Modifier.padding(9.dp).size(20.dp),
-                                        tint = rowAccent,
-                                    )
+                        items(txList, key = { it.id }) { transaction ->
+                            val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
+                            val cat = categories[transaction.categoryId]
+                            val relWallet = wallets[transaction.relatedWalletId]
+                            val curWallet = wallets[transaction.walletId]
+                            val rowAccent = when (transaction.type) {
+                                TransactionType.INCOME -> cat?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
+                                TransactionType.EXPENSE -> cat?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
+                                TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+                            }
+                            val rowIcon = when (transaction.type) {
+                                TransactionType.INCOME -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
+                                TransactionType.EXPENSE -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
+                                TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
+                            }
+                            val title = transaction.note.ifBlank {
+                                when (transaction.type) {
+                                    TransactionType.INCOME -> cat?.name ?: "Thu nhập"
+                                    TransactionType.EXPENSE -> cat?.name ?: "Chi tiêu"
+                                    TransactionType.TRANSFER_OUT -> if (relWallet != null) "Chuyển đến ${relWallet.name}" else "Chuyển tiền đi"
+                                    TransactionType.TRANSFER_IN -> if (relWallet != null) "Nhận từ ${relWallet.name}" else "Nhận tiền chuyển"
                                 }
-                                Column(Modifier.weight(1f).padding(horizontal = 11.dp)) {
-                                    Text(title, fontWeight = FontWeight.Bold)
-                                    Text(
-                                        DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm").format(transaction.date.atZone(ZoneId.systemDefault())),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = FinluxTextSecondary,
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(amountPrefix + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold)
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (!isTransfer) {
-                                            IconButton(onClick = { onEditTransaction?.invoke(transaction) }) {
-                                                Icon(Icons.Default.Edit, "Sửa giao dịch", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            val amountPrefix = when (transaction.type) {
+                                TransactionType.INCOME, TransactionType.TRANSFER_IN -> "+"
+                                TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> "-"
+                            }
+
+                            GlassCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                mode = com.finlux.app.core.designsystem.modern.LiquidGlassMode.REGULAR,
+                                tint = rowAccent,
+                                padding = PaddingValues(14.dp),
+                                onClick = { viewingTransaction = transaction },
+                                onLongClick = { actionTransaction = transaction },
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(shape = RoundedCornerShape(12.dp), color = rowAccent.copy(alpha = .12f)) {
+                                        Icon(
+                                            rowIcon,
+                                            null,
+                                            Modifier.padding(9.dp).size(20.dp),
+                                            tint = rowAccent,
+                                        )
+                                    }
+                                    Column(Modifier.weight(1f).padding(horizontal = 11.dp)) {
+                                        Text(title, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm").format(transaction.date.atZone(financeZone)),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = FinluxTextSecondary,
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(amountPrefix + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold)
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (!isTransfer) {
+                                                IconButton(onClick = { onEditTransaction?.invoke(transaction) }) {
+                                                    Icon(Icons.Default.Edit, "Sửa giao dịch", tint = MaterialTheme.colorScheme.primary)
+                                                }
                                             }
-                                        }
-                                        IconButton(onClick = { pendingDelete = transaction }) {
-                                            Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            IconButton(onClick = { pendingDelete = transaction }) {
+                                                Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
                                         }
                                     }
                                 }
@@ -256,12 +329,17 @@ fun ModernTransactionsScreen(
             currentPeriod = periodFilter,
             selectedWalletId = selectedWalletId,
             selectedCategoryId = selectedCategoryId,
+            currentSearchQuery = searchQuery,
+            currentMinimumAmount = minimumAmount,
+            currentMaximumAmount = maximumAmount,
             wallets = allWallets,
             categories = allCategories,
-            onApply = { period, walletId, categoryId ->
+            onApply = { period, walletId, categoryId, query, minimum, maximum ->
                 viewModel.setPeriod(period)
                 viewModel.setWalletFilter(walletId)
                 viewModel.setCategoryFilter(categoryId)
+                viewModel.setSearchQuery(query)
+                viewModel.setAmountRange(minimum, maximum)
             },
             onReset = { viewModel.resetFilters() },
             onDismiss = { showFilterSheet = false },

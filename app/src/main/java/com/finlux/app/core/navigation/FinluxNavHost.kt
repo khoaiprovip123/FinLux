@@ -5,6 +5,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -18,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -26,6 +31,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -105,6 +111,17 @@ fun FinluxNavHost(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
+    var swipeDragOffset by remember { mutableFloatStateOf(0f) }
+    var isSwipeDragging by remember { mutableStateOf(false) }
+    var snapResetSwipe by remember { mutableStateOf(false) }
+    val renderedSwipeOffset by animateFloatAsState(
+        targetValue = swipeDragOffset,
+        animationSpec = if (isSwipeDragging || snapResetSwipe) snap() else spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "main-tab-swipe-offset",
+    )
 
     val destination = destinationFlow?.collectAsState()?.value
     LaunchedEffect(destination) {
@@ -162,6 +179,14 @@ fun FinluxNavHost(
 
                     if (gestureLocked) {
                         change.consume()
+                        if (uiPreferences.animationsEnabled) {
+                            val routeIndex = MainSwipeRoutes.indexOf(currentRoute)
+                            val isBlockedAtEdge =
+                                (routeIndex == 0 && horizontalTravel > 0f) ||
+                                    (routeIndex == MainSwipeRoutes.lastIndex && horizontalTravel < 0f)
+                            isSwipeDragging = true
+                            swipeDragOffset = horizontalTravel * if (isBlockedAtEdge) 0.22f else 1f
+                        }
                     }
                 } while (change.pressed)
 
@@ -173,12 +198,20 @@ fun FinluxNavHost(
                         threshold = swipeThresholdPx,
                         elapsedMillis = lastUptimeMillis - down.uptimeMillis,
                     )
-                    if (target != null) navigateMain(target)
+                    if (target != null) {
+                        snapResetSwipe = true
+                        swipeDragOffset = 0f
+                        isSwipeDragging = false
+                        navigateMain(target)
+                        snapResetSwipe = false
+                    } else {
+                        isSwipeDragging = false
+                        swipeDragOffset = 0f
+                    }
                 }
             }
         }
     } else Modifier
-
     val showRootBottomBar = currentRoute in MainSwipeRoutes
 
     Scaffold(
@@ -200,7 +233,9 @@ fun FinluxNavHost(
         NavHost(
             navController = navController,
             startDestination = Route.Splash.value,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { translationX = renderedSwipeOffset },
             enterTransition = {
                 val from = MainSwipeRoutes.indexOf(initialState.destination.route)
                 val to = MainSwipeRoutes.indexOf(targetState.destination.route)

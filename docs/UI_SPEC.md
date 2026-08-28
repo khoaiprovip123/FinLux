@@ -324,14 +324,17 @@ Route: /reports
 THEME: luôn kế thừa `ThemePreference` + `VisualStyle` từ root; không ép nền tối cục bộ.
   LAYOUT:
   ┌─────────────────────────────────────┐
-  │ Segmented: Tháng | Quý | Năm | Tùy chọn │
-  │ GlassCard tổng quan: Thu nhập / Chi tiêu / Tiết kiệm + % so với kỳ trước │
+  │ Tabs chính: Tổng quan | Thu & Chi | Danh mục | Chuyên sâu │
+  │ Chuyên sâu: Vay nợ | Tiết kiệm | Ngân sách | Tài sản | Xu hướng │
+  │ Period selector: Kỳ lương | Tháng | Quý | Năm | Tùy chọn │
+  │ GlassCard tổng quan: Thu nhập / Chi tiêu / Dòng tiền còn lại + % kỳ trước │
   │ Line chart: hai đường Thu-Chi, điểm dữ liệu, đường focus và tooltip theo ngày │
   │ Treemap bất đối xứng: phân bổ Chi theo danh mục, số tiền và tỷ trọng │
   │ Báo cáo theo ví: icon, số tiền, tỷ trọng và thanh tiến độ │
   │ Button: "Xuất báo cáo" (icon) → mở dialog chọn Excel/PDF (UC-17) │
   └─────────────────────────────────────┘
-STATES: Empty (chưa có dữ liệu trong kỳ) → hiện minh họa + gợi ý thêm giao dịch
+STATES: Empty theo từng phân hệ → CTA thật tới Vay nợ / Mục tiêu / Ngân sách / Ví.
+SEMANTIC: tách `Dòng tiền còn lại`, `Tỷ lệ giữ lại thu nhập`, `Đã phân bổ vào mục tiêu`; insight chỉ hiển thị nhận xét có số liệu nguồn.
 ```
 
 ## 10A. SCREEN: Chi tiêu (Expense)
@@ -340,15 +343,22 @@ Route: /expense
 LAYOUT:
 ┌─────────────────────────────────────┐
 │ GlassTopBar: "Chi tiêu" | + Thêm    │
-│ Bộ chọn tháng trước/sau             │
-│ GradientHeroCard: Tổng chi + so sánh tháng trước │
+│ Bộ chọn FinancialPeriod trước/sau   │
+│ GradientHeroCard: Tổng chi + so sánh kỳ trước │
 │ Donut: chi tiêu theo danh mục + tỷ trọng │
 │ Bar chart: chi tiêu từng ngày trong tháng │
 │ Danh sách giao dịch chi gần đây     │
 │ GlassBottomNav giống Dashboard      │
 └─────────────────────────────────────┘
-ACTIONS: đổi tháng; nhấn "+ Thêm" mở form ở trạng thái Chi; tap KPI "Chi tháng này" từ Home để mở.
+ACTIONS: đổi kỳ; nhấn "+ Thêm" mở form ở trạng thái Chi; tap KPI Chi từ Home để mở.
 ```
+
+### 10B. Lịch sử và bộ lọc giao dịch
+
+- Bottom sheet dùng chung cả ba style, hỗ trợ kỳ này/kỳ trước, 30 ngày, 3 tháng, 6 tháng, năm, ví, danh mục, khoảng tiền và tìm kiếm không dấu.
+- Search tra theo ghi chú, danh mục, ví và số tiền; trạng thái được giữ trong `TransactionsViewModel` khi chuyển tab trong cùng session.
+- Cặp chuyển tiền nội bộ chỉ hiển thị một dòng logic (ưu tiên phía chuyển đi); bản ghi nhận tiền mồ côi vẫn hiển thị để không che lỗi đồng bộ.
+- Badge bộ lọc tính cả query và khoảng tiền. Reset xóa toàn bộ điều kiện.
 
 ## 11. SCREEN: Thông báo (Notifications)
 ```

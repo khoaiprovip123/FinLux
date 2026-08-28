@@ -400,6 +400,10 @@ Business rule:
 | BR-SALARY-01 | Dải chu kỳ lương tính chính xác [start, endExclusive) theo múi giờ tài chính |
 | BR-SALARY-02 | Tự động xử lý ngày cuối tháng ngắn hơn (leap year, 28/30/31 ngày) |
 | BR-SALARY-03 | Báo cáo và trang chủ tự động tính toán tổng thu, chi, dòng tiền theo chu kỳ khi bật |
+| BR-PERIOD-01 | Home, Lịch sử, Thu nhập, Chi tiêu, Ngân sách và Báo cáo phải dùng cùng `FinancialPeriod`; kỳ trước giữ cùng loại kỳ và múi giờ tài chính |
+| BR-TRANSFER-UI-01 | Cặp `TRANSFER_OUT`/`TRANSFER_IN` của một lần chuyển nội bộ được trình bày thành một dòng logic; vẫn giữ double-entry ở data layer và không tính vào Thu/Chi |
+| BR-SAVING-01 | `Dòng tiền còn lại = Thu - Chi`; `Tỷ lệ giữ lại = (Thu - Chi) / Thu`; `Đã phân bổ mục tiêu = Nạp savings - Rút savings`, ba số liệu không được dùng thay thế nhau |
+| BR-ASSET-01 | Tổng tài sản chỉ cộng ví hoạt động không phải `CARD`; tài sản ròng bằng tổng tài sản trừ tổng dư nợ chưa tất toán |
 
 ---
 

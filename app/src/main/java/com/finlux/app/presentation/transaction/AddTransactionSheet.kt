@@ -313,6 +313,7 @@ fun AddTransactionSheet(
                 placeholder = "0",
                 amountColor = amountColor,
                 showSuggestions = true,
+                amountFontSize = 32.sp,
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -361,6 +362,7 @@ fun AddTransactionSheet(
                     icon = Icons.AutoMirrored.Filled.ReceiptLong,
                     iconBgColor = Color(0xFF06B6D4).copy(alpha = 0.14f),
                     iconTintColor = Color(0xFF0891B2),
+                    fontSize = 18.sp,
                     onClear = { viewModel.setNote("") },
                 )
 

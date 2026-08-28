@@ -69,6 +69,7 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.FinancialInstitutionLogo
@@ -191,6 +192,7 @@ fun ErgonomicInputRow(
     iconTintColor: Color,
     onClear: () -> Unit = {},
     modifier: Modifier = Modifier,
+    fontSize: TextUnit = 17.5.sp,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
     val tokens = LocalFinluxTokens.current
@@ -205,16 +207,16 @@ fun ErgonomicInputRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = iconBgColor,
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(46.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, null, tint = iconTintColor, modifier = Modifier.size(22.dp))
+                    Icon(icon, null, tint = iconTintColor, modifier = Modifier.size(24.dp))
                 }
             }
 
@@ -222,12 +224,12 @@ fun ErgonomicInputRow(
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                     ),
@@ -237,7 +239,7 @@ fun ErgonomicInputRow(
                     value = value,
                     onValueChange = onValueChange,
                     textStyle = TextStyle(
-                        fontSize = 15.5.sp,
+                        fontSize = fontSize,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.onSurface,
                     ),
@@ -249,7 +251,7 @@ fun ErgonomicInputRow(
                             Text(
                                 text = placeholder,
                                 style = TextStyle(
-                                    fontSize = 14.5.sp,
+                                    fontSize = fontSize,
                                     color = Color(0xFF9CA3AF),
                                 ),
                             )
@@ -392,6 +394,7 @@ fun ErgonomicCompactAmountCard(
     placeholder: String = "0",
     amountColor: Color = LocalFinluxTokens.current.primary,
     showSuggestions: Boolean = true,
+    amountFontSize: TextUnit = 24.sp,
     modifier: Modifier = Modifier,
     isReadOnly: Boolean = onAmountChange == null,
     enabled: Boolean = true,
@@ -401,6 +404,12 @@ fun ErgonomicCompactAmountCard(
     val cleanDigits = amountText.filter { it.isDigit() }.take(12)
     val formattedDisplay = formatAmountDigitsWithDots(cleanDigits)
     val suggestions = remember(cleanDigits) { generateAmountSuggestions(cleanDigits) }
+
+    val effectiveFontSize = when {
+        cleanDigits.length >= 11 -> (amountFontSize.value * 0.70f).sp
+        cleanDigits.length >= 9 -> (amountFontSize.value * 0.82f).sp
+        else -> amountFontSize
+    }
 
     Surface(
         shape = RoundedCornerShape(18.dp),
@@ -413,14 +422,14 @@ fun ErgonomicCompactAmountCard(
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // Label in uppercase
             Text(
                 text = label.uppercase(),
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp,
                 ),
@@ -439,8 +448,8 @@ fun ErgonomicCompactAmountCard(
                 if (isReadOnly || onAmountChange == null) {
                     Text(
                         text = if (formattedDisplay.isNotEmpty()) "$formattedDisplay ₫" else "$placeholder ₫",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 16.sp,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = effectiveFontSize,
                             fontWeight = FontWeight.Bold,
                         ),
                         color = if (formattedDisplay.isNotEmpty()) amountColor else Color(0xFF9CA3AF),
@@ -459,7 +468,7 @@ fun ErgonomicCompactAmountCard(
                             onAmountChange(digits)
                         },
                         textStyle = TextStyle(
-                            fontSize = 16.sp,
+                            fontSize = effectiveFontSize,
                             fontWeight = FontWeight.Bold,
                             color = amountColor,
                         ),
@@ -473,7 +482,7 @@ fun ErgonomicCompactAmountCard(
                                 Text(
                                     text = "$placeholder ₫",
                                     style = TextStyle(
-                                        fontSize = 16.sp,
+                                        fontSize = effectiveFontSize,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF9CA3AF),
                                     ),
@@ -491,7 +500,7 @@ fun ErgonomicCompactAmountCard(
                 if (!isReadOnly && onAmountChange != null && cleanDigits.isNotEmpty() && enabled) {
                     Box(
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(26.dp)
                             .clip(CircleShape)
                             .background(if (tokens.isDark) Color.White.copy(alpha = 0.12f) else Color(0xFFE5E7EB))
                             .clickable { onAmountChange("") },
@@ -501,7 +510,7 @@ fun ErgonomicCompactAmountCard(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Xóa số tiền",
                             tint = if (tokens.isDark) Color.White.copy(alpha = 0.8f) else Color(0xFF6B7280),
-                            modifier = Modifier.size(13.dp),
+                            modifier = Modifier.size(15.dp),
                         )
                     }
                 }

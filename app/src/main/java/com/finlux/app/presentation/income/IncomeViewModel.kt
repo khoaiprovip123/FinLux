@@ -4,23 +4,31 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.FinancialPeriod
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.repository.CategoryRepository
+import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.TransactionRepository
+import com.finlux.app.domain.usecase.FinancialPeriodResolver
+import com.finlux.app.core.time.FinanceTime
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.YearMonth
-import java.time.ZoneId
+import java.time.Instant
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 data class IncomeCategoryStat(val category: Category?, val amount: Long, val percent: Int)
-data class IncomeDayStat(val day: Int, val amount: Long)
+data class IncomeDayStat(val date: LocalDate, val amount: Long)
 
 data class IncomeUiState(
-    val month: YearMonth = YearMonth.now(),
+    val period: FinancialPeriod? = null,
+    val canNavigateNext: Boolean = false,
     val total: Long = 0,
     val changePercent: Int = 0,
     val transactions: List<FinanceTransaction> = emptyList(),
@@ -32,24 +40,41 @@ data class IncomeUiState(
     val dailyStats: List<IncomeDayStat> = emptyList(),
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class IncomeViewModel @Inject constructor(
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
+    salaryCycleRepository: SalaryCycleRepository,
+    financialPeriodResolver: FinancialPeriodResolver,
 ) : ViewModel() {
-    private val selectedMonth = MutableStateFlow(YearMonth.now())
+    private data class PeriodSelection(
+        val current: FinancialPeriod,
+        val previous: FinancialPeriod,
+        val zoneId: java.time.ZoneId,
+    )
 
-    val state = combine(
-        transactionRepository.observeRecent(5_000),
-        categoryRepository.observeCategories(),
-        selectedMonth,
-    ) { transactions, categories, month ->
-        val zone = ZoneId.systemDefault()
-        fun incomes(target: YearMonth) = transactions.filter {
-            it.type == TransactionType.INCOME && YearMonth.from(it.date.atZone(zone)) == target
-        }
-        val current = incomes(month).sortedByDescending { it.date }
-        val previousTotal = incomes(month.minusMonths(1)).sumOf { it.amount.value }
+    private val selectedTime = MutableStateFlow(Instant.now())
+    private val periodSelection = combine(
+        selectedTime,
+        salaryCycleRepository.observeConfig(),
+    ) { time, config ->
+        val current = financialPeriodResolver.resolvePeriodContaining(time, config)
+        PeriodSelection(
+            current = current,
+            previous = financialPeriodResolver.resolvePeriodContaining(current.start.minusMillis(1), config),
+            zoneId = FinanceTime.zoneOf(config.financeTimeZone),
+        )
+    }
+
+    val state = periodSelection.flatMapLatest { selection ->
+        combine(
+            transactionRepository.observePeriod(selection.current.start, selection.current.endExclusive),
+            transactionRepository.observePeriod(selection.previous.start, selection.previous.endExclusive),
+            categoryRepository.observeCategories(),
+        ) { currentTransactions, previousTransactions, categories ->
+        val current = currentTransactions.filter { it.type == TransactionType.INCOME }.sortedByDescending { it.date }
+        val previousTotal = previousTransactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
         val total = current.sumOf { it.amount.value }
         val categoryMap = categories.associateBy { it.id }
         val categoryStats = current.groupBy { it.categoryId }.map { (id, rows) ->
@@ -57,22 +82,35 @@ class IncomeViewModel @Inject constructor(
             IncomeCategoryStat(categoryMap[id], amount, if (total == 0L) 0 else (amount * 100 / total).toInt())
         }.sortedByDescending { it.amount }
 
+        val startDate = selection.current.start.atZone(selection.zoneId).toLocalDate()
+        val endDateExclusive = selection.current.endExclusive.atZone(selection.zoneId).toLocalDate()
+        val periodDays = ChronoUnit.DAYS.between(startDate, endDateExclusive).toInt().coerceAtLeast(1)
+
         IncomeUiState(
-            month = month,
+            period = selection.current,
+            canNavigateNext = selection.current.endExclusive < Instant.now(),
             total = total,
             changePercent = if (previousTotal == 0L) 0 else (((total - previousTotal) * 100) / previousTotal).toInt(),
             transactions = current,
             categories = categoryMap,
             categoryStats = categoryStats,
-            dailyAverage = if (total == 0L) 0L else total / month.lengthOfMonth(),
+            dailyAverage = if (total == 0L) 0L else total / periodDays,
             highest = current.maxOfOrNull { it.amount.value } ?: 0L,
             lowest = current.minOfOrNull { it.amount.value } ?: 0L,
-            dailyStats = (1..month.lengthOfMonth()).map { day ->
-                IncomeDayStat(day, current.filter { it.date.atZone(zone).dayOfMonth == day }.sumOf { it.amount.value })
+            dailyStats = (0 until periodDays).map { offset ->
+                val date = startDate.plusDays(offset.toLong())
+                IncomeDayStat(date, current.filter { it.date.atZone(selection.zoneId).toLocalDate() == date }.sumOf { it.amount.value })
             },
         )
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IncomeUiState())
 
-    fun previousMonth() { selectedMonth.value = selectedMonth.value.minusMonths(1) }
-    fun nextMonth() { if (selectedMonth.value < YearMonth.now()) selectedMonth.value = selectedMonth.value.plusMonths(1) }
+    fun previousPeriod() {
+        state.value.period?.let { selectedTime.value = it.start.minusMillis(1) }
+    }
+
+    fun nextPeriod() {
+        val period = state.value.period ?: return
+        if (state.value.canNavigateNext) selectedTime.value = period.endExclusive.plusMillis(1)
+    }
 }

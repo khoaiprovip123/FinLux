@@ -40,11 +40,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
+import com.finlux.app.core.designsystem.FinluxTextStyles
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -107,10 +110,14 @@ fun PrismTransactionsScreen(
     val periodFilter = viewModel.periodFilter.collectAsStateWithLifecycle().value
     val selectedWalletId = viewModel.walletFilter.collectAsStateWithLifecycle().value
     val selectedCategoryId = viewModel.categoryFilter.collectAsStateWithLifecycle().value
+    val searchQuery = viewModel.searchQuery.collectAsStateWithLifecycle().value
+    val minimumAmount = viewModel.minimumAmount.collectAsStateWithLifecycle().value
+    val maximumAmount = viewModel.maximumAmount.collectAsStateWithLifecycle().value
     val totalIncome = viewModel.totalIncome.collectAsStateWithLifecycle().value
     val totalExpense = viewModel.totalExpense.collectAsStateWithLifecycle().value
     val netCashFlow = viewModel.netCashFlow.collectAsStateWithLifecycle().value
     val activeFilterCount = viewModel.activeFilterCount.collectAsStateWithLifecycle().value
+    val financeZone = viewModel.financeZone.collectAsStateWithLifecycle().value
 
     val snackbar = remember { SnackbarHostState() }
     val tokens = LocalFinluxTokens.current
@@ -120,7 +127,18 @@ fun PrismTransactionsScreen(
     var pendingDelete by remember { mutableStateOf<FinanceTransaction?>(null) }
     var showFilterSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
+    LaunchedEffect(Unit) {
+        viewModel.messages.collect { event ->
+            val result = snackbar.showSnackbar(
+                message = event.message,
+                actionLabel = if (event.undoTransaction != null) "Hoàn tác" else null,
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed && event.undoTransaction != null) {
+                viewModel.restore(event.undoTransaction)
+            }
+        }
+    }
 
     val isRootTab = onNavigate != null && onAdd != null
 
@@ -230,6 +248,14 @@ fun PrismTransactionsScreen(
 
             Spacer(Modifier.height(6.dp))
 
+            val groupedTransactions = remember(transactions, financeZone) {
+                transactions.groupBy { tx ->
+                    tx.date.atZone(financeZone).toLocalDate()
+                }
+            }
+            val today = remember(financeZone) { java.time.LocalDate.now(financeZone) }
+            val yesterday = remember(today) { today.minusDays(1) }
+
             // 2. Transaction List
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -262,22 +288,74 @@ fun PrismTransactionsScreen(
                         )
                     }
                 } else {
-                    items(
-                        items = transactions,
-                        key = { it.id },
-                    ) { tx ->
-                        val category = tx.categoryId?.let { categories[it] }
-                        val wallet = tx.walletId.let { wallets[it] }
-                        val relatedWallet = tx.relatedWalletId?.let { wallets[it] }
+                    groupedTransactions.forEach { (date, txList) ->
+                        item(key = "header_$date") {
+                            val headerTitle = when (date) {
+                                today -> "Hôm nay"
+                                yesterday -> "Hôm qua"
+                                else -> date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                            }
 
-                        PrismTransactionCardItem(
-                            transaction = tx,
-                            category = category,
-                            wallet = wallet,
-                            relatedWallet = relatedWallet,
-                            onClick = { viewingTransaction = tx },
-                            onLongClick = { actionTransaction = tx },
-                        )
+                            val dayIncome = txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
+                            val dayExpense = txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+                            val dayNet = dayIncome - dayExpense
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Text(
+                                        text = headerTitle,
+                                        style = FinluxTextStyles.SectionTitle.copy(
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        ),
+                                        color = tokens.onSurface,
+                                    )
+                                    Text(
+                                        text = "(${txList.size})",
+                                        style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
+                                        color = tokens.onSurfaceVariant,
+                                    )
+                                }
+
+                                if (dayExpense > 0L || dayIncome > 0L) {
+                                    Text(
+                                        text = if (dayNet >= 0) "+${formatVndAmount(dayNet, isCompact = true)}" else "-${formatVndAmount(-dayNet, isCompact = true)}",
+                                        style = FinluxTextStyles.Caption.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                        ),
+                                        color = if (dayNet >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
+                                    )
+                                }
+                            }
+                        }
+
+                        items(
+                            items = txList,
+                            key = { it.id },
+                        ) { tx ->
+                            val category = tx.categoryId?.let { categories[it] }
+                            val wallet = tx.walletId.let { wallets[it] }
+                            val relatedWallet = tx.relatedWalletId?.let { wallets[it] }
+
+                            PrismTransactionCardItem(
+                                transaction = tx,
+                                category = category,
+                                wallet = wallet,
+                                relatedWallet = relatedWallet,
+                                onClick = { viewingTransaction = tx },
+                                onLongClick = { actionTransaction = tx },
+                            )
+                        }
                     }
                 }
             }
@@ -340,12 +418,17 @@ fun PrismTransactionsScreen(
             currentPeriod = periodFilter,
             selectedWalletId = selectedWalletId,
             selectedCategoryId = selectedCategoryId,
+            currentSearchQuery = searchQuery,
+            currentMinimumAmount = minimumAmount,
+            currentMaximumAmount = maximumAmount,
             wallets = allWallets,
             categories = allCategories,
-            onApply = { period, walletId, categoryId ->
+            onApply = { period, walletId, categoryId, query, minimum, maximum ->
                 viewModel.setPeriod(period)
                 viewModel.setWalletFilter(walletId)
                 viewModel.setCategoryFilter(categoryId)
+                viewModel.setSearchQuery(query)
+                viewModel.setAmountRange(minimum, maximum)
             },
             onReset = { viewModel.resetFilters() },
             onDismiss = { showFilterSheet = false },

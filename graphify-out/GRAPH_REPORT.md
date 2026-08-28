@@ -1,16 +1,16 @@
 # Graph Report - FinLux  (2026-08-27)
 
 ## Corpus Check
-- 251 files · ~353,932 words
+- 256 files · ~419,791 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2801 nodes · 6934 edges · 220 communities (183 shown, 37 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 112 edges (avg confidence: 0.8)
+- 2834 nodes · 6977 edges · 226 communities (187 shown, 39 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 113 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3691f1a1`
+- Built from commit: `b0f7d677`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,44 +19,44 @@
 - Timestamp
 - RecordingAuthRepository
 - Reminder
-- ModernHomeScreen.kt
+- ClassicHomeScreen.kt
 - Route
 - AuthViewModel
-- DemoFinluxRepository
+- AppResult
 - ReportsViewModel.kt
 - firebaseResult
 - BudgetViewModelTest
-- TransactionRepository
-- AppResult
+- WalletRepository
+- TransactionUseCasesTest.kt
+- CategoryRepository
 - Category
-- categoryIcon
 - TransactionType
 - mainRouteAfterSwipe
-- Wallet
+- FirebaseWalletRepository.kt
 - HANDOVER LOG - FINLUX APP
 - gradlew
 - FinluxApplication.kt
 - package.json
 - FinluxEmptyState
-- RepositoryModule.kt
+- FinanceRepositoryModule
 - Budget
-- FinluxNavHost.kt
+- Wallet
 - Money
 - colorFromHex
 - BACKLOG - FINLUX APP
 - Changelog
-- DebtViewModelTest
+- com
 - DebtAccount
-- formatVndAmount
+- PrismHomeScreen.kt
 - SalaryCycleRepository
-- RoundedCornerShape
-- HomeViewModelTest.kt
+- SettingsScreen.kt
+- .`state computes netWorth as grossAssets minus totalDebt accurately`
 - Trạng Thái Dự Án (Project Status)
 - AppNotification
 - AppLockManager
 - PaydayRuleType
-- DebtPaymentHistory
-- FinluxColors
+- DemoFinluxRepository.kt
+- GlassCard
 - PrismReportsScreen.kt
 - DashboardSummary
 - SalaryCycleConfig
@@ -71,62 +71,62 @@
 - 🟡 P1 — Chất lượng & nhất quán
 - FinancialGoal
 - UserProfile
-- TransactionRangeRepository
-- PayoffStrategy
-- DebtType
-- StrategySelectorCard
-- DebtViewModel.kt
+- FinanceTransaction
+- DebtViewModelTest.kt
+- TransactionsViewModel
+- .invoke
+- DebtViewModelTest
 - PrismSettingsScreen.kt
-- AppUiStyle
-- ExecuteSalaryRolloverUseCaseTest
+- RepositoryModule.kt
+- generateAmountSuggestions
 - FirebaseAuthRepository
-- UpdateUiState
+- AppUpdateManager
 - index.ts
 - compilerOptions
 - FinancialPeriod
 - ProcessDebtPaymentUseCaseTest
 - PrismSettingsAction
 - FinLux Android — Open-Source Personal Finance App 🚀
-- GoalsScreen.kt
+- FinluxRoot.kt
 - FirebaseDebtRepository.kt
 - ClassicReportsScreen.kt
 - SalaryCycleViewModel
 - SettingsViewModel
 - SalaryCycleCalculatorTest
 - AGENTS.md — Hướng dẫn cho AI Coding Agent (Claude Code / Cursor / Antigravity...)
-- ThemePreference
-- UiPreferences
-- GoalUseCasesTest
+- FinanceModels.kt
+- ModernHomeScreen.kt
+- FinluxTransactionComponents.kt
 - 🧱 2. Danh Sách & Đặc Tả Chi Tiết Các Component Tiêu Chuẩn
-- AppUpdateManager
-- FirebaseGoalRepository.kt
+- FinluxStyleBackdrop
+- VisualStyle
 - 🛠️ SpecKit Commands & Phases
 - BiometricPrompt
-- FinanceTime
-- AppUpdateDialog
+- HomeViewModel.kt
+- FinluxSoftCard
 - FirebaseModule.kt
 - FirebaseBudgetRepository.kt
 - FirebaseSalaryCycleRepository
-- AppUpdateManagerTest
-- RootViewModelTest
+- ModernWaterGlass.kt
+- FirebaseCategoryRepository.kt
 - UI SPEC — Finlux
 - README.md
-- .setUp
+- IncomeViewModel.kt
 - ReportMainTab
 - DATA & SERVICE SPEC — Finlux (Firebase)
 - PROJECT PROFILE
-- CONTEXT.md
-- FinluxMessagingService.kt
+- AppLockManagerTest
+- BudgetRepository
 - MainActivity
-- QuickAddSheet.kt
+- RoundedCornerShape
 - ExpenseViewModel.kt
-- FakeGoalRepository
+- AuthViewModelTest
 - PLAN — Finlux
 - 0. Design System — "Liquid Glass" (giống iOS)
 - Danh Sách Nhiệm Vụ Đã Hoàn Thành (Completed Tasks)
 - FinluxTokens.kt
-- ExportReportDialog
-- GoalsViewModelTest
+- CashFlowPoint
+- [DONE] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam
 - ✨ Tính năng cốt lõi (Key Features)
 - InstitutionCategory
 - .resolve
@@ -148,7 +148,7 @@
 - [DONE] Task v1.5.3: Variable Amount Quick Payment Sheet
 - [DONE] Task v1.5.2: Fix Double Payment & Sync Notification Paid State
 - [DONE] Task v1.5.0: Save Notification History & Auto Navigation Deep Link
-- FinancialInstitutionsTest
+- FinluxComponents.kt
 - PrismSettingsMenuTest
 - [1.10.0] - 2026-08-24
 - [1.10.1] - 2026-08-25
@@ -183,8 +183,8 @@
 - [DONE] Task v1.7.6: Fix Swipe-to-Delete Translucent Ghosting Trash Icon
 - [DONE] Task v1.7.7: Fix SettingsScreen Theme Inconsistency & Contrast
 - UpdateDisplayNameUseCase.kt
-- GoalTransactionMode
-- [1.10.12] - 2026-08-26
+- SaveBudgetUseCase
+- [1.11.7] - 2026-08-27
 - [1.10.13] - 2026-08-26
 - [1.10.16] - 2026-08-27
 - [1.10.3] - 2026-08-25
@@ -210,60 +210,65 @@
 - rules/graphify.md
 - workflows/graphify.md
 - [1.10.10] - 2026-08-26
-- [1.10.11] - 2026-08-26
+- Financial Institution Logo Assets
 - [1.10.14] - 2026-08-26
 - [1.10.15] - 2026-08-26
-- [1.10.18] - 2026-08-27
-- [1.10.20] - 2026-08-27
-- [1.10.4] - 2026-08-25
-- [1.10.5] - 2026-08-25
+- [1.10.12] - 2026-08-26
+- [1.10.17] - 2026-08-27
+- [1.10.19] - 2026-08-27
+- [1.11.1] - 2026-08-27
 - [1.11.2] - 2026-08-27
 - [1.11.3] - 2026-08-27
-- [1.2.1] - 2026-08-13
+- [1.11.5] - 2026-08-27
 - [1.4.8] - 2026-08-13
 - [1.5.1] - 2026-08-13
-- [1.5.4] - 2026-08-13
+- [1.3.0] - 2026-08-13
 - [1.5.6] - 2026-08-13
 - [1.5.9] - 2026-08-14
-- [1.7.0] - 2026-08-15
+- [1.3.1] - 2026-08-13
 - [1.7.2] - 2026-08-15
-- [1.7.3] - 2026-08-15
+- [1.4.0] - 2026-08-13
 - [1.7.6] - 2026-08-15
 - [1.7.7] - 2026-08-15
 - GEMINI.md
+- [1.4.5] - 2026-08-13
+- [1.4.7] - 2026-08-13
+- [1.5.8] - 2026-08-14
+- [1.7.1] - 2026-08-15
+- [1.7.4] - 2026-08-15
 
 ## God Nodes (most connected - your core abstractions)
 1. `AppResult` - 282 edges
 2. `Money` - 177 edges
 3. `FinanceTransaction` - 158 edges
-4. `Wallet` - 121 edges
+4. `Wallet` - 122 edges
 5. `Category` - 98 edges
 6. `DemoFinluxRepository` - 89 edges
-7. `HANDOVER LOG - FINLUX APP` - 87 edges
-8. `colorFromHex()` - 74 edges
-9. `Changelog` - 74 edges
+7. `HANDOVER LOG - FINLUX APP` - 88 edges
+8. `Changelog` - 78 edges
+9. `colorFromHex()` - 74 edges
 10. `DebtAccount` - 73 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `FinancialInstitutionLogo()` --calls--> `walletIcon()`  [INFERRED]
   app/src/main/java/com/finlux/app/core/designsystem/FinancialInstitutions.kt → app/src/main/java/com/finlux/app/core/designsystem/FinanceIcons.kt
+- `MetricTile()` --calls--> `GlassCard()`  [INFERRED]
+  app/src/main/java/com/finlux/app/core/designsystem/FinluxComponents.kt → app/src/main/java/com/finlux/app/core/designsystem/LiquidGlass.kt
 - `FinluxStyleBackdrop()` --calls--> `LiquidAuraBackdrop()`  [INFERRED]
   app/src/main/java/com/finlux/app/core/designsystem/StyleBackdrop.kt → app/src/main/java/com/finlux/app/core/designsystem/WaterGlass.kt
-- `FinluxWalletPickerBottomSheet()` --calls--> `formatVndAmount()`  [INFERRED]
-  app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt → app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt
-- `GradientHeroCard()` --calls--> `LiquidGlassSurface()`  [INFERRED]
-  app/src/main/java/com/finlux/app/core/designsystem/modern/ModernFinluxComponents.kt → app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt
-- `WaterGlassCard()` --calls--> `GlassCard()`  [INFERRED]
-  app/src/main/java/com/finlux/app/core/designsystem/modern/ModernWaterGlass.kt → app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt
+- `ErgonomicCompactAmountCard()` --calls--> `formatAmountDigitsWithDots()`  [INFERRED]
+  app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt → app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt
+- `FinluxTransactionRow()` --calls--> `FinluxSoftCard()`  [INFERRED]
+  app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt → app/src/main/java/com/finlux/app/core/designsystem/component/FinluxCardComponents.kt
 
 ## Import Cycles
 - None detected.
 
-## Communities (220 total, 37 thin omitted)
+## Communities (226 total, 39 thin omitted)
 
 ### Community 0 - "FinluxPanel"
-Cohesion: 0.12
-Nodes (31): FinluxLazyColumn(), FinluxListType, DETAIL, TAB_MAIN, Dp, Modifier, FinluxScreenScaffold(), Color (+23 more)
+Cohesion: 0.20
+Nodes (18): FinluxPanel(), Color, Dp, Modifier, PaddingValues, DailyExpenseCard(), ExpenseCategoryCard(), ExpenseHero() (+10 more)
 
 ### Community 1 - "Timestamp"
 Cohesion: 0.27
@@ -277,57 +282,57 @@ Nodes (5): ByteArray, Flow, T, RecordingAuthRepository, UpdateDisplayNameUseCase
 Cohesion: 0.06
 Nodes (30): bindReminderScheduler(), AlarmReminderScheduler, BroadcastReceiver, Context, Intent, nextTrigger(), pendingIntent(), ReminderReceiver (+22 more)
 
-### Community 4 - "ModernHomeScreen.kt"
-Cohesion: 0.06
-Nodes (56): FinluxUserAvatar(), Dp, Modifier, AuraBlob(), Brush, Color, Modifier, PaddingValues (+48 more)
+### Community 4 - "ClassicHomeScreen.kt"
+Cohesion: 0.16
+Nodes (19): FinluxBrandMark(), Dp, Modifier, FinluxUserAvatar(), Dp, Modifier, ClassicHomeScreen(), ExpenseAnalytics() (+11 more)
 
 ### Community 5 - "Route"
-Cohesion: 0.05
-Nodes (63): FinluxBottomDock(), FinluxCenterFab(), FinluxNavTab, FinluxNavTabItem(), Modifier, GlassBottomNav(), GlassFab(), Color (+55 more)
+Cohesion: 0.06
+Nodes (61): FinluxBottomDock(), FinluxCenterFab(), FinluxNavTab, FinluxNavTabItem(), Modifier, GlassBottomNav(), GlassFab(), GradientHeroCard() (+53 more)
 
 ### Community 6 - "AuthViewModel"
-Cohesion: 0.06
-Nodes (38): android, FinluxBrandMark(), Dp, Modifier, AuthHeaderSection(), AuthMode, FORGOT, LOGIN (+30 more)
+Cohesion: 0.07
+Nodes (35): android, AuthHeaderSection(), AuthMode, FORGOT, LOGIN, REGISTER, AuthScreen(), FinluxInput() (+27 more)
 
-### Community 7 - "DemoFinluxRepository"
-Cohesion: 0.15
-Nodes (4): DemoFinluxRepository, Budget, Flow, YearMonth
+### Community 7 - "AppResult"
+Cohesion: 0.06
+Nodes (10): AppResult, Error, T, Success, DemoFinluxRepository, Budget, ByteArray, Flow (+2 more)
 
 ### Community 8 - "ReportsViewModel.kt"
-Cohesion: 0.15
-Nodes (13): ReportPeriodSelector(), DailyExpense, Budget, SalaryCycleConfig, ViewModel, ReportPeriod, CUSTOM, MONTH (+5 more)
+Cohesion: 0.17
+Nodes (12): DailyExpense, Budget, SalaryCycleConfig, ViewModel, ReportPeriod, CUSTOM, MONTH, QUARTER (+4 more)
 
 ### Community 9 - "firebaseResult"
-Cohesion: 0.26
-Nodes (6): FirebaseNotificationRepository, Flow, toAppNotification(), toNotificationMap(), firebaseResult(), T
+Cohesion: 0.19
+Nodes (7): FirebaseGoalRepository, Flow, toGoal(), toGoalMap(), FirebaseNotificationRepository, firebaseResult(), T
 
 ### Community 10 - "BudgetViewModelTest"
-Cohesion: 0.14
-Nodes (6): BudgetUiState, BudgetViewModel, Budget, ViewModel, BudgetViewModelTest, com
+Cohesion: 0.22
+Nodes (4): DeleteBudgetUseCase, Budget, BudgetViewModelTest, com
 
-### Community 11 - "TransactionRepository"
+### Community 11 - "WalletRepository"
+Cohesion: 0.07
+Nodes (10): FirebaseDashboardRepository, Flow, DashboardRepository, Flow, YearMonth, TransactionRepository, WalletRepository, DeleteWalletUseCase (+2 more)
+
+### Community 12 - "TransactionUseCasesTest.kt"
+Cohesion: 0.09
+Nodes (7): FakeBudgetRepository, FakeNotificationRepository, FakeWalletRepository, com, Flow, java, RecordingTransactionRepository
+
+### Community 13 - "CategoryRepository"
 Cohesion: 0.12
-Nodes (10): BudgetRepository, DashboardRepository, Budget, Flow, YearMonth, TransactionRepository, FinancialOverview, HomeUiState (+2 more)
+Nodes (7): CategoryRepository, DeleteCategoryUseCase, SaveCategoryUseCase, CategoriesViewModel, CategoryActionState, ViewModel, AddTransactionViewModelTest
 
-### Community 12 - "AppResult"
-Cohesion: 0.07
-Nodes (10): AppResult, Error, T, Success, Flow, NotificationRepository, validateTransaction(), java (+2 more)
-
-### Community 13 - "Category"
-Cohesion: 0.07
-Nodes (17): FirebaseCategoryRepository, Flow, toCategory(), toCategoryMap(), Category, CategoryType, EXPENSE, INCOME (+9 more)
-
-### Community 14 - "categoryIcon"
-Cohesion: 0.10
-Nodes (46): AnnotatedString, FinluxAmountInputCard(), formatAmountDigitsWithDots(), Color, Modifier, ErgonomicCompactAmountCard(), ErgonomicFormRow(), ErgonomicInputRow() (+38 more)
+### Community 14 - "Category"
+Cohesion: 0.15
+Nodes (36): ErgonomicFormRow(), ErgonomicInputRow(), FinluxCategoryPickerBottomSheet(), FinluxWalletPickerBottomSheet(), Color, ImageVector, Modifier, PrincipalInterestSplitCard() (+28 more)
 
 ### Community 15 - "TransactionType"
-Cohesion: 0.09
-Nodes (14): TransactionType, EXPENSE, INCOME, TRANSFER_IN, TRANSFER_OUT, IncomeCategoryStat, IncomeDayStat, IncomeUiState (+6 more)
+Cohesion: 0.13
+Nodes (9): TransactionType, EXPENSE, INCOME, TRANSFER_IN, TRANSFER_OUT, AddTransactionUiState, AddTransactionViewModel, StateFlow (+1 more)
 
-### Community 17 - "Wallet"
-Cohesion: 0.06
-Nodes (25): FirebaseWalletRepository, Flow, parseWalletType(), toMetadataMap(), toWallet(), toWalletMap(), Wallet, WalletType (+17 more)
+### Community 17 - "FirebaseWalletRepository.kt"
+Cohesion: 0.31
+Nodes (6): FirebaseWalletRepository, Flow, parseWalletType(), toMetadataMap(), toWallet(), toWalletMap()
 
 ### Community 18 - "HANDOVER LOG - FINLUX APP"
 Cohesion: 0.04
@@ -342,84 +347,84 @@ Cohesion: 0.06
 Nodes (30): firebase-admin, firebase-functions, @firebase/rules-unit-testing, firebase-tools, dependencies, firebase-admin, firebase-functions, firebase-tools (+22 more)
 
 ### Community 22 - "FinluxEmptyState"
-Cohesion: 0.13
-Nodes (29): FinluxHeroCard(), FinluxInsightCard(), FinluxMetricCard(), FinluxSoftCard(), Color, Composable, Dp, ImageVector (+21 more)
-
-### Community 25 - "RepositoryModule.kt"
 Cohesion: 0.14
-Nodes (12): FinanceClock, SystemFinanceClock, bindDebtPreferenceRepository(), bindFinanceClock(), FinanceRepositoryModule, com, FirebaseAuth, FirebaseFirestore (+4 more)
+Nodes (23): FinluxEmptyState(), FinluxErrorState(), FinluxOfflineState(), ImageVector, Modifier, FinluxScreenHeader(), FinluxSectionHeader(), Composable (+15 more)
+
+### Community 25 - "FinanceRepositoryModule"
+Cohesion: 0.20
+Nodes (7): FinanceRepositoryModule, FirebaseAuth, FirebaseFirestore, FirebaseMessaging, FirebaseStorage, FirebaseReceiptStorageRepository, ReceiptStorageRepository
 
 ### Community 26 - "Budget"
-Cohesion: 0.07
-Nodes (10): Budget, AddTransactionUseCase, EditTransactionUseCase, TransferMoneyUseCase, FakeBudgetRepository, FakeNotificationRepository, FakeWalletRepository, com (+2 more)
+Cohesion: 0.12
+Nodes (6): Budget, AddTransactionUseCase, EditTransactionUseCase, validateTransaction(), TransferMoneyUseCase, TransactionUseCasesTest
 
-### Community 27 - "FinluxNavHost.kt"
-Cohesion: 0.09
-Nodes (37): FinluxStyleBackdrop(), Modifier, FinluxNavHost(), MutableStateFlow, replaceGraphStart(), ReceiptCaptureScreen(), ReportsScreen(), ClassicTransactionsScreen() (+29 more)
+### Community 27 - "Wallet"
+Cohesion: 0.15
+Nodes (30): categoryIcon(), FinanceIconOption, Color, ImageVector, FinluxColors, FinluxNavHost(), MutableStateFlow, replaceGraphStart() (+22 more)
 
 ### Community 28 - "Money"
-Cohesion: 0.07
-Nodes (7): FinanceTransaction, Money, DemoTransactionInvariantTest, Context, AnalyzeDebtCashflowUseCaseTest, GetBudgetStatusUseCaseTest, AddTransactionViewModelTest
+Cohesion: 0.11
+Nodes (6): Money, AdjustWalletBalanceUseCase, DemoTransactionInvariantTest, Context, AdjustWalletBalanceUseCaseTest, AnalyzeDebtCashflowUseCaseTest
 
 ### Community 29 - "colorFromHex"
-Cohesion: 0.13
-Nodes (36): colorFromHex(), FinancialInstitution, FinancialInstitutionLogo(), findInstitutionForWallet(), InstitutionCatalogDialog(), InstitutionSelectorSection(), androidx, Dp (+28 more)
+Cohesion: 0.09
+Nodes (44): ErgonomicCompactAmountCard(), colorFromHex(), FinancialInstitution, FinancialInstitutionLogo(), findInstitutionForWallet(), InstitutionCatalogDialog(), InstitutionSelectorSection(), androidx (+36 more)
 
 ### Community 30 - "BACKLOG - FINLUX APP"
 Cohesion: 0.05
-Nodes (42): 📌 1. Bối Cảnh & Đánh Giá Hiện Trạng (Audit Summary), 1. 🐞 Mô Tả Hiện Tượng & Nguyên Nhân Gốc, 1. 🐞 Mô Tả Hiện Tượng (Problem Description), 1. 🐞 Mô Tả Vấn Đề (Problem Description), 1. 🐞 Mô Tả Vấn Đề (Problem Description), 1. 🎯 Mục Tiêu & Phạm Vi (Objective & Scope), 2. 🛠️ Giải Pháp Đã Triển Khai, 🏗️ 2. Phân Loại & Mở Rộng Data Model (+34 more)
+Nodes (43): 📌 1. Bối Cảnh & Đánh Giá Hiện Trạng (Audit Summary), 1. 🐞 Mô Tả Hiện Tượng & Nguyên Nhân Gốc, 1. 🐞 Mô Tả Hiện Tượng (Problem Description), 1. 🐞 Mô Tả Vấn Đề (Problem Description), 1. 🐞 Mô Tả Vấn Đề (Problem Description), 1. 🎯 Mục Tiêu & Phạm Vi (Objective & Scope), 2. 🛠️ Giải Pháp Đã Triển Khai, 🏗️ 2. Phân Loại & Mở Rộng Data Model (+35 more)
 
 ### Community 31 - "Changelog"
 Cohesion: 0.05
-Nodes (39): [1.0.0] - 2026-08-12, [1.10.17] - 2026-08-27, [1.10.19] - 2026-08-27, [1.10.21] - 2026-08-27, [1.10.6] - 2026-08-26, [1.11.1] - 2026-08-27, [1.3.0] - 2026-08-13, [1.3.1] - 2026-08-13 (+31 more)
+Nodes (39): [1.0.0] - 2026-08-12, [1.10.11] - 2026-08-26, [1.10.18] - 2026-08-27, [1.10.20] - 2026-08-27, [1.10.21] - 2026-08-27, [1.10.4] - 2026-08-25, [1.10.5] - 2026-08-25, [1.10.6] - 2026-08-26 (+31 more)
 
-### Community 32 - "DebtViewModelTest"
-Cohesion: 0.09
-Nodes (9): DebtViewModelTest, FakeCategoryRepo, FakeDebtPreferenceRepo, FakeReminderRepo, FakeReminderScheduler, FakeTransactionRepo, com, Flow (+1 more)
+### Community 32 - "com"
+Cohesion: 0.12
+Nodes (8): FakeCategoryRepo, FakeDebtPreferenceRepo, FakeReminderRepo, FakeReminderScheduler, FakeTransactionRepo, com, Flow, java
 
 ### Community 33 - "DebtAccount"
-Cohesion: 0.08
-Nodes (7): DebtAccount, DeleteDebtAccountUseCase, SaveDebtAccountUseCase, CalculatePayoffStrategyUseCaseTest, SyncDebtReminderUseCaseTest, FakeDebtRepo, FakeHomeDebtRepository
+Cohesion: 0.11
+Nodes (5): DebtAccount, SyncDebtReminderUseCase, CalculatePayoffStrategyUseCaseTest, SyncDebtReminderUseCaseTest, FakeDebtRepo
 
-### Community 34 - "formatVndAmount"
+### Community 34 - "PrismHomeScreen.kt"
 Cohesion: 0.15
-Nodes (24): FinluxAmountText(), FinluxFilterChip(), formatVndAmount(), getTransactionSemanticColor(), androidx, Color, ImageVector, Modifier (+16 more)
+Nodes (27): FinluxLazyColumn(), FinluxListType, DETAIL, TAB_MAIN, Dp, Modifier, CategoryType, EXPENSE (+19 more)
 
 ### Community 35 - "SalaryCycleRepository"
+Cohesion: 0.09
+Nodes (14): DemoSalaryCycleRepository, Flow, SalaryCycleConfig, Flow, SalaryCycleConfig, SalaryCycleRepository, AlreadyProcessed, ExecuteSalaryRolloverUseCase (+6 more)
+
+### Community 36 - "SettingsScreen.kt"
+Cohesion: 0.22
+Nodes (16): AboutFinluxCard(), AvatarSourceButton(), copyColorAlpha(), createCameraUri(), androidx, Brush, Color, Context (+8 more)
+
+### Community 37 - ".`state computes netWorth as grossAssets minus totalDebt accurately`"
 Cohesion: 0.08
-Nodes (14): DemoSalaryCycleRepository, Flow, SalaryCycleConfig, SystemNotificationHelper, NotificationType, BUDGET_ALERT, DEBT_DUE_ALERT, GOAL_MILESTONE (+6 more)
-
-### Community 36 - "RoundedCornerShape"
-Cohesion: 0.16
-Nodes (27): Color, Modifier, MetricTile(), SectionHeader(), GlassCard(), BudgetBasisCard(), Modifier, PaydayRuleCard() (+19 more)
-
-### Community 37 - "HomeViewModelTest.kt"
-Cohesion: 0.10
-Nodes (9): FakeDashboardRepository, FakeHomeBudgetRepository, FakeHomeSalaryCycleRepository, FakeHomeTransactionRepository, HomeViewModelTest, Budget, com, Flow (+1 more)
+Nodes (10): FakeDashboardRepository, FakeHomeBudgetRepository, FakeHomeCategoryRepository, FakeHomeDebtRepository, FakeHomeSalaryCycleRepository, FakeHomeWalletRepository, HomeViewModelTest, Budget (+2 more)
 
 ### Community 38 - "Trạng Thái Dự Án (Project Status)"
 Cohesion: 0.07
 Nodes (30): [Task-BUGFIX-Notification-Budget-Sync] - Fix Budget Alert Key Mismatch & In-App Notification Center Sync, [Task-CI-FIX-LINT-PDF-v1.11.3] — Sửa Lỗi CI Lint UnusedMaterial3ScaffoldPaddingParameter, Khôi Phục KPI Tổng Chi Tiêu PDF & Dọn Dẹp Conflict Marker, [Task-DESIGN-SYSTEM-CORE-v1.11.0] — Design System Core & Base Screen Scaffolding Architecture, [Task-FEAT-Budget-History-Modal-LongPress-Edit] - Thêm Lịch Sử Chi Tiêu Danh Mục khi Chạm Thẻ & Nhấn Giữ để Sửa Ngân Sách, [Task-FEAT-Budget-Threshold-Alert-System] - Phục Hồi & Tối Ưu Tính Năng Cảnh Báo Vượt Ngưỡng Ngân Sách (80% & 100%), [Task-FEAT-Comprehensive-Reports-FixedBottomNav-v1.10.13] - Báo Cáo Đa Chiều (Vay Nợ, Tiết Kiệm, Ngân Sách, Tài Sản) & Cố Định Bottom Navigation Bar, [Task-FEAT-Debt-UI-Controls-And-Reminder-Fix] - Nâng Cấp Form Nợ Chuẩn Ergonomic, Khôi Phục Reminder Badge Thẻ Nợ & Fix Lỗi Tính Ngày Nhắc Nhở, [Task-FEAT-ErgonomicCompactAmountCard-Focus-Suggestions] - Chỉ Hiển Thị Gợi Ý Nhanh (Chips) Khi Focus Vào Ô Nhập Tiền (+22 more)
 
 ### Community 39 - "AppNotification"
-Cohesion: 0.10
-Nodes (13): AppNotification, StateFlow, ViewModel, NotificationFilter, ALL, BUDGET, GOAL, REMINDER (+5 more)
+Cohesion: 0.07
+Nodes (18): Flow, toAppNotification(), toNotificationMap(), AppNotification, Flow, NotificationRepository, StateFlow, ViewModel (+10 more)
 
 ### Community 40 - "AppLockManager"
-Cohesion: 0.10
-Nodes (9): AppLockManager, StateFlow, BiometricLockTimeout, FIVE_MINUTES, IMMEDIATE, ONE_MINUTE, AppLockManagerTest, DefaultLifecycleObserver (+1 more)
+Cohesion: 0.15
+Nodes (8): AppLockManager, StateFlow, BiometricLockTimeout, FIVE_MINUTES, IMMEDIATE, ONE_MINUTE, DefaultLifecycleObserver, LifecycleOwner
 
 ### Community 41 - "PaydayRuleType"
 Cohesion: 0.09
 Nodes (15): SalaryCycleConfig, T, SalaryCycleFirestoreMapper, BudgetPeriodBasis, CALENDAR_MONTH, SALARY_CYCLE, CycleRolloverRule, ASK_EACH_CYCLE (+7 more)
 
-### Community 42 - "DebtPaymentHistory"
-Cohesion: 0.13
-Nodes (8): DebtPaymentHistory, DebtRepository, Flow, GetDebtPaymentHistoryUseCase, Flow, GetDebtPaymentHistoryUseCaseTest, FakeDebtRepository, Flow
+### Community 42 - "DemoFinluxRepository.kt"
+Cohesion: 0.11
+Nodes (13): DebtPaymentHistory, DebtType, BANK_LOAN, CREDIT_CARD, INSTALLMENT, PERSONAL_LOAN, DebtRepository, Flow (+5 more)
 
-### Community 43 - "FinluxColors"
-Cohesion: 0.16
-Nodes (21): FinluxScreenHeader(), FinluxSectionHeader(), Composable, Modifier, finluxBackgroundBlur(), Dp, Modifier, PaddingValues (+13 more)
+### Community 43 - "GlassCard"
+Cohesion: 0.12
+Nodes (32): FinluxScreenScaffold(), finluxBackgroundBlur(), GlassCard(), GlassTopBar(), Dp, Modifier, PaddingValues, LiquidGlassSurface() (+24 more)
 
 ### Community 44 - "PrismReportsScreen.kt"
 Cohesion: 0.18
@@ -430,7 +435,7 @@ Cohesion: 0.24
 Nodes (9): Context, Uri, ReportExporter, XlsxReportWriter, DashboardSummary, CategoryExpense, ReportRange, XlsxReportWriterTest (+1 more)
 
 ### Community 46 - "SalaryCycleConfig"
-Cohesion: 0.16
+Cohesion: 0.15
 Nodes (4): SalaryCycleConfig, FinancialPeriodResolverTest, ValidateSalaryCycleConfigUseCaseTest, ReportQueryWindowResolverTest
 
 ### Community 47 - "SalaryCycleViewModelTest.kt"
@@ -442,80 +447,80 @@ Cohesion: 0.15
 Nodes (4): FirebaseTransactionRepositoryTest, FirebaseAuth, FirebaseFirestore, FirebaseUser
 
 ### Community 49 - "BudgetViewModel.kt"
-Cohesion: 0.14
-Nodes (11): DeleteBudgetUseCase, Budget, BudgetLevel, EXCEEDED, SAFE, WARNING, BudgetStatus, GetBudgetStatusUseCase (+3 more)
+Cohesion: 0.10
+Nodes (12): BudgetLevel, EXCEEDED, SAFE, WARNING, BudgetStatus, GetBudgetStatusUseCase, Budget, BudgetUiState (+4 more)
 
 ### Community 50 - "GoalsViewModel"
-Cohesion: 0.14
-Nodes (4): GoalEditorState, GoalsViewModel, GoalTransactionSheetState, ViewModel
+Cohesion: 0.11
+Nodes (7): GoalEditorState, GoalsViewModel, GoalTransactionMode, DEPOSIT, WITHDRAW, GoalTransactionSheetState, ViewModel
 
 ### Community 51 - "DefaultSalaryCycleCalculator"
 Cohesion: 0.23
 Nodes (9): bindSalaryCycleCalculator(), FinancialCycle, DefaultSalaryCycleCalculator, SalaryCycleConfig, YearMonth, SalaryCycleCalculator, GetCurrentSalaryCycleUseCase, GetPreviousSalaryCycleUseCase (+1 more)
 
 ### Community 52 - "AuthRepository"
-Cohesion: 0.12
-Nodes (4): AuthRepository, ByteArray, Flow, AuthViewModelTest
+Cohesion: 0.20
+Nodes (3): AuthRepository, ByteArray, Flow
 
 ### Community 53 - "ModernReportsScreen.kt"
-Cohesion: 0.18
+Cohesion: 0.27
 Nodes (13): CashFlowChart(), CategoryBlock(), EmptyChartText(), ExpenseDistribution(), Color, Modifier, ModernReportsScreen(), ReportAmount() (+5 more)
 
 ### Community 54 - "3. Chi tiết Use Case (các use case trọng yếu)"
-Cohesion: 0.11
-Nodes (19): 3. Chi tiết Use Case (các use case trọng yếu), UC-01: Đăng ký tài khoản, UC-05: Đổi ảnh đại diện, UC-05A: Đổi tên hiển thị, UC-06: Chuyển đổi chế độ Sáng/Tối, UC-07: Thêm giao dịch, UC-13: Chuyển tiền giữa các ví, UC-14 & UC-15: Ngân sách & Cảnh báo (+11 more)
+Cohesion: 0.10
+Nodes (20): 3. Chi tiết Use Case (các use case trọng yếu), UC-01: Đăng ký tài khoản, UC-05: Đổi ảnh đại diện, UC-05A: Đổi tên hiển thị, UC-06: Chuyển đổi chế độ Sáng/Tối, UC-07: Thêm giao dịch, UC-12: Quản lý ví/tài khoản và chọn tổ chức tài chính, UC-13: Chuyển tiền giữa các ví (+12 more)
 
 ### Community 55 - "🟡 P1 — Chất lượng & nhất quán"
 Cohesion: 0.11
 Nodes (18): FIX PLAN — FinLux Danh Sách Cần Sửa, Nguyên tắc thực hiện, P0.1 — Gom 373 màu hard-code về designsystem token `[TODO]`, P0.2 — Tách 9 file UI >700 dòng `[TODO]`, 🔴 P0 — Vi phạm quy chuẩn nội bộ AGENTS.md (blocker), P1.1 — Default UI style lệch nơi đầu tư phát triển `[CẦN QUYẾT ĐỊNH]`, P1.2 — UI test smoke cho luồng trọng yếu `[TODO]`, P1.3 — Chuẩn bị tách string resource cho i18n `[TODO]` (+10 more)
 
 ### Community 56 - "FinancialGoal"
-Cohesion: 0.17
-Nodes (4): FinancialGoal, GoalRepository, Flow, RecordingGoalRepository
+Cohesion: 0.07
+Nodes (14): FinancialGoal, GoalRepository, DeleteGoalUseCase, DepositToGoalUseCase, SaveGoalUseCase, WithdrawFromGoalUseCase, GoalUseCasesTest, Flow (+6 more)
 
 ### Community 57 - "UserProfile"
-Cohesion: 0.18
-Nodes (4): ByteArray, UserProfile, FakeAuthRepository, ByteArray
+Cohesion: 0.22
+Nodes (3): UserProfile, FakeAuthRepository, ByteArray
 
-### Community 58 - "TransactionRangeRepository"
-Cohesion: 0.17
-Nodes (8): DemoTransactionRangeRepository, filterTransactionsForRange(), Flow, FirebaseTransactionRangeRepository, Flow, Flow, TransactionRangeRepository, TransactionRangeFilterTest
-
-### Community 59 - "PayoffStrategy"
-Cohesion: 0.18
-Nodes (8): DataStoreDebtPreferenceRepository, Flow, PayoffStrategy, AVALANCHE, CUSTOM, SNOWBALL, DebtPreferenceRepository, Flow
-
-### Community 60 - "DebtType"
-Cohesion: 0.19
-Nodes (13): DebtPaymentStep, DebtPayoffPlan, DebtType, BANK_LOAN, CREDIT_CARD, INSTALLMENT, PERSONAL_LOAN, CalculatePayoffStrategyUseCase (+5 more)
-
-### Community 61 - "StrategySelectorCard"
-Cohesion: 0.24
-Nodes (12): DebtCashflowAnalysis, PayoffScenario, AnalyzeDebtCashflowUseCase, YearMonth, CashflowAdvisorCard(), Color, Modifier, MetricPill() (+4 more)
-
-### Community 62 - "DebtViewModel.kt"
+### Community 58 - "FinanceTransaction"
 Cohesion: 0.13
-Nodes (7): GetDebtsUseCase, Flow, DebtUiState, DebtViewModel, FormState, StateFlow, ViewModel
+Nodes (11): DemoTransactionRangeRepository, filterTransactionsForRange(), Flow, FirebaseTransactionRangeRepository, Flow, FinanceTransaction, Flow, TransactionRangeRepository (+3 more)
+
+### Community 59 - "DebtViewModelTest.kt"
+Cohesion: 0.13
+Nodes (12): DataStoreDebtPreferenceRepository, Flow, DebtPaymentStep, PayoffStrategy, AVALANCHE, CUSTOM, SNOWBALL, DebtPreferenceRepository (+4 more)
+
+### Community 60 - "TransactionsViewModel"
+Cohesion: 0.09
+Nodes (14): DeleteTransactionUseCase, ViewModel, TimePeriodFilter, ALL, LAST_MONTH, THIS_MONTH, THIS_WEEK, THIS_YEAR (+6 more)
+
+### Community 61 - ".invoke"
+Cohesion: 0.25
+Nodes (9): DebtCashflowAnalysis, PayoffScenario, AnalyzeDebtCashflowUseCase, YearMonth, CashflowAdvisorCard(), Color, Modifier, MetricPill() (+1 more)
+
+### Community 62 - "DebtViewModelTest"
+Cohesion: 0.09
+Nodes (9): DeleteDebtAccountUseCase, GetDebtsUseCase, Flow, SaveDebtAccountUseCase, DebtViewModel, FormState, StateFlow, ViewModel (+1 more)
 
 ### Community 63 - "PrismSettingsScreen.kt"
 Cohesion: 0.22
 Nodes (17): AppearanceDialog(), BiometricTimeoutDialog(), createCameraUri(), InfoDialogContent, Context, ImageVector, Modifier, Uri (+9 more)
 
-### Community 64 - "AppUiStyle"
-Cohesion: 0.17
-Nodes (9): bindThemeRepository(), bindUiPreferencesRepository(), DataStoreThemePreferenceRepository, Flow, AppUiStyle, CLASSIC_LIQUID, MODERN_LUXURY, PRISM (+1 more)
+### Community 64 - "RepositoryModule.kt"
+Cohesion: 0.10
+Nodes (24): bindDebtPreferenceRepository(), bindThemeRepository(), bindUiPreferencesRepository(), com, DataStoreThemePreferenceRepository, Flow, AppUiStyle, CLASSIC_LIQUID (+16 more)
 
-### Community 65 - "ExecuteSalaryRolloverUseCaseTest"
+### Community 65 - "generateAmountSuggestions"
 Cohesion: 0.16
-Nodes (8): AlreadyProcessed, ExecuteSalaryRolloverUseCase, SalaryCycleConfig, SalaryRolloverResult, Skipped, Transferred, ZeroBalance, ExecuteSalaryRolloverUseCaseTest
+Nodes (9): AnnotatedString, FinluxAmountInputCard(), formatAmountDigitsWithDots(), Color, Modifier, generateAmountSuggestions(), OffsetMapping, AmountSuggestionsTest (+1 more)
 
 ### Community 66 - "FirebaseAuthRepository"
 Cohesion: 0.24
 Nodes (4): FirebaseAuthRepository, ByteArray, Flow, Uri
 
-### Community 67 - "UpdateUiState"
-Cohesion: 0.18
-Nodes (11): AppUpdateViewModel, Checking, Downloading, Error, Idle, StateFlow, ViewModel, NoUpdateAvailable (+3 more)
+### Community 67 - "AppUpdateManager"
+Cohesion: 0.06
+Nodes (30): AppUpdateInfo, AppUpdateManager, ByteArray, AppUpdateDialog(), DownloadingContent(), androidx, Color, ReadyToInstallContent() (+22 more)
 
 ### Community 68 - "index.ts"
 Cohesion: 0.21
@@ -529,10 +534,6 @@ Nodes (15): compilerOptions, esModuleInterop, forceConsistentCasingInFileNames, 
 Cohesion: 0.33
 Nodes (5): bindFinancialPeriodResolver(), FinancialPeriod, DefaultFinancialPeriodResolver, FinancialPeriodResolver, SalaryCycleConfig
 
-### Community 71 - "ProcessDebtPaymentUseCaseTest"
-Cohesion: 0.16
-Nodes (3): ProcessDebtPaymentUseCase, SyncDebtReminderUseCase, ProcessDebtPaymentUseCaseTest
-
 ### Community 72 - "PrismSettingsAction"
 Cohesion: 0.14
 Nodes (14): PrismSettingsAction, ABOUT, ACCOUNT, APPEARANCE, BACKUP, BUDGET, CATEGORIES, DEBT (+6 more)
@@ -541,17 +542,17 @@ Nodes (14): PrismSettingsAction, ABOUT, ACCOUNT, APPEARANCE, BACKUP, BUDGET, CAT
 Cohesion: 0.14
 Nodes (14): 1. Clone Repository, 2. Chạy Chế Độ Demo (Out-of-the-Box), 3. Kết Nối Firebase Thực Tế (Optional), 🛠 Công nghệ & Thư viện sử dụng (Tech Stack), FinLux Android — Open-Source Personal Finance App 🚀, 📸 Giao diện ứng dụng (Screenshots), 📄 Giấy phép (License), 🚀 Hướng dẫn Chạy Dự Án (Getting Started) (+6 more)
 
-### Community 74 - "GoalsScreen.kt"
-Cohesion: 0.29
-Nodes (11): FinluxStyleBackdrop(), BiometricLockScreen(), FinluxRoot(), FragmentActivity, MutableStateFlow, GoalCard(), GoalCategory, GoalCategoryChip() (+3 more)
+### Community 74 - "FinluxRoot.kt"
+Cohesion: 0.43
+Nodes (6): FinluxTheme(), GlassTokens, BiometricLockScreen(), FinluxRoot(), FragmentActivity, MutableStateFlow
 
 ### Community 75 - "FirebaseDebtRepository.kt"
 Cohesion: 0.29
 Nodes (5): FirebaseDebtRepository, Flow, toDebtAccount(), toDebtMap(), toDebtPaymentHistory()
 
 ### Community 76 - "ClassicReportsScreen.kt"
-Cohesion: 0.32
-Nodes (12): CashFlowChart(), CategoryBlock(), ClassicReportsScreen(), EmptyChartText(), ExpenseDistribution(), Color, Modifier, ReportAmount() (+4 more)
+Cohesion: 0.19
+Nodes (18): CashFlowChart(), CategoryBlock(), ClassicReportsScreen(), EmptyChartText(), ExpenseDistribution(), Color, Modifier, ReportAmount() (+10 more)
 
 ### Community 77 - "SalaryCycleViewModel"
 Cohesion: 0.23
@@ -565,25 +566,29 @@ Nodes (6): AvatarUpdateState, ByteArray, Uri, ViewModel, NameUpdateState, Settin
 Cohesion: 0.17
 Nodes (12): 🎯 3 NGUYÊN TẮC CỐT LÕI BẮT BUỘC (MANDATORY CORE DIRECTIVES), AGENTS.md — Hướng dẫn cho AI Coding Agent (Claude Code / Cursor / Antigravity...), Bối cảnh, CHANGELOG.md — Chỉ ghi sau khi build thành công, Cập nhật tài liệu, HANDOVER_LOG.md — Bắt buộc ghi 2 bước, Khi sinh code data layer, Khi sinh code UI (+4 more)
 
-### Community 81 - "ThemePreference"
-Cohesion: 0.20
-Nodes (10): FinluxTheme(), GlassTokens, GlassIntensity, BALANCED, SOFT, VIVID, ThemePreference, DARK (+2 more)
+### Community 81 - "FinanceModels.kt"
+Cohesion: 0.25
+Nodes (7): CardDensity, COMFORTABLE, COMPACT, GlassIntensity, BALANCED, SOFT, VIVID
 
-### Community 82 - "UiPreferences"
-Cohesion: 0.32
-Nodes (6): UiPreferences, Flow, UiPreferencesRepository, ViewModel, RootViewModel, FakeUiPreferencesRepository
+### Community 82 - "ModernHomeScreen.kt"
+Cohesion: 0.23
+Nodes (16): FinluxStyleBackdrop(), Modifier, ExpenseAnalytics(), HeroWaterDetails(), Color, ImageVector, Modifier, ModernHomeScreen() (+8 more)
 
-### Community 83 - "GoalUseCasesTest"
-Cohesion: 0.26
-Nodes (3): DepositToGoalUseCase, SaveGoalUseCase, GoalUseCasesTest
+### Community 83 - "FinluxTransactionComponents.kt"
+Cohesion: 0.21
+Nodes (9): FinluxAmountText(), FinluxFilterChip(), FinluxTransactionRow(), getTransactionSemanticColor(), androidx, Color, ImageVector, Modifier (+1 more)
 
 ### Community 84 - "🧱 2. Danh Sách & Đặc Tả Chi Tiết Các Component Tiêu Chuẩn"
-Cohesion: 0.17
-Nodes (11): 1️⃣ `FinluxCategoryPickerBottomSheet` — Bộ Chọn Danh Mục Chuẩn, 📍 1. Vị Trí Lưu Trữ Mã Nguồn, 🧱 2. Danh Sách & Đặc Tả Chi Tiết Các Component Tiêu Chuẩn, 2️⃣ `FinluxWalletPickerBottomSheet` — Bộ Chọn Ví Tài Khoản Chuẩn, 3️⃣ `ErgonomicFormRow` — Hàng Chọn Dữ Liệu 2 Dòng Tiêu Chuẩn, 📱 4. DANH SÁCH MÀN HÌNH ĐÃ KẾ THỪA BỘ COMPONENT CHUẨN, 4️⃣ `ErgonomicInputRow` — Thẻ Nhập Liệu Phẳng Bo Góc, 5️⃣ `ErgonomicCompactAmountCard` — Thẻ Ô Nhập / Hiển Thị Tiền Gọn Gàng (Custom Color & Focus-driven Quick Chips) (+3 more)
+Cohesion: 0.18
+Nodes (10): 1️⃣ `FinluxCategoryPickerBottomSheet` — Bộ Chọn Danh Mục Chuẩn, 📍 1. Vị Trí Lưu Trữ Mã Nguồn, 🧱 2. Danh Sách & Đặc Tả Chi Tiết Các Component Tiêu Chuẩn, 2️⃣ `FinluxWalletPickerBottomSheet` — Bộ Chọn Ví Tài Khoản Chuẩn, 3️⃣ `ErgonomicFormRow` — Hàng Chọn Dữ Liệu 2 Dòng Tiêu Chuẩn, 📱 4. DANH SÁCH MÀN HÌNH ĐÃ KẾ THỪA BỘ COMPONENT CHUẨN, 4️⃣ `ErgonomicInputRow` — Thẻ Nhập Liệu Phẳng Bo Góc, 5️⃣ `ErgonomicCompactAmountCard` — Thẻ Ô Nhập / Hiển Thị Tiền Gọn Gàng (Custom Color & Focus-driven Quick Chips) (+2 more)
 
-### Community 86 - "FirebaseGoalRepository.kt"
-Cohesion: 0.31
-Nodes (4): FirebaseGoalRepository, Flow, toGoal(), toGoalMap()
+### Community 85 - "FinluxStyleBackdrop"
+Cohesion: 0.24
+Nodes (10): Color, Modifier, DynamicGradientBackdrop(), FinluxStyleBackdrop(), Modifier, ModernDarkBackdrop(), createReceiptUri(), Context (+2 more)
+
+### Community 86 - "VisualStyle"
+Cohesion: 0.28
+Nodes (12): AuraBlob(), Brush, Color, Modifier, PaddingValues, LiquidAuraBackdrop(), WaterGlassCard(), waterGlassFill() (+4 more)
 
 ### Community 87 - "🛠️ SpecKit Commands & Phases"
 Cohesion: 0.20
@@ -593,13 +598,13 @@ Nodes (9): 1. `/speckit.constitution`, 2. `/speckit.specify`, 3. `/speckit.clari
 Cohesion: 0.29
 Nodes (4): BiometricHelper, BiometricPrompt, Context, FragmentActivity
 
-### Community 89 - "FinanceTime"
-Cohesion: 0.27
-Nodes (4): FinanceTime, YearMonth, FirebaseDashboardRepository, Flow
+### Community 89 - "HomeViewModel.kt"
+Cohesion: 0.18
+Nodes (9): FinanceClock, FinanceTime, YearMonth, SystemFinanceClock, bindFinanceClock(), FinancialOverview, HomeUiState, HomeViewModel (+1 more)
 
-### Community 90 - "AppUpdateDialog"
-Cohesion: 0.47
-Nodes (9): AppUpdateInfo, AppUpdateDialog(), DownloadingContent(), androidx, Color, ReadyToInstallContent(), SimpleMessageDialog(), UpdateAvailableContent() (+1 more)
+### Community 90 - "FinluxSoftCard"
+Cohesion: 0.49
+Nodes (9): FinluxHeroCard(), FinluxInsightCard(), FinluxMetricCard(), FinluxSoftCard(), Color, Composable, Dp, ImageVector (+1 more)
 
 ### Community 91 - "FirebaseModule.kt"
 Cohesion: 0.29
@@ -613,9 +618,13 @@ Nodes (5): FirebaseBudgetRepository, Budget, Flow, toBudget(), toBudgetMap()
 Cohesion: 0.33
 Nodes (3): FirebaseSalaryCycleRepository, Flow, SalaryCycleConfig
 
-### Community 95 - "RootViewModelTest"
-Cohesion: 0.27
-Nodes (3): FakeThemePreferenceRepository, Flow, RootViewModelTest
+### Community 94 - "ModernWaterGlass.kt"
+Cohesion: 0.44
+Nodes (8): AuraBlob(), Brush, Color, Modifier, PaddingValues, LiquidAuraBackdrop(), WaterGlassCard(), waterGlassFill()
+
+### Community 95 - "FirebaseCategoryRepository.kt"
+Cohesion: 0.36
+Nodes (4): FirebaseCategoryRepository, Flow, toCategory(), toCategoryMap()
 
 ### Community 96 - "UI SPEC — Finlux"
 Cohesion: 0.20
@@ -624,6 +633,10 @@ Nodes (9): 14. User Flow tổng quát, 18. SCREEN: Trung tâm Thông báo (Notif
 ### Community 97 - "README.md"
 Cohesion: 0.22
 Nodes (3): 1. Actor, 2. Use Case List, BA SPEC — Finlux (Quản lý Thu Chi Cá Nhân)
+
+### Community 98 - "IncomeViewModel.kt"
+Cohesion: 0.39
+Nodes (5): IncomeCategoryStat, IncomeDayStat, IncomeUiState, IncomeViewModel, ViewModel
 
 ### Community 99 - "ReportMainTab"
 Cohesion: 0.22
@@ -637,21 +650,17 @@ Nodes (8): 1. Cấu trúc Firestore, 2. Firebase Storage, 3. Firestore Security 
 Cohesion: 0.22
 Nodes (8): In scope, Out of scope (V1 — để V2 xét sau), Phạm vi V1 (MVP), PROJECT PROFILE, Team & Vai trò, Thông tin chung, Timeline, Tích hợp
 
-### Community 102 - "CONTEXT.md"
-Cohesion: 0.25
-Nodes (6): CONTEXT — Finlux, Cấu trúc thư mục đề xuất, File tài liệu liên quan, Nguyên tắc code, Tech Stack, Tổng quan
-
-### Community 103 - "FinluxMessagingService.kt"
-Cohesion: 0.32
-Nodes (4): FinluxMessagingService, FirebaseMessagingService, NotificationManager, RemoteMessage
+### Community 103 - "BudgetRepository"
+Cohesion: 0.12
+Nodes (11): SystemNotificationHelper, NotificationType, BUDGET_ALERT, DEBT_DUE_ALERT, GOAL_MILESTONE, REMINDER, SYSTEM, TRANSACTION_SUMMARY (+3 more)
 
 ### Community 104 - "MainActivity"
-Cohesion: 0.46
-Nodes (4): FragmentActivity, Intent, MainActivity, Bundle
+Cohesion: 0.23
+Nodes (7): FinluxMessagingService, FragmentActivity, Intent, MainActivity, Bundle, FirebaseMessagingService, RemoteMessage
 
-### Community 105 - "QuickAddSheet.kt"
-Cohesion: 0.61
-Nodes (7): Color, ImageVector, Modifier, QuickActionBentoCard(), QuickActionFullBanner(), QuickAddRecentTransactionRow(), QuickAddSheet()
+### Community 105 - "RoundedCornerShape"
+Cohesion: 0.35
+Nodes (13): Color, ImageVector, Modifier, QuickActionBentoCard(), QuickActionFullBanner(), QuickAddRecentTransactionRow(), QuickAddSheet(), BudgetBasisCard() (+5 more)
 
 ### Community 106 - "ExpenseViewModel.kt"
 Cohesion: 0.39
@@ -673,9 +682,9 @@ Nodes (8): Danh Sách Nhiệm Vụ Đã Hoàn Thành (Completed Tasks), [x] Task
 Cohesion: 0.38
 Nodes (6): FinluxDesignTokens, FinluxMotion, FinluxRadius, FinluxSpacing, Brush, Color
 
-### Community 112 - "ExportReportDialog"
-Cohesion: 0.43
-Nodes (6): ExportFormat, EXCEL, PDF, ExportFormatOption(), ExportReportDialog(), ImageVector
+### Community 113 - "[DONE] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam"
+Cohesion: 0.29
+Nodes (7): Danh sách file đã thực sự chỉnh sửa, [DONE] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam, Kết quả thực hiện, Kết quả Unit Test, Build & ADB, Mục tiêu, Scope dự kiến, Trạng thái
 
 ### Community 114 - "✨ Tính năng cốt lõi (Key Features)"
 Cohesion: 0.29
@@ -752,6 +761,10 @@ Nodes (5): Danh sách file đã thực sự chỉnh sửa / tạo mới, [DONE] 
 ### Community 134 - "[DONE] Task v1.5.0: Save Notification History & Auto Navigation Deep Link"
 Cohesion: 0.40
 Nodes (5): Danh sách file đã thực sự chỉnh sửa / tạo mới, [DONE] Task v1.5.0: Save Notification History & Auto Navigation Deep Link, Kết quả Unit Test & Build, Mục tiêu, Trạng thái
+
+### Community 135 - "FinluxComponents.kt"
+Cohesion: 0.70
+Nodes (4): Color, Modifier, MetricTile(), SectionHeader()
 
 ### Community 137 - "[1.10.0] - 2026-08-24"
 Cohesion: 0.50
@@ -881,13 +894,9 @@ Nodes (4): [DONE] Task v1.7.6: Fix Swipe-to-Delete Translucent Ghosting Trash Ic
 Cohesion: 0.50
 Nodes (4): [DONE] Task v1.7.7: Fix SettingsScreen Theme Inconsistency & Contrast, Kết quả & Danh sách file đã chỉnh sửa, Mục tiêu, Trạng thái
 
-### Community 170 - "GoalTransactionMode"
-Cohesion: 0.67
-Nodes (3): GoalTransactionMode, DEPOSIT, WITHDRAW
-
-### Community 171 - "[1.10.12] - 2026-08-26"
-Cohesion: 0.67
-Nodes (3): [1.10.12] - 2026-08-26, Added, Changed
+### Community 171 - "[1.11.7] - 2026-08-27"
+Cohesion: 0.50
+Nodes (4): [1.11.7] - 2026-08-27, Added, Changed, Fixed
 
 ### Community 172 - "[1.10.13] - 2026-08-26"
 Cohesion: 0.67
@@ -977,25 +986,33 @@ Nodes (3): Danh sách file đã chỉnh sửa / tạo mới:, [DONE] Task: Fix U
 Cohesion: 0.67
 Nodes (3): [DONE] Task: Remove Auto VersionCode Bump from build_and_install.ps1, Kết quả & Danh sách file đã chỉnh sửa, Mục tiêu
 
+### Community 197 - "Financial Institution Logo Assets"
+Cohesion: 0.50
+Nodes (3): Financial Institution Logo Assets, Nguồn và cách cập nhật, Phạm vi hiện tại
+
+### Community 200 - "[1.10.12] - 2026-08-26"
+Cohesion: 0.67
+Nodes (3): [1.10.12] - 2026-08-26, Added, Changed
+
 ## Knowledge Gaps
-- **655 isolated node(s):** `Error`, `FinanceIconOption`, `ALL`, `BANK`, `EWALLET` (+650 more)
+- **670 isolated node(s):** `Error`, `FinanceIconOption`, `ALL`, `BANK`, `EWALLET` (+665 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `HANDOVER LOG - FINLUX APP` connect `HANDOVER LOG - FINLUX APP` to `[DONE] Task v1.4.3: Fix Budget Dynamic SpentAmount & Category Fallback Mapping`, `[DONE] Task v1.5.6: Auto Request Notification Permission & Settings Guide`, `[DONE] Task v1.5.5: Restore Heads-up Dropdown Banner Notification Channel & Priority`, `[DONE] Task v1.5.4: Update Actual Paid Amount on Notification Record`, `[DONE] Task v1.5.3: Variable Amount Quick Payment Sheet`, `[DONE] Task v1.5.2: Fix Double Payment & Sync Notification Paid State`, `[DONE] Task v1.5.0: Save Notification History & Auto Navigation Deep Link`, `[DONE] Task: Finlux v1.8.5 Security & Release Hardening Master Plan`, `[DONE] Task: In-App Auto-Update & GitHub Actions CI/CD Auto-Release`, `[DONE] Task: Batch 3 - P1 Architecture Hardening (Split God Repository)`, `[DONE] Task: Batch 1 - P0 Data Integrity & Security Hardening`, `[DONE] Task: Transaction Detail Modal, Long-Press Actions Popup, and Bottom History Tab (v1.8.2)`, `[DONE] Task: Finlux Prism UI Theme & Design System Implementation`, `[DONE] Task: Fix Transaction Edit & Adjustment Capability (Sửa/Điều chỉnh giao dịch thu chi)`, `[DONE] Task: Long-Press & Button-Only Edit Trigger (Chỉ mở sửa khi bấm giữ hoặc bấm nút sửa)`, `[DONE] Task: Reorganize Root Files into Dedicated Directories`, `[DONE] Task v1.5.7: Custom Release APK Naming on GitHub Actions`, `[DONE] Task v1.5.8: Embed Firebase google-services.json and Web Client ID`, `[DONE] Task v1.5.9: Simplify Release & APK Artifact Naming`, `[DONE] Task v1.7.0: Dual-UI Style Architecture & Theme Switcher`, `[DONE] Task v1.7.1: Fix Dual-UI Isolation, Overexposure & Settings Switcher`, `[DONE] Task v1.7.2: Restore True Modern UI Screens from commit 6535f24`, `[DONE] Task v1.7.3: Redesign Add & Transfer Wallet UI & Fix Dialog Text Bleed`, `[DONE] Task v1.7.4: Refine Wallet Card Layout & Safety UX`, `[DONE] Task v1.7.5: Restore Safe Swipe-to-Delete with Confirm Dialog`, `[DONE] Task v1.7.6: Fix Swipe-to-Delete Translucent Ghosting Trash Icon`, `[DONE] Task v1.7.7: Fix SettingsScreen Theme Inconsistency & Contrast`, `Trạng Thái Dự Án (Project Status)`, `[DONE] Task: Fix UI Report Issues from Real Device Testing (docs/Report)`, `[DONE] Task: Remove Auto VersionCode Bump from build_and_install.ps1`, `README.md`, `Danh Sách Nhiệm Vụ Đã Hoàn Thành (Completed Tasks)`, `[DONE] Task v1.5.1: Quick Pay Action on NotificationsScreen`, `[DONE] Task v1.4.8: Remove Full-Screen Frame Drag Gesture & Zero Gesture Collision`, `[DONE] Task v1.4.7: Fix Gesture Collision & Item Swipe Clipping`, `[DONE] Task v1.4.6: Google Auth CredentialProvider Compatibility & Multi-ADB Deployment`, `[DONE] Task v1.4.5: Update App Launcher Display Name to "Finance Luxury"`, `[DONE] Task v1.4.4: Shared Project Debug Keystore & Google Sign-In SHA-1 Standardization`?**
-  _High betweenness centrality (0.170) - this node is a cross-community bridge._
-- **Why does `Changelog` connect `Changelog` to `[1.10.0] - 2026-08-24`, `[1.10.1] - 2026-08-25`, `[1.10.2] - 2026-08-25`, `[1.1.0] - 2026-08-13`, `[1.6.7] - 2026-08-15`, `[1.8.5] - 2026-08-19`, `[1.8.6] - 2026-08-20`, `[1.8.7] - 2026-08-21`, `[1.9.0] - 2026-08-22`, `[1.9.1] - 2026-08-24`, `[1.9.2] - 2026-08-24`, `[1.9.3] - 2026-08-24`, `[1.10.12] - 2026-08-26`, `[1.10.13] - 2026-08-26`, `[1.10.16] - 2026-08-27`, `[1.10.3] - 2026-08-25`, `[1.10.7] - 2026-08-26`, `[1.10.8] - 2026-08-26`, `[1.10.9] - 2026-08-26`, `[1.11.0] - 2026-08-27`, `[1.2.0] - 2026-08-13`, `[1.4.1] - 2026-08-13`, `[1.4.2] - 2026-08-13`, `[1.4.3] - 2026-08-13`, `[1.4.4] - 2026-08-13`, `[1.4.6] - 2026-08-13`, `[1.5.2] - 2026-08-13`, `[1.8.0] - 2026-08-15`, `[1.8.1] - 2026-08-19`, `[1.8.2] - 2026-08-19`, `[1.8.3] - 2026-08-19`, `[1.8.4] - 2026-08-19`, `[1.8.8] - 2026-08-22`, `[1.10.10] - 2026-08-26`, `[1.10.11] - 2026-08-26`, `[1.10.14] - 2026-08-26`, `[1.10.15] - 2026-08-26`, `[1.10.18] - 2026-08-27`, `[1.10.20] - 2026-08-27`, `[1.10.4] - 2026-08-25`, `[1.10.5] - 2026-08-25`, `[1.11.2] - 2026-08-27`, `[1.11.3] - 2026-08-27`, `[1.2.1] - 2026-08-13`, `[1.4.8] - 2026-08-13`, `[1.5.1] - 2026-08-13`, `[1.5.4] - 2026-08-13`, `[1.5.6] - 2026-08-13`, `[1.5.9] - 2026-08-14`, `[1.7.0] - 2026-08-15`, `[1.7.2] - 2026-08-15`, `[1.7.3] - 2026-08-15`, `[1.7.6] - 2026-08-15`, `[1.7.7] - 2026-08-15`, `README.md`?**
-  _High betweenness centrality (0.137) - this node is a cross-community bridge._
-- **Why does `AppResult` connect `AppResult` to `Timestamp`, `RecordingAuthRepository`, `Reminder`, `AuthViewModel`, `DemoFinluxRepository`, `firebaseResult`, `TransactionRepository`, `Category`, `TransactionType`, `Wallet`, `RepositoryModule.kt`, `Budget`, `Money`, `DebtViewModelTest`, `DebtAccount`, `SalaryCycleRepository`, `HomeViewModelTest.kt`, `AppNotification`, `UpdateDisplayNameUseCase.kt`, `DebtPaymentHistory`, `SalaryCycleConfig`, `SalaryCycleViewModelTest.kt`, `FirebaseTransactionRepositoryTest`, `BudgetViewModel.kt`, `GoalsViewModel`, `AuthRepository`, `FinancialGoal`, `UserProfile`, `DebtViewModel.kt`, `ExecuteSalaryRolloverUseCaseTest`, `FirebaseAuthRepository`, `UpdateUiState`, `ProcessDebtPaymentUseCaseTest`, `FirebaseDebtRepository.kt`, `SettingsViewModel`, `GoalUseCasesTest`, `AppUpdateManager`, `FirebaseGoalRepository.kt`, `FirebaseBudgetRepository.kt`, `FirebaseSalaryCycleRepository`, `AppUpdateManagerTest`, `.setUp`, `CONTEXT.md`, `FakeGoalRepository`?**
-  _High betweenness centrality (0.129) - this node is a cross-community bridge._
+- **Why does `HANDOVER LOG - FINLUX APP` connect `HANDOVER LOG - FINLUX APP` to `[DONE] Task v1.4.3: Fix Budget Dynamic SpentAmount & Category Fallback Mapping`, `[DONE] Task v1.5.6: Auto Request Notification Permission & Settings Guide`, `[DONE] Task v1.5.5: Restore Heads-up Dropdown Banner Notification Channel & Priority`, `[DONE] Task v1.5.4: Update Actual Paid Amount on Notification Record`, `[DONE] Task v1.5.3: Variable Amount Quick Payment Sheet`, `[DONE] Task v1.5.2: Fix Double Payment & Sync Notification Paid State`, `[DONE] Task v1.5.0: Save Notification History & Auto Navigation Deep Link`, `[DONE] Task: Finlux v1.8.5 Security & Release Hardening Master Plan`, `[DONE] Task: In-App Auto-Update & GitHub Actions CI/CD Auto-Release`, `[DONE] Task: Batch 3 - P1 Architecture Hardening (Split God Repository)`, `[DONE] Task: Batch 1 - P0 Data Integrity & Security Hardening`, `[DONE] Task: Transaction Detail Modal, Long-Press Actions Popup, and Bottom History Tab (v1.8.2)`, `[DONE] Task: Finlux Prism UI Theme & Design System Implementation`, `[DONE] Task: Fix Transaction Edit & Adjustment Capability (Sửa/Điều chỉnh giao dịch thu chi)`, `[DONE] Task: Long-Press & Button-Only Edit Trigger (Chỉ mở sửa khi bấm giữ hoặc bấm nút sửa)`, `[DONE] Task: Reorganize Root Files into Dedicated Directories`, `[DONE] Task v1.5.7: Custom Release APK Naming on GitHub Actions`, `[DONE] Task v1.5.8: Embed Firebase google-services.json and Web Client ID`, `[DONE] Task v1.5.9: Simplify Release & APK Artifact Naming`, `[DONE] Task v1.7.0: Dual-UI Style Architecture & Theme Switcher`, `[DONE] Task v1.7.1: Fix Dual-UI Isolation, Overexposure & Settings Switcher`, `[DONE] Task v1.7.2: Restore True Modern UI Screens from commit 6535f24`, `[DONE] Task v1.7.3: Redesign Add & Transfer Wallet UI & Fix Dialog Text Bleed`, `[DONE] Task v1.7.4: Refine Wallet Card Layout & Safety UX`, `[DONE] Task v1.7.5: Restore Safe Swipe-to-Delete with Confirm Dialog`, `[DONE] Task v1.7.6: Fix Swipe-to-Delete Translucent Ghosting Trash Icon`, `[DONE] Task v1.7.7: Fix SettingsScreen Theme Inconsistency & Contrast`, `Trạng Thái Dự Án (Project Status)`, `[DONE] Task: Fix UI Report Issues from Real Device Testing (docs/Report)`, `[DONE] Task: Remove Auto VersionCode Bump from build_and_install.ps1`, `README.md`, `Danh Sách Nhiệm Vụ Đã Hoàn Thành (Completed Tasks)`, `[DONE] Task: Đồng bộ bộ icon ngân hàng và ví điện tử Việt Nam`, `[DONE] Task v1.5.1: Quick Pay Action on NotificationsScreen`, `[DONE] Task v1.4.8: Remove Full-Screen Frame Drag Gesture & Zero Gesture Collision`, `[DONE] Task v1.4.7: Fix Gesture Collision & Item Swipe Clipping`, `[DONE] Task v1.4.6: Google Auth CredentialProvider Compatibility & Multi-ADB Deployment`, `[DONE] Task v1.4.5: Update App Launcher Display Name to "Finance Luxury"`, `[DONE] Task v1.4.4: Shared Project Debug Keystore & Google Sign-In SHA-1 Standardization`?**
+  _High betweenness centrality (0.180) - this node is a cross-community bridge._
+- **Why does `AppResult` connect `AppResult` to `Timestamp`, `RecordingAuthRepository`, `Reminder`, `AuthViewModel`, `firebaseResult`, `BudgetViewModelTest`, `WalletRepository`, `TransactionUseCasesTest.kt`, `CategoryRepository`, `TransactionType`, `FirebaseWalletRepository.kt`, `FinanceRepositoryModule`, `Budget`, `Money`, `colorFromHex`, `com`, `DebtAccount`, `SalaryCycleRepository`, `.`state computes netWorth as grossAssets minus totalDebt accurately``, `AppNotification`, `UpdateDisplayNameUseCase.kt`, `DemoFinluxRepository.kt`, `SaveBudgetUseCase`, `PaydayRuleType`, `SalaryCycleConfig`, `SalaryCycleViewModelTest.kt`, `FirebaseTransactionRepositoryTest`, `BudgetViewModel.kt`, `GoalsViewModel`, `AuthRepository`, `FinancialGoal`, `UserProfile`, `FinanceTransaction`, `DebtViewModelTest.kt`, `TransactionsViewModel`, `DebtViewModelTest`, `FirebaseAuthRepository`, `AppUpdateManager`, `ProcessDebtPaymentUseCaseTest`, `FirebaseDebtRepository.kt`, `SettingsViewModel`, `FirebaseBudgetRepository.kt`, `FirebaseSalaryCycleRepository`, `FirebaseCategoryRepository.kt`, `BudgetRepository`, `AuthViewModelTest`?**
+  _High betweenness centrality (0.142) - this node is a cross-community bridge._
+- **Why does `Changelog` connect `Changelog` to `[1.10.0] - 2026-08-24`, `[1.10.1] - 2026-08-25`, `[1.10.2] - 2026-08-25`, `[1.1.0] - 2026-08-13`, `[1.6.7] - 2026-08-15`, `[1.8.5] - 2026-08-19`, `[1.8.6] - 2026-08-20`, `[1.8.7] - 2026-08-21`, `[1.9.0] - 2026-08-22`, `[1.9.1] - 2026-08-24`, `[1.9.2] - 2026-08-24`, `[1.9.3] - 2026-08-24`, `[1.11.7] - 2026-08-27`, `[1.10.13] - 2026-08-26`, `[1.10.16] - 2026-08-27`, `[1.10.3] - 2026-08-25`, `[1.10.7] - 2026-08-26`, `[1.10.8] - 2026-08-26`, `[1.10.9] - 2026-08-26`, `[1.11.0] - 2026-08-27`, `[1.2.0] - 2026-08-13`, `[1.4.1] - 2026-08-13`, `[1.4.2] - 2026-08-13`, `[1.4.3] - 2026-08-13`, `[1.4.4] - 2026-08-13`, `[1.4.6] - 2026-08-13`, `[1.5.2] - 2026-08-13`, `[1.8.0] - 2026-08-15`, `[1.8.1] - 2026-08-19`, `[1.8.2] - 2026-08-19`, `[1.8.3] - 2026-08-19`, `[1.8.4] - 2026-08-19`, `[1.8.8] - 2026-08-22`, `[1.10.10] - 2026-08-26`, `[1.10.14] - 2026-08-26`, `[1.10.15] - 2026-08-26`, `[1.10.12] - 2026-08-26`, `[1.10.17] - 2026-08-27`, `[1.10.19] - 2026-08-27`, `[1.11.1] - 2026-08-27`, `[1.11.2] - 2026-08-27`, `[1.11.3] - 2026-08-27`, `[1.11.5] - 2026-08-27`, `[1.4.8] - 2026-08-13`, `[1.5.1] - 2026-08-13`, `[1.3.0] - 2026-08-13`, `[1.5.6] - 2026-08-13`, `[1.5.9] - 2026-08-14`, `[1.3.1] - 2026-08-13`, `[1.7.2] - 2026-08-15`, `[1.4.0] - 2026-08-13`, `[1.7.6] - 2026-08-15`, `[1.7.7] - 2026-08-15`, `[1.4.5] - 2026-08-13`, `[1.4.7] - 2026-08-13`, `[1.5.8] - 2026-08-14`, `[1.7.1] - 2026-08-15`, `[1.7.4] - 2026-08-15`, `README.md`?**
+  _High betweenness centrality (0.131) - this node is a cross-community bridge._
 - **What connects `Error`, `FinanceIconOption`, `ALL` to the rest of the system?**
-  _655 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `FinluxPanel` be split into smaller, more focused modules?**
-  _Cohesion score 0.11711711711711711 - nodes in this community are weakly interconnected._
+  _670 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Reminder` be split into smaller, more focused modules?**
-  _Cohesion score 0.059907834101382486 - nodes in this community are weakly interconnected._
-- **Should `ModernHomeScreen.kt` be split into smaller, more focused modules?**
-  _Cohesion score 0.06448412698412699 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06349206349206349 - nodes in this community are weakly interconnected._
+- **Should `Route` be split into smaller, more focused modules?**
+  _Cohesion score 0.056189640035118525 - nodes in this community are weakly interconnected._
+- **Should `AuthViewModel` be split into smaller, more focused modules?**
+  _Cohesion score 0.06901960784313725 - nodes in this community are weakly interconnected._

@@ -228,6 +228,15 @@ Nâng cấp module **Quản lý Nợ & Tín dụng** (`com.finlux.app.presentati
 - `TRANSFER_OUT`: Tiêu đề tự động `Chuyển tiền đến [Ví nhận]`, icon `SwapHoriz`, màu xanh `FinluxColors.TransferBlue`, định tuyến `[Ví nguồn] ➔ [Ví nhận]`, số tiền `-amount`.
 - `TRANSFER_IN`: Tiêu đề tự động `Nhận tiền từ [Ví nguồn]`, icon `SwapHoriz`, màu xanh `FinluxColors.TransferBlue`, định tuyến `[Ví nguồn] ➔ [Ví nhận]`, số tiền `+amount`.
 - `TransactionDetailSheet`: Hiển thị đúng nhãn `"Chuyển tiền đi"` / `"Nhận tiền chuyển"`, loại giao dịch `"Chuyển tiền giữa các ví"`, và `"Định tuyến ví: [Ví A] ➔ [Ví B]"`.
+- **Bổ sung 2026-08-28:** `collapseInternalTransferPairs()` gom cặp `_out`/`_in` thành một dòng logic
+  trên Home và Lịch sử; bản ghi `_in` mồ côi vẫn được giữ để không che lỗi đồng bộ.
+
+### 3. ✅ Hoàn thiện History P1 — 2026-08-28
+
+- Search tiếng Việt không dấu theo ghi chú, danh mục, ví và số tiền.
+- Lọc kỳ này/kỳ trước theo `FinancialPeriod`, thêm 30 ngày/3 tháng/6 tháng và khoảng tiền.
+- Filter badge tính đầy đủ query, kỳ, ví, danh mục và amount range; Reset đưa về mặc định.
+- Còn backlog: selector nhiều lựa chọn cho tập ví/danh mục lớn, custom date range và swipe-delete Undo.
 
 ---
 

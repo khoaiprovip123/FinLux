@@ -5,13 +5,18 @@ import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.TransactionRepository
+import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.usecase.DeleteTransactionUseCase
+import com.finlux.app.domain.usecase.AddTransactionUseCase
+import com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver
+import com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -39,7 +44,9 @@ class TransactionsViewModelTest {
     private val transactionRepository: TransactionRepository = mockk(relaxed = true)
     private val categoryRepository: CategoryRepository = mockk(relaxed = true)
     private val walletRepository: WalletRepository = mockk(relaxed = true)
+    private val salaryCycleRepository: SalaryCycleRepository = mockk(relaxed = true)
     private val deleteTransactionUseCase: DeleteTransactionUseCase = mockk(relaxed = true)
+    private val addTransactionUseCase: AddTransactionUseCase = mockk(relaxed = true)
 
     private val sampleWallet = Wallet(id = "w1", name = "Ví tiền mặt", type = WalletType.CASH, balance = Money(1_000_000), colorHex = "#FFFFFF", isDefault = true, createdAt = Instant.now())
     private val sampleCat = Category(id = "c1", name = "Ăn uống", type = CategoryType.EXPENSE, icon = "food", colorHex = "#FF5722", isDefault = true, createdAt = Instant.now())
@@ -59,6 +66,7 @@ class TransactionsViewModelTest {
         coEvery { transactionRepository.observeRecent(any()) } returns flowOf(listOf(sampleTx))
         coEvery { categoryRepository.observeCategories() } returns flowOf(listOf(sampleCat))
         coEvery { walletRepository.observeWallets() } returns flowOf(listOf(sampleWallet))
+        coEvery { salaryCycleRepository.observeConfig() } returns flowOf(SalaryCycleConfig())
     }
 
     @AfterEach
@@ -70,7 +78,10 @@ class TransactionsViewModelTest {
         repository = transactionRepository,
         categoryRepository = categoryRepository,
         walletRepository = walletRepository,
+        salaryCycleRepository = salaryCycleRepository,
+        financialPeriodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
         deleteTransaction = deleteTransactionUseCase,
+        addTransaction = addTransactionUseCase,
     )
 
     @Test
@@ -103,5 +114,32 @@ class TransactionsViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { deleteTransactionUseCase.invoke(sampleTx) }
+    }
+
+    @Test
+    fun `search ignores Vietnamese diacritics and amount range is applied`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.transactions.collect() }
+
+        viewModel.setSearchQuery("an pho")
+        viewModel.setAmountRange(40_000L, 60_000L)
+        advanceUntilIdle()
+
+        assertEquals(listOf("tx1"), viewModel.transactions.value.map(FinanceTransaction::id))
+
+        viewModel.setAmountRange(60_001L, 100_000L)
+        advanceUntilIdle()
+        assertTrue(viewModel.transactions.value.isEmpty())
+    }
+
+    @Test
+    fun `restore transaction delegates to atomic add use case`() = runTest(testDispatcher) {
+        coEvery { addTransactionUseCase.invoke(sampleTx) } returns AppResult.Success(sampleTx.id)
+        val viewModel = createViewModel()
+
+        viewModel.restore(sampleTx)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { addTransactionUseCase.invoke(sampleTx) }
     }
 }

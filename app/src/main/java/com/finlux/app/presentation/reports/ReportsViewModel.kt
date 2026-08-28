@@ -15,6 +15,8 @@ import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
+import com.finlux.app.domain.model.assetWallets
+import com.finlux.app.domain.model.netGoalContribution
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DebtRepository
@@ -97,7 +99,13 @@ data class ReportsUiState(
     val averageIncome: Long = 0,
     val largestExpense: FinanceTransaction? = null,
     val largestIncome: FinanceTransaction? = null,
+    /** Phần thu nhập còn lại sau chi tiêu trong kỳ, chưa đồng nghĩa với tiền đã gửi tiết kiệm. */
+    val unspentCashFlow: Long = 0L,
+    /** Tỷ lệ thu nhập còn được giữ lại trong kỳ. */
     val savingsRatePercent: Int = 0,
+    /** Số tiền ròng đã nạp vào các mục tiêu qua danh mục `savings` trong kỳ. */
+    val goalContributionInPeriod: Long = 0L,
+    val trendInsights: List<String> = emptyList(),
     val previousIncome: Long = 0,
     val previousExpense: Long = 0,
     val previousNet: Long = 0,
@@ -316,6 +324,16 @@ class ReportsViewModel @Inject constructor(
             GoalReportItem(g, g.targetAmount.value, g.savedAmount.value, p)
         }
         val savingsRatePercent = if (income > 0) (((income - expense).toFloat() / income.toFloat()) * 100).roundToInt().coerceIn(-100, 100) else 0
+        val savingsCategoryIds = categories.filter {
+            it.id.equals("savings", ignoreCase = true) ||
+                it.id == "203" ||
+                it.name.contains("tiết kiệm", ignoreCase = true) ||
+                it.name.contains("saving", ignoreCase = true) ||
+                it.name.contains("tích lũy", ignoreCase = true)
+        }.map { it.id }.toSet()
+        val goalContributionInPeriod = filtered.netGoalContribution { catId ->
+            catId != null && (catId in savingsCategoryIds || catId.equals("savings", ignoreCase = true))
+        }
 
         // Ngân sách (Budgets)
         val totalBudgetLimit = budgets.sumOf { it.limitAmount.value }
@@ -340,11 +358,12 @@ class ReportsViewModel @Inject constructor(
         }
 
         // Tài sản & Ví (Wallets & Net Worth)
-        val activeWallets = wallets.filter { it.status == "active" }
-        val totalAssets = activeWallets.sumOf { it.balance.value }
+        // CARD represents a liability/payment instrument; counting it as an asset inflates net worth.
+        val assetWallets = wallets.assetWallets()
+        val totalAssets = assetWallets.sumOf { it.balance.value }
         val totalNetWorth = totalAssets - totalDebtRemaining
-        val assetsByType = activeWallets.groupBy { it.type }.mapValues { (_, list) -> list.sumOf { it.balance.value } }
-        val walletReportItems = activeWallets.map { w ->
+        val assetsByType = assetWallets.groupBy { it.type }.mapValues { (_, list) -> list.sumOf { it.balance.value } }
+        val walletReportItems = assetWallets.map { w ->
             val act = walletActivity.find { it.wallet?.id == w.id }
             val pct = if (totalAssets > 0) (w.balance.value.toFloat() / totalAssets.toFloat()) else 0f
             WalletReportItem(
@@ -374,6 +393,27 @@ class ReportsViewModel @Inject constructor(
             requestedPeriod
         }
 
+        val currentNet = income - expense
+        val previousNet = previousIncome - previousExpense
+        val netChange = currentNet - previousNet
+        val topExpense = byCategoryExpense.firstOrNull()
+        val trendInsights = buildList {
+            add(
+                when {
+                    previousNet == 0L && currentNet > 0L -> "Dòng tiền kỳ này dương ${currentNet} đ; kỳ trước chưa có số dư ròng để so sánh."
+                    netChange > 0L -> "Dòng tiền ròng tăng ${netChange} đ so với kỳ trước."
+                    netChange < 0L -> "Dòng tiền ròng giảm ${-netChange} đ so với kỳ trước."
+                    else -> "Dòng tiền ròng không thay đổi so với kỳ trước."
+                },
+            )
+            topExpense?.let {
+                add("${it.category?.name ?: "Chưa phân loại"} là nhóm chi lớn nhất, chiếm ${(it.percentage * 100).roundToInt()}% tổng chi.")
+            }
+            if (goalContributionInPeriod > 0L) {
+                add("Đã phân bổ ròng ${goalContributionInPeriod} đ vào mục tiêu tài chính trong kỳ.")
+            }
+        }
+
         return ReportsUiState(
             period = effectivePeriod,
             range = range,
@@ -388,7 +428,10 @@ class ReportsViewModel @Inject constructor(
             averageIncome = avgIncome,
             largestExpense = expenseItems.maxByOrNull { it.amount.value },
             largestIncome = incomeItems.maxByOrNull { it.amount.value },
+            unspentCashFlow = income - expense,
             savingsRatePercent = savingsRatePercent,
+            goalContributionInPeriod = goalContributionInPeriod,
+            trendInsights = trendInsights,
             previousIncome = previousIncome,
             previousExpense = previousExpense,
             previousNet = previousIncome - previousExpense,

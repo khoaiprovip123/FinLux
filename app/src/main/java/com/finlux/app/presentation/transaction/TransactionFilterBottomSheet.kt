@@ -30,7 +30,9 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -42,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,8 +57,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.categoryIcon
@@ -72,9 +76,12 @@ fun TransactionFilterBottomSheet(
     currentPeriod: TimePeriodFilter,
     selectedWalletId: String?,
     selectedCategoryId: String?,
+    currentSearchQuery: String,
+    currentMinimumAmount: Long?,
+    currentMaximumAmount: Long?,
     wallets: List<Wallet>,
     categories: List<Category>,
-    onApply: (TimePeriodFilter, String?, String?) -> Unit,
+    onApply: (TimePeriodFilter, String?, String?, String, Long?, Long?) -> Unit,
     onReset: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -84,8 +91,13 @@ fun TransactionFilterBottomSheet(
     var tempPeriod by remember { mutableStateOf(currentPeriod) }
     var tempWalletId by remember { mutableStateOf(selectedWalletId) }
     var tempCategoryId by remember { mutableStateOf(selectedCategoryId) }
+    var tempSearchQuery by remember { mutableStateOf(currentSearchQuery) }
+    var tempMinimumAmount by remember { mutableStateOf(currentMinimumAmount?.toString().orEmpty()) }
+    var tempMaximumAmount by remember { mutableStateOf(currentMaximumAmount?.toString().orEmpty()) }
 
-    val hasActiveFilters = tempPeriod != TimePeriodFilter.ALL || tempWalletId != null || tempCategoryId != null
+    val hasActiveFilters = tempPeriod != TimePeriodFilter.ALL || tempWalletId != null ||
+        tempCategoryId != null || tempSearchQuery.isNotBlank() ||
+        tempMinimumAmount.isNotBlank() || tempMaximumAmount.isNotBlank()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -146,6 +158,9 @@ fun TransactionFilterBottomSheet(
                                 tempPeriod = TimePeriodFilter.ALL
                                 tempWalletId = null
                                 tempCategoryId = null
+                                tempSearchQuery = ""
+                                tempMinimumAmount = ""
+                                tempMaximumAmount = ""
                             },
                         ) {
                             Icon(
@@ -191,7 +206,7 @@ fun TransactionFilterBottomSheet(
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
                         contentDescription = null,
-                        tint = Color(0xFF6366F1),
+                        tint = tokens.primary,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
@@ -201,7 +216,7 @@ fun TransactionFilterBottomSheet(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
                         ),
-                        color = Color(0xFF6B7280),
+                        color = tokens.onSurfaceVariant,
                     )
                 }
 
@@ -234,9 +249,9 @@ fun TransactionFilterBottomSheet(
                                 }
                             } else null,
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Color(0xFF6366F1).copy(alpha = 0.16f),
-                                selectedLabelColor = Color(0xFF6366F1),
-                                selectedLeadingIconColor = Color(0xFF6366F1),
+                                selectedContainerColor = tokens.primary.copy(alpha = 0.16f),
+                                selectedLabelColor = tokens.primary,
+                                selectedLeadingIconColor = tokens.primary,
                                 containerColor = tokens.surfaceSoft,
                                 labelColor = tokens.onSurface,
                             ),
@@ -249,6 +264,67 @@ fun TransactionFilterBottomSheet(
                             shape = RoundedCornerShape(12.dp),
                         )
                     }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "TÌM KIẾM",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                    ),
+                    color = tokens.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = tempSearchQuery,
+                    onValueChange = { tempSearchQuery = it.take(80) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = tokens.primary) },
+                    placeholder = { Text("Ghi chú, danh mục, ví hoặc số tiền") },
+                    shape = RoundedCornerShape(16.dp),
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(Icons.Default.Payments, contentDescription = null, tint = tokens.primary, modifier = Modifier.size(16.dp))
+                    Text(
+                        text = "KHOẢNG SỐ TIỀN",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                        ),
+                        color = tokens.onSurfaceVariant,
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = tempMinimumAmount,
+                        onValueChange = { tempMinimumAmount = it.filter(Char::isDigit).take(15) },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Từ") },
+                        suffix = { Text("đ") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                    OutlinedTextField(
+                        value = tempMaximumAmount,
+                        onValueChange = { tempMaximumAmount = it.filter(Char::isDigit).take(15) },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Đến") },
+                        suffix = { Text("đ") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(16.dp),
+                    )
                 }
             }
 
@@ -394,7 +470,7 @@ fun TransactionFilterBottomSheet(
 
                     items(categories) { cat ->
                         val isSelected = tempCategoryId == cat.id
-                        val catColor = colorFromHex(cat.colorHex, Color(0xFFF43F5E))
+                        val catColor = colorFromHex(cat.colorHex, MaterialTheme.colorScheme.error)
                         FilterChip(
                             selected = isSelected,
                             onClick = { tempCategoryId = if (isSelected) null else cat.id },
@@ -453,7 +529,16 @@ fun TransactionFilterBottomSheet(
 
                 Button(
                     onClick = {
-                        onApply(tempPeriod, tempWalletId, tempCategoryId)
+                        val minimum = tempMinimumAmount.toLongOrNull()
+                        val maximum = tempMaximumAmount.toLongOrNull()
+                        onApply(
+                            tempPeriod,
+                            tempWalletId,
+                            tempCategoryId,
+                            tempSearchQuery.trim(),
+                            minimum,
+                            maximum,
+                        )
                         onDismiss()
                     },
                     modifier = Modifier
@@ -465,7 +550,7 @@ fun TransactionFilterBottomSheet(
                     Text(
                         text = "Áp dụng bộ lọc",
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }

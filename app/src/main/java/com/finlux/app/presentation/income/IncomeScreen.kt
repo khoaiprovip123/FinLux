@@ -95,11 +95,11 @@ fun IncomeScreen(
             listType = FinluxListType.DETAIL,
         ) {
             item {
-                MonthPicker(
-                    month = state.month.toString(),
-                    previous = viewModel::previousMonth,
-                    next = viewModel::nextMonth,
-                    canNext = state.month < java.time.YearMonth.now(),
+                PeriodPicker(
+                    label = state.period?.displayLabel ?: "Đang tải kỳ tài chính…",
+                    previous = viewModel::previousPeriod,
+                    next = viewModel::nextPeriod,
+                    canNext = state.canNavigateNext,
                 )
             }
             item {
@@ -184,8 +184,7 @@ fun IncomeScreen(
 }
 
 @Composable
-private fun MonthPicker(month: String, previous: () -> Unit, next: () -> Unit, canNext: Boolean) {
-    val parsed = java.time.YearMonth.parse(month)
+private fun PeriodPicker(label: String, previous: () -> Unit, next: () -> Unit, canNext: Boolean) {
     FinluxPanel(
         modifier = Modifier.fillMaxWidth().height(48.dp),
         cornerRadius = 24.dp,
@@ -195,7 +194,7 @@ private fun MonthPicker(month: String, previous: () -> Unit, next: () -> Unit, c
             IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Tháng trước") }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                Text(parsed.format(DateTimeFormatter.ofPattern("'Tháng' M, yyyy", Locale.forLanguageTag("vi-VN"))), Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
+                Text(label, Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
             }
             IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Tháng sau") }
         }
@@ -222,7 +221,7 @@ private fun IncomeHero(total: Long, changePercent: Int) {
                 Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
                     if (changePercent == 0) "▲ Dòng tiền vào trong tháng"
-                    else "${if (changePercent >= 0) "▲" else "▼"} ${kotlin.math.abs(changePercent)}% so với tháng trước",
+                    else "${if (changePercent >= 0) "▲" else "▼"} ${kotlin.math.abs(changePercent)}% so với kỳ trước",
                     color = Color(0xFF77FFB3),
                     style = MaterialTheme.typography.bodyMedium,
                 )

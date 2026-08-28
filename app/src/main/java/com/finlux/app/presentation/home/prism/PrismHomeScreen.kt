@@ -2,8 +2,10 @@ package com.finlux.app.presentation.home.prism
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -12,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -71,6 +75,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -993,6 +999,7 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
 
 /**
  * 3. Metric 3-Column Card (Thu tháng này | Chi tháng này | Dòng tiền (ròng))
+ * Thiết kế gọn gàng, loại bỏ hoàn toàn viền, icon 3D chìm tinh tế 100% trong suốt với chữ đè lên trên
  */
 @Composable
 private fun PrismSummaryTrioCard(
@@ -1005,16 +1012,18 @@ private fun PrismSummaryTrioCard(
     onNetClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(152.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .height(104.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Column 1: Thu tháng này
         PrismTrioMetricCard(
-            icon = Icons.Default.ArrowDownward,
+            watermarkType = PrismMetricWatermarkType.INCOME,
             accentColor = FinluxColors.IncomeGreen,
             title = "Thu tháng này",
             value = if (showBalance) formatVndAmount(income) else "••••",
@@ -1028,7 +1037,7 @@ private fun PrismSummaryTrioCard(
 
         // Column 2: Chi tháng này
         PrismTrioMetricCard(
-            icon = Icons.Default.ArrowUpward,
+            watermarkType = PrismMetricWatermarkType.EXPENSE,
             accentColor = FinluxColors.ExpenseRed,
             title = "Chi tháng này",
             value = if (showBalance) formatVndAmount(expense) else "••••",
@@ -1041,13 +1050,15 @@ private fun PrismSummaryTrioCard(
         )
 
         // Column 3: Dòng tiền (ròng)
+        val netPositive = net >= 0
+        val netColor = if (net < 0) FinluxColors.ExpenseRed else tokens.primary
         PrismTrioMetricCard(
-            icon = Icons.Default.PieChart,
-            accentColor = if (net < 0) FinluxColors.ExpenseRed else FinluxColors.BudgetViolet,
+            watermarkType = PrismMetricWatermarkType.NET,
+            accentColor = netColor,
             title = "Dòng tiền ròng",
             value = if (showBalance) (if (net < 0) "-${formatVndAmount(-net)}" else "+${formatVndAmount(net)}") else "••••",
             trendText = if (net == 0L) "— 0%" else (if (net < 0) "▼ Âm ví" else "▲ Dương"),
-            isTrendPositive = if (net == 0L) null else (net >= 0),
+            isTrendPositive = if (net == 0L) null else netPositive,
             onClick = onNetClick,
             modifier = Modifier
                 .weight(1f)
@@ -1056,9 +1067,81 @@ private fun PrismSummaryTrioCard(
     }
 }
 
+private enum class PrismMetricWatermarkType {
+    INCOME, EXPENSE, NET
+}
+
+@Composable
+private fun PrismMetricMiniBadge(
+    type: PrismMetricWatermarkType,
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = accentColor.copy(alpha = 0.14f),
+        border = BorderStroke(0.75.dp, accentColor.copy(alpha = 0.35f)),
+        modifier = modifier.size(18.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.size(10.dp)) {
+                val w = size.width
+                val h = size.height
+                when (type) {
+                    PrismMetricWatermarkType.INCOME -> {
+                        val p = Path().apply {
+                            moveTo(w * 0.18f, h * 0.82f)
+                            lineTo(w * 0.82f, h * 0.18f)
+                            moveTo(w * 0.38f, h * 0.18f)
+                            lineTo(w * 0.82f, h * 0.18f)
+                            lineTo(w * 0.82f, h * 0.62f)
+                        }
+                        drawPath(
+                            path = p,
+                            color = accentColor,
+                            style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round),
+                        )
+                    }
+                    PrismMetricWatermarkType.EXPENSE -> {
+                        val p = Path().apply {
+                            moveTo(w * 0.18f, h * 0.18f)
+                            lineTo(w * 0.82f, h * 0.82f)
+                            moveTo(w * 0.38f, h * 0.82f)
+                            lineTo(w * 0.82f, h * 0.82f)
+                            lineTo(w * 0.82f, h * 0.38f)
+                        }
+                        drawPath(
+                            path = p,
+                            color = accentColor,
+                            style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round),
+                        )
+                    }
+                    PrismMetricWatermarkType.NET -> {
+                        val p = Path().apply {
+                            moveTo(w * 0.50f, 0f)
+                            lineTo(w * 0.64f, h * 0.36f)
+                            lineTo(w, h * 0.50f)
+                            lineTo(w * 0.64f, h * 0.64f)
+                            lineTo(w * 0.50f, h)
+                            lineTo(w * 0.36f, h * 0.64f)
+                            lineTo(0f, h * 0.50f)
+                            lineTo(w * 0.36f, h * 0.36f)
+                            close()
+                        }
+                        drawPath(
+                            path = p,
+                            color = accentColor,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun PrismTrioMetricCard(
-    icon: ImageVector,
+    watermarkType: PrismMetricWatermarkType,
     accentColor: Color,
     title: String,
     value: String,
@@ -1068,100 +1151,123 @@ private fun PrismTrioMetricCard(
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
-    val shape = RoundedCornerShape(20.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow),
+        label = "metric_card_scale",
+    )
 
-    LiquidGlassCard(
-        mode = LiquidGlassMode.REGULAR,
-        tint = accentColor,
-        shape = shape,
-        modifier = modifier,
-        elevation = if (tokens.isDark) 4.dp else 6.dp,
-        padding = PaddingValues(0.dp),
-        onClick = onClick,
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = tokens.surface,
+        border = BorderStroke(0.8.dp, accentColor.copy(alpha = if (tokens.isDark) 0.28f else 0.16f)),
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .shadow(
+                elevation = if (tokens.isDark) 5.dp else 3.5.dp,
+                shape = RoundedCornerShape(18.dp),
+                spotColor = accentColor.copy(alpha = if (tokens.isDark) 0.32f else 0.20f),
+                ambientColor = Color.Black.copy(alpha = if (tokens.isDark) 0.20f else 0.05f),
+            )
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = ripple(bounded = true, color = accentColor),
+                onClick = onClick,
+            ),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            accentColor.copy(alpha = if (tokens.isDark) 0.14f else 0.07f),
-                            Color.Transparent,
+        Box(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            // 1. Ánh sáng nền Liquid Glass chuyển màu êm ái
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                accentColor.copy(alpha = if (tokens.isDark) 0.12f else 0.06f),
+                                Color.Transparent,
+                            ),
                         ),
                     ),
-                )
-                .padding(horizontal = 8.dp, vertical = 13.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            // Top: Circular Icon
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(accentColor.copy(alpha = if (tokens.isDark) 0.22f else 0.14f))
-                    .border(BorderStroke(1.dp, accentColor.copy(alpha = 0.30f)), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = accentColor,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
-            // Title
-            Text(
-                text = title,
-                style = FinluxTextStyles.Caption.copy(
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Medium,
-                ),
-                color = tokens.onSurface.copy(alpha = if (tokens.isDark) 0.78f else 0.72f),
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 1,
-                textAlign = TextAlign.Center,
             )
 
-            // Amount Value
-            Box(
+            // 2. Nội dung 3 tầng đối xứng hoàn hảo, thoáng đãng
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp),
-                contentAlignment = Alignment.Center,
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
+                // Tầng 1: Badge kính + Tiêu đề
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    PrismMetricMiniBadge(
+                        type = watermarkType,
+                        accentColor = accentColor,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = title,
+                        style = FinluxTextStyles.Caption.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = tokens.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                // Tầng 2: Số tiền nổi bật, to rõ, sắc nét
                 Text(
                     text = value,
                     style = FinluxTextStyles.CardTitle.copy(
                         fontSize = prismMetricAmountFontSizeSp(value).sp,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.4).sp,
+                        letterSpacing = 0.25.sp,
+                        shadow = Shadow(
+                            color = accentColor.copy(alpha = if (tokens.isDark) 0.45f else 0.18f),
+                            offset = Offset(0f, 1.2f),
+                            blurRadius = 3f,
+                        ),
                     ),
-                    color = tokens.onSurface,
+                    color = accentColor,
                     maxLines = 1,
                     textAlign = TextAlign.Center,
                 )
-            }
 
-            // Bottom Trend Pill
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = when (isTrendPositive) {
-                    true -> FinluxColors.IncomeGreen.copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
-                    false -> FinluxColors.ExpenseRed.copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
-                    null -> tokens.surfaceSoft
-                },
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                // Tầng 3: Nhãn xu hướng Liquid Glass căn giữa hoàn hảo
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = when (isTrendPositive) {
+                        true -> FinluxColors.IncomeGreen.copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
+                        false -> FinluxColors.ExpenseRed.copy(alpha = if (tokens.isDark) 0.20f else 0.12f)
+                        null -> tokens.surfaceSoft
+                    },
+                    border = BorderStroke(
+                        width = 0.75.dp,
+                        color = when (isTrendPositive) {
+                            true -> FinluxColors.IncomeGreen.copy(alpha = 0.25f)
+                            false -> FinluxColors.ExpenseRed.copy(alpha = 0.25f)
+                            null -> Color.Transparent
+                        },
+                    ),
                 ) {
                     Text(
                         text = trendText,
                         style = FinluxTextStyles.MicroLabel.copy(
-                            fontSize = 10.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,
                         ),
                         color = when (isTrendPositive) {
@@ -1169,6 +1275,7 @@ private fun PrismTrioMetricCard(
                             false -> FinluxColors.ExpenseRed
                             null -> tokens.onSurfaceVariant
                         },
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
                     )
                 }
             }
@@ -1177,10 +1284,10 @@ private fun PrismTrioMetricCard(
 }
 
 internal fun prismMetricAmountFontSizeSp(value: String): Float = when {
-    value.length >= 15 -> 12.5f
-    value.length >= 13 -> 13.5f
-    value.length >= 11 -> 14.5f
-    else -> 15.5f
+    value.length >= 16 -> 13.5f
+    value.length >= 14 -> 15.0f
+    value.length >= 12 -> 16.5f
+    else -> 18.0f
 }
 
 /**

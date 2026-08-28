@@ -194,3 +194,14 @@ presentation layer; số tiền, tỷ trọng và dữ liệu giao dịch vẫn 
 
 `visual_style` nhận một trong ba giá trị enum: `MODERN_DARK`, `GLASSMORPHISM`, `DYNAMIC_GRADIENT`;
 giá trị mặc định cho cài mới là `DYNAMIC_GRADIENT`.
+
+## 8. Derived financial semantics (không đổi schema)
+
+- Firestore tiếp tục lưu chuyển tiền theo cặp `<base>_out` và `<base>_in`; presentation gọi
+  `collapseInternalTransferPairs()` để tạo một dòng logic. Bản ghi `_in` không có `_out` tương ứng
+  vẫn được giữ lại để người dùng thấy dữ liệu đồng bộ chưa hoàn chỉnh.
+- Tổng tài sản dùng `assetWallets()`/`totalAssetBalance()`: chỉ ví `status == active` và loại khác
+  `CARD`. Thẻ tín dụng và dư nợ được trình bày ở liability, không cộng vào gross assets.
+- Đóng góp mục tiêu trong kỳ dùng category mặc định `savings`: tổng EXPENSE nạp mục tiêu trừ tổng
+  INCOME rút mục tiêu, chặn dưới ở 0. Đây là aggregate dẫn xuất, không thêm field Firestore.
+

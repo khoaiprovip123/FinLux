@@ -13,6 +13,8 @@ import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.model.totalAssetBalance
+import com.finlux.app.domain.model.collapseInternalTransferPairs
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
@@ -147,7 +149,7 @@ class HomeViewModel @Inject constructor(
         walletRepository.observeWallets(),
         debtRepository.observeDebts(),
     ) { wallets, debts ->
-        val gross = wallets.sumOf { it.balance.value }
+        val gross = wallets.totalAssetBalance()
         val totalDebt = debts.filterNot { it.isSettled }.sumOf { it.remainingBalance.value }
         val netWorth = gross - totalDebt
         Triple(wallets, debts, Triple(gross, totalDebt, netWorth))
@@ -171,7 +173,7 @@ class HomeViewModel @Inject constructor(
             grossAssets = gross,
             totalDebt = totalDebt,
             netWorth = netWorth,
-            transactions = transactions,
+            transactions = transactions.collapseInternalTransferPairs(),
             monthTransactions = overview.monthTransactions,
             categories = categories,
             budgetRemaining = overview.budgetRemaining,

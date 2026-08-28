@@ -57,6 +57,7 @@ class HomeViewModelTest {
         val wallets = listOf(
             Wallet("w1", "Tiền mặt", WalletType.CASH, Money(15_000_000L), "#1F6FBF", true, Instant.now()),
             Wallet("w2", "MB Bank", WalletType.BANK, Money(25_000_000L), "#3478F6", false, Instant.now()),
+            Wallet("card", "Thẻ tín dụng", WalletType.CARD, Money(20_000_000L), "#3478F6", false, Instant.now()),
         ) // Total Gross = 40,000,000
 
         val debts = listOf(

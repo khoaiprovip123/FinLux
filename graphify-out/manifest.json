@@ -1,7 +1,7 @@
 {
   "app/build.gradle.kts": {
-    "mtime": 1787816896.0536623,
-    "ast_hash": "59182b8bc479dd69447561609754498b",
+    "mtime": 1787821103.0078151,
+    "ast_hash": "7f26c6bcb5720714897bf741bc5fe66c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/FinluxApplication.kt": {
@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt": {
-    "mtime": 1787816871.5238776,
-    "ast_hash": "d4d0f8e301e51cc95183cd705ae84262",
+    "mtime": 1787821056.8672936,
+    "ast_hash": "4650b8bf002274850eef35104c66919d",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/navigation/Routes.kt": {
@@ -80,8 +80,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt": {
-    "mtime": 1787816841.3161938,
-    "ast_hash": "3e8243a795f015d32d651f110be96410",
+    "mtime": 1787821056.8683314,
+    "ast_hash": "5f4a5768b2d10fdd43eb2754f4992a65",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt": {
@@ -105,8 +105,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt": {
-    "mtime": 1787724858.079741,
-    "ast_hash": "91173938b6ab101b5d11d3d6533a44ca",
+    "mtime": 1787821056.8690462,
+    "ast_hash": "6e0bac512d11988dedacb9c0d2bf5bb5",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt": {
-    "mtime": 1787816841.324219,
-    "ast_hash": "855de9ae2725c1811bf962290c7e8409",
+    "mtime": 1787821056.8711457,
+    "ast_hash": "3e7530d0641b788a48dae063ed728e58",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt": {
@@ -260,8 +260,8 @@
     "semantic_hash": "f28e46de2af80569e5ce33343a6ba6b6"
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt": {
-    "mtime": 1787731904.1547382,
-    "ast_hash": "5f8d85fd7471fe2fe108191a0dccb7bd",
+    "mtime": 1787821056.8721974,
+    "ast_hash": "199f1c772d68b5a3cc158f0421e722ca",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionViewModel.kt": {
@@ -325,8 +325,8 @@
     "semantic_hash": "914b90b05c30bf9328521ce9cde9c5e3"
   },
   "app/src/main/java/com/finlux/app/core/designsystem/FinancialInstitutions.kt": {
-    "mtime": 1787735970.9853778,
-    "ast_hash": "37a4610dc0fb3851cc9b03557c3783e6",
+    "mtime": 1787821063.3536935,
+    "ast_hash": "7298e237b85f92150772ddb1d4ec77ee",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/NotificationPermissionHandler.kt": {
@@ -350,8 +350,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt": {
-    "mtime": 1787816841.3141088,
-    "ast_hash": "28d4e3369d581d33f61113a64efa985e",
+    "mtime": 1787821056.8662486,
+    "ast_hash": "9d1b44066cb495d72592a71b042a3d01",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt": {
@@ -810,8 +810,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt": {
-    "mtime": 1787816841.32216,
-    "ast_hash": "018446f59b4b0f330d1a4b3133dd19da",
+    "mtime": 1787821056.8700864,
+    "ast_hash": "f7a4afc9b3329f9b8df5910f1d4305c7",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/goal/GoalsViewModel.kt": {
@@ -890,8 +890,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "a3a4b564bb3eb22a86c6c41a3f667fa8",
+    "mtime": 1787821056.873258,
+    "ast_hash": "8948449ca39c6e94581e5e3837260e6b",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/TransactionFilterBottomSheet.kt": {
@@ -900,18 +900,18 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt": {
-    "mtime": 1787734342.1719804,
-    "ast_hash": "2a37e469e21349ca86c33538c645ece1",
+    "mtime": 1787821056.8737867,
+    "ast_hash": "b30c22644efa58a521523f42af288002",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt": {
-    "mtime": 1787734396.7847166,
-    "ast_hash": "02b9151f7bd435cba00c6f631df75e1c",
+    "mtime": 1787821056.874837,
+    "ast_hash": "a340200041acb86dee2811a73a6c9682",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "e774f767130996dcb024e126a3546755",
+    "mtime": 1787821056.8753788,
+    "ast_hash": "fd2573098246579080193b874d8aacba",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/updater/AppUpdateDialog.kt": {
@@ -925,23 +925,23 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "6658dc6510ffdcfae41847621597e346",
+    "mtime": 1787821056.8764398,
+    "ast_hash": "074c3c4053dde302ed673a77aae04047",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "17eeb85fae2a25b3c008049aaf72e694",
+    "mtime": 1787821056.877492,
+    "ast_hash": "7ba46c434f1dac893667004cce9a0835",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "3fd4522a32b48f00e07e833ede0e5a22",
+    "mtime": 1787821056.8780303,
+    "ast_hash": "fabdbb0417e08ae49633d5f35e1c0fc5",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/core/designsystem/FinancialInstitutionsTest.kt": {
-    "mtime": 1787735834.512051,
-    "ast_hash": "7327b82dc4a8f39719f119348a114a0b",
+    "mtime": 1787821063.354211,
+    "ast_hash": "098e7284008d760f5aa5815b5d295da7",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/core/designsystem/FinluxDesignSystemTest.kt": {
@@ -990,8 +990,8 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt": {
-    "mtime": 1787724858.097127,
-    "ast_hash": "ff161d87e14fa0291b3dc32cf3f75c8f",
+    "mtime": 1787821056.8790672,
+    "ast_hash": "c6080a751b387b6b3d344deb3579b41e",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/domain/usecase/AdjustWalletBalanceUseCaseTest.kt": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1787816905.6917293,
-    "ast_hash": "cc5201efa0fc3c6484fb692ea28281e1",
+    "mtime": 1787821094.7182422,
+    "ast_hash": "9ea2bb13868542a1115c3d4515bd0a15",
     "semantic_hash": ""
   },
   "GEMINI.md": {
@@ -1195,8 +1195,8 @@
     "semantic_hash": ""
   },
   "HANDOVER_LOG.md": {
-    "mtime": 1787817388.5339856,
-    "ast_hash": "3693d8df326e1bd253743ba0f7e3c2cc",
+    "mtime": 1787821107.5301025,
+    "ast_hash": "70778788c72450c3ecec7b128403ddd8",
     "semantic_hash": ""
   },
   "README.md": {
@@ -1205,23 +1205,23 @@
     "semantic_hash": ""
   },
   "docs/BACKLOG.md": {
-    "mtime": 1787816841.330176,
-    "ast_hash": "4b7abcff3d7eac16fef7abb8e88dffd0",
+    "mtime": 1787821063.3547258,
+    "ast_hash": "07fa6ed2aa8d445f60e0a0e7cc7763ae",
     "semantic_hash": ""
   },
   "docs/BA_SPEC.md": {
-    "mtime": 1787816841.330176,
-    "ast_hash": "e35d81be04240033cdf6e79d9157880f",
+    "mtime": 1787821063.355244,
+    "ast_hash": "95820b81aec4e912d339a154c9f6768c",
     "semantic_hash": ""
   },
   "docs/CONTEXT.md": {
-    "mtime": 1786959982.3781097,
-    "ast_hash": "8ce962751f9b44f0441b3930130ad2c0",
+    "mtime": 1787821063.3557568,
+    "ast_hash": "9aeea46430b6298be7b2b9f9423b6825",
     "semantic_hash": ""
   },
   "docs/DATA_SPEC.md": {
-    "mtime": 1787567081.5778844,
-    "ast_hash": "4d6508d76949d4ce76d8c2e2d4cc11cc",
+    "mtime": 1787821063.3562675,
+    "ast_hash": "8d5354ca3d943fcf7b28f3f01b6cae31",
     "semantic_hash": ""
   },
   "docs/FIX_PLAN.md": {
@@ -1230,13 +1230,13 @@
     "semantic_hash": ""
   },
   "docs/FORM_COMPONENTS_SPEC.md": {
-    "mtime": 1787816841.3307514,
-    "ast_hash": "d831c41e6b14c035a0e1bfa4bcac7181",
+    "mtime": 1787821056.8811617,
+    "ast_hash": "00b2336848a51062b9ada9ad73c47018",
     "semantic_hash": ""
   },
   "docs/PLAN.md": {
-    "mtime": 1786959982.3783493,
-    "ast_hash": "3d201d76a8ba4a08995cac1498853f85",
+    "mtime": 1787821063.3567853,
+    "ast_hash": "60c74bf908ceeedb0f93d067dc1c1bb7",
     "semantic_hash": ""
   },
   "docs/PROJECT_PROFILE.md": {
@@ -1245,8 +1245,8 @@
     "semantic_hash": ""
   },
   "docs/UI_SPEC.md": {
-    "mtime": 1787816841.3312547,
-    "ast_hash": "7a6e37f17bd3e08eb12b6e84e0d14399",
+    "mtime": 1787821063.3573012,
+    "ast_hash": "7838fea51aa7841749039d1ecaabd202",
     "semantic_hash": ""
   },
   "docs/fix_plan.txt": {
@@ -1297,6 +1297,371 @@
   "docs/screenshots/qa-reports.png": {
     "mtime": 1786500388.6404295,
     "ast_hash": "c9bbe5cc034fbc3fa20bb80caf54b454",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/core/designsystem/VietQrBankCatalog.kt": {
+    "mtime": 1787821063.418401,
+    "ast_hash": "db427e7ef039bb8a41564cb9a0b3be1a",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/core/designsystem/AmountSuggestionsTest.kt": {
+    "mtime": 1787821056.8785486,
+    "ast_hash": "db62bd2b8044968b9e93ff7590ccc7d4",
+    "semantic_hash": ""
+  },
+  "tools/sync-financial-institution-icons.ps1": {
+    "mtime": 1787821063.4461312,
+    "ast_hash": "97b76fe0fbddb597ca2049cdafed8f0c",
+    "semantic_hash": ""
+  },
+  "docs/FINANCIAL_INSTITUTION_ASSETS.md": {
+    "mtime": 1787821063.4445224,
+    "ast_hash": "003473221cea3a781fd4a9c0b36fbd52",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_ewallet_9pay.png": {
+    "mtime": 1787821063.4195073,
+    "ast_hash": "166823be6f494beb702c9eb95feee38a",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_ewallet_foxpay.png": {
+    "mtime": 1787821063.4205117,
+    "ast_hash": "38f9819f56a81ffa8651c2419c2e1f33",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_ewallet_payoo.png": {
+    "mtime": 1787821063.4205117,
+    "ast_hash": "02c76be6af6d56002a59e93042af029f",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_ewallet_vtcpay.png": {
+    "mtime": 1787821063.4215126,
+    "ast_hash": "1b767d1213adb5f8fcf6b375b23a24a6",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_422589.png": {
+    "mtime": 1787821063.4215126,
+    "ast_hash": "70b35f8077ddd3e4ad6cbdf3feac679b",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_458761.png": {
+    "mtime": 1787821063.4215126,
+    "ast_hash": "6fa7919610e8b7f6dc5a2af67cd3cbd2",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_533948.png": {
+    "mtime": 1787821063.4225123,
+    "ast_hash": "bf084332781e15a1dd7b448233a2bb31",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_546034.png": {
+    "mtime": 1787821063.4225123,
+    "ast_hash": "2bace27499922709c8edcaa54a36f5a9",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_546035.png": {
+    "mtime": 1787821063.4235115,
+    "ast_hash": "afe8a0b08ef6017f97538c3f2fc4e2eb",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_668888.png": {
+    "mtime": 1787821063.4235115,
+    "ast_hash": "52eb42aa97e2957d58e5ca67c60b2edc",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_796500.png": {
+    "mtime": 1787821063.4245107,
+    "ast_hash": "2aca5f4d069e16348ce79f724df00e53",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_801011.png": {
+    "mtime": 1787821063.4245107,
+    "ast_hash": "6a3f79523002af26f660a31603782d9b",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_963388.png": {
+    "mtime": 1787821063.4245107,
+    "ast_hash": "0ac5f73dc8850ed2e2fdda17b5ebf79d",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970400.png": {
+    "mtime": 1787821063.4255123,
+    "ast_hash": "5886546f794235bb7ead3522fc0b0072",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970403.png": {
+    "mtime": 1787821063.4255123,
+    "ast_hash": "a03fef2c24b0b9360ff9127294b170cd",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970405.png": {
+    "mtime": 1787821063.4255123,
+    "ast_hash": "d72a0e06e63a55baa8a50b86d936ce52",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970406.png": {
+    "mtime": 1787821063.426512,
+    "ast_hash": "8655837f5b1d59c3cdc158239aa6d2f6",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970407.png": {
+    "mtime": 1787821063.426512,
+    "ast_hash": "b2828982b40a588507c4707429c9bac8",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970408.png": {
+    "mtime": 1787821063.4275117,
+    "ast_hash": "29bd127d73e076946121c49cc89b2989",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970409.png": {
+    "mtime": 1787821063.4275117,
+    "ast_hash": "75c3a8c2bdef8311ffd05dcc8deae5cc",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970410.png": {
+    "mtime": 1787821063.4275117,
+    "ast_hash": "a53976bed9b815dbb8e358d2944910b9",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970412.png": {
+    "mtime": 1787821063.4285152,
+    "ast_hash": "6129f34299bd0ca7ce5c87a55e4dff57",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970414.png": {
+    "mtime": 1787821063.4285152,
+    "ast_hash": "eb2e03487ac4a00a2ec816b1bfb6e01e",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970415.png": {
+    "mtime": 1787821063.4285152,
+    "ast_hash": "3d4d6760b322c20a389f436741f6e3cb",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970416.png": {
+    "mtime": 1787821063.4296827,
+    "ast_hash": "6e7fe025e9e05f9d001b2b306b3b7e62",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970418.png": {
+    "mtime": 1787821063.4296827,
+    "ast_hash": "a34cc102516d21d6526257ea9cac7a2f",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970419.png": {
+    "mtime": 1787821063.4307685,
+    "ast_hash": "7d8af05719fc7e63f044a36a445882c9",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970421.png": {
+    "mtime": 1787821063.4307685,
+    "ast_hash": "9d6d40f3125998d845460f1a9a44fc48",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970422.png": {
+    "mtime": 1787821063.4307685,
+    "ast_hash": "f97403195f87286d1a492f7d60dafacb",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970423.png": {
+    "mtime": 1787821063.4307685,
+    "ast_hash": "883b6135d39619be58235ced68c59bc4",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970424.png": {
+    "mtime": 1787821063.4316876,
+    "ast_hash": "b6c0e806b72c756bb2936804d0137da0",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970425.png": {
+    "mtime": 1787821063.4316876,
+    "ast_hash": "2ceb7ca509dc0a2d1b77bd06fe91bc67",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970426.png": {
+    "mtime": 1787821063.4316876,
+    "ast_hash": "1b076e2a8a7aa0f075d6f182d10b37f7",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970427.png": {
+    "mtime": 1787821063.4326887,
+    "ast_hash": "9bf85d8e1453e5cf402150f44eb5c008",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970428.png": {
+    "mtime": 1787821063.4326887,
+    "ast_hash": "f74b0fa8e59c16f0521e59b7156e7d08",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970429.png": {
+    "mtime": 1787821063.4326887,
+    "ast_hash": "5ca4bec458740ec44354e90642057852",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970430.png": {
+    "mtime": 1787821063.4326887,
+    "ast_hash": "825cbbda348e1d06b34924dfa9f32021",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970431.png": {
+    "mtime": 1787821063.4336877,
+    "ast_hash": "ae2f0252fdbaf9ea90436eac9ff22976",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970432.png": {
+    "mtime": 1787821063.4336877,
+    "ast_hash": "ca2e7350c595e85be530371318a6233f",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970433.png": {
+    "mtime": 1787821063.4336877,
+    "ast_hash": "bb702d50319031d4c781e9a8fc5ab41d",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970434.png": {
+    "mtime": 1787821063.4346888,
+    "ast_hash": "ee79782ce5e034d9829ead209b521827",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970436.png": {
+    "mtime": 1787821063.4346888,
+    "ast_hash": "237d49247ea20647f6a92b688bf2b102",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970437.png": {
+    "mtime": 1787821063.4346888,
+    "ast_hash": "4256e826ae9bcc573b72401da3cf21a1",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970438.png": {
+    "mtime": 1787821063.4356875,
+    "ast_hash": "2b7aab15a2b50ee9e9e0b1a349bc55bd",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970439.png": {
+    "mtime": 1787821063.4356875,
+    "ast_hash": "67dbc9aff83deba8701422d172614661",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970440.png": {
+    "mtime": 1787821063.4356875,
+    "ast_hash": "1864a6655a8bfcc5e17813c7f9c9fd4c",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970441.png": {
+    "mtime": 1787821063.4366877,
+    "ast_hash": "4ecb28e6b20bc3f3632f8249c289ee25",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970442.png": {
+    "mtime": 1787821063.4366877,
+    "ast_hash": "4a284a9a3c682c3df5da7af50f18952e",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970443.png": {
+    "mtime": 1787821063.4366877,
+    "ast_hash": "665daa2753f38d30b3a1e5da0a6fcd3a",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970444.png": {
+    "mtime": 1787821063.4366877,
+    "ast_hash": "5b47e56f8b93da744813d3a3f3b2f145",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970446.png": {
+    "mtime": 1787821063.4376879,
+    "ast_hash": "16fc2602b1b3f137a5dfbe76e060c16c",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970448.png": {
+    "mtime": 1787821063.4376879,
+    "ast_hash": "84d922d14dea427e80c897b605d19238",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970449.png": {
+    "mtime": 1787821063.4386878,
+    "ast_hash": "1b8ad32354e1a0c01e5e6d9327079894",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970452.png": {
+    "mtime": 1787821063.4391906,
+    "ast_hash": "d457e78de31e6ba06e38feadb904330b",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970454.png": {
+    "mtime": 1787821063.4391906,
+    "ast_hash": "654a3506fd4cf9b6a2f20c010616725d",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970455.png": {
+    "mtime": 1787821063.4391906,
+    "ast_hash": "eee4e569fb65dfd273c6ed1d6d6457b3",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970456.png": {
+    "mtime": 1787821063.4400144,
+    "ast_hash": "eee4e569fb65dfd273c6ed1d6d6457b3",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970457.png": {
+    "mtime": 1787821063.4401941,
+    "ast_hash": "4545199980a184486bd972249b4965d3",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970458.png": {
+    "mtime": 1787821063.4401941,
+    "ast_hash": "e6a847d282cb89e54ed71e433fc61f24",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970462.png": {
+    "mtime": 1787821063.4401941,
+    "ast_hash": "5126abce9cdfded31b54aa0b4752b7a1",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970463.png": {
+    "mtime": 1787821063.4415157,
+    "ast_hash": "5126abce9cdfded31b54aa0b4752b7a1",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970466.png": {
+    "mtime": 1787821063.4415157,
+    "ast_hash": "8ad9ebec76b5bae13897ff223ce73143",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_970467.png": {
+    "mtime": 1787821063.4415157,
+    "ast_hash": "86132049eb1de04815549b549d181df9",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_971005.png": {
+    "mtime": 1787821063.4425213,
+    "ast_hash": "11a8350a7297702026764743a5300fde",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_971011.png": {
+    "mtime": 1787821063.4425213,
+    "ast_hash": "a33df93310b2c606fc15b797ab6e8b56",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_971025.png": {
+    "mtime": 1787821063.4425213,
+    "ast_hash": "724606ce043d32fba35b5319d5410158",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_971133.png": {
+    "mtime": 1787821063.4435215,
+    "ast_hash": "6129f34299bd0ca7ce5c87a55e4dff57",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_977777.png": {
+    "mtime": 1787821063.4435215,
+    "ast_hash": "14ed3d6713e1d724065e3ea21971cdbd",
+    "semantic_hash": ""
+  },
+  "app/src/main/res/drawable-nodpi/ic_vietqr_999888.png": {
+    "mtime": 1787821063.4445224,
+    "ast_hash": "16fd95362e7648ca07aa04d5b714397c",
     "semantic_hash": ""
   }
 }
