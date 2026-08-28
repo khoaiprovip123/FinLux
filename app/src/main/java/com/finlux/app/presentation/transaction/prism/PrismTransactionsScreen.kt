@@ -75,6 +75,7 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.component.FinluxTransactionGroup
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.navigation.Route
@@ -339,21 +340,13 @@ fun PrismTransactionsScreen(
                             }
                         }
 
-                        items(
-                            items = txList,
-                            key = { it.id },
-                        ) { tx ->
-                            val category = tx.categoryId?.let { categories[it] }
-                            val wallet = tx.walletId.let { wallets[it] }
-                            val relatedWallet = tx.relatedWalletId?.let { wallets[it] }
-
-                            PrismTransactionCardItem(
-                                transaction = tx,
-                                category = category,
-                                wallet = wallet,
-                                relatedWallet = relatedWallet,
-                                onClick = { viewingTransaction = tx },
-                                onLongClick = { actionTransaction = tx },
+                        item(key = "group_$date") {
+                            FinluxTransactionGroup(
+                                transactions = txList,
+                                categories = categories,
+                                wallets = wallets,
+                                onTransactionClick = { tx -> viewingTransaction = tx },
+                                onTransactionLongClick = { tx -> actionTransaction = tx },
                             )
                         }
                     }

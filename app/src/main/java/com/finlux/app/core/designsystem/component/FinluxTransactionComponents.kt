@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -305,6 +307,138 @@ fun FinluxTransactionRow(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * A profile-menu-like transaction group: one glass/soft container, compact rows and inset dividers.
+ * Home and History share this component so their hierarchy, spacing and semantic colors stay aligned.
+ */
+@Composable
+fun FinluxTransactionGroup(
+    transactions: List<FinanceTransaction>,
+    categories: Map<String, Category>,
+    wallets: Map<String, Wallet>,
+    modifier: Modifier = Modifier,
+    showAmounts: Boolean = true,
+    onTransactionClick: (FinanceTransaction) -> Unit,
+    onTransactionLongClick: ((FinanceTransaction) -> Unit)? = null,
+) {
+    val tokens = LocalFinluxTokens.current
+    if (transactions.isEmpty()) return
+
+    FinluxSoftCard(
+        modifier = modifier.fillMaxWidth(),
+        radius = tokens.radius.standardCard,
+        padding = 0.dp,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            transactions.forEachIndexed { index, transaction ->
+                FinluxGroupedTransactionRow(
+                    transaction = transaction,
+                    category = transaction.categoryId?.let(categories::get),
+                    wallet = wallets[transaction.walletId],
+                    relatedWallet = transaction.relatedWalletId?.let(wallets::get),
+                    showAmount = showAmounts,
+                    onClick = { onTransactionClick(transaction) },
+                    onLongClick = onTransactionLongClick?.let { callback -> { callback(transaction) } },
+                )
+                if (index != transactions.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 68.dp, end = 14.dp),
+                        color = tokens.border,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FinluxGroupedTransactionRow(
+    transaction: FinanceTransaction,
+    category: Category?,
+    wallet: Wallet?,
+    relatedWallet: Wallet?,
+    showAmount: Boolean,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
+) {
+    val tokens = LocalFinluxTokens.current
+    val semanticColor = getTransactionSemanticColor(transaction.type)
+    val accentColor = category?.let { colorFromHex(it.colorHex) } ?: semanticColor
+    val icon = category?.let { categoryIcon(it.icon) } ?: when (transaction.type) {
+        TransactionType.INCOME -> Icons.Default.ArrowDownward
+        TransactionType.EXPENSE -> Icons.Default.Payments
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
+    }
+    val title = transaction.note.ifBlank {
+        when (transaction.type) {
+            TransactionType.INCOME -> category?.name ?: "Thu nhập"
+            TransactionType.EXPENSE -> category?.name ?: "Chi tiêu"
+            TransactionType.TRANSFER_OUT -> relatedWallet?.let { "Chuyển tiền đến ${it.name}" } ?: "Chuyển tiền đi"
+            TransactionType.TRANSFER_IN -> relatedWallet?.let { "Nhận tiền từ ${it.name}" } ?: "Nhận tiền chuyển"
+        }
+    }
+    val formatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm") }
+    val dateText = remember(transaction.date) { formatter.format(transaction.date.atZone(ZoneId.systemDefault())) }
+    val walletName = when (transaction.type) {
+        TransactionType.TRANSFER_OUT -> relatedWallet?.let { "${wallet?.name ?: "Ví"} ➔ ${it.name}" } ?: wallet?.name
+        TransactionType.TRANSFER_IN -> relatedWallet?.let { "${it.name} ➔ ${wallet?.name ?: "Ví"}" } ?: wallet?.name
+        else -> wallet?.name
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(tokens.radius.smallChip),
+            color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
+            modifier = Modifier.size(42.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(21.dp))
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f).padding(start = 12.dp, end = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = title,
+                style = FinluxTextStyles.CardTitle,
+                color = tokens.onSurface,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = listOfNotNull(dateText, walletName).joinToString(" · "),
+                style = FinluxTextStyles.Caption,
+                color = tokens.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (showAmount) {
+            FinluxAmountText(
+                amount = transaction.amount.value,
+                type = transaction.type,
+                explicitColor = semanticColor,
+                textStyle = FinluxTextStyles.CardTitle,
+            )
+        } else {
+            Text("••••", style = FinluxTextStyles.CardTitle, color = semanticColor, fontWeight = FontWeight.Bold)
         }
     }
 }

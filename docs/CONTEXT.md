@@ -64,6 +64,12 @@ functions/                    -- Cloud Functions (TypeScript), xem DATA_SPEC.md 
   suy diễn mốc tháng khi Salary Cycle đang bật.
 - Các phép diễn giải dùng chung (`collapseInternalTransferPairs`, `assetWallets`,
   `netGoalContribution`) nằm trong domain model để Home, History và Reports không lệch công thức.
+- Home/Lịch sử Prism dùng `core/designsystem/component/FinluxTransactionGroup` cho danh sách kiểu
+  nhóm menu Hồ sơ; feature chỉ truyền dữ liệu và callback, không tự dựng lại row/card.
+- Header Home Prism dùng `modern.GlassCard` chế độ CLEAR làm capsule hồ sơ dùng token động; avatar,
+  lời chào/tên và thông báo là ba vùng thao tác riêng, an toàn với status bar và tên dài.
+- Bộ Thu/Chi/Dòng tiền trên Home Prism là một `HorizontalPager` ba trang dùng `modern.GlassCard`
+  REGULAR: chọn qua tab, vuốt tay hoặc tự tiến sau 10 giây; mọi thao tác tay đều đặt lại thời gian chờ.
 - Vuốt bốn tab chính được nhận ở root, phần nội dung bám theo ngón tay và có edge resistance; bottom
   navigation không dịch chuyển cùng trang. Component con đã consume gesture vẫn được ưu tiên.
 

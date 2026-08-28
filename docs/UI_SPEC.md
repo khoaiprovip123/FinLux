@@ -182,13 +182,15 @@ ACTIONS: "Tạo tài khoản" → Firebase createUser + seed dữ liệu mặc �
 Route: /home
 LAYOUT:
 ┌───────────────────────────────────────────┐
-│ Logo FinLux | "Xin chào" + {tên} | Thông báo | Avatar │
+│ CLEAR Glass Profile Header: Avatar | "Xin chào" + {tên} | Thông báo │
 ├───────────────────────────────────────────┤
 │ GradientHeroCard "Tổng tài sản": số dư, xu hướng, nút ẩn/hiện │
 ├───────────────────────────────────────────┤
-│ Prism: 3 KPI đều nhau: Thu tháng này | Chi tháng này | Dòng tiền ròng │
-│   - Cùng chiều cao; icon, nhãn, số tiền và trạng thái căn giữa │
-│   - Số tiền co cỡ chữ theo ngưỡng độ dài nhưng giữ baseline cố định │
+│ Prism: Carousel 3 KPI: Thu tháng này | Chi tháng này | Dòng tiền ròng │
+│   - Một KPI lớn tại một thời điểm; tab 3 lựa chọn và trang kế bên có thể vuốt │
+│   - Tự chuyển sang KPI kế tiếp sau 10 giây; sau thao tác tay phải đếm lại 10 giây │
+│   - Tôn trọng tùy chọn Animation: trượt mượt khi bật, chuyển tức thời khi tắt │
+│   - Số tiền co cỡ chữ theo ngưỡng độ dài nhưng giữ baseline ổn định │
 │   - Dùng LiquidGlass REGULAR, chromatic rim và spring 0.975 khi chạm │
 │   - Không hiển thị thẻ "Kỳ tài chính" riêng trên Home │
 ├───────────────────────────────────────────┤
@@ -211,6 +213,13 @@ ACTIONS:
   - Tap avatar → /profile
   - Tap thông báo → /notifications
   - Swipe trái trên item giao dịch → hiện nút Xóa
+
+HOME HEADER:
+  - Dùng một capsule Liquid Glass CLEAR bo góc 22dp, nằm trọn dưới status bar.
+  - Avatar 48dp đặt bên trái; lời chào và tên người dùng ở giữa, tên dài ellipsis một dòng.
+  - Nút thông báo 44dp đặt bên phải; badge hiển thị số chưa đọc và rút gọn thành "9+".
+  - Chạm avatar hoặc cụm tên → /profile; chạm chuông → /notifications.
+  - Màu kính, viền, chữ và icon lấy từ `LocalFinluxTokens`; tự thích ứng mọi VisualStyle và Dark/Light.
 ```
 
 ## 5. SCREEN: Thêm/Sửa giao dịch (Bottom Sheet hoặc full screen)
@@ -355,10 +364,14 @@ ACTIONS: đổi kỳ; nhấn "+ Thêm" mở form ở trạng thái Chi; tap KPI 
 
 ### 10B. Lịch sử và bộ lọc giao dịch
 
+- Home “Giao dịch gần nhất” và từng nhóm ngày trong Lịch sử dùng chung `FinluxTransactionGroup`:
+  một container Liquid Glass/soft bo góc 20dp, row cao gọn, icon pastel 42dp, divider inset sau icon,
+  nội dung giữa và amount semantic căn phải. Không bọc mỗi row trong một card riêng.
 - Bottom sheet dùng chung cả ba style, hỗ trợ kỳ này/kỳ trước, 30 ngày, 3 tháng, 6 tháng, năm, ví, danh mục, khoảng tiền và tìm kiếm không dấu.
 - Search tra theo ghi chú, danh mục, ví và số tiền; trạng thái được giữ trong `TransactionsViewModel` khi chuyển tab trong cùng session.
 - Cặp chuyển tiền nội bộ chỉ hiển thị một dòng logic (ưu tiên phía chuyển đi); bản ghi nhận tiền mồ côi vẫn hiển thị để không che lỗi đồng bộ.
 - Badge bộ lọc tính cả query và khoảng tiền. Reset xóa toàn bộ điều kiện.
+- Tap row mở chi tiết; nhấn giữ mở menu Sửa/Xóa. Sau khi xóa thành công, Snackbar có `Hoàn tác`.
 
 ## 11. SCREEN: Thông báo (Notifications)
 ```

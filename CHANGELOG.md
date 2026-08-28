@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+## [1.12.0] - 2026-08-28
+### Added
+- Component dùng chung `FinluxTransactionGroup` cho bố cục danh sách giao dịch kiểu nhóm menu Hồ sơ.
+- Carousel tổng quan Home tự chuyển vòng Thu nhập → Chi tiêu → Dòng tiền sau mỗi 10 giây, có tab chọn nhanh và hỗ trợ vuốt trực tiếp.
+
+### Changed
+- Ba KPI nhỏ trên Home Prism được thay bằng một thẻ Liquid Glass REGULAR trọng tâm, số tiền lớn hơn, mô tả rõ hơn và tự đặt lại thời gian chờ sau thao tác tay.
+- Header Home Prism chuyển thành capsule Liquid Glass CLEAR: avatar 48dp bên trái, lời chào/tên co giãn ở giữa và nút thông báo có badge số lượng bên phải.
+- Trang chủ Prism gom tối đa 10 giao dịch gần nhất vào một thẻ bo góc lớn, dùng divider inset thay cho các card rời.
+- Lịch sử Prism gom từng ngày vào một thẻ riêng; giữ header ngày, tổng ròng ngày, tap chi tiết và nhấn giữ thao tác.
+- Màu/icon/surface/divider của nhóm giao dịch kế thừa hoàn toàn `LocalFinluxTokens` và semantic Thu/Chi/Chuyển tiền.
+
+### Fixed
+- Khắc phục cụm KPI ba cột khó đọc trên màn hình hẹp và danh sách giao dịch bị phân mảnh thành nhiều card rời.
+- Header Home xử lý tên người dùng dài bằng ellipsis và badge thông báo nhiều hơn 9 mục bằng nhãn `9+`.
+
 ## [1.11.12] - 2026-08-28
 ### Added
 - **Nâng cấp Thẻ 3 Cột Prism Liquid Glass (Thu tháng này, Chi tháng này, Dòng tiền ròng)**:

@@ -1,8 +1,69 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.11.12 (versionCode 146)
-- **Trạng thái Build:** 🟢 PASSED — Chuẩn hóa Thẻ 3 Cột Prism Liquid Glass (Huy hiệu kính Glass Squircle, font số tiền 18sp Black, đổ bóng phát quang màu kép, spring bounce xúc giác)
+- **Phiên bản hiện tại:** v1.12.0 (versionCode 147)
+- **Trạng thái Build:** 🟢 PASSED — Header Home Prism CLEAR Liquid Glass + thẻ nhóm giao dịch Home/Lịch sử
+
+### [Task-RELEASE-v1.12.0] — Git checkpoint cải tiến Home/Lịch sử
+- **Status**: `[IN PROGRESS]`
+- **Mục tiêu**: Đóng gói, kiểm thử, commit và push bộ cải tiến Header Home, carousel Thu/Chi/Dòng tiền và thẻ nhóm giao dịch lên `origin/main`.
+- **Scope dự kiến**: Ứng dụng Android, unit test Home, tài liệu đặc tả/kế hoạch/changelog/handover và `app/build.gradle.kts`.
+- **Version**: `versionCode 147`, `versionName 1.12.0`.
+
+### [Task-PRISM-HOME-AUTO-SUMMARY-CAROUSEL] — Tổng quan Thu/Chi/Dòng tiền tự chuyển
+- **Status**: `[DONE]`
+- **Mục tiêu**: Thay cụm ba KPI nhỏ khó đọc bằng carousel Liquid Glass thân thiện, cho phép chạm/vuốt trực tiếp và tự chuyển chỉ số sau mỗi 10 giây.
+- **Kết quả**:
+  1. Thay hàng ba card nhỏ bằng một thẻ KPI lớn Liquid Glass REGULAR, tăng cỡ số tiền lên 20–27sp theo độ dài và bổ sung mô tả dễ hiểu.
+  2. Bổ sung ba tab Thu nhập/Chi tiêu/Dòng tiền, hỗ trợ chạm chọn nhanh và vuốt bám tay qua `HorizontalPager`.
+  3. Carousel tự chuyển vòng sau 10 giây không thao tác; thao tác vuốt/chọn trang đặt lại thời gian chờ. Khi tắt Animation, trang chuyển tức thời.
+  4. Thêm scale/alpha theo vị trí trang, spring khi chạm, viền/bóng phát quang semantic và chỉ báo trang động.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+  - `docs/UI_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+- **Rà soát nghiệp vụ**: Giữ nguyên dữ liệu và phép tính Thu/Chi/Dòng tiền; `BA_SPEC.md` và `DATA_SPEC.md` không cần đổi.
+- **Kiểm thử**:
+  - `gradlew :app:compileDebugKotlin :app:testDebugUnitTest`: **PASS**.
+  - `gradlew assembleDebug`: **PASS** — 214/214 tests, 0 failed, 0 errors, 0 skipped.
+  - APK debug: `app/build/outputs/apk/debug/app-debug.apk` (34,146,616 bytes).
+  - ADB: chưa thể cài bản mới vì thiết bị đã ngắt kết nối sau khi build; `adb devices -l` không còn thiết bị online.
+
+### [Task-PRISM-HOME-PROFILE-HEADER] — Thiết kế lại cụm chào hỏi Trang chủ
+- **Status**: `[DONE]`
+- **Mục tiêu**: Làm gọn vùng chào hỏi, tên người dùng, avatar và thông báo thành một cụm Liquid Glass cân đối, dễ thao tác trên màn hình hẹp.
+- **Kết quả**:
+  1. Gom toàn bộ header vào capsule `LiquidGlassCard` chế độ CLEAR, bo góc 22dp và dùng token động cho sáng/tối.
+  2. Avatar 48dp đặt bên trái; lời chào/tên ở giữa, hỗ trợ ellipsis khi tên dài; nút thông báo 44dp đặt bên phải.
+  3. Badge thông báo hiển thị số chưa đọc và rút gọn `9+`; giữ riêng callback mở Hồ sơ và Thông báo.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `docs/UI_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+- **Rà soát tài liệu**: `BA_SPEC.md` và `DATA_SPEC.md` không đổi vì thay đổi chỉ thuộc presentation, không thêm nghiệp vụ hoặc schema.
+- **Kiểm thử và cài đặt**:
+  - `gradlew testDebugUnitTest assembleDebug`: **PASS** — 213/213 tests, 0 failed, 0 errors, 0 skipped.
+  - APK debug: `app/build/outputs/apk/debug/app-debug.apk` (34,134,141 bytes).
+  - ADB `7f4ca06a` (`2107119DC`): `adb install -r` **Success**; package `com.finlux.app` khởi chạy và có process hoạt động.
+
+### [Task-PRISM-TRANSACTION-GROUPED-PROFILE-CARD] — Đồng bộ giao dịch Home/Lịch sử theo thẻ nhóm Hồ sơ
+- **Status**: `[DONE]`
+- **Mục tiêu**: Gom các giao dịch rời thành một container bo góc lớn giống nhóm menu Hồ sơ, giữ đầy đủ semantic tài chính và thao tác hiện có.
+- **Kết quả**:
+  1. Tạo `FinluxTransactionGroup` dùng chung trong design system: icon pastel 42dp, title/subtitle gọn, amount căn phải và divider inset sau icon.
+  2. Home Prism hiển thị tối đa 10 giao dịch gần nhất trong một thẻ nhóm.
+  3. Lịch sử Prism hiển thị một thẻ nhóm cho từng ngày, giữ header ngày và tổng dòng tiền ròng ngày.
+  4. Tap mở chi tiết, nhấn giữ mở Sửa/Xóa; dark/light và các style semantic lấy từ token dùng chung.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `docs/UI_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`
+- **Rà soát tài liệu**: `BA_SPEC.md` và `DATA_SPEC.md` không đổi vì đây là thay đổi presentation-only,
+  không thêm nghiệp vụ, schema hoặc phép tính tài chính mới.
+- **Kiểm thử**:
+  - `gradlew testDebugUnitTest assembleDebug`: **PASS** — 213/213 tests, 0 failed, 0 skipped.
+  - APK debug: `app/build/outputs/apk/debug/app-debug.apk` (34,132,701 bytes).
+  - ADB: chưa cài được vì `adb devices -l` không có thiết bị online tại thời điểm kiểm tra.
 
 ### [Task-UI-UX-MASTER-PLAN-P0-P1-COMPLETION] — Hoàn thiện các khoảng trống P0/P1 sau audit docs/plan
 - **Status**: `[DONE]`
