@@ -117,6 +117,7 @@ data class UiPreferences(
     val animationsEnabled: Boolean = true,
     val biometricEnabled: Boolean = false,
     val biometricTimeout: BiometricLockTimeout = BiometricLockTimeout.IMMEDIATE,
+    val isBalanceVisible: Boolean = true,
 )
 
 data class DashboardSummary(

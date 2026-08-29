@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.13.2] - 2026-08-29
+### Added
+- **Lưu trữ Bền vững Trạng thái Ẩn/Hiện Số Dư (Persistent Balance Visibility)**:
+  * Tích hợp `isBalanceVisible` vào hệ thống DataStore `UiPreferencesRepository` và `HomeViewModel`, giúp lưu nhớ vĩnh viễn trạng thái ẩn/hiện số dư qua các lần đóng mở app, chuyển màn hình hoặc đổi theme.
+
+### Fixed
+- **Khắc phục Lỗi Rò rỉ Dữ liệu Số Nợ khi Ẩn Số Dư (Debt Amount Masking Fix)**:
+  * Che giấu toàn diện số tiền dư nợ `Nợ: ••••` trên thẻ Tổng quan Hero Prism khi người dùng kích hoạt chế độ ẩn số dư thay vì hiển thị số tiền thật.
+  * Tự động che các số liệu thống kê trung bình và chênh lệch dòng tiền trên các thẻ Tổng quan khi ẩn số dư.
+
 ## [1.13.1] - 2026-08-29
 ### Added
 - **Chế độ Trải nghiệm dùng thử tức thì (Demo Mode)**:

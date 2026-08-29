@@ -1,8 +1,30 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.13.1 (versionCode 152)
-- **Trạng thái Build:** 🟢 PASSED — Hoàn tất sửa dứt điểm 14 lỗi UI/UX toàn diện, nâng cấp Home FinLux Prism Data-First Hero Cards và hỗ trợ chế độ Dùng thử.
+- **Phiên bản hiện tại:** v1.13.2 (versionCode 153)
+- **Trạng thái Build:** 🟢 PASSED — Lưu trạng thái ẩn hiện số dư bền vững qua DataStore và che toàn diện số dư nợ trên Hero Card Prism.
+
+### [Task-PERSISTENT-BALANCE-VISIBILITY-AND-DEBT-MASKING] — Lưu trữ vĩnh viễn trạng thái ẩn số dư & che số tiền nợ
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thêm `isBalanceVisible` vào `UiPreferences` và `DataStoreThemePreferenceRepository` để lưu trữ trạng thái ẩn/hiện số dư vĩnh viễn vào DataStore.
+  2. Tích hợp `showBalance` vào `HomeUiState` và `HomeViewModel.toggleBalanceVisibility()`, thay thế toàn bộ state tạm `remember { mutableStateOf(true) }` ở cả 3 giao diện Home (`PrismHomeScreen`, `ModernHomeScreen`, `ClassicHomeScreen`).
+  3. Sửa lỗi lộ số tiền nợ `Nợ: 34.154.000 đ`: Tự động che thành `Nợ: ••••` khi `showBalance == false` trên thẻ Hero Prism Overview Card.
+  4. Che toàn bộ các số liệu tiền tệ phát sinh trong dòng contextInfo và trung bình mỗi khoản khi ẩn số dư.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Kết quả kiểm thử & xác thực**:
+  - `gradlew testDebugUnitTest`: **100% PASS** (219/219 tests).
+  - `gradlew assembleDebug`: Build thành công.
 
 ### [Task-PRISM-HERO-TEXTURE-AND-BIGGER-AMOUNT] — Nâng cỡ chữ số tiền siêu lớn in đậm và thiết kế họa tiết chìm chuyên biệt cho từng thẻ
 - **Status**: `[DONE]`

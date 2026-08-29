@@ -13,8 +13,8 @@ import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
-import com.finlux.app.domain.model.totalAssetBalance
 import com.finlux.app.domain.model.collapseInternalTransferPairs
+import com.finlux.app.domain.model.totalAssetBalance
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
@@ -23,6 +23,7 @@ import com.finlux.app.domain.repository.DebtRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.TransactionRepository
+import com.finlux.app.domain.repository.UiPreferencesRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.usecase.FinancialPeriodResolver
 import com.finlux.app.domain.usecase.SalaryCycleCalculator
@@ -31,8 +32,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -52,6 +55,7 @@ data class HomeUiState(
     val budgetRemainingPercent: Int = 0,
     val unreadNotificationsCount: Int = 0,
     val salaryCycleLabel: String? = null,
+    val showBalance: Boolean = true,
 )
 
 private data class FinancialOverview(
@@ -78,6 +82,7 @@ class HomeViewModel @Inject constructor(
     financialPeriodResolver: FinancialPeriodResolver,
     calculator: SalaryCycleCalculator,
     clock: FinanceClock,
+    private val uiPreferencesRepository: UiPreferencesRepository,
 ) : ViewModel() {
 
     private val financialOverviewFlow = salaryCycleRepository.observeConfig().flatMapLatest { cycleConfig ->
@@ -118,8 +123,8 @@ class HomeViewModel @Inject constructor(
                 .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
             val limit = budgets.sumOf { it.limitAmount.value }
             val spent = budgets.sumOf { spentByCategory[it.categoryId] ?: 0L }
-            val remaining = limit - spent
-            val percent = if (limit <= 0L) 0 else ((remaining.coerceAtLeast(0L) * 100L) / limit).toInt()
+            val remaining = (limit - spent).coerceAtLeast(0L)
+            val percent = if (limit > 0) ((spent.toDouble() / limit.toDouble()) * 100).toInt() else 0
             val unread = notifications.count { !it.isRead }
 
             val effectiveSummary = if (isSalaryCycleActive) {
@@ -160,8 +165,10 @@ class HomeViewModel @Inject constructor(
         financialOverviewFlow,
         assetsAndDebtsFlow,
         transactionRepository.observeRecent(),
-        categoryRepository.observeCategories(),
-    ) { user, overview, assetsAndDebts, transactions, categories ->
+        combine(categoryRepository.observeCategories(), uiPreferencesRepository.preferences) { categories, uiPrefs ->
+            categories to uiPrefs
+        },
+    ) { user, overview, assetsAndDebts, transactions, (categories, uiPrefs) ->
         val (wallets, debts, balances) = assetsAndDebts
         val (gross, totalDebt, netWorth) = balances
 
@@ -180,7 +187,14 @@ class HomeViewModel @Inject constructor(
             budgetRemainingPercent = overview.budgetRemainingPercent,
             unreadNotificationsCount = overview.unreadCount,
             salaryCycleLabel = overview.salaryCycleLabel,
+            showBalance = uiPrefs.isBalanceVisible,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
-}
 
+    fun toggleBalanceVisibility() {
+        viewModelScope.launch {
+            val current = uiPreferencesRepository.preferences.first()
+            uiPreferencesRepository.setPreferences(current.copy(isBalanceVisible = !current.isBalanceVisible))
+        }
+    }
+}

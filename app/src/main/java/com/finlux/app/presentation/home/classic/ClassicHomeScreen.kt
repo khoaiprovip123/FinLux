@@ -101,7 +101,7 @@ fun ClassicHomeScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val totalBalance = state.netWorth
     val categories = state.categories.associateBy(Category::id)
-    var showBalance by remember { mutableStateOf(true) }
+    val showBalance = state.showBalance
     val visualStyle = LocalUiPreferences.current.visualStyle
 
     Box(Modifier.fillMaxSize()) {
@@ -129,7 +129,7 @@ fun ClassicHomeScreen(
                         net = state.summary.net,
                         style = visualStyle,
                         showBalance = showBalance,
-                        onToggleBalance = { showBalance = !showBalance },
+                        onToggleBalance = viewModel::toggleBalanceVisibility,
                     )
                 }
                 item {

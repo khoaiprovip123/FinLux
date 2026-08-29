@@ -103,6 +103,7 @@ class HomeViewModelTest {
             financialPeriodResolver = periodResolver,
             calculator = calculator,
             clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
         )
 
         viewModel.state.test {
@@ -111,6 +112,41 @@ class HomeViewModelTest {
             assertEquals(40_000_000L, state.grossAssets)
             assertEquals(12_000_000L, state.totalDebt)
             assertEquals(28_000_000L, state.netWorth) // 40tr - 12tr = 28tr
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `toggleBalanceVisibility updates showBalance in state and repository`() = runTest(testDispatcher) {
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+        val uiRepo = FakeUiPreferencesRepository()
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(emptyList()),
+            transactionRepository = FakeHomeTransactionRepository(),
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = FakeHomeBudgetRepository(),
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(emptyList()),
+            salaryCycleRepository = FakeHomeSalaryCycleRepository(),
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = uiRepo,
+        )
+
+        viewModel.state.test {
+            val state1 = awaitItem()
+            assertEquals(true, state1.showBalance)
+
+            viewModel.toggleBalanceVisibility()
+            testScheduler.advanceUntilIdle()
+
+            val state2 = awaitItem()
+            assertEquals(false, state2.showBalance)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -165,6 +201,7 @@ class HomeViewModelTest {
             financialPeriodResolver = periodResolver,
             calculator = calculator,
             clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
         )
 
         viewModel.state.test {
@@ -250,4 +287,12 @@ private class FakeHomeSalaryCycleRepository : com.finlux.app.domain.repository.S
     override suspend fun saveConfig(config: com.finlux.app.domain.model.SalaryCycleConfig): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun isRolloverProcessed(cycleKey: String): Boolean = false
     override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> = AppResult.Success(Unit)
+}
+
+private class FakeUiPreferencesRepository : com.finlux.app.domain.repository.UiPreferencesRepository {
+    private val state = kotlinx.coroutines.flow.MutableStateFlow(com.finlux.app.domain.model.UiPreferences())
+    override val preferences: Flow<com.finlux.app.domain.model.UiPreferences> = state
+    override suspend fun setPreferences(preferences: com.finlux.app.domain.model.UiPreferences) {
+        state.value = preferences
+    }
 }

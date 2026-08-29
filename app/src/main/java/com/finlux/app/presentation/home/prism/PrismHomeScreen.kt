@@ -137,7 +137,7 @@ fun PrismHomeScreen(
     val totalBalance = state.wallets.sumOf { it.balance.value }
     val categoriesMap = remember(state.categories) { state.categories.associateBy(Category::id) }
     val walletsMap = remember(state.wallets) { state.wallets.associateBy(Wallet::id) }
-    var showBalance by remember { mutableStateOf(true) }
+    val showBalance = state.showBalance
     val tokens = LocalFinluxTokens.current
 
     Box(
@@ -179,7 +179,7 @@ fun PrismHomeScreen(
                     wallets = state.wallets,
                     salaryCycleLabel = state.salaryCycleLabel,
                     showBalance = showBalance,
-                    onToggleShowBalance = { showBalance = !showBalance },
+                    onToggleShowBalance = viewModel::toggleBalanceVisibility,
                     onDebtsClick = { onNavigate(Route.Debt.value) },
                     onWalletsClick = { onNavigate(Route.Wallets.value) },
                     onIncomeClick = { onNavigate(Route.Income.value) },
@@ -508,7 +508,11 @@ private fun PrismFinancialOverviewCard(
             periodLabel = if (wallets.isNotEmpty()) "${wallets.size} ví hoạt động" else "Tất cả ví",
             value = if (showBalance) formatVndAmount(grossAssets).replace("đ", "₫") else hiddenAmount,
             subtitle = "Tài sản ròng: ${if (showBalance) formatVndAmount(netWorth).replace("đ", "₫") else "••••"}",
-            contextInfo = if (totalDebt > 0L) "Nợ: ${formatVndAmount(totalDebt).replace("đ", "₫")}" else "Không có dư nợ",
+            contextInfo = if (totalDebt > 0L) {
+                if (showBalance) "Nợ: ${formatVndAmount(totalDebt).replace("đ", "₫")}" else "Nợ: ••••"
+            } else {
+                "Không có dư nợ"
+            },
             chartValues = walletBars,
             theme = PrismCardTheme.WALLET,
             backgroundColors = listOf(
@@ -524,7 +528,11 @@ private fun PrismFinancialOverviewCard(
             periodLabel = periodDateRange,
             value = if (showBalance) formatVndAmount(income).replace("đ", "₫") else hiddenAmount,
             subtitle = if (incomeCount > 0) "$incomeCount khoản thu" else "Chưa có khoản thu",
-            contextInfo = if (incomeCount > 0) "TB ${formatVndAmount(income / incomeCount).replace("đ", "₫")}/khoản" else "Chưa phát sinh",
+            contextInfo = if (incomeCount > 0) {
+                if (showBalance) "TB ${formatVndAmount(income / incomeCount).replace("đ", "₫")}/khoản" else "TB ••••/khoản"
+            } else {
+                "Chưa phát sinh"
+            },
             chartValues = incomeBars,
             theme = PrismCardTheme.INCOME,
             backgroundColors = listOf(
@@ -540,7 +548,11 @@ private fun PrismFinancialOverviewCard(
             periodLabel = periodDateRange,
             value = if (showBalance) formatVndAmount(expense).replace("đ", "₫") else hiddenAmount,
             subtitle = if (expenseCount > 0) "$expenseCount khoản chi" else "Chưa có khoản chi",
-            contextInfo = if (expenseCount > 0) "TB ${formatVndAmount(expense / expenseCount).replace("đ", "₫")}/khoản" else "Chưa phát sinh",
+            contextInfo = if (expenseCount > 0) {
+                if (showBalance) "TB ${formatVndAmount(expense / expenseCount).replace("đ", "₫")}/khoản" else "TB ••••/khoản"
+            } else {
+                "Chưa phát sinh"
+            },
             chartValues = expenseBars,
             theme = PrismCardTheme.EXPENSE,
             backgroundColors = listOf(
@@ -560,7 +572,13 @@ private fun PrismFinancialOverviewCard(
                 hiddenAmount
             },
             subtitle = "${incomeCount + expenseCount} giao dịch trong kỳ",
-            contextInfo = if (net > 0L) "Thu vượt chi ${formatVndAmount(net).replace("đ", "₫")}" else if (net < 0L) "Chi vượt thu ${formatVndAmount(-net).replace("đ", "₫")}" else "Thu chi cân bằng",
+            contextInfo = if (showBalance) {
+                if (net > 0L) "Thu vượt chi ${formatVndAmount(net).replace("đ", "₫")}"
+                else if (net < 0L) "Chi vượt thu ${formatVndAmount(-net).replace("đ", "₫")}"
+                else "Thu chi cân bằng"
+            } else {
+                "Dòng tiền trong kỳ"
+            },
             chartValues = netBars,
             theme = PrismCardTheme.CASH_FLOW,
             backgroundColors = listOf(
