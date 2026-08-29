@@ -1,6 +1,21 @@
 # Changelog
 
-## [Unreleased]
+## [1.13.0] - 2026-08-29
+### Added
+- **Mini Bar Chart dữ liệu thật**: Tích hợp biểu đồ cột mini phân bổ giao dịch thực tế 5 mốc thời gian trong kỳ trên các thẻ Hero Tổng quan.
+- **Họa tiết bảo mật watermark & texture chuyên biệt**: Mỗi thẻ sở hữu hình nền chuyển sắc độc lập kết hợp họa tiết Canvas chìm tinh xảo (Vòm bảo mật cho Ví, Cực quang tăng trưởng & chevrons cho Thu, Radar đo lường ngân sách cho Chi, Sóng điều hòa tuần hoàn kép cho Dòng tiền).
+- **Named Morphing Capsule Indicator**: Chỉ báo trang dạng viên thuốc động hiển thị tên trang hiện tại (`[ Ví ] • • •`, `• [ Thu ] • •`, ...) hỗ trợ chạm chuyển trang trực tiếp.
+- **Nút "Xem chi tiết ›"**: Lối tắt trực tiếp từ đáy thẻ dẫn đến trang danh sách chi tiết nghiệp vụ tương ứng.
+
+### Changed
+- **Chuẩn hóa Data-First ngân hàng số**: Tiêu đề theo chu kỳ lương linh hoạt ("Thu kỳ này", "Chi kỳ này", "Dòng tiền kỳ này", "Số dư hiện có") kèm khoảng ngày thực tế `dd/MM – dd/MM`.
+- **Nâng cấp typography số tiền**: Cỡ chữ lớn lên tới `38sp`, in đậm `ExtraBold`, ký hiệu `₫` sắc nét, dễ đọc tức thì.
+- **Dòng thông tin hữu ích**: Thay dòng mô tả lặp lại bằng số lượng khoản thu/chi thực tế và thống kê chi tiêu/thu nhập trung bình mỗi khoản.
+- **Tối ưu chiều cao thẻ**: Thu gọn thẻ xuống `180dp` giúp bố cục trang chủ thoáng đãng và hiển thị nhiều giao dịch hơn.
+
+### Fixed
+- Khắc phục triệt để mũi tên chúc xuống gây hiểu lầm giảm tiền/chi tiền trên thẻ Thu nhập.
+- Loại bỏ các hình minh họa trừu tượng chiếm diện tích và các chip trạng thái không mang lại giá trị thông tin.
 
 ## [1.12.0] - 2026-08-28
 ### Added
