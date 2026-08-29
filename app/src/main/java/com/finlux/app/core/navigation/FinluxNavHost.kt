@@ -1,9 +1,12 @@
 package com.finlux.app.core.navigation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Spring
@@ -216,9 +219,19 @@ fun FinluxNavHost(
 
     Scaffold(
         bottomBar = {
-            if (showRootBottomBar && currentRoute != null) {
+            AnimatedVisibility(
+                visible = showRootBottomBar && currentRoute != null,
+                enter = fadeIn(tween(260)) + slideInVertically(
+                    animationSpec = tween(300, easing = FastOutSlowInEasing),
+                    initialOffsetY = { it },
+                ),
+                exit = fadeOut(tween(140)) + slideOutVertically(
+                    animationSpec = tween(200, easing = FastOutSlowInEasing),
+                    targetOffsetY = { it },
+                ),
+            ) {
                 MainBottomBar(
-                    selectedRoute = currentRoute,
+                    selectedRoute = currentRoute ?: Route.Home.value,
                     onNavigate = navigateMain,
                     onAdd = { showQuickAdd = true },
                 )

@@ -39,8 +39,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -118,6 +120,7 @@ fun ModernHomeScreen(
                     ReferenceHeader(
                         name = state.user?.displayName ?: "Bạn",
                         photoUrl = state.user?.photoUrl,
+                        unreadCount = state.unreadNotificationsCount,
                         onNotifications = onNotifications,
                         onProfile = { onNavigate(Route.Settings.value) },
                     )
@@ -198,7 +201,13 @@ fun ModernHomeScreen(
 }
 
 @Composable
-private fun ReferenceHeader(name: String, photoUrl: String?, onNotifications: () -> Unit, onProfile: () -> Unit) {
+private fun ReferenceHeader(
+    name: String,
+    photoUrl: String?,
+    unreadCount: Int,
+    onNotifications: () -> Unit,
+    onProfile: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().statusBarsPadding().padding(top = 10.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -211,7 +220,24 @@ private fun ReferenceHeader(name: String, photoUrl: String?, onNotifications: ()
         IconButton(onClick = onNotifications) {
             Box(contentAlignment = Alignment.TopEnd) {
                 Icon(Icons.Default.NotificationsNone, "Thông báo", tint = MaterialTheme.colorScheme.onSurface)
-                Box(Modifier.size(7.dp).background(ExpenseRed, CircleShape))
+                if (unreadCount > 0) {
+                    Surface(
+                        shape = CircleShape,
+                        color = ExpenseRed,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(if (unreadCount > 9) 16.dp else 14.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 7.5.sp, fontWeight = FontWeight.Bold),
+                                color = Color.White,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
             }
         }
         FinluxUserAvatar(photoUrl, name, 38.dp, onClick = onProfile)

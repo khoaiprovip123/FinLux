@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.CreditScore
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -131,6 +132,7 @@ fun NotificationsScreen(
     }
 
     LaunchedEffect(Unit) {
+        viewModel.markAllAsRead()
         viewModel.userMessage.collectLatest { msg ->
             snackbarHostState.showSnackbar(msg)
         }
@@ -171,6 +173,13 @@ fun NotificationsScreen(
                 },
                 actions = {
                     if (notifications.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.markAllAsRead(notifyUser = true) }) {
+                            Icon(
+                                Icons.Default.DoneAll,
+                                contentDescription = "Đánh dấu tất cả đã đọc",
+                                tint = if (notifications.any { !it.isRead }) tokens.primary else tokens.onSurfaceVariant,
+                            )
+                        }
                         IconButton(onClick = { viewModel.clearAll() }) {
                             Icon(
                                 Icons.Default.DeleteSweep,
@@ -221,6 +230,55 @@ fun NotificationsScreen(
                         ),
                         shape = RoundedCornerShape(12.dp),
                     )
+                }
+            }
+
+            // Quick Action & Status Row
+            if (notifications.isNotEmpty()) {
+                val unreadCount = notifications.count { !it.isRead }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = if (unreadCount > 0) "$unreadCount thông báo mới" else "${notifications.size} thông báo",
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.5.sp),
+                        color = if (unreadCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                        fontWeight = if (unreadCount > 0) FontWeight.Bold else FontWeight.Medium,
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (unreadCount > 0) tokens.primary.copy(alpha = if (tokens.isDark) 0.20f else 0.12f) else tokens.surfaceSoft,
+                        border = BorderStroke(1.dp, if (unreadCount > 0) tokens.primary.copy(alpha = 0.4f) else tokens.border),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { viewModel.markAllAsRead(notifyUser = true) },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DoneAll,
+                                contentDescription = "Đánh dấu tất cả đã đọc",
+                                tint = if (unreadCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                                modifier = Modifier.size(15.dp),
+                            )
+                            Text(
+                                text = "Đánh dấu tất cả đã đọc",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                                color = if (unreadCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
 
@@ -449,20 +507,33 @@ private fun NotificationItemCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                // Header: Type Label + Timestamp
+                // Header: Type Label + Timestamp + Unread Dot
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = typeLabel,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = badgeColor,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = typeLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = badgeColor,
+                        )
+                        if (!notification.isRead) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(tokens.primary),
+                            )
+                        }
+                    }
 
                     val timeStr = DateTimeFormatter.ofPattern("dd/MM HH:mm")
                         .withZone(ZoneId.systemDefault())

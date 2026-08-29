@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [1.12.2] - 2026-08-29
+### Added
+- **Tự động đánh dấu đã đọc khi mở Hộp thư Thông báo (`markAllAsRead`)**:
+  * Bổ sung API `markAllAsRead()` trong `NotificationRepository`, `FirebaseNotificationRepository` và `DemoFinluxRepository` để cập nhật batch toàn bộ thông báo chưa đọc sang `isRead = true`.
+  * Thêm nút "Đánh dấu tất cả đã đọc" (`Icons.Default.DoneAll` và pill button dưới thanh lọc) trên màn hình Thông báo và chấm tròn chỉ báo trạng thái chưa đọc trực quan trên từng thẻ.
+
+### Changed
+- `NotificationsScreen`: Tự động kích hoạt `viewModel.markAllAsRead()` ngay khi người dùng mở màn hình Thông báo, giúp badge số lượng thông báo chưa đọc trên chuông Trang chủ lập tức được xóa sạch về trạng thái bình thường.
+- `FinluxNavHost`: Nâng cấp `MainBottomBar` với `AnimatedVisibility` (fade + slide vertical transition).
+
+### Fixed
+- Sửa lỗi chuông thông báo trên Trang chủ (`HomeScreen` ở tất cả các theme: `FinLux Prism`, `Modern Luxury`, `Liquid Glass Classic`) bị hiển thị vĩnh viễn chấm đỏ do hardcode trong `ReferenceHeader`. Đã liên kết động 100% với `unreadNotificationsCount`.
+- Khắc phục lỗi BottomBar xuất hiện sớm đè lên màn hình Splash lúc ứng dụng đang khởi động/chưa hoàn tất tải dữ liệu.
+
 ## [1.12.1] - 2026-08-29
 ### Added
 - **Deterministic Idempotency Key cho Thông báo Nhắc nhở**:

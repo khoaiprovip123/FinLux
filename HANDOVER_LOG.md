@@ -1,8 +1,41 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.12.1 (versionCode 148)
-- **Trạng thái Build:** 🟢 PASSED — Khắc phục triệt để lỗi Trang chủ Prism HomeScreen không hiển thị nội dung
+- **Phiên bản hiện tại:** v1.12.2 (versionCode 149)
+- **Trạng thái Build:** 🟢 PASSED — Tự động xóa badge chuông thông báo khi mở Hộp thư Thông báo
+
+### [Task-NOTIFICATION-AUTO-MARK-AS-READ] — Tự động xóa badge chuông thông báo và đánh dấu đã đọc khi xem Hộp thư
+- **Status**: `[DONE]`
+- **Nguyên nhân cốt lõi**:
+  - Khi người dùng bấm vào chuông thông báo từ Trang chủ để vào `NotificationsScreen`, hệ thống trước đó chỉ gọi `markAsRead(id)` khi người dùng click vào từng thẻ riêng biệt.
+  - Do người dùng chỉ vào xem danh sách mà không click vào từng thẻ (đặc biệt là các cảnh báo ngân sách), các bản ghi vẫn giữ nguyên `isRead = false`, khiến badge số lượng thông báo chưa đọc trên icon chuông Trang chủ không bao giờ biến mất.
+  - Tại `FinluxNavHost.kt`, `Scaffold.bottomBar` ban đầu không có animation/transition check, khiến BottomBar hiển thị tức thì khi chuyển route từ Splash sang Home làm lộ thanh điều hướng trắng dưới đáy màn hình tím lúc đang Splash.
+  - Tại `ModernHomeScreen.kt` và `ClassicHomeScreen.kt`, `ReferenceHeader` bị hardcode vẽ một `Box(Modifier.size(7.dp).background(ExpenseRed, CircleShape))` đỏ tĩnh bên góc chuông thay vì kiểm tra `unreadNotificationsCount > 0`.
+- **Giải pháp xử lý**:
+  - Bổ sung hàm `markAllAsRead()` vào interface `NotificationRepository`, `FirebaseNotificationRepository` (dùng Firestore Batch Update `isRead = true` cho các doc có `isRead == false`), và `DemoFinluxRepository`.
+  - Trong `NotificationsViewModel`: Thêm hàm `markAllAsRead(notifyUser: Boolean)`.
+  - Trong `NotificationsScreen`: Thêm `LaunchedEffect(Unit) { viewModel.markAllAsRead() }` để tự động dọn sạch trạng thái chưa đọc ngay khi mở màn hình, đồng thời thêm icon `DoneAll` trên TopBar, nút bấm trực quan `[✔ Đánh dấu tất cả đã đọc]` dưới thanh Filter, và hiển thị chấm tròn chỉ báo chưa đọc trực quan trên thẻ.
+  - Trong `FinluxNavHost.kt`: Bọc `MainBottomBar` bằng `AnimatedVisibility` (fade + slide vertical), bảo đảm thanh điều hướng đáy chỉ xuất hiện mượt mà khi đã vào màn hình chính, hoàn toàn biến mất trên màn hình Splash/Auth.
+  - Trong `ModernHomeScreen.kt` và `ClassicHomeScreen.kt`: Bổ sung tham số `unreadCount: Int` cho `ReferenceHeader`, chỉ hiển thị badge/chấm đỏ kèm số đếm khi `unreadCount > 0`.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/NotificationRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseNotificationRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/notifications/NotificationsViewModelTest.kt`
+  - `app/build.gradle.kts` (versionCode 149, versionName 1.12.2)
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Kết quả kiểm thử & Bàn giao**:
+  - Unit Test: `gradlew testDebugUnitTest` -> **PASS 217/217 tests (100% PASS, 0 failure, 0 error)**.
+  - Build APK: `gradlew assembleDebug` -> **SUCCESS**.
+  - Kiểm thử trực tiếp trên điện thoại: Cài đặt bản dựng `v1.12.2`, mở màn hình Thông báo, sau đó quay lại Trang chủ: Chụp ảnh màn hình xác nhận badge đỏ số `1` trên chuông thông báo đã biến mất hoàn toàn, icon chuông trở về trạng thái sạch sẽ.
 
 ### [Task-PRISM-HOME-LAYOUT-FIX] — Sửa lỗi Trang chủ Prism HomeScreen không hiển thị nội dung do xung đột Nested Scaffold TopBar
 - **Status**: `[DONE]`

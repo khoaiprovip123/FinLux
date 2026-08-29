@@ -228,6 +228,7 @@ private class FakeHomeNotificationRepository : NotificationRepository {
     override fun observeNotifications(): Flow<List<AppNotification>> = flowOf(emptyList())
     override suspend fun saveNotification(notification: AppNotification): AppResult<String> = AppResult.Success("n-1")
     override suspend fun markAsRead(id: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun markAllAsRead(): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun markAsPaid(id: String): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun markAsPaidWithAmount(id: String, amount: Money, newBody: String?): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit> = AppResult.Success(Unit)

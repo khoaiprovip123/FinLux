@@ -9,6 +9,7 @@ interface NotificationRepository {
     fun observeNotifications(): Flow<List<AppNotification>>
     suspend fun saveNotification(notification: AppNotification): AppResult<String>
     suspend fun markAsRead(id: String): AppResult<Unit>
+    suspend fun markAllAsRead(): AppResult<Unit>
     suspend fun markAsPaid(id: String): AppResult<Unit>
     suspend fun markAsPaidWithAmount(id: String, amount: Money, newBody: String? = null): AppResult<Unit>
     suspend fun markAsPaidByReminderId(reminderId: String): AppResult<Unit>

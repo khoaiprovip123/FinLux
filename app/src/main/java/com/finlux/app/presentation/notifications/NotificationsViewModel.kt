@@ -99,6 +99,15 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 
+    fun markAllAsRead(notifyUser: Boolean = false) {
+        viewModelScope.launch {
+            val result = notificationRepository.markAllAsRead()
+            if (notifyUser && result is AppResult.Success) {
+                _userMessage.emit("Đã đánh dấu tất cả thông báo là đã đọc")
+            }
+        }
+    }
+
     fun payNotification(notification: AppNotification) {
         payNotificationWithCustomAmount(
             notification = notification,

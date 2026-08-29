@@ -175,4 +175,12 @@ class NotificationsViewModelTest {
         org.junit.jupiter.api.Assertions.assertTrue(list.first().isPaid)
         collectJob.cancel()
     }
+
+    @Test
+    fun `markAllAsRead delegates to notificationRepository markAllAsRead`() = runTest {
+        viewModel.markAllAsRead()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { notificationRepository.markAllAsRead() }
+    }
 }
