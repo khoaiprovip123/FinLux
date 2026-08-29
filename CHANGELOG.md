@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.13.1] - 2026-08-29
+### Added
+- **Chế độ Trải nghiệm dùng thử tức thì (Demo Mode)**:
+  * Bổ sung nút "⚡ Trải nghiệm ngay (Chế độ Dùng thử)" trên màn hình Đăng nhập giúp tester và người dùng trên máy ảo trải nghiệm đầy đủ tính năng ngay lập tức.
+- **Hỗ trợ Máy ảo & Thiết bị không có Google Play Services**:
+  * Bổ sung cơ chế bắt lỗi và hiển thị thông báo hướng dẫn thân thiện khi thiết bị thiếu Google Play Credential Provider thay vì crash hoặc văng lỗi kỹ thuật.
+
+### Changed
+- **Tối ưu hóa Luồng Khởi động Splash**:
+  * Chuyển `SplashViewModel` sang `SharingStarted.Eagerly` và phát giá trị auth ban đầu đồng bộ trong `callbackFlow`, triệt tiêu hoàn toàn hiện tượng treo màn hình Splash.
+
+### Fixed
+- **Giải quyết toàn diện xung đột Remote Merge**:
+  * Hợp nhất thành công thiết kế Hero Overview Data-First (`v1.13.0`) với bộ 14 bản vá lỗi UI/UX toàn diện (`v1.12.3`).
+  * Chuẩn hóa chiều cao và padding Top Header trên `PrismHomeScreen`.
+
 ## [1.13.0] - 2026-08-29
 ### Added
 - **Mini Bar Chart dữ liệu thật**: Tích hợp biểu đồ cột mini phân bổ giao dịch thực tế 5 mốc thời gian trong kỳ trên các thẻ Hero Tổng quan.

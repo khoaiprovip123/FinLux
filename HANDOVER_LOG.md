@@ -1,7 +1,7 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.13.0 (versionCode 151)
+- **Phiên bản hiện tại:** v1.13.1 (versionCode 152)
 - **Trạng thái Build:** 🟢 PASSED — Hoàn tất sửa dứt điểm 14 lỗi UI/UX toàn diện, nâng cấp Home FinLux Prism Data-First Hero Cards và hỗ trợ chế độ Dùng thử.
 
 ### [Task-PRISM-HERO-TEXTURE-AND-BIGGER-AMOUNT] — Nâng cỡ chữ số tiền siêu lớn in đậm và thiết kế họa tiết chìm chuyên biệt cho từng thẻ
