@@ -214,9 +214,11 @@ Main flow:
      100% mốc giờ:phút (LocalTime) gốc và ngày trong tháng gốc từ startDate, không bị sai lệch qua các chu kỳ.
   4. Local Notification với mức ưu tiên cao (PRIORITY_MAX, CATEGORY_REMINDER, VISIBILITY_PUBLIC) cho phép
      người dùng chọn: [Đã thanh toán], [Sửa số tiền], [Nhắc lại 1h].
-Business rule: BR-12: Nhắc nhở lưu cấu hình trên Firestore subcollection users/{uid}/reminders.
+Business rule: 
+  BR-12: Nhắc nhở lưu cấu hình trên Firestore subcollection users/{uid}/reminders.
   Khi người dùng đăng nhập hoặc mở app trên bất kỳ thiết bị nào, ReminderSyncObserver tự động đồng bộ
   và nạp toàn bộ lịch báo thức vào AlarmManager cục bộ của thiết bị đó (Multi-Device Auto-Sync).
+  BR-12A (Deduplication & Idempotency): Mọi thông báo nhắc nhở phát sinh từ báo thức định kỳ bắt buộc dùng Deterministic Idempotency Key dạng reminder_{reminderId}_{triggerEpochDay} khi lưu Firestore; ReminderTriggerDeduplicator chặn trùng lặp ở cấp OS; Khi người dùng thực hiện thanh toán, hệ thống đồng bộ toàn bộ bản ghi liên quan sang isPaid = true.
 ```
 
 ### UC-19: Đồng bộ dữ liệu đa thiết bị

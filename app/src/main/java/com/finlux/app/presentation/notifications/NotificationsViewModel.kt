@@ -52,6 +52,21 @@ class NotificationsViewModel @Inject constructor(
 
     val notifications: StateFlow<List<AppNotification>> = notificationRepository
         .observeNotifications()
+        .map { list ->
+            val seenKeys = mutableSetOf<String>()
+            list.sortedWith(
+                compareByDescending<AppNotification> { it.isPaid }
+                    .thenByDescending { it.timestamp }
+            ).filter { item ->
+                val dedupeKey = if (item.type == com.finlux.app.domain.model.NotificationType.REMINDER && !item.reminderId.isNullOrBlank()) {
+                    val epochDay = item.timestamp.toEpochMilli() / 86400000L
+                    "rem_${item.reminderId}_$epochDay"
+                } else {
+                    item.id
+                }
+                seenKeys.add(dedupeKey)
+            }.sortedByDescending { it.timestamp }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -131,6 +146,9 @@ class NotificationsViewModel @Inject constructor(
                         amount = Money(finalAmount),
                         newBody = "Đã thanh toán $formatted",
                     )
+                    if (!notification.reminderId.isNullOrBlank()) {
+                        notificationRepository.markAsPaidByReminderId(notification.reminderId)
+                    }
                     _userMessage.emit("Đã ghi nhận thanh toán ${notification.title}: $formatted!")
                 }
                 is AppResult.Error -> {

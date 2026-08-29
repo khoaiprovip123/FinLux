@@ -15,6 +15,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -82,6 +83,7 @@ class NotificationsViewModelTest {
 
         coVerify(exactly = 1) { addTransactionUseCase.invoke(any()) }
         coVerify(exactly = 1) { notificationRepository.markAsPaidWithAmount("noti_001", Money(500_000L), any()) }
+        coVerify(exactly = 1) { notificationRepository.markAsPaidByReminderId("rem_001") }
     }
 
     @Test
@@ -105,6 +107,7 @@ class NotificationsViewModelTest {
             addTransactionUseCase.invoke(match { it.amount.value == 750_000L })
         }
         coVerify(exactly = 1) { notificationRepository.markAsPaidWithAmount("noti_003", Money(750_000L), any()) }
+        coVerify(exactly = 1) { notificationRepository.markAsPaidByReminderId("rem_003") }
     }
 
     @Test
@@ -122,6 +125,7 @@ class NotificationsViewModelTest {
 
         coVerify(exactly = 0) { addTransactionUseCase.invoke(any()) }
         coVerify(exactly = 0) { notificationRepository.markAsPaidWithAmount(any(), any(), any()) }
+        coVerify(exactly = 0) { notificationRepository.markAsPaidByReminderId(any()) }
     }
 
     @Test
@@ -130,5 +134,45 @@ class NotificationsViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { notificationRepository.deleteNotification("noti_delete_001") }
+    }
+
+    @Test
+    fun observeNotifications_deduplicatesSameReminderSameDay() = runTest {
+        val now = Instant.now()
+        val noti1 = AppNotification(
+            id = "noti_dup_1",
+            title = "Ăn sáng",
+            amount = Money(15_000L),
+            reminderId = "rem_breakfast",
+            type = com.finlux.app.domain.model.NotificationType.REMINDER,
+            timestamp = now,
+            isPaid = false,
+        )
+        val noti2 = AppNotification(
+            id = "noti_dup_2",
+            title = "Ăn sáng",
+            amount = Money(15_000L),
+            reminderId = "rem_breakfast",
+            type = com.finlux.app.domain.model.NotificationType.REMINDER,
+            timestamp = now.plusMillis(100),
+            isPaid = true,
+        )
+
+        coEvery { notificationRepository.observeNotifications() } returns flowOf(listOf(noti1, noti2))
+
+        val vm = NotificationsViewModel(
+            notificationRepository = notificationRepository,
+            walletRepository = walletRepository,
+            categoryRepository = categoryRepository,
+            addTransactionUseCase = addTransactionUseCase,
+        )
+
+        val collectJob = backgroundScope.launch { vm.notifications.collect {} }
+        advanceUntilIdle()
+
+        val list = vm.notifications.value
+        org.junit.jupiter.api.Assertions.assertEquals(1, list.size)
+        org.junit.jupiter.api.Assertions.assertTrue(list.first().isPaid)
+        collectJob.cancel()
     }
 }

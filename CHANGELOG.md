@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-08-29
+### Added
+- **Deterministic Idempotency Key cho Thông báo Nhắc nhở**:
+  * Tự động sinh ID bản ghi thông báo định danh `reminder_${reminderId}_${triggerEpochDay}` khi báo thức nổ, bảo đảm Firestore tự động idempotent merge vào 1 document duy nhất.
+  * Thêm Unit Tests bao phủ kịch bản Deduplication và Idempotent Payment trong `NotificationsViewModelTest.kt` và `AlarmReminderSchedulerTest.kt`.
+
+### Changed
+- **Nâng cấp `AlarmReminderScheduler.schedule` & `ReminderReceiver`**:
+  * Tính toán mốc tương lai hợp lệ bằng `ReminderUtils.computeNextTriggerDate` khi `nextTriggerDate <= now`, chấm dứt hoàn toàn hiện tượng trigger lặp lại tức thì 1 giây sau.
+  * Đưa `ReminderTriggerDeduplicator.shouldTrigger(id)` ra ngoài `onReceive()` đồng bộ (trước khi launch coroutine) để triệt tiêu race condition cấp OS.
+- **Đồng bộ hóa Thanh toán Toàn diện (`NotificationsViewModel.kt`)**:
+  * Khi thanh toán thành công, tự động gọi `markAsPaidByReminderId(notification.reminderId)` để đồng bộ toàn bộ các thông báo liên quan sang trạng thái `isPaid = true`.
+  * Bổ sung bộ lọc Deduplication guard trong StateFlow `notifications` theo `(type, reminderId, epochDay)` để tự động làm sạch cả các bản ghi rác cũ còn lưu trong Firestore.
+
+### Fixed
+- Khắc phục triệt để lỗi nhân đôi thông báo nhắc nhở hóa đơn định kỳ trên `NotificationsScreen` và lỗi thanh toán 1 thẻ nhưng thẻ trùng lặp còn lại vẫn giữ nguyên nút thanh toán.
+- Sửa lỗi màn hình Trang chủ Prism (`PrismHomeScreen`) bị trắng/không hiển thị nội dung thẻ KPI do xung đột layout giữa `Scaffold.topBar` lồng trong `NavHost`. Chuẩn hóa kiến trúc phẳng `Box` + `LazyColumn` với Top Header nằm ở item đầu tiên.
+
 ## [1.12.0] - 2026-08-28
 ### Added
 - Component dùng chung `FinluxTransactionGroup` cho bố cục danh sách giao dịch kiểu nhóm menu Hồ sơ.

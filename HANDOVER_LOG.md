@@ -1,8 +1,47 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.12.0 (versionCode 147)
-- **Trạng thái Build:** 🟢 PASSED — Header Home Prism CLEAR Liquid Glass + thẻ nhóm giao dịch Home/Lịch sử
+- **Phiên bản hiện tại:** v1.12.1 (versionCode 148)
+- **Trạng thái Build:** 🟢 PASSED — Khắc phục triệt để lỗi Trang chủ Prism HomeScreen không hiển thị nội dung
+
+### [Task-PRISM-HOME-LAYOUT-FIX] — Sửa lỗi Trang chủ Prism HomeScreen không hiển thị nội dung do xung đột Nested Scaffold TopBar
+- **Status**: `[DONE]`
+- **Nguyên nhân cốt lõi**:
+  - `PrismHomeScreen.kt` sử dụng `FinluxScreenScaffold(topBar = { PrismHomeTopHeader(...) })` bên trong `NavHost`, trong khi root `FinluxNavHost` đã có một `Scaffold` bên ngoài.
+  - Cấu trúc lồng `Scaffold.topBar` kết hợp `.statusBarsPadding()` và `scaffoldPadding` đã khiến layout nội dung bên trong `FinluxLazyColumn` bị xung đột chiều cao và không thể đo đạc/render các item thẻ con trên thiết bị thực tế.
+- **Giải pháp xử lý**:
+  - Chuyển `PrismHomeScreen.kt` sang kiến trúc phẳng chuẩn giống `ClassicHomeScreen` / `ModernHomeScreen`: Sử dụng `Box` + `LazyColumn` trực tiếp.
+  - Đưa `PrismHomeTopHeader` thành `item {}` đầu tiên trong `LazyColumn`, hỗ trợ cuộn mượt mà đồng bộ và triệt tiêu hoàn toàn xung đột đo đạc giữa nested `Scaffold`.
+  - Căn chỉnh `contentPadding` (`start = 16.dp, end = 16.dp, bottom = 96.dp`) để đảm bảo các thẻ số dư, Carousel Thu/Chi/Dòng tiền, Quick Actions, Donut Chart danh mục và Danh sách giao dịch hiển thị hoàn hảo, không bị đè bởi Bottom Navigation Bar.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `HANDOVER_LOG.md`
+- **Kết quả kiểm thử & Bàn giao**:
+  - Unit Test: `gradlew testDebugUnitTest` -> **PASS 216/216 tests (100% PASS, 0 failure, 0 error)**.
+  - Build APK: `gradlew assembleDebug` -> **SUCCESS**.
+  - Kiểm thử trực tiếp trên điện thoại: Cài đặt qua ADB, khởi chạy ứng dụng và chụp ảnh màn hình xác nhận: Trang chủ hiển thị 100% đầy đủ, sắc nét toàn bộ các thẻ KPI, Hero Card số dư tài sản/nợ, Carousel Thu chi, Quick Actions, Donut Chart chi tiêu theo danh mục và danh sách giao dịch gần nhất.
+
+### [Task-NOTIFICATION-DEDUPLICATION-FIX] — Khắc phục triệt để lỗi trùng lặp thông báo nhắc nhở hóa đơn
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Loại bỏ Document ID ngẫu nhiên (`UUID.randomUUID()`) trong `AlarmReminderScheduler.kt`, chuyển sang **Deterministic Idempotency Key** (`reminder_${reminderId}_${triggerEpochDay}`) để Firestore tự động merge vào 1 document duy nhất.
+  2. Sửa lỗi `triggerAt = maxOf(nextTriggerDate, now + 1_000ms)` trong `AlarmReminderScheduler.schedule` gây trigger lặp lại tức thì 1 giây sau; tự động tính mốc tương lai hợp lệ qua `ReminderUtils.computeNextTriggerDate`.
+  3. Đưa `ReminderTriggerDeduplicator` check đồng bộ ngay trong `onReceive()` trước khi launch coroutine để ngăn chặn race condition cấp OS.
+  4. Nâng cấp `NotificationsViewModel.kt` đồng bộ trạng thái `isPaid = true` cho toàn bộ thông báo liên quan qua `markAsPaidByReminderId`.
+  5. Thêm UI/Flow Deduplication Guard trong `NotificationsViewModel.observeNotifications` để làm sạch danh sách thông báo.
+  6. Bổ sung Unit Test `NotificationsViewModelTest.kt` và `AlarmReminderSchedulerTest.kt` kiểm thử tính Idempotent và Deduplication.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsViewModel.kt`
+  - `app/src/test/java/com/finlux/app/presentation/notifications/NotificationsViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/data/local/reminder/AlarmReminderSchedulerTest.kt`
+  - `app/build.gradle.kts` (versionCode 148, versionName 1.12.1)
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Kết quả kiểm thử & Bàn giao**:
+  - Unit Test: `gradlew testDebugUnitTest` -> **PASS 216/216 tests (100% PASS, 0 failure, 0 error)**.
+  - Build APK: `gradlew assembleDebug` -> **SUCCESS** (File APK: `app/build/outputs/apk/debug/app-debug.apk`, 33,583,713 bytes).
+  - Nạp thiết bị thực tế: Đã gỡ bỏ bản cũ và cài đặt thành công bản APK `v1.12.1` lên điện thoại qua ADB (thiết bị Android thử nghiệm). Đã khởi chạy `MainActivity` thành công.
 
 ### [Task-RELEASE-v1.12.0] — Git checkpoint cải tiến Home/Lịch sử
 - **Status**: `[DONE]`

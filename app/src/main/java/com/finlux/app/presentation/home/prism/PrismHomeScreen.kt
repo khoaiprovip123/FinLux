@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.finlux.app.core.designsystem.component.FinluxLazyColumn
 import com.finlux.app.core.designsystem.component.FinluxListType
@@ -136,28 +137,32 @@ fun PrismHomeScreen(
     var showBalance by remember { mutableStateOf(true) }
     val tokens = LocalFinluxTokens.current
 
-    FinluxScreenScaffold(
-        showBackdrop = false,
-        containerColor = tokens.background,
-        topBar = {
-            PrismHomeTopHeader(
-                displayName = state.user?.displayName?.ifBlank { "Văn Khoai" } ?: "Văn Khoai",
-                photoUrl = state.user?.photoUrl,
-                unreadCount = state.unreadNotificationsCount,
-                onProfile = { onNavigate(Route.Settings.value) },
-                onNotifications = onNotifications,
-                modifier = Modifier
-                    .background(tokens.background)
-                    .padding(horizontal = 20.dp),
-            )
-        },
-    ) { scaffoldPadding ->
-        FinluxLazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(scaffoldPadding),
-            listType = FinluxListType.TAB_MAIN,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(tokens.background),
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 0.dp,
+                bottom = 96.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item {
+                PrismHomeTopHeader(
+                    displayName = state.user?.displayName?.ifBlank { "Văn Khoai" } ?: "Văn Khoai",
+                    photoUrl = state.user?.photoUrl,
+                    unreadCount = state.unreadNotificationsCount,
+                    onProfile = { onNavigate(Route.Settings.value) },
+                    onNotifications = onNotifications,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
             // 1. Main Hero Card (Tài sản ròng = Tổng tài sản - Tổng dư nợ + 3D Wallet illustration)
             item {
                 PrismHeroNetWorthCard(
@@ -332,7 +337,7 @@ private fun PrismHomeTopHeader(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(top = 8.dp, bottom = 10.dp),
+            .padding(top = 8.dp, bottom = 2.dp),
     ) {
         LiquidGlassCard(
             modifier = Modifier.fillMaxWidth(),
