@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.14.0] - 2026-08-29
+### Added
+- **Chức năng Sao chép Ngân sách sang Kỳ Tiếp theo (Budget Period Rollover & Manual Copy)**:
+  * Cho phép sao chép nhanh toàn bộ định mức hạn mức ngân sách từ kỳ hiện tại sang kỳ chi tiêu kế tiếp (hoặc sao chép từ kỳ trước sang kỳ hiện tại khi kỳ mới chưa có ngân sách).
+  * Tích hợp nút sao chép chuyên dụng tại TopBar và Empty State trên cả 3 phong cách giao diện: `PrismBudgetScreen`, `ModernBudgetScreen`, `ClassicBudgetScreen`.
+  * Hộp thoại xác nhận trực quan (`FinluxDialog`) hiển thị rõ số lượng danh mục và kỳ đích trước khi tiến hành sao chép.
+  * Tự động khởi tạo lại số tiền đã chi (`spentAmount = 0đ`) và trạng thái cảnh báo hạn mức (`notified80 = false`, `notified100 = false`) cho kỳ mới.
+
+### Fixed
+- **Hỗ trợ Cuộn Dọc Khi Thêm/Sửa Ngân Sách Màn Hình Ngang (Landscape Modal Scroll Fix)**:
+  * Bổ sung `Modifier.verticalScroll(rememberScrollState())` vào form Thêm/Sửa ngân sách trên cả 3 phong cách giao diện (`PrismBudgetScreen`, `ModernBudgetScreen`, `ClassicBudgetScreen`).
+  * Khắc phục triệt để lỗi khi xoay màn hình ngang hoặc trên thiết bị màn hình thấp không thể cuộn xuống để nhấn nút "Lưu ngân sách".
+
+### Changed
+- **Nâng cấp Xử lý Kỳ Tài chính (Financial Period Resolver & Copy Use Case)**:
+  * Mở rộng `FinancialPeriodResolver` hỗ trợ tính toán kỳ tiếp theo/kỳ trước (`resolveNextPeriod`, `resolveNextPeriodOf`, `resolvePreviousPeriodOf`) tương thích linh hoạt cho cả tháng dương lịch lẫn chu kỳ ngày nhận lương.
+  * Xây dựng `CopyBudgetUseCase` độc lập tuân thủ Clean Architecture, kèm bộ unit test `CopyBudgetUseCaseTest.kt` kiểm thử 100% kịch bản (sao chép, bỏ qua danh mục đã có, hoặc ghi đè).
+
+## [1.13.4] - 2026-08-29
+### Fixed
+- **Tự động Co Giãn An Toàn Tránh Phím Ảo Điều Hướng (Adaptive System Navigation Bar Insets)**:
+  * Bổ sung cơ chế tự động co giãn vùng hiển thị `WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)` trên toàn bộ hệ thống (`FinluxNavHost`, `FinluxScreenScaffold`, `PrismHomeScreen`).
+  * Khắc phục triệt để lỗi phím ảo (Back / Home / Recents) che khuất nội dung, badge % và các nút bấm bên cạnh phải khi xoay ngang hoặc trên các thiết bị có thanh điều hướng ảo.
+
+## [1.13.3] - 2026-08-29
+### Added
+- **Kết nối Dữ liệu Ngân sách Thực tế vào Donut Carousel Trang Chủ (Real Budget Allocation)**:
+  * Nâng cấp Trang số 4 trong Carousel phân tích trên Trang chủ FinLux Prism (`Tiến độ định mức ngân sách`) kết nối trực tiếp với dữ liệu ngân sách thực tế trong kỳ của người dùng.
+  * Hiển thị Donut chart với tổng % ngân sách đã chi tiêu kèm cảnh báo màu thông minh (Xanh lá < 80%, Vàng cam 80-99%, Đỏ ≥ 100%).
+  * Danh sách chi tiết thể hiện rõ: Tên danh mục, Số tiền đã chi tiêu / Hạn mức ngân sách, và % tiến độ.
+  * Hỗ trợ Empty State trực quan khi chưa có ngân sách kèm nút điều hướng nhanh `[+ Thiết lập ngay ›]`.
+  * Nút "Xem chi tiết ›" tại trang này tự động điều hướng trực tiếp sang màn hình Quản lý Ngân sách (`Route.Budget`).
+
 ## [1.13.2] - 2026-08-29
 ### Added
 - **Lưu trữ Bền vững Trạng thái Ẩn/Hiện Số Dư (Persistent Balance Visibility)**:

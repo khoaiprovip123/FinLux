@@ -4,6 +4,8 @@ import com.finlux.app.presentation.budget.*
 import com.finlux.app.core.designsystem.modern.*
 
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -96,6 +99,7 @@ fun ModernBudgetScreen(
     var editing by remember { mutableStateOf<BudgetItemUi?>(null) }
     var viewingHistory by remember { mutableStateOf<BudgetItemUi?>(null) }
     var showEditor by remember { mutableStateOf(false) }
+    var showCopyConfirmDialog by remember { mutableStateOf(false) }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); viewModel.consumeMessage() } }
     val spent = state.items.sumOf { it.budget.spentAmount.value }
     val limit = state.items.sumOf { it.budget.limitAmount.value }
@@ -110,7 +114,14 @@ fun ModernBudgetScreen(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại")
                         }
                     },
-                    actions = { IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm ngân sách") } },
+                    actions = {
+                        if (state.items.isNotEmpty()) {
+                            IconButton(onClick = { showCopyConfirmDialog = true }) {
+                                Icon(Icons.Default.ContentCopy, "Sao chép sang kỳ sau")
+                            }
+                        }
+                        IconButton(onClick = { editing = null; showEditor = true }) { Icon(Icons.Default.Add, "Thêm ngân sách") }
+                    },
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -155,7 +166,26 @@ fun ModernBudgetScreen(
                         }
                     }
                 }
-                if (state.items.isEmpty()) item { GlassCard(Modifier.fillMaxWidth(), onClick = { showEditor = true }) { Text("Chưa có ngân sách trong tháng này · Chạm để thêm", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                if (state.items.isEmpty()) {
+                    item {
+                        GlassCard(Modifier.fillMaxWidth()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Chưa có ngân sách trong kỳ này · Chạm để thêm", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(onClick = { showEditor = true }, modifier = Modifier.weight(1f)) {
+                                        Text("Thiết lập mới")
+                                    }
+                                    Button(
+                                        onClick = { viewModel.copyBudgetsFromPreviousPeriod() },
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Text("Sao chép kỳ trước")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 items(state.items, key = { it.budget.id }) { item ->
                     val color = when (item.status.level) { BudgetLevel.SAFE -> IncomeGreen; BudgetLevel.WARNING -> WarningAmber; BudgetLevel.EXCEEDED -> ExpenseRed }
                     GlassCard(
@@ -240,6 +270,23 @@ fun ModernBudgetScreen(
     if (showEditor) BudgetEditor(state.categories, state.period, editing, state.busy, { showEditor = false }) { categoryId, amount ->
         viewModel.save(categoryId, amount, editing?.budget) { showEditor = false }
     }
+
+    // Copy to next period confirmation dialog
+    if (showCopyConfirmDialog) {
+        com.finlux.app.core.designsystem.component.FinluxDialog(
+            onDismissRequest = { showCopyConfirmDialog = false },
+            title = "Sao chép sang kỳ tiếp theo?",
+            message = "Định mức ${state.items.size} danh mục của kỳ hiện tại (${state.period?.displayLabel ?: ""}) sẽ được sao chép sang kỳ tiếp theo với số tiền đã chi khởi tạo là 0đ.",
+            confirmLabel = "Sao chép ngay",
+            dismissLabel = "Hủy",
+            onConfirm = {
+                showCopyConfirmDialog = false
+                viewModel.copyBudgetsToNextPeriod { _, _ ->
+                    viewModel.nextMonth()
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -254,7 +301,12 @@ private fun BudgetEditor(categories: List<Category>, period: com.finlux.app.doma
 
     Dialog(onDismissRequest = onDismiss) {
         GlassDialogSurface {
-            Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(13.dp),
+            ) {
                 Text(if (initial == null) "Thêm ngân sách" else "Sửa ngân sách", style = MaterialTheme.typography.titleLarge)
                 Text("Áp dụng: ${period?.displayLabel ?: "Đang tải..."}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 

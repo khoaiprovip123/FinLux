@@ -215,6 +215,86 @@ class HomeViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `state reflects active budgets and total budget metrics accurately`() = runTest(testDispatcher) {
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+
+        val activeBudgets = listOf(
+            Budget(
+                id = "b1",
+                categoryId = "cat1",
+                periodKey = "2026-08",
+                limitAmount = Money(5_000_000L),
+                spentAmount = Money(0L),
+                notified80 = false,
+                notified100 = false,
+            ),
+            Budget(
+                id = "b2",
+                categoryId = "cat2",
+                periodKey = "2026-08",
+                limitAmount = Money(2_000_000L),
+                spentAmount = Money(0L),
+                notified80 = false,
+                notified100 = false,
+            ),
+        )
+
+        val txs = listOf(
+            FinanceTransaction(
+                id = "tx1",
+                type = TransactionType.EXPENSE,
+                amount = Money(3_500_000L),
+                categoryId = "cat1",
+                walletId = "w1",
+                date = Instant.now(),
+            ),
+            FinanceTransaction(
+                id = "tx2",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_000_000L),
+                categoryId = "cat2",
+                walletId = "w1",
+                date = Instant.now(),
+            ),
+        )
+
+        val budgetRepo = object : BudgetRepository by FakeHomeBudgetRepository() {
+            override fun observeBudgets(periodKey: String): Flow<List<Budget>> = flowOf(activeBudgets)
+        }
+
+        val txRepo = object : TransactionRepository by FakeHomeTransactionRepository() {
+            override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> = flowOf(txs)
+        }
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(emptyList()),
+            transactionRepository = txRepo,
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = budgetRepo,
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(emptyList()),
+            salaryCycleRepository = FakeHomeSalaryCycleRepository(),
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            val state = if (initial.budgets.isEmpty()) awaitItem() else initial
+            assertEquals(2, state.budgets.size)
+            assertEquals(7_000_000L, state.totalBudgetLimit)
+            assertEquals(4_500_000L, state.totalBudgetSpent)
+            assertEquals(64, state.totalBudgetPercent) // (4.5 / 7) * 100 = 64%
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }
 
 private class FakeAuthRepository : AuthRepository {

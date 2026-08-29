@@ -108,6 +108,7 @@ class BudgetViewModelTest {
     }
     private val saveBudget: SaveBudgetUseCase = mockk()
     private val deleteBudget: DeleteBudgetUseCase = mockk()
+    private val copyBudgetUseCase: com.finlux.app.domain.usecase.CopyBudgetUseCase = mockk(relaxed = true)
     private lateinit var viewModel: BudgetViewModel
 
     private val dummyConfig = com.finlux.app.domain.model.SalaryCycleConfig()
@@ -138,6 +139,7 @@ class BudgetViewModelTest {
             getBudgetStatus = GetBudgetStatusUseCase(),
             saveBudget = saveBudget,
             deleteBudget = deleteBudget,
+            copyBudgetUseCase = copyBudgetUseCase,
         )
         // Keep state active so it settles
         kotlinx.coroutines.CoroutineScope(testDispatcher).launch {

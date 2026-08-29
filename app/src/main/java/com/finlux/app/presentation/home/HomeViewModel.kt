@@ -51,6 +51,10 @@ data class HomeUiState(
     val transactions: List<FinanceTransaction> = emptyList(),
     val monthTransactions: List<FinanceTransaction> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val budgets: List<Budget> = emptyList(),
+    val totalBudgetLimit: Long = 0L,
+    val totalBudgetSpent: Long = 0L,
+    val totalBudgetPercent: Int = 0,
     val budgetRemaining: Long = 0L,
     val budgetRemainingPercent: Int = 0,
     val unreadNotificationsCount: Int = 0,
@@ -60,6 +64,10 @@ data class HomeUiState(
 
 private data class FinancialOverview(
     val summary: DashboardSummary,
+    val budgets: List<Budget>,
+    val totalBudgetLimit: Long,
+    val totalBudgetSpent: Long,
+    val totalBudgetPercent: Int,
     val budgetRemaining: Long,
     val budgetRemainingPercent: Int,
     val monthTransactions: List<FinanceTransaction>,
@@ -141,6 +149,10 @@ class HomeViewModel @Inject constructor(
 
             FinancialOverview(
                 summary = effectiveSummary,
+                budgets = budgets,
+                totalBudgetLimit = limit,
+                totalBudgetSpent = spent,
+                totalBudgetPercent = percent,
                 budgetRemaining = remaining,
                 budgetRemainingPercent = percent,
                 monthTransactions = periodTransactions,
@@ -183,6 +195,10 @@ class HomeViewModel @Inject constructor(
             transactions = transactions.collapseInternalTransferPairs(),
             monthTransactions = overview.monthTransactions,
             categories = categories,
+            budgets = overview.budgets,
+            totalBudgetLimit = overview.totalBudgetLimit,
+            totalBudgetSpent = overview.totalBudgetSpent,
+            totalBudgetPercent = overview.totalBudgetPercent,
             budgetRemaining = overview.budgetRemaining,
             budgetRemainingPercent = overview.budgetRemainingPercent,
             unreadNotificationsCount = overview.unreadCount,

@@ -1,8 +1,66 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.13.2 (versionCode 153)
-- **Trạng thái Build:** 🟢 PASSED — Lưu trạng thái ẩn hiện số dư bền vững qua DataStore và che toàn diện số dư nợ trên Hero Card Prism.
+- **Phiên bản hiện tại:** v1.14.0 (versionCode 156)
+- **Trạng thái Build:** ✅ STABLE — Tính năng sao chép ngân sách sang kỳ tiếp theo & sửa lỗi cuộn form màn hình ngang đã hoàn thành. Tests 100% PASS.
+
+### [Task-BUDGET-COPY-AND-LANDSCAPE-FIX] — Sao chép ngân sách & Khắc phục cuộn form màn hình ngang
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ Bổ sung `resolveNextPeriod`, `resolveNextPeriodOf`, `resolvePreviousPeriodOf` vào `FinancialPeriodResolver`.
+  2. ✅ Tạo `CopyBudgetUseCase` để sao chép toàn bộ ngân sách giữa các kỳ chi tiêu an toàn.
+  3. ✅ Cập nhật `BudgetViewModel` hỗ trợ `copyBudgetsToNextPeriod`, `copyBudgetsFromPreviousPeriod`.
+  4. ✅ Cập nhật `PrismBudgetScreen`, `ModernBudgetScreen`, `ClassicBudgetScreen` với nút Copy ở TopBar, nút "Sao chép kỳ trước" ở EmptyState và dialog xác nhận.
+  5. ✅ Bổ sung `Modifier.verticalScroll(rememberScrollState())` vào form Thêm/Sửa ngân sách trên cả 3 giao diện, giúp cuộn mượt mà khi xoay ngang thiết bị.
+  6. ✅ Lược bỏ toggle trong màn hình Hồ sơ/Cài đặt theo yêu cầu để giữ giao diện tinh gọn.
+  7. ✅ Viết unit test `CopyBudgetUseCaseTest.kt` và cập nhật `BudgetViewModelTest.kt`.
+- **Kết quả kiểm thử**: `gradlew testDebugUnitTest` **BUILD SUCCESSFUL** 100% PASS.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/domain/usecase/FinancialPeriodResolver.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CopyBudgetUseCase.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CopyBudgetUseCaseTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/presentation/budget/BudgetViewModelTest.kt`
+
+### [Task-ADAPTIVE-SYSTEM-NAVIGATION-INSETS] — Tự động co giãn an toàn tránh phím ảo điều hướng toàn hệ thống
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thêm `WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)` và `consumeWindowInsets` vào `FinluxNavHost.kt`, `FinluxScreenScaffold.kt` và các màn hình chính.
+  2. Tự động nhận diện thanh phím ảo điều hướng (3-button navigation bar / gesture navigation) ở cạnh bên (Landscape / Tablets / Foldables) để co lại khoảng cách an toàn, tránh 100% việc che khuất nội dung, badge % và các nút bấm mép phải.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxScreenScaffold.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Kết quả kiểm thử & xác thực**:
+  - `gradlew testDebugUnitTest`: **100% PASS** (220/220 tests).
+  - `gradlew assembleDebug`: Build thành công, xác nhận hiển thị hoàn hảo trên thiết bị.
+
+### [Task-PRISM-REAL-BUDGET-ALLOCATION-CAROUSEL] — Kết nối dữ liệu Ngân sách thật vào Donut Carousel Trang Chủ
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thêm `budgets`, `totalBudgetLimit`, `totalBudgetSpent`, `totalBudgetPercent` vào `HomeUiState` và `HomeViewModel`.
+  2. Nâng cấp Trang số 4 trong Carousel phân tích trên Trang chủ FinLux Prism (`Tiến độ định mức ngân sách`) lấy dữ liệu động từ các ngân sách thực tế trong kỳ.
+  3. Donut chart thể hiện tổng % ngân sách đã chi tiêu kèm cảnh báo màu thông minh (Xanh lá < 80%, Vàng cam 80-99%, Đỏ ≥ 100%).
+  4. Danh sách chi tiết thể hiện: Tên danh mục, Số tiền đã chi tiêu / Hạn mức ngân sách (`formatVnd(spent) / formatVnd(limit)`), và % tiến độ.
+  5. Thiết kế Empty State trực quan khi chưa tạo ngân sách kèm nút điều hướng nhanh `[+ Thiết lập ngay ›]`.
+  6. Nút "Xem chi tiết ›" tại trang này tự động điều hướng sang màn hình Quản lý Ngân sách (`Route.Budget`).
+  7. Tự động che số tiền thành `••••` khi bật chế độ ẩn số dư.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Kết quả kiểm thử & xác thực**:
+  - `gradlew testDebugUnitTest`: **100% PASS** (220/220 tests).
+  - `gradlew assembleDebug`: Build thành công.
 
 ### [Task-PERSISTENT-BALANCE-VISIBILITY-AND-DEBT-MASKING] — Lưu trữ vĩnh viễn trạng thái ẩn số dư & che số tiền nợ
 - **Status**: `[DONE]`

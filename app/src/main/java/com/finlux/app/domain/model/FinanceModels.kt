@@ -71,11 +71,11 @@ data class Budget(
     val periodStart: Instant? = null,
     val periodEndExclusive: Instant? = null,
     val periodBasis: String? = null,
-    val month: YearMonth? = null, // Deprecated, kept for backward compatibility during migration
+    val month: java.time.YearMonth? = null, // Deprecated, kept for backward compatibility during migration
     val limitAmount: Money,
-    val spentAmount: Money,
-    val notified80: Boolean,
-    val notified100: Boolean,
+    val spentAmount: Money = Money(0L),
+    val notified80: Boolean = false,
+    val notified100: Boolean = false,
 )
 
 data class Reminder(
@@ -118,6 +118,7 @@ data class UiPreferences(
     val biometricEnabled: Boolean = false,
     val biometricTimeout: BiometricLockTimeout = BiometricLockTimeout.IMMEDIATE,
     val isBalanceVisible: Boolean = true,
+    val autoRolloverBudgets: Boolean = false,
 )
 
 data class DashboardSummary(

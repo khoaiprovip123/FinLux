@@ -21,6 +21,21 @@ interface FinancialPeriodResolver {
         now: Instant = Instant.now(),
     ): FinancialPeriod
 
+    fun resolveNextPeriod(
+        config: SalaryCycleConfig,
+        now: Instant = Instant.now(),
+    ): FinancialPeriod
+
+    fun resolveNextPeriodOf(
+        period: FinancialPeriod,
+        config: SalaryCycleConfig,
+    ): FinancialPeriod
+
+    fun resolvePreviousPeriodOf(
+        period: FinancialPeriod,
+        config: SalaryCycleConfig,
+    ): FinancialPeriod
+
     fun resolvePeriodContaining(
         instant: Instant,
         config: SalaryCycleConfig,
@@ -47,7 +62,29 @@ class DefaultFinancialPeriodResolver @Inject constructor(
         now: Instant,
     ): FinancialPeriod {
         val currentPeriod = resolveCurrentPeriod(config, now)
-        return resolvePeriodContaining(currentPeriod.start.minusMillis(1), config)
+        return resolvePreviousPeriodOf(currentPeriod, config)
+    }
+
+    override fun resolveNextPeriod(
+        config: SalaryCycleConfig,
+        now: Instant,
+    ): FinancialPeriod {
+        val currentPeriod = resolveCurrentPeriod(config, now)
+        return resolveNextPeriodOf(currentPeriod, config)
+    }
+
+    override fun resolveNextPeriodOf(
+        period: FinancialPeriod,
+        config: SalaryCycleConfig,
+    ): FinancialPeriod {
+        return resolvePeriodContaining(period.endExclusive.plusMillis(1), config)
+    }
+
+    override fun resolvePreviousPeriodOf(
+        period: FinancialPeriod,
+        config: SalaryCycleConfig,
+    ): FinancialPeriod {
+        return resolvePeriodContaining(period.start.minusMillis(1), config)
     }
 
     override fun resolvePeriodContaining(
