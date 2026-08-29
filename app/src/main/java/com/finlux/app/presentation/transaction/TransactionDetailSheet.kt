@@ -492,13 +492,13 @@ fun TransactionDetailSheet(
                                     maxLines = 1,
                                 )
                                 Text(
-                                    text = "Thay đổi số tiền, danh mục, ví, ngày...",
+                                    text = "Chỉnh sửa thông tin giao dịch",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontSize = 10.sp,
                                         lineHeight = 13.sp,
                                     ),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
+                                    maxLines = 1,
                                 )
                             }
 

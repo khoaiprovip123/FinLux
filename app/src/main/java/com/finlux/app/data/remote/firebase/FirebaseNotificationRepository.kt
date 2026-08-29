@@ -52,6 +52,21 @@ class FirebaseNotificationRepository(
         Unit
     }
 
+    override suspend fun markAllAsRead(): AppResult<Unit> = firebaseResult("Không thể cập nhật thông báo") {
+        val uid = requireUid()
+        val snapshot = firestore.collection("users").document(uid).collection("notifications")
+            .whereEqualTo("isRead", false)
+            .get().await()
+        if (snapshot.documents.isNotEmpty()) {
+            firestore.runBatch { batch ->
+                snapshot.documents.forEach { doc ->
+                    batch.update(doc.reference, "isRead", true)
+                }
+            }.await()
+        }
+        Unit
+    }
+
     override suspend fun markAsPaid(id: String): AppResult<Unit> = firebaseResult("Không thể cập nhật thông báo") {
         val uid = requireUid()
         firestore.collection("users").document(uid).collection("notifications").document(id)

@@ -1,5 +1,64 @@
 # Changelog
 
+## [1.14.0] - 2026-08-29
+### Added
+- **Chức năng Sao chép Ngân sách sang Kỳ Tiếp theo (Budget Period Rollover & Manual Copy)**:
+  * Cho phép sao chép nhanh toàn bộ định mức hạn mức ngân sách từ kỳ hiện tại sang kỳ chi tiêu kế tiếp (hoặc sao chép từ kỳ trước sang kỳ hiện tại khi kỳ mới chưa có ngân sách).
+  * Tích hợp nút sao chép chuyên dụng tại TopBar và Empty State trên cả 3 phong cách giao diện: `PrismBudgetScreen`, `ModernBudgetScreen`, `ClassicBudgetScreen`.
+  * Hộp thoại xác nhận trực quan (`FinluxDialog`) hiển thị rõ số lượng danh mục và kỳ đích trước khi tiến hành sao chép.
+  * Tự động khởi tạo lại số tiền đã chi (`spentAmount = 0đ`) và trạng thái cảnh báo hạn mức (`notified80 = false`, `notified100 = false`) cho kỳ mới.
+
+### Fixed
+- **Hỗ trợ Cuộn Dọc Khi Thêm/Sửa Ngân Sách Màn Hình Ngang (Landscape Modal Scroll Fix)**:
+  * Bổ sung `Modifier.verticalScroll(rememberScrollState())` vào form Thêm/Sửa ngân sách trên cả 3 phong cách giao diện (`PrismBudgetScreen`, `ModernBudgetScreen`, `ClassicBudgetScreen`).
+  * Khắc phục triệt để lỗi khi xoay màn hình ngang hoặc trên thiết bị màn hình thấp không thể cuộn xuống để nhấn nút "Lưu ngân sách".
+
+### Changed
+- **Nâng cấp Xử lý Kỳ Tài chính (Financial Period Resolver & Copy Use Case)**:
+  * Mở rộng `FinancialPeriodResolver` hỗ trợ tính toán kỳ tiếp theo/kỳ trước (`resolveNextPeriod`, `resolveNextPeriodOf`, `resolvePreviousPeriodOf`) tương thích linh hoạt cho cả tháng dương lịch lẫn chu kỳ ngày nhận lương.
+  * Xây dựng `CopyBudgetUseCase` độc lập tuân thủ Clean Architecture, kèm bộ unit test `CopyBudgetUseCaseTest.kt` kiểm thử 100% kịch bản (sao chép, bỏ qua danh mục đã có, hoặc ghi đè).
+
+## [1.13.4] - 2026-08-29
+### Fixed
+- **Tự động Co Giãn An Toàn Tránh Phím Ảo Điều Hướng (Adaptive System Navigation Bar Insets)**:
+  * Bổ sung cơ chế tự động co giãn vùng hiển thị `WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)` trên toàn bộ hệ thống (`FinluxNavHost`, `FinluxScreenScaffold`, `PrismHomeScreen`).
+  * Khắc phục triệt để lỗi phím ảo (Back / Home / Recents) che khuất nội dung, badge % và các nút bấm bên cạnh phải khi xoay ngang hoặc trên các thiết bị có thanh điều hướng ảo.
+
+## [1.13.3] - 2026-08-29
+### Added
+- **Kết nối Dữ liệu Ngân sách Thực tế vào Donut Carousel Trang Chủ (Real Budget Allocation)**:
+  * Nâng cấp Trang số 4 trong Carousel phân tích trên Trang chủ FinLux Prism (`Tiến độ định mức ngân sách`) kết nối trực tiếp với dữ liệu ngân sách thực tế trong kỳ của người dùng.
+  * Hiển thị Donut chart với tổng % ngân sách đã chi tiêu kèm cảnh báo màu thông minh (Xanh lá < 80%, Vàng cam 80-99%, Đỏ ≥ 100%).
+  * Danh sách chi tiết thể hiện rõ: Tên danh mục, Số tiền đã chi tiêu / Hạn mức ngân sách, và % tiến độ.
+  * Hỗ trợ Empty State trực quan khi chưa có ngân sách kèm nút điều hướng nhanh `[+ Thiết lập ngay ›]`.
+  * Nút "Xem chi tiết ›" tại trang này tự động điều hướng trực tiếp sang màn hình Quản lý Ngân sách (`Route.Budget`).
+
+## [1.13.2] - 2026-08-29
+### Added
+- **Lưu trữ Bền vững Trạng thái Ẩn/Hiện Số Dư (Persistent Balance Visibility)**:
+  * Tích hợp `isBalanceVisible` vào hệ thống DataStore `UiPreferencesRepository` và `HomeViewModel`, giúp lưu nhớ vĩnh viễn trạng thái ẩn/hiện số dư qua các lần đóng mở app, chuyển màn hình hoặc đổi theme.
+
+### Fixed
+- **Khắc phục Lỗi Rò rỉ Dữ liệu Số Nợ khi Ẩn Số Dư (Debt Amount Masking Fix)**:
+  * Che giấu toàn diện số tiền dư nợ `Nợ: ••••` trên thẻ Tổng quan Hero Prism khi người dùng kích hoạt chế độ ẩn số dư thay vì hiển thị số tiền thật.
+  * Tự động che các số liệu thống kê trung bình và chênh lệch dòng tiền trên các thẻ Tổng quan khi ẩn số dư.
+
+## [1.13.1] - 2026-08-29
+### Added
+- **Chế độ Trải nghiệm dùng thử tức thì (Demo Mode)**:
+  * Bổ sung nút "⚡ Trải nghiệm ngay (Chế độ Dùng thử)" trên màn hình Đăng nhập giúp tester và người dùng trên máy ảo trải nghiệm đầy đủ tính năng ngay lập tức.
+- **Hỗ trợ Máy ảo & Thiết bị không có Google Play Services**:
+  * Bổ sung cơ chế bắt lỗi và hiển thị thông báo hướng dẫn thân thiện khi thiết bị thiếu Google Play Credential Provider thay vì crash hoặc văng lỗi kỹ thuật.
+
+### Changed
+- **Tối ưu hóa Luồng Khởi động Splash**:
+  * Chuyển `SplashViewModel` sang `SharingStarted.Eagerly` và phát giá trị auth ban đầu đồng bộ trong `callbackFlow`, triệt tiêu hoàn toàn hiện tượng treo màn hình Splash.
+
+### Fixed
+- **Giải quyết toàn diện xung đột Remote Merge**:
+  * Hợp nhất thành công thiết kế Hero Overview Data-First (`v1.13.0`) với bộ 14 bản vá lỗi UI/UX toàn diện (`v1.12.3`).
+  * Chuẩn hóa chiều cao và padding Top Header trên `PrismHomeScreen`.
+
 ## [1.13.0] - 2026-08-29
 ### Added
 - **Mini Bar Chart dữ liệu thật**: Tích hợp biểu đồ cột mini phân bổ giao dịch thực tế 5 mốc thời gian trong kỳ trên các thẻ Hero Tổng quan.
@@ -16,6 +75,67 @@
 ### Fixed
 - Khắc phục triệt để mũi tên chúc xuống gây hiểu lầm giảm tiền/chi tiền trên thẻ Thu nhập.
 - Loại bỏ các hình minh họa trừu tượng chiếm diện tích và các chip trạng thái không mang lại giá trị thông tin.
+
+## [1.12.3] - 2026-08-29
+### Added
+- **Hệ Thống Tự Động Co Giãn Font Số Dư Tài Sản (Auto-Scale Balance)**:
+  * Tích hợp cơ chế tự động hạ kích thước chữ từ `28.sp` xuống `23.sp` hoặc `20.sp` cho các số dư tài sản lớn (trên 11 - 17 chữ số) trên cả `ModernHomeScreen` và `ClassicHomeScreen`.
+- **Tối Ưu Hiển Thị Thông Minh Cho Ô Treemap Chi Tiêu Nhỏ**:
+  * Tự động chuyển đổi sang Icon + Tỷ lệ % (`Icon` + `percent%`) khi diện tích ô danh mục nhỏ, tránh lỗi cắt cụt tên danh mục thành 1 ký tự.
+- **Tách Khối Phân Đoạn Cho Dải Ngày Chu Kỳ Lương**:
+  * Đóng gói dải ngày chu kỳ hiện tại và chu kỳ tiếp theo thành các pill card riêng biệt trong `SalaryCycleSettingsSheet`.
+
+### Changed
+- **Nâng Cấp Khoảng Đệm Đáy Toàn Diện Màn Hình Báo Cáo**:
+  * Tăng khoảng đệm đáy lên `120.dp` trên `ModernReportsScreen` và `ClassicReportsScreen`, giải phóng hoàn toàn nút "Xuất báo cáo" nổi cao phía trên `MainBottomBar`.
+- **Chuẩn Hóa Nhãn 2 Dòng Cho Bộ Chọn Danh Mục (`CategoryPicker`)**:
+  * Cấu hình `maxLines = 2`, `lineHeight = 11.sp` trong `FinluxFormComponents` giúp tên danh mục dài tiếng Việt hiển thị đầy đủ, không bị cắt cụt.
+- **Tái Cấu Trúc Bố Cục Thẻ Giao Dịch**:
+  * Tách độc lập cột ghi chú/danh mục (`weight(1f)`) và cột số tiền + hành động (`Alignment.End`) trong `ModernTransactionsScreen` nhằm chống va chạm text khi ghi chú dài.
+- **Thay Đổi Icon Cảnh Báo Ngân Sách**:
+  * Thay icon dấu cộng `Add` bằng `Icons.Default.NotificationsActive` đúng nghiệp vụ cảnh báo vượt hạn mức 80% - 100%.
+
+### Fixed
+- **Khắc Phục Triệt Để Lỗi Ép Nền Trắng Dark Mode Cho Tất Cả Dialog & BottomSheet**:
+  * Loại bỏ công thức `luminance() < 0.4f` trong `ModernLiquidGlass.kt`, chuyển sang đọc trực tiếp cờ `LocalFinluxTokens.current.isDark` và `tokens.surfaceSoft`.
+- **Khắc Phục Lỗi Nền Trắng Màn Hình Lịch Sử Giao Dịch Trong Dark Mode**:
+  * Bọc nền `ModernTransactionsScreen` bằng `FinluxStyleBackdrop` và chuẩn hóa màu text tiêu đề nhóm ngày với `tokens.onSurface` & `tokens.onSurfaceVariant`.
+- **Sửa Lỗi Viền Màu Thẻ Ví Bị Chìm Trong Light Mode**:
+  * Thay thế viền tĩnh `Color.White` bằng hệ thống viền 2 lớp tương thích động Light/Dark Mode trong `ModernWalletsScreen`.
+- **Sửa Lỗi Subtext Nút Chỉnh Sửa Trong `TransactionDetailSheet`**:
+  * Loại bỏ dấu phẩy thừa do chuỗi ví rỗng và áp dụng nền Dark Glass đồng bộ.
+
+## [1.12.2] - 2026-08-29
+### Added
+- **Tự động đánh dấu đã đọc khi mở Hộp thư Thông báo (`markAllAsRead`)**:
+  * Bổ sung API `markAllAsRead()` trong `NotificationRepository`, `FirebaseNotificationRepository` và `DemoFinluxRepository` để cập nhật batch toàn bộ thông báo chưa đọc sang `isRead = true`.
+  * Thêm nút "Đánh dấu tất cả đã đọc" (`Icons.Default.DoneAll` và pill button dưới thanh lọc) trên màn hình Thông báo và chấm tròn chỉ báo trạng thái chưa đọc trực quan trên từng thẻ.
+
+### Changed
+- `NotificationsScreen`: Tự động kích hoạt `viewModel.markAllAsRead()` ngay khi người dùng mở màn hình Thông báo, giúp badge số lượng thông báo chưa đọc trên chuông Trang chủ lập tức được xóa sạch về trạng thái bình thường.
+- `FinluxNavHost`: Nâng cấp `MainBottomBar` với `AnimatedVisibility` (fade + slide vertical transition).
+
+### Fixed
+- Sửa lỗi chuông thông báo trên Trang chủ (`HomeScreen` ở tất cả các theme: `FinLux Prism`, `Modern Luxury`, `Liquid Glass Classic`) bị hiển thị vĩnh viễn chấm đỏ do hardcode trong `ReferenceHeader`. Đã liên kết động 100% với `unreadNotificationsCount`.
+- Khắc phục lỗi BottomBar xuất hiện sớm đè lên màn hình Splash lúc ứng dụng đang khởi động/chưa hoàn tất tải dữ liệu.
+
+## [1.12.1] - 2026-08-29
+### Added
+- **Deterministic Idempotency Key cho Thông báo Nhắc nhở**:
+  * Tự động sinh ID bản ghi thông báo định danh `reminder_${reminderId}_${triggerEpochDay}` khi báo thức nổ, bảo đảm Firestore tự động idempotent merge vào 1 document duy nhất.
+  * Thêm Unit Tests bao phủ kịch bản Deduplication và Idempotent Payment trong `NotificationsViewModelTest.kt` và `AlarmReminderSchedulerTest.kt`.
+
+### Changed
+- **Nâng cấp `AlarmReminderScheduler.schedule` & `ReminderReceiver`**:
+  * Tính toán mốc tương lai hợp lệ bằng `ReminderUtils.computeNextTriggerDate` khi `nextTriggerDate <= now`, chấm dứt hoàn toàn hiện tượng trigger lặp lại tức thì 1 giây sau.
+  * Đưa `ReminderTriggerDeduplicator.shouldTrigger(id)` ra ngoài `onReceive()` đồng bộ (trước khi launch coroutine) để triệt tiêu race condition cấp OS.
+- **Đồng bộ hóa Thanh toán Toàn diện (`NotificationsViewModel.kt`)**:
+  * Khi thanh toán thành công, tự động gọi `markAsPaidByReminderId(notification.reminderId)` để đồng bộ toàn bộ các thông báo liên quan sang trạng thái `isPaid = true`.
+  * Bổ sung bộ lọc Deduplication guard trong StateFlow `notifications` theo `(type, reminderId, epochDay)` để tự động làm sạch cả các bản ghi rác cũ còn lưu trong Firestore.
+
+### Fixed
+- Khắc phục triệt để lỗi nhân đôi thông báo nhắc nhở hóa đơn định kỳ trên `NotificationsScreen` và lỗi thanh toán 1 thẻ nhưng thẻ trùng lặp còn lại vẫn giữ nguyên nút thanh toán.
+- Sửa lỗi màn hình Trang chủ Prism (`PrismHomeScreen`) bị trắng/không hiển thị nội dung thẻ KPI do xung đột layout giữa `Scaffold.topBar` lồng trong `NavHost`. Chuẩn hóa kiến trúc phẳng `Box` + `LazyColumn` với Top Header nằm ở item đầu tiên.
 
 ## [1.12.0] - 2026-08-28
 ### Added

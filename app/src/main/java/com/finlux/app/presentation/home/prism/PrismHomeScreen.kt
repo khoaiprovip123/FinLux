@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.finlux.app.core.designsystem.component.FinluxLazyColumn
 import com.finlux.app.core.designsystem.component.FinluxListType
@@ -106,6 +107,7 @@ import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.navigation.Route
+import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.FinanceTransaction
@@ -136,31 +138,35 @@ fun PrismHomeScreen(
     val totalBalance = state.wallets.sumOf { it.balance.value }
     val categoriesMap = remember(state.categories) { state.categories.associateBy(Category::id) }
     val walletsMap = remember(state.wallets) { state.wallets.associateBy(Wallet::id) }
-    var showBalance by remember { mutableStateOf(true) }
+    val showBalance = state.showBalance
     val tokens = LocalFinluxTokens.current
 
-    FinluxScreenScaffold(
-        showBackdrop = false,
-        containerColor = tokens.background,
-        topBar = {
-            PrismHomeTopHeader(
-                displayName = state.user?.displayName?.ifBlank { "Văn Khoai" } ?: "Văn Khoai",
-                photoUrl = state.user?.photoUrl,
-                unreadCount = state.unreadNotificationsCount,
-                onProfile = { onNavigate(Route.Settings.value) },
-                onNotifications = onNotifications,
-                modifier = Modifier
-                    .background(tokens.background)
-                    .padding(horizontal = 20.dp),
-            )
-        },
-    ) { scaffoldPadding ->
-        FinluxLazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(scaffoldPadding),
-            listType = FinluxListType.TAB_MAIN,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(tokens.background),
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 0.dp,
+                bottom = 96.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item {
+                PrismHomeTopHeader(
+                    displayName = state.user?.displayName?.ifBlank { "Văn Khoai" } ?: "Văn Khoai",
+                    photoUrl = state.user?.photoUrl,
+                    unreadCount = state.unreadNotificationsCount,
+                    onProfile = { onNavigate(Route.Settings.value) },
+                    onNotifications = onNotifications,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
             // 1. Unified financial overview: balance hero + auto Thu/Chi/Dòng tiền carousel
             item {
                 PrismFinancialOverviewCard(
@@ -174,7 +180,7 @@ fun PrismHomeScreen(
                     wallets = state.wallets,
                     salaryCycleLabel = state.salaryCycleLabel,
                     showBalance = showBalance,
-                    onToggleShowBalance = { showBalance = !showBalance },
+                    onToggleShowBalance = viewModel::toggleBalanceVisibility,
                     onDebtsClick = { onNavigate(Route.Debt.value) },
                     onWalletsClick = { onNavigate(Route.Wallets.value) },
                     onIncomeClick = { onNavigate(Route.Income.value) },
@@ -200,8 +206,11 @@ fun PrismHomeScreen(
                     monthTransactions = state.monthTransactions.ifEmpty { state.transactions },
                     categories = state.categories,
                     wallets = state.wallets,
+                    budgets = state.budgets,
+                    totalBudgetPercent = state.totalBudgetPercent,
                     showBalance = showBalance,
                     onViewDetail = { onNavigate(Route.Reports.value) },
+                    onNavigateToBudget = { onNavigate(Route.Budget.value) },
                 )
             }
 
@@ -503,7 +512,11 @@ private fun PrismFinancialOverviewCard(
             periodLabel = if (wallets.isNotEmpty()) "${wallets.size} ví hoạt động" else "Tất cả ví",
             value = if (showBalance) formatVndAmount(grossAssets).replace("đ", "₫") else hiddenAmount,
             subtitle = "Tài sản ròng: ${if (showBalance) formatVndAmount(netWorth).replace("đ", "₫") else "••••"}",
-            contextInfo = if (totalDebt > 0L) "Nợ: ${formatVndAmount(totalDebt).replace("đ", "₫")}" else "Không có dư nợ",
+            contextInfo = if (totalDebt > 0L) {
+                if (showBalance) "Nợ: ${formatVndAmount(totalDebt).replace("đ", "₫")}" else "Nợ: ••••"
+            } else {
+                "Không có dư nợ"
+            },
             chartValues = walletBars,
             theme = PrismCardTheme.WALLET,
             backgroundColors = listOf(
@@ -519,7 +532,11 @@ private fun PrismFinancialOverviewCard(
             periodLabel = periodDateRange,
             value = if (showBalance) formatVndAmount(income).replace("đ", "₫") else hiddenAmount,
             subtitle = if (incomeCount > 0) "$incomeCount khoản thu" else "Chưa có khoản thu",
-            contextInfo = if (incomeCount > 0) "TB ${formatVndAmount(income / incomeCount).replace("đ", "₫")}/khoản" else "Chưa phát sinh",
+            contextInfo = if (incomeCount > 0) {
+                if (showBalance) "TB ${formatVndAmount(income / incomeCount).replace("đ", "₫")}/khoản" else "TB ••••/khoản"
+            } else {
+                "Chưa phát sinh"
+            },
             chartValues = incomeBars,
             theme = PrismCardTheme.INCOME,
             backgroundColors = listOf(
@@ -535,7 +552,11 @@ private fun PrismFinancialOverviewCard(
             periodLabel = periodDateRange,
             value = if (showBalance) formatVndAmount(expense).replace("đ", "₫") else hiddenAmount,
             subtitle = if (expenseCount > 0) "$expenseCount khoản chi" else "Chưa có khoản chi",
-            contextInfo = if (expenseCount > 0) "TB ${formatVndAmount(expense / expenseCount).replace("đ", "₫")}/khoản" else "Chưa phát sinh",
+            contextInfo = if (expenseCount > 0) {
+                if (showBalance) "TB ${formatVndAmount(expense / expenseCount).replace("đ", "₫")}/khoản" else "TB ••••/khoản"
+            } else {
+                "Chưa phát sinh"
+            },
             chartValues = expenseBars,
             theme = PrismCardTheme.EXPENSE,
             backgroundColors = listOf(
@@ -555,7 +576,13 @@ private fun PrismFinancialOverviewCard(
                 hiddenAmount
             },
             subtitle = "${incomeCount + expenseCount} giao dịch trong kỳ",
-            contextInfo = if (net > 0L) "Thu vượt chi ${formatVndAmount(net).replace("đ", "₫")}" else if (net < 0L) "Chi vượt thu ${formatVndAmount(-net).replace("đ", "₫")}" else "Thu chi cân bằng",
+            contextInfo = if (showBalance) {
+                if (net > 0L) "Thu vượt chi ${formatVndAmount(net).replace("đ", "₫")}"
+                else if (net < 0L) "Chi vượt thu ${formatVndAmount(-net).replace("đ", "₫")}"
+                else "Thu chi cân bằng"
+            } else {
+                "Dòng tiền trong kỳ"
+            },
             chartValues = netBars,
             theme = PrismCardTheme.CASH_FLOW,
             backgroundColors = listOf(
@@ -2241,8 +2268,11 @@ private fun PrismCategoryExpenseBreakdownCard(
     monthTransactions: List<FinanceTransaction>,
     categories: List<Category>,
     wallets: List<Wallet>,
+    budgets: List<Budget>,
+    totalBudgetPercent: Int,
     showBalance: Boolean,
     onViewDetail: () -> Unit,
+    onNavigateToBudget: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
@@ -2277,11 +2307,6 @@ private fun PrismCategoryExpenseBreakdownCard(
         Color(0xFF10B981), // Emerald
         Color(0xFF06B6D4), // Cyan
         Color(0xFF3B82F6), // Blue
-    )
-    val budgetPalette = listOf(
-        Color(0xFF8B5CF6), // Violet
-        Color(0xFFEC4899), // Pink
-        Color(0xFFF59E0B), // Amber
     )
     val walletPalette = listOf(
         Color(0xFF3B82F6), // Blue
@@ -2368,12 +2393,38 @@ private fun PrismCategoryExpenseBreakdownCard(
         }
     }
 
-    // Page 3: Budget shares
-    val budgetShares = listOf(
-        Triple(Category("201", "Thiết yếu (50%)", CategoryType.EXPENSE, "Shield", "#8B5CF6", true, Instant.now()), 0L, 0),
-        Triple(Category("202", "Mong muốn (30%)", CategoryType.EXPENSE, "Favorite", "#EC4899", true, Instant.now()), 0L, 0),
-        Triple(Category("203", "Tiết kiệm (20%)", CategoryType.EXPENSE, "Savings", "#F59E0B", true, Instant.now()), 0L, 0),
-    )
+    // Page 3: Real Budget shares
+    val budgetShares = remember(budgets, categories, monthTransactions) {
+        if (budgets.isNotEmpty()) {
+            val expenseMap = monthTransactions
+                .filter { it.type == TransactionType.EXPENSE && it.categoryId != null }
+                .groupBy { it.categoryId!! }
+                .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+
+            budgets.mapNotNull { b ->
+                val cat = categories.find { it.id == b.categoryId } ?: Category(
+                    id = b.categoryId,
+                    name = "Ngân sách",
+                    type = CategoryType.EXPENSE,
+                    icon = "Savings",
+                    colorHex = "#8B5CF6",
+                    isDefault = false,
+                    createdAt = Instant.now(),
+                )
+                val limit = b.limitAmount.value
+                val spent = expenseMap[b.categoryId] ?: 0L
+                val pct = if (limit > 0) ((spent * 100.0) / limit).toInt() else 0
+                PrismBudgetShareUi(
+                    category = cat,
+                    spent = spent,
+                    limit = limit,
+                    percent = pct,
+                )
+            }.sortedByDescending { it.percent }
+        } else {
+            emptyList()
+        }
+    }
 
     // Page 4: Wallets asset distribution
     val totalWalletBalance = wallets.sumOf { it.balance.value }
@@ -2396,10 +2447,12 @@ private fun PrismCategoryExpenseBreakdownCard(
         0 -> "Chi tiêu theo danh mục"
         1 -> "Chi tiêu khác & phụ"
         2 -> "Nguồn thu nhập theo danh mục"
-        3 -> "Phân bổ định mức ngân sách"
+        3 -> "Tiến độ định mức ngân sách"
         4 -> "Cơ cấu tài sản theo ví"
         else -> "Chi tiêu theo danh mục"
     }
+
+    val currentOnViewDetail = if (pagerState.currentPage == 3) onNavigateToBudget else onViewDetail
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Section Header
@@ -2421,7 +2474,7 @@ private fun PrismCategoryExpenseBreakdownCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(CircleShape)
-                    .clickable(onClick = onViewDetail)
+                    .clickable(onClick = currentOnViewDetail)
                     .padding(horizontal = 6.dp, vertical = 4.dp),
             ) {
                 Text(
@@ -2479,12 +2532,11 @@ private fun PrismCategoryExpenseBreakdownCard(
                             centerLabel = "Tổng thu",
                             showBalance = showBalance,
                         )
-                        3 -> PrismBreakdownPageContent(
-                            shares = budgetShares,
-                            colors = budgetPalette,
-                            centerAmount = "0%",
-                            centerLabel = "Đã chi tiêu",
+                        3 -> PrismBudgetBreakdownPageContent(
+                            budgetShares = budgetShares,
+                            totalSpentPercent = totalBudgetPercent,
                             showBalance = showBalance,
+                            onNavigateToBudget = onNavigateToBudget,
                         )
                         4 -> PrismBreakdownPageContent(
                             shares = walletShares,
@@ -2527,6 +2579,236 @@ private fun PrismCategoryExpenseBreakdownCard(
                                     }
                                 },
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Data Model for Budget Share Item in Carousel
+ */
+private data class PrismBudgetShareUi(
+    val category: Category,
+    val spent: Long,
+    val limit: Long,
+    val percent: Int,
+)
+
+/**
+ * Specialized Page Content for Budget Breakdown in Carousel
+ */
+@Composable
+private fun PrismBudgetBreakdownPageContent(
+    budgetShares: List<PrismBudgetShareUi>,
+    totalSpentPercent: Int,
+    showBalance: Boolean,
+    onNavigateToBudget: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+
+    if (budgetShares.isEmpty()) {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(0.40f)
+                    .height(130.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                PrismDonutChart(
+                    percentages = listOf(100),
+                    colors = listOf(tokens.border.copy(alpha = 0.45f)),
+                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "0%",
+                        style = FinluxTextStyles.CardTitle.copy(
+                            fontWeight = FontWeight.Black,
+                            fontSize = 18.sp,
+                        ),
+                        color = tokens.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "Chưa có hạn mức",
+                        style = FinluxTextStyles.MicroLabel.copy(
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Medium,
+                        ),
+                        color = tokens.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(0.60f),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = "Chưa đặt ngân sách",
+                    style = FinluxTextStyles.CardTitle.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                    color = tokens.onSurface,
+                )
+                Text(
+                    text = "Thiết lập hạn mức chi tiêu để kiểm soát chi tiêu tối ưu.",
+                    style = FinluxTextStyles.Caption.copy(fontSize = 11.sp),
+                    color = tokens.onSurfaceVariant,
+                    maxLines = 2,
+                )
+                Surface(
+                    onClick = onNavigateToBudget,
+                    shape = RoundedCornerShape(10.dp),
+                    color = tokens.primary.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.35f)),
+                    modifier = Modifier.padding(top = 2.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Savings,
+                            contentDescription = null,
+                            tint = tokens.primary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = "Thiết lập ngay ›",
+                            style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                            color = tokens.primary,
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        val colors = budgetShares.map { item ->
+            when {
+                item.percent >= 100 -> Color(0xFFEF4444)
+                item.percent >= 80 -> Color(0xFFF59E0B)
+                else -> Color(0xFF10B981)
+            }
+        }
+
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Left: Donut Chart
+            Box(
+                modifier = Modifier
+                    .weight(0.40f)
+                    .height(130.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                PrismDonutChart(
+                    percentages = budgetShares.map { it.percent },
+                    colors = colors,
+                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = if (showBalance) "$totalSpentPercent%" else "••••",
+                        style = FinluxTextStyles.CardTitle.copy(
+                            fontWeight = FontWeight.Black,
+                            fontSize = 18.sp,
+                        ),
+                        color = when {
+                            totalSpentPercent >= 100 -> Color(0xFFEF4444)
+                            totalSpentPercent >= 80 -> Color(0xFFF59E0B)
+                            else -> tokens.onSurface
+                        },
+                    )
+                    Text(
+                        text = "Đã chi tiêu",
+                        style = FinluxTextStyles.MicroLabel.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                        ),
+                        color = tokens.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(10.dp))
+
+            // Right: Budget legend list
+            Column(
+                modifier = Modifier.weight(0.60f),
+                verticalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                budgetShares.take(3).forEachIndexed { index, item ->
+                    val color = colors.getOrElse(index) { Color(0xFF6366F1) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(26.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = color.copy(alpha = 0.14f),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = categoryIcon(item.category.icon),
+                                    contentDescription = null,
+                                    tint = color,
+                                    modifier = Modifier.size(15.dp),
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.width(7.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(1.dp),
+                        ) {
+                            Text(
+                                text = item.category.name,
+                                style = FinluxTextStyles.Caption.copy(
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                                color = tokens.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            val spentText = if (showBalance) formatVndAmount(item.spent, isCompact = true) else "••••"
+                            val limitText = if (showBalance) formatVndAmount(item.limit, isCompact = true) else "••••"
+                            Text(
+                                text = "$spentText / $limitText",
+                                style = FinluxTextStyles.MicroLabel.copy(
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                                color = tokens.onSurface.copy(alpha = if (tokens.isDark) 0.76f else 0.70f),
+                                maxLines = 1,
+                            )
+                        }
+
+                        Spacer(Modifier.width(6.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = color.copy(alpha = if (tokens.isDark) 0.22f else 0.12f),
+                        ) {
+                            Text(
+                                text = "${item.percent}%",
+                                style = FinluxTextStyles.MicroLabel.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = color,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                            )
+                        }
                     }
                 }
             }

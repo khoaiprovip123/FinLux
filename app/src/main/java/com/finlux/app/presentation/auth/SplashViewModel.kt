@@ -15,5 +15,5 @@ enum class SessionState { CHECKING, AUTHENTICATED, GUEST }
 class SplashViewModel @Inject constructor(repository: AuthRepository) : ViewModel() {
     val session = repository.currentUser
         .map { if (it == null) SessionState.GUEST else SessionState.AUTHENTICATED }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SessionState.CHECKING)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, SessionState.CHECKING)
 }

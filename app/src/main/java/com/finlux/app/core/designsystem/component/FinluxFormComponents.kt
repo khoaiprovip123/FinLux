@@ -916,13 +916,15 @@ fun FinluxCategoryPickerBottomSheet(
                         Text(
                             text = cat.name,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
+                                lineHeight = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             ),
                             color = if (isSelected) tokens.primary else tokens.onSurface,
                             textAlign = TextAlign.Center,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 28.dp),
                         )
                     }
                 }

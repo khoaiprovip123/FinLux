@@ -67,7 +67,17 @@ class AlarmReminderScheduler @Inject constructor(
     override fun schedule(reminder: Reminder) {
         if (!reminder.enabled || reminder.id.isBlank()) return
         val manager = context.getSystemService(AlarmManager::class.java) ?: return
-        val triggerAt = maxOf(reminder.nextTriggerDate.toEpochMilli(), System.currentTimeMillis() + 1_000)
+        val now = Instant.now()
+        val effectiveTriggerInstant = if (reminder.nextTriggerDate.isAfter(now)) {
+            reminder.nextTriggerDate
+        } else {
+            ReminderUtils.computeNextTriggerDate(
+                startDate = reminder.startDate,
+                recurrence = reminder.recurrence,
+                afterInstant = now,
+            )
+        }
+        val triggerAt = effectiveTriggerInstant.toEpochMilli()
 
         val showIntent = PendingIntent.getActivity(
             context,
@@ -220,10 +230,15 @@ class ReminderReceiver : BroadcastReceiver() {
             }
 
             else -> {
+                // 1. Deduplication check: Tránh trigger lặp lại đồng bộ từ ngoài trước khi launch coroutine
+                if (!ReminderTriggerDeduplicator.shouldTrigger(id)) {
+                    return
+                }
+
                 val notiPendingResult = goAsync()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        // 1. Validation Guard: Kiểm tra xem nhắc nhở có còn tồn tại và đang bật (enabled) trong Database không
+                        // 2. Validation Guard: Kiểm tra xem nhắc nhở có còn tồn tại và đang bật (enabled) trong Database không
                         val currentReminders = reminderRepository.observeReminders().firstOrNull().orEmpty()
                         val activeReminder = currentReminders.firstOrNull { it.id == id }
 
@@ -243,11 +258,6 @@ class ReminderReceiver : BroadcastReceiver() {
                             alarmManager?.cancel(cancelPending)
                             cancelPending.cancel()
                             notifications?.cancel(id.hashCode())
-                            return@launch
-                        }
-
-                        // 2. Deduplication check: Tránh trigger lặp lại trong vòng 60 giây
-                        if (!ReminderTriggerDeduplicator.shouldTrigger(id)) {
                             return@launch
                         }
 
@@ -276,10 +286,13 @@ class ReminderReceiver : BroadcastReceiver() {
                             "Đến hạn xác nhận giao dịch"
                         }
 
-                        // 4. Lưu thông báo vào NotificationRepository (đồng bộ vào In-App Notification Center)
+                        // 4. Lưu thông báo vào NotificationRepository với DETERMINISTIC ID (Idempotency Key chống trùng)
+                        val currentEpochDay = Instant.now().toEpochMilli() / 86400000L
+                        val deterministicNotificationId = "reminder_${id}_$currentEpochDay"
+
                         notificationRepository.saveNotification(
                             AppNotification(
-                                id = UUID.randomUUID().toString(),
+                                id = deterministicNotificationId,
                                 title = effectiveTitle,
                                 body = body,
                                 type = com.finlux.app.domain.model.NotificationType.REMINDER,
@@ -295,7 +308,6 @@ class ReminderReceiver : BroadcastReceiver() {
                         )
 
                         // 5. Bắn thông báo Android System Notification (Heads-up banner)
-                        val currentEpochDay = Instant.now().toEpochMilli() / 86400000L
                         val generatedPaymentActionId = "pay_rem_${id}_$currentEpochDay"
 
                         val openAppIntent = Intent(context, MainActivity::class.java).apply {
@@ -345,7 +357,7 @@ class ReminderReceiver : BroadcastReceiver() {
                         val editIntent = Intent(context, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                             putExtra("destination", "notifications")
-                            putExtra("pay_notification_id", id)
+                            putExtra("pay_notification_id", deterministicNotificationId)
                             putExtra("reminder_id", id)
                         }
                         val editPending = PendingIntent.getActivity(

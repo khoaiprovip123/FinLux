@@ -110,11 +110,17 @@ users/{uid}
   │    ├─ financeTimeZone: string   -- "Asia/Ho_Chi_Minh"
   │    └─ updatedAt: timestamp
   │
-  └─ notifications/{notificationId}
+  └─ notifications/{notificationId}    -- ID định danh: reminder_{reminderId}_{epochDay} cho thông báo nhắc nhở để đảm bảo Idempotency
        ├─ title: string
        ├─ body: string
        ├─ type: "budget_warning" | "budget_exceeded" | "reminder"
        ├─ isRead: boolean
+       ├─ isPaid: boolean               -- true khi hóa đơn nhắc nhở đã được thanh toán
+       ├─ reminderId: string?
+       ├─ amount: number?
+       ├─ categoryId: string?
+       ├─ walletId: string?
+       ├─ timestamp: timestamp
        └─ createdAt: timestamp
 ```
 

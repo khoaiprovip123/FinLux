@@ -166,7 +166,7 @@ fun ModernReportsScreen(
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                 ) { Text("Xuất báo cáo", fontWeight = FontWeight.Bold) }
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(96.dp))
             }
         }
     }
@@ -274,14 +274,46 @@ private fun ExpenseDistribution(items: List<CategoryExpense>) {
 @Composable
 private fun CategoryBlock(item: CategoryExpense, total: Long, index: Int, modifier: Modifier) {
     val accent = ChartColors[index % ChartColors.size]
+    val isSmall = index >= 3
+    val percent = (item.amount * 100 / total).coerceAtLeast(1)
     Column(
-        modifier.background(accent, RoundedCornerShape(10.dp)).padding(if (index == 0) 11.dp else 8.dp),
+        modifier
+            .background(accent, RoundedCornerShape(10.dp))
+            .padding(if (index == 0) 10.dp else if (isSmall) 6.dp else 8.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(item.category?.name ?: "Khác", color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, style = if (index == 0) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.labelMedium)
+        if (isSmall) {
+            Icon(
+                imageVector = com.finlux.app.core.designsystem.categoryIcon(item.category?.icon.orEmpty()),
+                contentDescription = item.category?.name,
+                tint = Color.White,
+                modifier = Modifier.size(16.dp),
+            )
+        } else {
+            Text(
+                text = item.category?.name ?: "Khác",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                style = if (index == 0) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.labelSmall,
+            )
+        }
         Column {
-            Text("${item.amount * 100 / total}%", color = Color.White, style = if (index == 0) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text(item.amount.toShortVnd(), color = Color.White.copy(alpha = .88f), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Text(
+                text = "$percent%",
+                color = Color.White,
+                style = if (index == 0) MaterialTheme.typography.titleLarge else if (isSmall) MaterialTheme.typography.labelMedium else MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            if (!isSmall) {
+                Text(
+                    text = item.amount.toShortVnd(),
+                    color = Color.White.copy(alpha = .88f),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }

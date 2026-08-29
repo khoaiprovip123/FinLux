@@ -175,6 +175,11 @@ class DemoFinluxRepository @Inject constructor(
         AppResult.Success(Unit)
     }
 
+    override suspend fun markAllAsRead(): AppResult<Unit> = mutationMutex.withLock {
+        notificationState.value = notificationState.value.map { it.copy(isRead = true) }
+        AppResult.Success(Unit)
+    }
+
     override suspend fun markAsPaid(id: String): AppResult<Unit> = mutationMutex.withLock {
         notificationState.value = notificationState.value.map {
             if (it.id == id) it.copy(isRead = true, isPaid = true) else it

@@ -3,6 +3,8 @@ package com.finlux.app.presentation.budget.prism
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
@@ -101,6 +104,7 @@ fun PrismBudgetScreen(
     var editingBudget by remember { mutableStateOf<BudgetItemUi?>(null) }
     var viewingHistoryBudget by remember { mutableStateOf<BudgetItemUi?>(null) }
     var isCreatingBudget by remember { mutableStateOf(false) }
+    var showCopyConfirmDialog by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<Budget?>(null) }
 
     val totalLimit = state.items.sumOf { it.budget.limitAmount.value }
@@ -188,22 +192,47 @@ fun PrismBudgetScreen(
                 )
             }
 
-            // Add Budget Button
+            // Add Budget & Copy Action Row
             item {
-                Button(
-                    onClick = { isCreatingBudget = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(tokens.radius.input),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = tokens.primary,
-                        contentColor = tokens.onHero,
-                    ),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(6.dp))
-                    Text("Thiết lập ngân sách mới", style = FinluxTextStyles.CardTitle.copy(fontSize = 14.sp))
+                    Button(
+                        onClick = { isCreatingBudget = true },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(tokens.radius.input),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = tokens.primary,
+                            contentColor = tokens.onHero,
+                        ),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.size(6.dp))
+                        Text("Thiết lập mới", style = FinluxTextStyles.CardTitle.copy(fontSize = 14.sp), maxLines = 1)
+                    }
+
+                    if (state.items.isNotEmpty()) {
+                        Button(
+                            onClick = { showCopyConfirmDialog = true },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(tokens.radius.input),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = tokens.surface,
+                                contentColor = tokens.textPrimary,
+                            ),
+                            border = BorderStroke(1.dp, tokens.onSurface.copy(alpha = tokens.borderAlpha)),
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp), tint = tokens.primary)
+                            Spacer(Modifier.size(6.dp))
+                            Text("Sao chép kỳ sau", style = FinluxTextStyles.CardTitle.copy(fontSize = 14.sp), maxLines = 1)
+                        }
+                    }
                 }
             }
 
@@ -212,7 +241,11 @@ fun PrismBudgetScreen(
                 item {
                     FinluxEmptyState(
                         title = "Chưa có ngân sách",
-                        description = "Tạo ngân sách theo từng danh mục (Ăn uống, Tiền trọ, Mua sắm...) để kiểm soát chi tiêu.",
+                        description = "Tạo ngân sách theo từng danh mục hoặc sao chép nhanh định mức từ kỳ trước.",
+                        actionLabel = "Sao chép từ kỳ trước",
+                        onActionClick = {
+                            viewModel.copyBudgetsFromPreviousPeriod()
+                        },
                     )
                 }
             } else {
@@ -400,6 +433,7 @@ fun PrismBudgetScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = tokens.spacing.lg, vertical = tokens.spacing.sm),
                 verticalArrangement = Arrangement.spacedBy(tokens.spacing.md),
             ) {
@@ -756,6 +790,23 @@ fun PrismBudgetScreen(
             onConfirm = {
                 viewModel.delete(budget)
                 pendingDelete = null
+            },
+        )
+    }
+
+    // Copy to next period confirmation dialog
+    if (showCopyConfirmDialog) {
+        FinluxDialog(
+            onDismissRequest = { showCopyConfirmDialog = false },
+            title = "Sao chép sang kỳ tiếp theo?",
+            message = "Định mức ${state.items.size} danh mục của kỳ hiện tại (${state.period?.displayLabel ?: ""}) sẽ được sao chép sang kỳ tiếp theo với số tiền đã chi khởi tạo là 0đ.",
+            confirmLabel = "Sao chép ngay",
+            dismissLabel = "Hủy",
+            onConfirm = {
+                showCopyConfirmDialog = false
+                viewModel.copyBudgetsToNextPeriod { _, _ ->
+                    viewModel.nextMonth()
+                }
             },
         )
     }

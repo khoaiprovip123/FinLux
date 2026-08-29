@@ -37,8 +37,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,7 +101,7 @@ fun ClassicHomeScreen(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val totalBalance = state.netWorth
     val categories = state.categories.associateBy(Category::id)
-    var showBalance by remember { mutableStateOf(true) }
+    val showBalance = state.showBalance
     val visualStyle = LocalUiPreferences.current.visualStyle
 
     Box(Modifier.fillMaxSize()) {
@@ -116,6 +118,7 @@ fun ClassicHomeScreen(
                     ReferenceHeader(
                         name = state.user?.displayName ?: "Bạn",
                         photoUrl = state.user?.photoUrl,
+                        unreadCount = state.unreadNotificationsCount,
                         onNotifications = onNotifications,
                         onProfile = { onNavigate(Route.Settings.value) },
                     )
@@ -126,7 +129,7 @@ fun ClassicHomeScreen(
                         net = state.summary.net,
                         style = visualStyle,
                         showBalance = showBalance,
-                        onToggleBalance = { showBalance = !showBalance },
+                        onToggleBalance = viewModel::toggleBalanceVisibility,
                     )
                 }
                 item {
@@ -196,7 +199,13 @@ fun ClassicHomeScreen(
 }
 
 @Composable
-private fun ReferenceHeader(name: String, photoUrl: String?, onNotifications: () -> Unit, onProfile: () -> Unit) {
+private fun ReferenceHeader(
+    name: String,
+    photoUrl: String?,
+    unreadCount: Int,
+    onNotifications: () -> Unit,
+    onProfile: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().statusBarsPadding().padding(top = 10.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -209,7 +218,24 @@ private fun ReferenceHeader(name: String, photoUrl: String?, onNotifications: ()
         IconButton(onClick = onNotifications) {
             Box(contentAlignment = Alignment.TopEnd) {
                 Icon(Icons.Default.NotificationsNone, "Thông báo", tint = MaterialTheme.colorScheme.onSurface)
-                Box(Modifier.size(7.dp).background(ExpenseRed, CircleShape))
+                if (unreadCount > 0) {
+                    Surface(
+                        shape = CircleShape,
+                        color = ExpenseRed,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(if (unreadCount > 9) 16.dp else 14.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 7.5.sp, fontWeight = FontWeight.Bold),
+                                color = Color.White,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
             }
         }
         FinluxUserAvatar(photoUrl, name, 38.dp, onClick = onProfile)
@@ -305,10 +331,16 @@ private fun ReferenceBalanceHero(
                     )
                 }
             }
+            val balanceText = if (showBalance) amount.toVnd() else "•••••••• ₫"
+            val balanceFontSize = when {
+                balanceText.length >= 17 -> 20.sp
+                balanceText.length >= 14 -> 23.sp
+                else -> 28.sp
+            }
             Text(
-                if (showBalance) amount.toVnd() else "•••••••• ₫",
+                text = balanceText,
                 color = Color.White,
-                style = MaterialTheme.typography.headlineMedium,
+                fontSize = balanceFontSize,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )

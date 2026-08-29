@@ -114,13 +114,26 @@ if ($targetDevices.Count -eq 0) {
 $successCount = 0
 foreach ($devId in $targetDevices) {
     Write-Host "   -> Dang nap va open app tren [$devId]..." -ForegroundColor Cyan
-    adb -s $devId install -r -t -d $apkPath
-    if ($LASTEXITCODE -eq 0) {
+    $output = adb -s $devId install -r -t -d $apkPath 2>&1 | Out-String
+    if ($output -match "Success") {
         $successCount++
         adb -s $devId shell am start -n com.finlux.app/.MainActivity | Out-Null
         Write-Host "      ✅ Thanh cong: $devId" -ForegroundColor Green
     } else {
-        Write-Host "      ❌ That bai: $devId" -ForegroundColor Red
+        if ($output -match "signatures do not match" -or $output -match "INSTALL_FAILED_UPDATE_INCOMPATIBLE" -or $output -match "INSTALL_FAILED_VERSION_DOWNGRADE") {
+            Write-Host "      ⚠️ Phat hien xung dot ban cai cu tren [$devId], dang go va nap lai..." -ForegroundColor Yellow
+            adb -s $devId uninstall com.finlux.app | Out-Null
+            $retryOutput = adb -s $devId install -r -t -d $apkPath 2>&1 | Out-String
+            if ($retryOutput -match "Success") {
+                $successCount++
+                adb -s $devId shell am start -n com.finlux.app/.MainActivity | Out-Null
+                Write-Host "      ✅ Thanh cong (sau khi go ban cu): $devId" -ForegroundColor Green
+            } else {
+                Write-Host "      ❌ That bai: $devId -> $retryOutput" -ForegroundColor Red
+            }
+        } else {
+            Write-Host "      ❌ That bai: $devId -> $output" -ForegroundColor Red
+        }
     }
 }
 

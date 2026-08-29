@@ -94,4 +94,26 @@ class AlarmReminderSchedulerTest {
             notificationManager.cancel("rem_2".hashCode())
         }
     }
+
+    @Test
+    fun `schedule advances expired nextTriggerDate to future before setAlarmClock`() {
+        val pastInstant = Instant.now().minusSeconds(86400 * 2)
+        val reminder = Reminder(
+            id = "rem_expired",
+            title = "Ăn sáng",
+            amount = Money(15_000L),
+            categoryId = "cat_food",
+            walletId = "wal_cash",
+            recurrence = ReminderRecurrence.DAILY,
+            startDate = pastInstant,
+            enabled = true,
+            nextTriggerDate = pastInstant,
+        )
+
+        scheduler.schedule(reminder)
+
+        verify(atLeast = 1) {
+            alarmManager.setAlarmClock(any(), any())
+        }
+    }
 }
