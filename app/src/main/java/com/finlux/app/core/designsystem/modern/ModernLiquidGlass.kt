@@ -440,11 +440,21 @@ fun GlassBottomNav(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val tokens = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current
     val dockShape = RoundedCornerShape(36.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.Transparent,
+                        tokens.background.copy(alpha = 0.75f),
+                        tokens.background.copy(alpha = 0.95f),
+                    ),
+                ),
+            )
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
@@ -536,14 +546,15 @@ fun GlassFab(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
-    val containerBg = if (dark) Color(0xFF0F172A) else Color(0xFFFFFFFF)
+    val tokens = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current
+    val dark = tokens.isDark
+    val containerBg = if (dark) tokens.surface else Color(0xFFFFFFFF)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        contentColor = tokens.onSurface,
         scrimColor = Color.Black.copy(alpha = 0.65f),
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         content = {
@@ -560,16 +571,17 @@ fun GlassBottomSheet(onDismiss: () -> Unit, content: @Composable () -> Unit) {
 
 @Composable
 fun GlassDialogSurface(content: @Composable BoxScope.() -> Unit) {
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
-    val bgFill = if (dark) Color(0xFF121E33).copy(alpha = 0.98f) else Color(0xFFF8FAFD).copy(alpha = 0.98f)
+    val tokens = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current
+    val dark = tokens.isDark
+    val bgFill = if (dark) tokens.surfaceSoft.copy(alpha = 0.98f) else Color(0xFFF8FAFD).copy(alpha = 0.98f)
     val rimBorder = BorderStroke(
         width = 1.2.dp,
         brush = Brush.linearGradient(
             listOf(
-                Color.White.copy(alpha = if (dark) 0.60f else 0.95f),
+                Color.White.copy(alpha = if (dark) 0.30f else 0.95f),
                 FinluxCyan.copy(alpha = 0.45f),
                 FinluxPurple.copy(alpha = 0.35f),
-                Color.White.copy(alpha = if (dark) 0.15f else 0.40f),
+                Color.White.copy(alpha = if (dark) 0.10f else 0.40f),
             ),
         ),
     )

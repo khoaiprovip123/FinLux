@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -229,12 +230,12 @@ fun ModernTransactionsScreen(
                                         text = headerTitle,
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
+                                        color = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current.onSurface,
                                     )
                                     Text(
                                         text = "(${txList.size})",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current.onSurfaceVariant,
                                     )
                                 }
 
@@ -281,11 +282,14 @@ fun ModernTransactionsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 mode = com.finlux.app.core.designsystem.modern.LiquidGlassMode.REGULAR,
                                 tint = rowAccent,
-                                padding = PaddingValues(14.dp),
+                                padding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
                                 onClick = { viewingTransaction = transaction },
                                 onLongClick = { actionTransaction = transaction },
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
                                     Surface(shape = RoundedCornerShape(12.dp), color = rowAccent.copy(alpha = .12f)) {
                                         Icon(
                                             rowIcon,
@@ -294,24 +298,64 @@ fun ModernTransactionsScreen(
                                             tint = rowAccent,
                                         )
                                     }
-                                    Column(Modifier.weight(1f).padding(horizontal = 11.dp)) {
-                                        Text(title, fontWeight = FontWeight.Bold)
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(start = 12.dp, end = 8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
                                         Text(
-                                            DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm").format(transaction.date.atZone(financeZone)),
+                                            text = title,
+                                            fontWeight = FontWeight.SemiBold,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = FinluxTextSecondary,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Text(
+                                            text = DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm").format(transaction.date.atZone(financeZone)),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
                                         )
                                     }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text(amountPrefix + transaction.amount.value.toVnd(), color = rowAccent, fontWeight = FontWeight.Bold)
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column(
+                                        horizontalAlignment = Alignment.End,
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
+                                        Text(
+                                            text = amountPrefix + transaction.amount.value.toVnd(),
+                                            color = rowAccent,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        ) {
                                             if (!isTransfer) {
-                                                IconButton(onClick = { onEditTransaction?.invoke(transaction) }) {
-                                                    Icon(Icons.Default.Edit, "Sửa giao dịch", tint = MaterialTheme.colorScheme.primary)
+                                                IconButton(
+                                                    onClick = { onEditTransaction?.invoke(transaction) },
+                                                    modifier = Modifier.size(28.dp),
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Edit,
+                                                        contentDescription = "Sửa giao dịch",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(16.dp),
+                                                    )
                                                 }
                                             }
-                                            IconButton(onClick = { pendingDelete = transaction }) {
-                                                Icon(Icons.Default.DeleteOutline, "Xóa giao dịch", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            IconButton(
+                                                onClick = { pendingDelete = transaction },
+                                                modifier = Modifier.size(28.dp),
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.DeleteOutline,
+                                                    contentDescription = "Xóa giao dịch",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                    modifier = Modifier.size(16.dp),
+                                                )
                                             }
                                         }
                                     }

@@ -27,6 +27,7 @@ class FirebaseAuthRepository(
 ) : AuthRepository {
     private val profileUpdates = MutableSharedFlow<UserProfile?>(extraBufferCapacity = 1)
     private val authState: Flow<UserProfile?> = callbackFlow {
+        trySend(auth.currentUser?.toDomain())
         val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             trySend(firebaseAuth.currentUser?.toDomain())
         }

@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+## [1.12.3] - 2026-08-29
+### Added
+- **Hệ Thống Tự Động Co Giãn Font Số Dư Tài Sản (Auto-Scale Balance)**:
+  * Tích hợp cơ chế tự động hạ kích thước chữ từ `28.sp` xuống `23.sp` hoặc `20.sp` cho các số dư tài sản lớn (trên 11 - 17 chữ số) trên cả `ModernHomeScreen` và `ClassicHomeScreen`.
+- **Tối Ưu Hiển Thị Thông Minh Cho Ô Treemap Chi Tiêu Nhỏ**:
+  * Tự động chuyển đổi sang Icon + Tỷ lệ % (`Icon` + `percent%`) khi diện tích ô danh mục nhỏ, tránh lỗi cắt cụt tên danh mục thành 1 ký tự.
+- **Tách Khối Phân Đoạn Cho Dải Ngày Chu Kỳ Lương**:
+  * Đóng gói dải ngày chu kỳ hiện tại và chu kỳ tiếp theo thành các pill card riêng biệt trong `SalaryCycleSettingsSheet`.
+
+### Changed
+- **Nâng Cấp Khoảng Đệm Đáy Toàn Diện Màn Hình Báo Cáo**:
+  * Tăng khoảng đệm đáy lên `120.dp` trên `ModernReportsScreen` và `ClassicReportsScreen`, giải phóng hoàn toàn nút "Xuất báo cáo" nổi cao phía trên `MainBottomBar`.
+- **Chuẩn Hóa Nhãn 2 Dòng Cho Bộ Chọn Danh Mục (`CategoryPicker`)**:
+  * Cấu hình `maxLines = 2`, `lineHeight = 11.sp` trong `FinluxFormComponents` giúp tên danh mục dài tiếng Việt hiển thị đầy đủ, không bị cắt cụt.
+- **Tái Cấu Trúc Bố Cục Thẻ Giao Dịch**:
+  * Tách độc lập cột ghi chú/danh mục (`weight(1f)`) và cột số tiền + hành động (`Alignment.End`) trong `ModernTransactionsScreen` nhằm chống va chạm text khi ghi chú dài.
+- **Thay Đổi Icon Cảnh Báo Ngân Sách**:
+  * Thay icon dấu cộng `Add` bằng `Icons.Default.NotificationsActive` đúng nghiệp vụ cảnh báo vượt hạn mức 80% - 100%.
+
+### Fixed
+- **Khắc Phục Triệt Để Lỗi Ép Nền Trắng Dark Mode Cho Tất Cả Dialog & BottomSheet**:
+  * Loại bỏ công thức `luminance() < 0.4f` trong `ModernLiquidGlass.kt`, chuyển sang đọc trực tiếp cờ `LocalFinluxTokens.current.isDark` và `tokens.surfaceSoft`.
+- **Khắc Phục Lỗi Nền Trắng Màn Hình Lịch Sử Giao Dịch Trong Dark Mode**:
+  * Bọc nền `ModernTransactionsScreen` bằng `FinluxStyleBackdrop` và chuẩn hóa màu text tiêu đề nhóm ngày với `tokens.onSurface` & `tokens.onSurfaceVariant`.
+- **Sửa Lỗi Viền Màu Thẻ Ví Bị Chìm Trong Light Mode**:
+  * Thay thế viền tĩnh `Color.White` bằng hệ thống viền 2 lớp tương thích động Light/Dark Mode trong `ModernWalletsScreen`.
+- **Sửa Lỗi Subtext Nút Chỉnh Sửa Trong `TransactionDetailSheet`**:
+  * Loại bỏ dấu phẩy thừa do chuỗi ví rỗng và áp dụng nền Dark Glass đồng bộ.
+
 ## [1.12.2] - 2026-08-29
 ### Added
 - **Tự động đánh dấu đã đọc khi mở Hộp thư Thông báo (`markAllAsRead`)**:

@@ -164,16 +164,47 @@ class AuthViewModel @Inject constructor(
                 mutableState.update { it.copy(error = null) }
             } catch (e: androidx.credentials.exceptions.NoCredentialException) {
                 android.util.Log.e("GoogleSignIn", "NoCredentialException: ${e.message}", e)
-                mutableState.update { it.copy(error = "Không tìm thấy tài khoản Google nào trên thiết bị. Vui lòng đăng nhập tài khoản Google vào máy.") }
+                mutableState.update { it.copy(error = "Không tìm thấy tài khoản Google nào trên thiết bị. Vui lòng đăng nhập tài khoản Google vào máy hoặc dùng Email/Mật khẩu.") }
             } catch (e: androidx.credentials.exceptions.GetCredentialException) {
                 android.util.Log.e("GoogleSignIn", "GetCredentialException: ${e.message}", e)
-                mutableState.update { it.copy(error = e.localizedMessage ?: "Đăng nhập Google thất bại. Vui lòng thử lại.") }
+                val msg = e.localizedMessage ?: ""
+                val friendlyError = if (msg.contains("no provider dependencies found", ignoreCase = true) || msg.contains("ProviderConfiguration", ignoreCase = true)) {
+                    "Máy ảo/thiết bị này chưa có Google Play Services. Vui lòng đăng nhập bằng Email/Mật khẩu hoặc chọn 'Trải nghiệm ngay'."
+                } else {
+                    msg.ifBlank { "Đăng nhập Google thất bại. Vui lòng thử lại." }
+                }
+                mutableState.update { it.copy(error = friendlyError) }
             } catch (e: Exception) {
                 android.util.Log.e("GoogleSignIn", "Google Sign-In Exception: ${e.message}", e)
-                mutableState.update { it.copy(error = e.localizedMessage ?: "Đăng nhập Google thất bại") }
+                val msg = e.localizedMessage ?: ""
+                val friendlyError = if (msg.contains("no provider dependencies found", ignoreCase = true)) {
+                    "Máy ảo/thiết bị này chưa có Google Play Services. Vui lòng đăng nhập bằng Email/Mật khẩu hoặc chọn 'Trải nghiệm ngay'."
+                } else {
+                    msg.ifBlank { "Đăng nhập Google thất bại" }
+                }
+                mutableState.update { it.copy(error = friendlyError) }
             } finally {
                 mutableState.update { it.copy(isLoading = false) }
             }
+        }
+    }
+
+    fun signInDemoMode() {
+        viewModelScope.launch {
+            mutableState.update { it.copy(isLoading = true, error = null) }
+            val demoEmail = "demo@finlux.app"
+            val demoPass = "finlux123456"
+            when (val result = repository.signIn(demoEmail, demoPass)) {
+                is AppResult.Success -> mutableState.update { it.copy(completed = true) }
+                is AppResult.Error -> {
+                    // Tự động tạo tài khoản demo nếu chưa tồn tại trên Firebase
+                    when (val reg = repository.register("Người Dùng Thử Nghiệm", demoEmail, demoPass)) {
+                        is AppResult.Success -> mutableState.update { it.copy(completed = true) }
+                        is AppResult.Error -> mutableState.update { it.copy(error = reg.message) }
+                    }
+                }
+            }
+            mutableState.update { it.copy(isLoading = false) }
         }
     }
 

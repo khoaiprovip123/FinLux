@@ -717,6 +717,7 @@ fun InstitutionSelectorSection(
         // Category Filter Chips
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp),
         ) {
             items(InstitutionCategory.entries) { cat ->
                 FilterChip(
@@ -727,6 +728,8 @@ fun InstitutionSelectorSection(
                             text = cat.label,
                             fontWeight = if (selectedCategory == cat) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 12.sp,
+                            maxLines = 1,
+                            softWrap = false,
                         )
                     },
                 )

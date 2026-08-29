@@ -432,7 +432,10 @@ private fun WalletEditor(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Loại tài khoản", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(horizontal = 2.dp),
+                ) {
                     items(WalletType.entries) { option ->
                         LiquidGlassCapsule(
                             selected = type == option,
@@ -440,9 +443,11 @@ private fun WalletEditor(
                             accentColor = MaterialTheme.colorScheme.primary,
                         ) {
                             Text(
-                                option.label,
+                                text = option.label,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = if (type == option) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                softWrap = false,
                             )
                         }
                     }
@@ -471,7 +476,7 @@ private fun WalletEditor(
                                 .background(colorFromHex(hex))
                                 .border(
                                     width = if (isSelected) 3.dp else 1.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.White.copy(alpha = 0.4f),
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else tokens.border.copy(alpha = 0.35f),
                                     shape = CircleShape,
                                 )
                                 .clickable { color = hex },

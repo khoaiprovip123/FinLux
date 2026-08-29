@@ -253,27 +253,52 @@ fun SalaryCycleSettingsSheet(
                         )
                     }
 
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Kỳ hiện tại", style = MaterialTheme.typography.labelSmall, color = tokens.onSurfaceVariant)
-                            Text(
-                                text = state.currentCyclePreview.ifBlank { "Chưa xác định" },
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = tokens.onSurface,
-                            )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = tokens.surfaceSoft.copy(alpha = 0.65f),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("Kỳ hiện tại", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                                Text(
+                                    text = state.currentCyclePreview.ifBlank { "Chưa xác định" },
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                    color = tokens.onSurface,
+                                )
+                            }
                         }
-                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Kỳ tiếp theo", style = MaterialTheme.typography.labelSmall, color = tokens.onSurfaceVariant)
-                            Text(
-                                text = state.nextCyclePreview.ifBlank { "Chưa xác định" },
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp,
-                                color = tokens.onSurfaceVariant,
-                            )
+
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = tokens.surfaceSoft.copy(alpha = 0.65f),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("Kỳ tiếp theo", style = MaterialTheme.typography.labelMedium, color = tokens.onSurfaceVariant)
+                                Text(
+                                    text = state.nextCyclePreview.ifBlank { "Chưa xác định" },
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 13.sp,
+                                    color = tokens.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }

@@ -331,10 +331,16 @@ private fun ReferenceBalanceHero(
                     )
                 }
             }
+            val balanceText = if (showBalance) amount.toVnd() else "•••••••• ₫"
+            val balanceFontSize = when {
+                balanceText.length >= 17 -> 20.sp
+                balanceText.length >= 14 -> 23.sp
+                else -> 28.sp
+            }
             Text(
-                if (showBalance) amount.toVnd() else "•••••••• ₫",
+                text = balanceText,
                 color = Color.White,
-                style = MaterialTheme.typography.headlineMedium,
+                fontSize = balanceFontSize,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )

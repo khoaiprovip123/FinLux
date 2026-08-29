@@ -1,10 +1,39 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.12.2 (versionCode 149)
-- **Trạng thái Build:** 🟢 PASSED — Tự động xóa badge chuông thông báo khi mở Hộp thư Thông báo
+- **Phiên bản hiện tại:** v1.12.3 (versionCode 150)
+- **Trạng thái Build:** 🟢 PASSED
+- **Nhiệm vụ đang thực thi:** Kiểm toán UI/UX chuyên sâu Cụm 1 (Trang chủ, Lịch sử GD, Form Thêm/Sửa GD, Sheet Chi tiết GD) trên cả 2 Theme (Modern Luxury & Liquid Glass Classic) trên Dark Mode và Light Mode.
 
-### [Task-NOTIFICATION-AUTO-MARK-AS-READ] — Tự động xóa badge chuông thông báo và đánh dấu đã đọc khi xem Hộp thư
+### [Task-UI-UX-BULK-FIX-14-ISSUES] — Sửa Đồng Loạt Toàn Bộ 14 Lỗi UI/UX Đã Được Phê Duyệt
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  - Giai đoạn 1: Sửa tận gốc Design System (`ModernLiquidGlass.kt`), Dark Mode màn hình Lịch sử (`ModernTransactionsScreen.kt`), Sheet Chi tiết GD (`TransactionDetailSheet.kt`), viền màu thẻ ví (`ModernWalletsScreen.kt`).
+  - Giai đoạn 2: Tăng padding đáy màn hình Báo cáo (`ModernReportsScreen.kt` & `ClassicReportsScreen.kt`), sửa va chạm text thẻ GD, Scrim cho `MainBottomBar.kt`, nhãn 2 dòng cho Category Picker (`FinluxFormComponents.kt`), wrap chip mẫu ví, tối ưu ô Treemap nhỏ.
+  - Giai đoạn 3: Tách dải ngày `SalaryCycleSheet.kt`, đổi icon cảnh báo `ModernBudgetScreen.kt`, làm phẳng capsule kỳ ngân sách, auto-scale font số dư khủng `ModernHomeScreen.kt` & `ClassicHomeScreen.kt`.
+- **Files đã thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt` (Xóa bỏ `luminance() < 0.4f`, đọc trực tiếp `isDark` & `tokens.surfaceSoft`)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt` (Backdrop Liquid Glass, chia tỷ lệ cột tránh đè text, token màu chuẩn Dark/Light)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt` (Xử lý chuỗi ví rỗng, loại bỏ dấu phẩy lơ lửng, nền kính Dark Mode)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt` (Viền chọn màu thẻ đa tầng, FlowRow cho chip loại tài khoản)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt` (Viền chọn màu thẻ đa tầng)
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt` (Padding đáy 120dp chống che khuất nút Xuất báo cáo, Treemap auto-switch icon + %)
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt` (Padding đáy 120dp chống che khuất nút Xuất báo cáo, Treemap auto-switch icon + %)
+  - `app/src/main/java/com/finlux/app/presentation/components/MainBottomBar.kt` (Thêm gradient scrim mờ chống nhìn xuyên thấu danh sách)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (`maxLines = 2` + `lineHeight = 11.sp` cho Category Picker)
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt` (Đổi icon cảnh báo sang `NotificationsActive`, làm phẳng background pill kỳ hạn)
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt` (Đổi icon cảnh báo sang `NotificationsActive`, làm phẳng background pill)
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt` (Bọc dải ngày chu kỳ thành thẻ phân cách rõ ràng)
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt` (Auto-scale font size số dư lớn)
+  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt` (Auto-scale font size số dư lớn)
+- **Kết quả Kiểm Thử & Xác Thực (Verification Results)**:
+  - `./gradlew testDebugUnitTest`: **100% PASS** (0 failed tests).
+  - `./gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+  - Đã cài đặt APK và xác thực thực tế trên thiết bị vật lý `192.168.17.153:39865`. Toàn bộ 14 lỗi đã được chụp ảnh màn hình nghiệm thu thành công.
+- **Tài liệu tham chiếu Single Source of Truth**:
+  - `docs/UI_UX_AUDIT_FINDINGS.md`
+  - `docs/AUDIT_REPORT_CLUSTER_1.md`
+
 - **Status**: `[DONE]`
 - **Nguyên nhân cốt lõi**:
   - Khi người dùng bấm vào chuông thông báo từ Trang chủ để vào `NotificationsScreen`, hệ thống trước đó chỉ gọi `markAsRead(id)` khi người dùng click vào từng thẻ riêng biệt.
