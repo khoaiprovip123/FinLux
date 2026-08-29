@@ -182,44 +182,47 @@ ACTIONS: "Tạo tài khoản" → Firebase createUser + seed dữ liệu mặc �
 Route: /home
 LAYOUT:
 ┌───────────────────────────────────────────┐
-│ CLEAR Glass Profile Header: Avatar | "Xin chào" + {tên} | Thông báo │
+│ Prism Header: Avatar | "Xin chào" + {tên} | Thông báo │
 ├───────────────────────────────────────────┤
-│ GradientHeroCard "Tổng tài sản": số dư, xu hướng, nút ẩn/hiện │
-├───────────────────────────────────────────┤
-│ Prism: Carousel 3 KPI: Thu tháng này | Chi tháng này | Dòng tiền ròng │
-│   - Một KPI lớn tại một thời điểm; tab 3 lựa chọn và trang kế bên có thể vuốt │
-│   - Tự chuyển sang KPI kế tiếp sau 10 giây; sau thao tác tay phải đếm lại 10 giây │
+│ Prism: Tổng quan tài chính 4 thẻ trong một carousel duy nhất │
+│   Số dư | Thu nhập | Chi tiêu | Dòng tiền                  │
+│   - Hero cao 196dp; bỏ tiêu đề, badge tự động và hàng tab rời phía trên │
+│   - Vuốt trực tiếp trên toàn bộ hero; chỉ báo 4 trang nằm trong đáy thẻ │
+│   - Số dư giữ nút ẩn/hiện, tài sản ròng và dư nợ; không có hero tách rời │
+│   - Mỗi thẻ có gradient semantic và hình nền vector riêng ở vùng bên phải: │
+│     ví/thẻ/đồng xu, biểu đồ tăng trưởng, vòng phân bổ, đường xu hướng dữ liệu │
+│   - Tự chuyển sang thẻ kế tiếp sau 10 giây; sau thao tác tay phải đếm lại 10 giây │
 │   - Tôn trọng tùy chọn Animation: trượt mượt khi bật, chuyển tức thời khi tắt │
-│   - Số tiền co cỡ chữ theo ngưỡng độ dài nhưng giữ baseline ổn định │
-│   - Dùng LiquidGlass REGULAR, chromatic rim và spring 0.975 khi chạm │
+│   - Số tiền 27–36sp, co cỡ chữ theo độ dài nhưng giữ baseline ổn định │
+│   - Dùng Prism solid/soft Surface, viền token mảnh; không blur, glow hoặc Liquid Glass │
 │   - Không hiển thị thẻ "Kỳ tài chính" riêng trên Home │
 ├───────────────────────────────────────────┤
-│ GlassCard donut "Chi tiêu theo danh mục" + chú giải │
+│ Prism Surface donut "Chi tiêu theo danh mục" + chú giải │
 │   - Chú giải mỗi danh mục dùng 2 dòng: tên; số tiền, tỷ trọng tách bên phải │
 │ Danh sách giao dịch gần đây                 │
 │   - Row: [icon danh mục] Tên danh mục | ghi chú | số tiền (+/- màu xanh/đỏ) │
 ├───────────────────────────────────────────┤
-│ GlassBottomNav: Trang chủ | Lịch sử | [FAB +] | Báo cáo | Hồ sơ │
+│ PrismBottomNav: Trang chủ | Lịch sử | [FAB +] | Báo cáo | Hồ sơ │
 └───────────────────────────────────────────┘
 
 STATES:
-  - Loading: shimmer skeleton dạng kính mờ
+  - Loading: shimmer skeleton trên soft surface Prism
   - Error: "Không tải được dữ liệu, thử lại" + nút Retry
 
 ACTIONS:
   - FAB "+" → menu tạo nhanh: Thêm Thu, Thêm Chi, Chuyển tiền, Quét hóa đơn, Thêm mục tiêu
-  - Tap KPI "Thu tháng này" → /income; "Chi tháng này" → /expense; "Dòng tiền ròng" → /reports
+  - Tap thẻ "Số dư" → /wallets; "Thu nhập" → /income; "Chi tiêu" → /expense; "Dòng tiền" → /reports
   - Tap giao dịch → /transaction/{id} (sửa)
   - Tap avatar → /profile
   - Tap thông báo → /notifications
   - Swipe trái trên item giao dịch → hiện nút Xóa
 
 HOME HEADER:
-  - Dùng một capsule Liquid Glass CLEAR bo góc 22dp, nằm trọn dưới status bar.
-  - Avatar 48dp đặt bên trái; lời chào và tên người dùng ở giữa, tên dài ellipsis một dòng.
-  - Nút thông báo 44dp đặt bên phải; badge hiển thị số chưa đọc và rút gọn thành "9+".
+  - Dùng Row Prism trong suốt, cao nội dung 52dp và nằm trọn dưới status bar; không bọc card/kính.
+  - Avatar 44dp đặt bên trái; lời chào và tên người dùng ở giữa, tên dài ellipsis một dòng.
+  - Nút thông báo 42dp dùng `surfaceSoft` đặt bên phải; badge hiển thị số chưa đọc và rút gọn thành "9+".
   - Chạm avatar hoặc cụm tên → /profile; chạm chuông → /notifications.
-  - Màu kính, viền, chữ và icon lấy từ `LocalFinluxTokens`; tự thích ứng mọi VisualStyle và Dark/Light.
+  - Màu nền, viền, chữ và icon lấy từ `LocalFinluxTokens`; tự thích ứng Dark/Light của FinLux Prism.
 ```
 
 ## 5. SCREEN: Thêm/Sửa giao dịch (Bottom Sheet hoặc full screen)

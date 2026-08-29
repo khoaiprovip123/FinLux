@@ -188,10 +188,13 @@ fun LiquidGlassSurface(
             .border(rimBorder, shape),
     ) {
         // Optical layers remain behind content: text and icons are never blurred or tinted.
-        Box(modifier = Modifier.fillMaxSize().background(surfaceFill))
+        // Decorative optical layers must not participate in measuring wrap-content cards.
+        // fillMaxSize() can consume a loose Scaffold topBar height and stretch a compact
+        // glass header across the screen; matchParentSize() follows the content-measured box.
+        Box(modifier = Modifier.matchParentSize().background(surfaceFill))
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .matchParentSize()
                 .background(
                     Brush.radialGradient(
                         colors = listOf(

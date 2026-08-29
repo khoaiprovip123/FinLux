@@ -43,6 +43,10 @@
 - [DONE 2026-08-28] Home/Lịch sử Prism dùng chung thẻ nhóm giao dịch theo bố cục menu Hồ sơ
 - [DONE 2026-08-28] Header Home Prism dạng CLEAR Liquid Glass capsule: avatar trái, tên co giãn, badge thông báo số lượng
 - [DONE 2026-08-28] Carousel Home Thu/Chi/Dòng tiền: thẻ lớn dễ đọc, tab/vuốt tay, tự chuyển vòng mỗi 10 giây
+- [DONE 2026-08-29] Hotfix header Home: khóa 68dp và sửa lớp quang học Liquid Glass không tham gia đo wrap-content
+- [DONE 2026-08-29] Đồng bộ lại Home FinLux Prism: bỏ Liquid Glass khỏi header, carousel KPI và thẻ phân tích
+- [DONE 2026-08-29] Gộp hero và KPI thành carousel Tổng quan tài chính 4 thẻ; mỗi thẻ có gradient và hình nền vector riêng
+- [DONE 2026-08-29] Mở rộng carousel thành hero 196dp, bỏ header/tab rời, tăng typography và đặt chỉ báo trang bên trong thẻ
 - [DONE 2026-08-27] Logo thương hiệu nền trắng + ẩn thẻ kỳ tài chính Home + cân giữa bộ ba KPI Prism
 - [DONE 2026-08-27] Tăng tương phản Home Prism, KPI Liquid Glass co chữ thích ứng và chú giải chart hai dòng
 - Kiểm tra accessibility, contrast trên nền kính mờ

@@ -58,18 +58,20 @@ functions/                    -- Cloud Functions (TypeScript), xem DATA_SPEC.md 
   `tools/sync-financial-institution-icons.ps1`.
 - Logo có tài nguyên thương hiệu dùng semantic token `brandLogoSurface/brandLogoBorder` để luôn có
   nền nhận diện trắng rõ ràng; chỉ monogram/fallback WalletType mới dùng nền accent gradient.
-- Home Prism tái sử dụng `modern.GlassCard` ở KPI và thẻ phân tích; lớp quang học nằm sau nội dung,
-  số tiền dùng baseline cố định và co cỡ chữ theo độ dài để không tràn trên màn hình hẹp.
+- Home Prism dùng Material `Surface` với `LocalFinluxTokens` ở KPI và thẻ phân tích; không dùng
+  blur/Liquid Glass/glow. Số tiền dùng baseline cố định và co cỡ chữ theo độ dài để không tràn.
 - Kỳ tài chính dùng `FinancialPeriodResolver` ở Home/History/Income/Expense/Reports; feature không tự
   suy diễn mốc tháng khi Salary Cycle đang bật.
 - Các phép diễn giải dùng chung (`collapseInternalTransferPairs`, `assetWallets`,
   `netGoalContribution`) nằm trong domain model để Home, History và Reports không lệch công thức.
 - Home/Lịch sử Prism dùng `core/designsystem/component/FinluxTransactionGroup` cho danh sách kiểu
   nhóm menu Hồ sơ; feature chỉ truyền dữ liệu và callback, không tự dựng lại row/card.
-- Header Home Prism dùng `modern.GlassCard` chế độ CLEAR làm capsule hồ sơ dùng token động; avatar,
-  lời chào/tên và thông báo là ba vùng thao tác riêng, an toàn với status bar và tên dài.
-- Bộ Thu/Chi/Dòng tiền trên Home Prism là một `HorizontalPager` ba trang dùng `modern.GlassCard`
-  REGULAR: chọn qua tab, vuốt tay hoặc tự tiến sau 10 giây; mọi thao tác tay đều đặt lại thời gian chờ.
+- Header Home Prism là Row 52dp không container, gồm avatar, lời chào/tên và nút thông báo soft surface.
+- Tổng quan Home Prism là một `HorizontalPager` bốn trang Số dư/Thu nhập/Chi tiêu/Dòng tiền, không
+  còn hero số dư tách rời, tiêu đề/badge/hàng tab. Hero cao 196dp, vuốt trực tiếp hoặc tự tiến sau
+  10 giây; mọi thao tác tay đều đặt lại thời gian chờ và chỉ báo trang nằm trong đáy thẻ. Mỗi trang
+  dùng gradient theo semantic của chỉ số và Canvas vector riêng đặt ở vùng phải để nhận diện nhanh,
+  không chồng lên số tiền và không dùng Liquid Glass.
 - Vuốt bốn tab chính được nhận ở root, phần nội dung bám theo ngón tay và có edge resistance; bottom
   navigation không dịch chuyển cùng trang. Component con đã consume gesture vẫn được ưu tiên.
 

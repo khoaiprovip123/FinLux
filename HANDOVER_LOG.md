@@ -1,9 +1,26 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.12.3 (versionCode 150)
-- **Trạng thái Build:** 🟢 PASSED
-- **Nhiệm vụ đang thực thi:** Kiểm toán UI/UX chuyên sâu Cụm 1 (Trang chủ, Lịch sử GD, Form Thêm/Sửa GD, Sheet Chi tiết GD) trên cả 2 Theme (Modern Luxury & Liquid Glass Classic) trên Dark Mode và Light Mode.
+- **Phiên bản hiện tại:** v1.13.0 (versionCode 151)
+- **Trạng thái Build:** 🟢 PASSED — Hoàn tất sửa dứt điểm 14 lỗi UI/UX toàn diện, nâng cấp Home FinLux Prism Data-First Hero Cards và hỗ trợ chế độ Dùng thử.
+
+### [Task-PRISM-HERO-TEXTURE-AND-BIGGER-AMOUNT] — Nâng cỡ chữ số tiền siêu lớn in đậm và thiết kế họa tiết chìm chuyên biệt cho từng thẻ
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Nâng kích thước font số tiền lên cỡ siêu lớn `38sp` (ExtraBold/Bold), tăng độ tương phản và nổi bật thị giác tức thì.
+  2. Thiết kế họa tiết nền (ambient textures & watermark patterns) chìm tinh xảo riêng biệt cho 4 thẻ:
+     - Thẻ Ví: Họa tiết vòm bảo mật & lưới khối đa tầng (Vault Rings & Security Mesh).
+     - Thẻ Thu: Họa tiết dải sáng tăng trưởng cực quang & chevron dâng sóng (Aurora Ascent Waves).
+     - Thẻ Chi: Họa tiết cung đo đa tầng ngân sách & quỹ đạo chi tiêu (Radar Gauge & Precision Curves).
+     - Thẻ Dòng tiền: Họa tiết sóng tuần hoàn nhịp điệu kép (Harmonic Flow Vectors & Dot Matrix).
+  3. Đảm bảo toàn bộ họa tiết vẽ ở lớp nền (`alpha` tinh tế 0.08f–0.18f), không che khuất dữ liệu số, Mini Bar Chart hay các nút bấm.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+- **Kết quả kiểm thử & xác thực**:
+  - `gradlew testDebugUnitTest`: **100% PASS** (218/218 tests).
+  - `gradlew assembleDebug`: Build thành công.
+  - Cài đặt lên máy thật, xác minh visual trực tiếp trên cả 4 thẻ đạt chuẩn ngân hàng số sang trọng 10/10.
 
 ### [Task-UI-UX-BULK-FIX-14-ISSUES] — Sửa Đồng Loạt Toàn Bộ 14 Lỗi UI/UX Đã Được Phê Duyệt
 - **Status**: `[DONE]`
@@ -26,6 +43,7 @@
   - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt` (Bọc dải ngày chu kỳ thành thẻ phân cách rõ ràng)
   - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt` (Auto-scale font size số dư lớn)
   - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt` (Auto-scale font size số dư lớn)
+  - `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`, `AuthViewModel.kt`, `SplashViewModel.kt`, `FirebaseAuthRepository.kt` (Chế độ dùng thử & xử lý thiết bị không có Play Services)
 - **Kết quả Kiểm Thử & Xác Thực (Verification Results)**:
   - `./gradlew testDebugUnitTest`: **100% PASS** (0 failed tests).
   - `./gradlew assembleDebug`: **BUILD SUCCESSFUL**.
@@ -34,76 +52,150 @@
   - `docs/UI_UX_AUDIT_FINDINGS.md`
   - `docs/AUDIT_REPORT_CLUSTER_1.md`
 
+### [Task-PRISM-HERO-TEXTURE-AND-BIGGER-AMOUNT] — Nâng cỡ chữ số tiền siêu lớn in đậm và thiết kế họa tiết chìm chuyên biệt cho từng thẻ
 - **Status**: `[DONE]`
-- **Nguyên nhân cốt lõi**:
-  - Khi người dùng bấm vào chuông thông báo từ Trang chủ để vào `NotificationsScreen`, hệ thống trước đó chỉ gọi `markAsRead(id)` khi người dùng click vào từng thẻ riêng biệt.
-  - Do người dùng chỉ vào xem danh sách mà không click vào từng thẻ (đặc biệt là các cảnh báo ngân sách), các bản ghi vẫn giữ nguyên `isRead = false`, khiến badge số lượng thông báo chưa đọc trên icon chuông Trang chủ không bao giờ biến mất.
-  - Tại `FinluxNavHost.kt`, `Scaffold.bottomBar` ban đầu không có animation/transition check, khiến BottomBar hiển thị tức thì khi chuyển route từ Splash sang Home làm lộ thanh điều hướng trắng dưới đáy màn hình tím lúc đang Splash.
-  - Tại `ModernHomeScreen.kt` và `ClassicHomeScreen.kt`, `ReferenceHeader` bị hardcode vẽ một `Box(Modifier.size(7.dp).background(ExpenseRed, CircleShape))` đỏ tĩnh bên góc chuông thay vì kiểm tra `unreadNotificationsCount > 0`.
-- **Giải pháp xử lý**:
-  - Bổ sung hàm `markAllAsRead()` vào interface `NotificationRepository`, `FirebaseNotificationRepository` (dùng Firestore Batch Update `isRead = true` cho các doc có `isRead == false`), và `DemoFinluxRepository`.
-  - Trong `NotificationsViewModel`: Thêm hàm `markAllAsRead(notifyUser: Boolean)`.
-  - Trong `NotificationsScreen`: Thêm `LaunchedEffect(Unit) { viewModel.markAllAsRead() }` để tự động dọn sạch trạng thái chưa đọc ngay khi mở màn hình, đồng thời thêm icon `DoneAll` trên TopBar, nút bấm trực quan `[✔ Đánh dấu tất cả đã đọc]` dưới thanh Filter, và hiển thị chấm tròn chỉ báo chưa đọc trực quan trên thẻ.
-  - Trong `FinluxNavHost.kt`: Bọc `MainBottomBar` bằng `AnimatedVisibility` (fade + slide vertical), bảo đảm thanh điều hướng đáy chỉ xuất hiện mượt mà khi đã vào màn hình chính, hoàn toàn biến mất trên màn hình Splash/Auth.
-  - Trong `ModernHomeScreen.kt` và `ClassicHomeScreen.kt`: Bổ sung tham số `unreadCount: Int` cho `ReferenceHeader`, chỉ hiển thị badge/chấm đỏ kèm số đếm khi `unreadCount > 0`.
-- **Files thực tế chỉnh sửa**:
-  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
-  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
-  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
-  - `app/src/main/java/com/finlux/app/domain/repository/NotificationRepository.kt`
-  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseNotificationRepository.kt`
-  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
-  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsViewModel.kt`
-  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
-  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt`
-  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
-  - `app/src/test/java/com/finlux/app/presentation/notifications/NotificationsViewModelTest.kt`
-  - `app/build.gradle.kts` (versionCode 149, versionName 1.12.2)
-  - `CHANGELOG.md`
-  - `HANDOVER_LOG.md`
-- **Kết quả kiểm thử & Bàn giao**:
-  - Unit Test: `gradlew testDebugUnitTest` -> **PASS 217/217 tests (100% PASS, 0 failure, 0 error)**.
-  - Build APK: `gradlew assembleDebug` -> **SUCCESS**.
-  - Kiểm thử trực tiếp trên điện thoại: Cài đặt bản dựng `v1.12.2`, mở màn hình Thông báo, sau đó quay lại Trang chủ: Chụp ảnh màn hình xác nhận badge đỏ số `1` trên chuông thông báo đã biến mất hoàn toàn, icon chuông trở về trạng thái sạch sẽ.
+- **Mục tiêu**:
+  1. Nâng kích thước font số tiền lên cỡ siêu lớn `38sp` (ExtraBold/Bold), tăng độ tương phản và nổi bật thị giác tức thì.
+  2. Thiết kế họa tiết nền (ambient textures & watermark patterns) chìm tinh xảo riêng biệt cho 4 thẻ:
+     - Thẻ Ví: Họa tiết vòm bảo mật & lưới khối đa tầng (Vault Rings & Security Mesh).
+     - Thẻ Thu: Họa tiết dải sáng tăng trưởng cực quang & chevron dâng sóng (Aurora Ascent Waves).
+     - Thẻ Chi: Họa tiết cung đo đa tầng ngân sách & quỹ đạo chi tiêu (Radar Gauge & Precision Curves).
+     - Thẻ Dòng tiền: Họa tiết sóng tuần hoàn nhịp điệu kép (Harmonic Flow Vectors & Dot Matrix).
+  3. Đảm bảo toàn bộ họa tiết vẽ ở lớp nền (`alpha` tinh tế 0.08f–0.18f), không che khuất dữ liệu số, Mini Bar Chart hay các nút bấm.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+- **Kết quả kiểm thử & xác thực**:
+  - `gradlew testDebugUnitTest`: **100% PASS** (218/218 tests).
+  - `gradlew assembleDebug`: Build thành công trong 22s.
+  - Cài đặt lên máy thật `7f4ca06a` qua ADB, xác minh visual trực tiếp trên cả 4 thẻ đạt chuẩn ngân hàng số sang trọng 10/10.
 
-### [Task-PRISM-HOME-LAYOUT-FIX] — Sửa lỗi Trang chủ Prism HomeScreen không hiển thị nội dung do xung đột Nested Scaffold TopBar
+### [Task-PRISM-HERO-DATA-FIRST-REDESIGN] — Tái cấu trúc 4 thẻ Hero theo chuẩn ngân hàng Data-First
 - **Status**: `[DONE]`
-- **Nguyên nhân cốt lõi**:
-  - `PrismHomeScreen.kt` sử dụng `FinluxScreenScaffold(topBar = { PrismHomeTopHeader(...) })` bên trong `NavHost`, trong khi root `FinluxNavHost` đã có một `Scaffold` bên ngoài.
-  - Cấu trúc lồng `Scaffold.topBar` kết hợp `.statusBarsPadding()` và `scaffoldPadding` đã khiến layout nội dung bên trong `FinluxLazyColumn` bị xung đột chiều cao và không thể đo đạc/render các item thẻ con trên thiết bị thực tế.
-- **Giải pháp xử lý**:
-  - Chuyển `PrismHomeScreen.kt` sang kiến trúc phẳng chuẩn giống `ClassicHomeScreen` / `ModernHomeScreen`: Sử dụng `Box` + `LazyColumn` trực tiếp.
-  - Đưa `PrismHomeTopHeader` thành `item {}` đầu tiên trong `LazyColumn`, hỗ trợ cuộn mượt mà đồng bộ và triệt tiêu hoàn toàn xung đột đo đạc giữa nested `Scaffold`.
-  - Căn chỉnh `contentPadding` (`start = 16.dp, end = 16.dp, bottom = 96.dp`) để đảm bảo các thẻ số dư, Carousel Thu/Chi/Dòng tiền, Quick Actions, Donut Chart danh mục và Danh sách giao dịch hiển thị hoàn hảo, không bị đè bởi Bottom Navigation Bar.
+- **Mục tiêu**: Tái thiết kế toàn bộ 4 thẻ Hero Tổng quan theo tiêu chuẩn data-first, ngân hàng chuyên nghiệp:
+  1. Đổi tiêu đề sang kỳ linh hoạt ("Thu kỳ này", "Chi kỳ này", "Dòng tiền kỳ này", "Số dư hiện có") kèm khoảng thời gian thực tế `dd/MM – dd/MM`.
+  2. Số tiền chuẩn định dạng `30-32sp`, Bold, biểu tượng `₫`.
+  3. Dòng phụ phản ánh thông tin thực tế: số lượng khoản thu/chi ("12 khoản thu", "28 khoản chi") thay vì lặp lại tiêu đề.
+  4. Bỏ các hình minh họa và mũi tên gây hiểu sai; thay bằng Mini Bar Chart hiển thị phân bổ giao dịch thực tế theo các khoảng trong kỳ.
+  5. Thêm nút "Xem chi tiết ›" trực tiếp chuyển đến màn hình tương ứng.
+  6. Thay thế các chấm carousel bằng Named Morphing Capsule Indicator dễ hiểu, có thể bấm chọn trang.
+  7. Giảm chiều cao card từ 196dp xuống 180dp gọn gàng, tinh tế.
+  8. Chuẩn hóa màu ngữ nghĩa cao cấp, giảm độ chói: Xanh ngọc (Thu), Đỏ san hô (Chi), Xanh tím (Dòng tiền), Xanh navy (Ví).
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+- **Kết quả kiểm thử & xác thực**:
+  - `gradlew testDebugUnitTest`: **100% PASS** (218/218 tests).
+  - `gradlew assembleDebug`: Build thành công trong 7s.
+  - Cài đặt lên máy thật `7f4ca06a` qua ADB, xác minh visual trực tiếp trên cả 4 thẻ đạt chuẩn 10/10.
+
+### [Task-PRISM-HERO-AMOUNT-FONT-UPDATE] — Nâng cỡ chữ và chuẩn hóa font hệ thống cho số tiền 4 thẻ Hero
+- **Status**: `[DONE]`
+- **Mục tiêu**: Nâng kích thước font chữ số tiền của 4 thẻ Hero Tổng quan tài chính lên cỡ lớn hơn (từ 36sp lên 38sp đối với các số tiền thông dụng), áp dụng font chữ hệ thống `FontFamily.Default` với `FontWeight.Bold`, mở rộng khung chữ lên `fillMaxWidth(0.80f)` và chỉnh `letterSpacing = (-0.2).sp` để chữ số to rõ, sắc nét, tự nhiên và không bị co ép.
+- **Scope**: `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`, `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`, `HANDOVER_LOG.md`.
+- **Kết quả thực hiện**:
+  1. Nâng cỡ chữ `prismOverviewAmountFontSizeSp`: độ dài thông dụng lên `38sp` (trước 36sp), ngưỡng lớn hơn điều chỉnh lên `34sp / 31sp / 28sp`.
+  2. Chuẩn hóa font hệ thống `FontFamily.Default` + `FontWeight.Bold`, khoảng cách ký tự `letterSpacing = (-0.2).sp` hiển thị thoáng và sắc nét trên mọi thiết bị.
+  3. Tăng tỷ lệ chiều rộng khối chữ `Column` lên `fillMaxWidth(0.80f)` đảm bảo không bị ngắt dòng hay tràn ký hiệu tiền tệ.
+- **Kiểm thử và xác nhận**:
+  - `gradlew testDebugUnitTest`: **PASS 100%** (217/217 tests).
+  - Cài đặt trực tiếp lên thiết bị thật `7f4ca06a` qua ADB và chụp màn hình xác minh hiển thị thực tế hoàn hảo.
+
+### [Task-PRISM-HOME-HERO-BACKGROUND-REDESIGN] — Thiết kế lại hình nền nghệ thuật 4 thẻ Hero Tổng quan tài chính
+- **Status**: `[DONE]`
+- **Mục tiêu**: Tái thiết kế toàn diện hình nền nghệ thuật Canvas đa lớp cho 4 thẻ Hero Tổng quan (Số dư ví, Thu nhập, Chi tiêu, Dòng tiền ròng) theo phong cách Liquid Glass siêu cao cấp: ánh sáng phản quang đa tầng (ambient radial orbs), sóng lượn thanh thoát, lưới điểm ma trận tài chính, radar phân bổ chi tiết và biểu tượng nhận diện 3D nổi khối sang trọng thay thế các nét vẽ cơ bản trước đó.
+- **Scope**: `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`, `HANDOVER_LOG.md`.
+- **Kết quả thực hiện**:
+  1. **Đồng bộ bảng màu chuyển sắc (Rich Semantic Gradients)**: Tách biệt 4 palette màu cao cấp cho từng thẻ (Số dư: Royal Cobalt & Vivid Violet, Thu: Emerald & Jade Aurora, Chi: Velvet Ruby & Sunset Crimson, Dòng tiền: Midnight Indigo & Cyber Azure) kèm đổ bóng màu `spotColor` và viền kính phản chiếu đa tầng.
+  2. **Nghệ thuật Canvas đa lớp chuyên sâu cho 4 thẻ**:
+     - *Thẻ 1 - Số dư hiện có*: Vòng quỹ đạo két an toàn (orbital vault rings), dải sóng thanh thoát, đồng xu kính bán trong suốt phản quang, bụi sao tài chính (constellation dust) và ánh sao ✦.
+     - *Thẻ 2 - Thu tháng này*: Vùng tăng trưởng chuyển màu, 4 cột trụ tăng trưởng thủy tinh frosted glass có nắp phản quang, đường xu hướng bứt phá và ngôi sao đỉnh cao (apex star ✦).
+     - *Thẻ 3 - Chi tháng này*: Radar ngân sách chính xác với sweep gradient, vòng phân độ chia vạch tọa độ lượng giác, đường phân bổ cột mốc chi tiêu với các điểm nút phát quang.
+     - *Thẻ 4 - Dòng tiền ròng*: Hai đường sóng hình sin điều hòa kép (Inflow & Outflow) giao nhau tại các điểm cân bằng tài chính phát sáng, kết hợp lưới ma trận số 4x4.
+  3. **Huy hiệu kính nổi khối (Floating Prism Badge)**: Nâng cấp khung icon bên phải thành khối kính Frosted Glass Crystal đa lớp phản xạ viền sáng và đổ bóng nổi khối 3D.
+- **Kiểm thử và xác nhận**:
+  - `gradlew testDebugUnitTest`: **PASS 100%** (217/217 tests).
+  - Cài đặt trực tiếp lên thiết bị thật `7f4ca06a` qua ADB và kiểm tra visual capture screenshot thực tế cả 4 thẻ thành công mỹ mãn.
 - **Files thực tế chỉnh sửa**:
   - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
   - `HANDOVER_LOG.md`
-- **Kết quả kiểm thử & Bàn giao**:
-  - Unit Test: `gradlew testDebugUnitTest` -> **PASS 216/216 tests (100% PASS, 0 failure, 0 error)**.
-  - Build APK: `gradlew assembleDebug` -> **SUCCESS**.
-  - Kiểm thử trực tiếp trên điện thoại: Cài đặt qua ADB, khởi chạy ứng dụng và chụp ảnh màn hình xác nhận: Trang chủ hiển thị 100% đầy đủ, sắc nét toàn bộ các thẻ KPI, Hero Card số dư tài sản/nợ, Carousel Thu chi, Quick Actions, Donut Chart chi tiêu theo danh mục và danh sách giao dịch gần nhất.
 
-### [Task-NOTIFICATION-DEDUPLICATION-FIX] — Khắc phục triệt để lỗi trùng lặp thông báo nhắc nhở hóa đơn
+### [Task-PRISM-HOME-FULL-HERO-CAROUSEL] — Hero tài chính toàn khối
 - **Status**: `[DONE]`
-- **Mục tiêu**:
-  1. Loại bỏ Document ID ngẫu nhiên (`UUID.randomUUID()`) trong `AlarmReminderScheduler.kt`, chuyển sang **Deterministic Idempotency Key** (`reminder_${reminderId}_${triggerEpochDay}`) để Firestore tự động merge vào 1 document duy nhất.
-  2. Sửa lỗi `triggerAt = maxOf(nextTriggerDate, now + 1_000ms)` trong `AlarmReminderScheduler.schedule` gây trigger lặp lại tức thì 1 giây sau; tự động tính mốc tương lai hợp lệ qua `ReminderUtils.computeNextTriggerDate`.
-  3. Đưa `ReminderTriggerDeduplicator` check đồng bộ ngay trong `onReceive()` trước khi launch coroutine để ngăn chặn race condition cấp OS.
-  4. Nâng cấp `NotificationsViewModel.kt` đồng bộ trạng thái `isPaid = true` cho toàn bộ thông báo liên quan qua `markAsPaidByReminderId`.
-  5. Thêm UI/Flow Deduplication Guard trong `NotificationsViewModel.observeNotifications` để làm sạch danh sách thông báo.
-  6. Bổ sung Unit Test `NotificationsViewModelTest.kt` và `AlarmReminderSchedulerTest.kt` kiểm thử tính Idempotent và Deduplication.
+- **Mục tiêu**: Bỏ tiêu đề/badge/hàng tab rời của Tổng quan tài chính; mở rộng thành một hero card lớn vuốt trực tiếp giữa 4 trang và tự chuyển 10 giây.
+- **Scope dự kiến**: `PrismHomeScreen.kt`, test layout Home và tài liệu UI/Context/Plan/Changelog/Handover.
+- **Rà soát nghiệp vụ**: Chỉ đổi trình bày; giữ nguyên dữ liệu, route, phép tính và schema. `BA_SPEC.md`/`DATA_SPEC.md` không đổi.
+- **Kết quả**:
+  1. Đã bỏ hoàn toàn tiêu đề `Tổng quan tài chính`, badge `Tự động · 10s` và hàng bốn tab rời.
+  2. `HorizontalPager` trở thành hero 196dp toàn khối; vuốt trực tiếp trên thẻ, tự chuyển vòng 10 giây và đặt chỉ báo trang bên trong cạnh dưới.
+  3. Typography số tiền dùng dải 27–36sp; nhãn, mô tả và pill trạng thái tăng cỡ/weight đồng nhất.
+  4. Nền bốn trang dùng gradient semantic rõ hơn; Canvas vector tăng tương phản nhưng vẫn giới hạn ở vùng phải để không che số liệu.
 - **Files thực tế chỉnh sửa**:
-  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`
-  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsViewModel.kt`
-  - `app/src/test/java/com/finlux/app/presentation/notifications/NotificationsViewModelTest.kt`
-  - `app/src/test/java/com/finlux/app/data/local/reminder/AlarmReminderSchedulerTest.kt`
-  - `app/build.gradle.kts` (versionCode 148, versionName 1.12.1)
-  - `CHANGELOG.md`
-  - `HANDOVER_LOG.md`
-- **Kết quả kiểm thử & Bàn giao**:
-  - Unit Test: `gradlew testDebugUnitTest` -> **PASS 216/216 tests (100% PASS, 0 failure, 0 error)**.
-  - Build APK: `gradlew assembleDebug` -> **SUCCESS** (File APK: `app/build/outputs/apk/debug/app-debug.apk`, 33,583,713 bytes).
-  - Nạp thiết bị thực tế: Đã gỡ bỏ bản cũ và cài đặt thành công bản APK `v1.12.1` lên điện thoại qua ADB (thiết bị Android thử nghiệm). Đã khởi chạy `MainActivity` thành công.
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+  - `docs/UI_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`.
+- **Kiểm thử và cài đặt**:
+  - `gradlew :app:compileDebugKotlin :app:testDebugUnitTest`: **PASS** — 217/217 tests.
+  - `gradlew :app:assembleDebug`: **BUILD SUCCESSFUL**; APK 34,184,800 bytes.
+  - ADB `7f4ca06a` (`2107119DC`): cài đè **Success**, `versionName=1.12.0`, `versionCode=147`, PID `27832`.
+  - Hậu kiểm screenshot thiết bị: hero đứng yên hiển thị đủ số dư, mô tả, hình nền và 4 chỉ báo; không còn header/tab rời hoặc tràn chữ.
+
+### [Task-PRISM-HOME-MERGED-FINANCIAL-OVERVIEW] — Gộp Hero và carousel KPI
+- **Status**: `[DONE]`
+- **Mục tiêu**: Gộp Số dư hiện có và carousel Thu/Chi/Dòng tiền thành một thẻ Tổng quan tài chính Prism duy nhất, giữ tự chuyển 10 giây; mỗi thẻ có hình nền nhận diện riêng.
+- **Scope dự kiến**: `PrismHomeScreen.kt`, test layout Home và tài liệu UI/Context/Plan/Changelog/Handover.
+- **Rà soát nghiệp vụ**: Chỉ thay đổi bố cục; giữ nguyên dữ liệu, route, phép tính và schema. `BA_SPEC.md`/`DATA_SPEC.md` không đổi.
+- **Kết quả**:
+  1. Hero Số dư và cụm KPI cũ đã được thay bằng một `PrismFinancialOverviewCard` có đúng 4 trang: Số dư, Thu nhập, Chi tiêu, Dòng tiền.
+  2. Mỗi trang có gradient theo token theme và Canvas vector riêng: ví/thẻ/đồng xu, biểu đồ tăng trưởng, vòng phân bổ chi, đường xu hướng dòng tiền.
+  3. Giữ chọn tab, vuốt trực tiếp, tự chuyển vòng 10 giây, tôn trọng cấu hình Animation và tự co cỡ chữ số tiền.
+  4. Hình nền nằm ở vùng phải, dùng opacity semantic để không che số liệu và đồng bộ cả theme sáng/tối.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+  - `docs/UI_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`.
+- **Kiểm thử và cài đặt**:
+  - `gradlew :app:testDebugUnitTest :app:assembleDebug`: **PASS** — 217/217 tests, 0 failed, 0 errors, 0 skipped.
+  - APK debug: `app/build/outputs/apk/debug/app-debug.apk` (34,192,239 bytes).
+  - ADB `7f4ca06a` (`2107119DC`): cài đè **Success**, package `1.12.0`, PID `23845`.
+  - Screenshot hậu kiểm thu được khung đen vì màn hình thiết bị tắt/khóa; build, cài đặt và tiến trình app đã được xác nhận.
+
+### [Task-PRISM-HOME-NO-LIQUID-GLASS] — Trả Home về đúng ngôn ngữ FinLux Prism
+- **Status**: `[DONE]`
+- **Mục tiêu**: Loại bỏ hiệu ứng Liquid Glass khỏi header, carousel Thu/Chi/Dòng tiền và thẻ phân tích Home Prism; giữ vuốt và tự chuyển 10 giây.
+- **Kết quả**:
+  1. Header đổi thành Row Prism 52dp không container, avatar 44dp và nút thông báo `surfaceSoft` 42dp.
+  2. Carousel KPI dùng `Surface` solid/soft, viền semantic mảnh; loại bỏ blur, chromatic rim, glow, shadow màu và scale kính.
+  3. Thẻ phân tích danh mục chuyển từ `LiquidGlassCard` sang Prism `Surface` dùng tokens.
+  4. Giữ nguyên tab Thu/Chi/Dòng tiền, vuốt bám tay, tự chuyển vòng 10 giây và tôn trọng tùy chọn Animation.
+- **Files thực tế chỉnh sửa**: `PrismHomeScreen.kt`, `PrismHomeLayoutTest.kt`, `ModernLiquidGlass.kt` và `UI_SPEC.md`, `CONTEXT.md`, `PLAN.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`.
+- **Rà soát nghiệp vụ**: Không đổi dữ liệu, route, phép tính hoặc schema; `BA_SPEC.md` và `DATA_SPEC.md` không đổi.
+- **Kiểm thử và cài đặt**:
+  - `gradlew :app:compileDebugKotlin :app:testDebugUnitTest`: **PASS**.
+  - `gradlew assembleDebug`: **PASS** — 215/215 tests, 0 failed, 0 errors, 0 skipped.
+  - APK debug: `app/build/outputs/apk/debug/app-debug.apk` (34,161,436 bytes).
+  - ADB `7f4ca06a` (`2107119DC`): cài đè **Success**, package `1.12.0`, PID `12640`.
+  - Screenshot hậu kiểm chỉ thu được màn hình khóa vì thiết bị yêu cầu người dùng mở khóa; không thể xác nhận pixel trực tiếp trong app qua ADB.
+
+### [Task-FIX-PRISM-HOME-HEADER-OVERSIZE] — Header Liquid Glass chiếm toàn màn hình
+- **Status**: `[DONE]`
+- **Mục tiêu**: Sửa lớp kính của header Home bị đo theo chiều cao tối đa, che toàn bộ nội dung trang trên thiết bị thật.
+- **Nguyên nhân gốc**: Hai lớp nền quang học của `LiquidGlassSurface` dùng `fillMaxSize()` trong `Box`, tham gia phép đo với ràng buộc lỏng của `Scaffold.topBar` và kéo card theo chiều cao tối đa.
+- **Kết quả**:
+  1. Chuyển hai lớp quang học sang `matchParentSize()` để chỉ bám kích thước container sau khi nội dung đã được đo.
+  2. Khóa phòng vệ capsule header Home ở 68dp, vừa avatar 48dp và padding dọc 10dp.
+  3. Bổ sung unit test khóa thông số chiều cao để tránh tái phát.
+- **Files thực tế chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt`
+  - `docs/UI_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `CHANGELOG.md`, `HANDOVER_LOG.md`.
+- **Rà soát nghiệp vụ**: Không đổi dữ liệu, phép tính hoặc schema; `BA_SPEC.md` và `DATA_SPEC.md` không đổi.
+- **Kiểm thử và cài đặt**:
+  - `gradlew testDebugUnitTest assembleDebug`: **PASS** — 215/215 tests, 0 failed, 0 errors, 0 skipped.
+  - APK debug: `app/build/outputs/apk/debug/app-debug.apk` (34,163,048 bytes).
+  - ADB `7f4ca06a` (`2107119DC`): `adb install -r` **Success**, package `1.12.0` khởi chạy với PID `7223`.
+  - ADB ngắt sau khi mở app nên không lấy được screenshot hậu kiểm tự động; không có crash build/runtime được ghi nhận trước khi mất kết nối.
 
 ### [Task-RELEASE-v1.12.0] — Git checkpoint cải tiến Home/Lịch sử
 - **Status**: `[DONE]`
