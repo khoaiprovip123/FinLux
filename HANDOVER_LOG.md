@@ -2,7 +2,21 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.15.0 (versionCode 157)
-- **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất nâng cấp Lịch sử Giao Dịch 2.0 (History Redesign 2.0) với 100% tests PASS và đóng gói APK thành công.
+- **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Lịch sử Thu Chi chuẩn Liquid Glass Prism (History Redesign 2.1), 100% tests PASS và APK build thành công.
+
+### [Task-PRISM-HISTORY-REDESIGN-V2.1] — Thiết kế lại giao diện Lịch sử chuẩn Liquid Glass Prism
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ Giữ lại Live Instant Search Bar phong cách Liquid Glass với nút xóa nhanh và bắt nét trực tiếp.
+  2. ✅ Lược bỏ dải chip phụ ngang theo yêu cầu người dùng, thay thế bằng bộ 3 Tab phân loại chính: `[✨ Tất cả]`, `[📈 Thu nhập]`, `[📉 Chi tiêu]` kèm badge đếm số lượng giao dịch và hiệu ứng phát sáng.
+  3. ✅ Thiết kế lại hoàn toàn hệ thống thẻ tổng tiền Bento Grid chuẩn Prism Liquid Glass:
+     - **Thẻ Dòng tiền ròng Hero Card**: Viền đa sắc Prism Chromatic Rim, Ambient Glow, badge trạng thái Thặng dư/Bội chi, số tiền lớn siêu nét, thanh phân bổ tỷ lệ dòng tiền trực quan (Prism Flow Bar).
+     - **Bộ đôi thẻ phụ Sub-Cards**: Thẻ Tổng thu nhập (Icon Xanh ngọc phát quang) và Thẻ Tổng chi tiêu (Icon Đỏ san hô phát quang).
+  4. ✅ Đồng bộ 100% màu sắc động từ `LocalFinluxTokens` và hiệu ứng kính Liquid Glass.
+- **Kết quả kiểm thử**: `gradlew testDebugUnitTest` 100% PASS, `gradlew assembleDebug` BUILD SUCCESSFUL.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `HANDOVER_LOG.md`
 
 ### [Task-TRANSACTION-HISTORY-REDESIGN-V2] — Nâng cấp toàn diện Lịch sử thu chi (History 2.0)
 - **Status**: `[DONE]`

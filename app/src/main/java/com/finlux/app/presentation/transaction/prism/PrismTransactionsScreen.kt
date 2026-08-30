@@ -1,11 +1,10 @@
 package com.finlux.app.presentation.transaction.prism
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,21 +20,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.graphicsLayer
-import com.finlux.app.core.designsystem.theme.FinluxColors
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TipsAndUpdates
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +47,6 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
-import com.finlux.app.core.designsystem.FinluxTextStyles
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,58 +56,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.finlux.app.core.designsystem.ExpenseRed
-import com.finlux.app.core.designsystem.IncomeGreen
-import com.finlux.app.core.designsystem.categoryIcon
-import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxTransactionGroup
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
-import com.finlux.app.core.navigation.Route
-import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.TransactionType
-import com.finlux.app.domain.model.Wallet
-import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.transaction.DeleteTransactionConfirmDialog
+import com.finlux.app.presentation.transaction.InsightIconType
+import com.finlux.app.presentation.transaction.SmartInsightUiModel
 import com.finlux.app.presentation.transaction.TimePeriodFilter
 import com.finlux.app.presentation.transaction.TransactionActionDialog
 import com.finlux.app.presentation.transaction.TransactionDetailSheet
 import com.finlux.app.presentation.transaction.TransactionFilter
 import com.finlux.app.presentation.transaction.TransactionFilterBottomSheet
-import com.finlux.app.presentation.transaction.TransactionsViewModel
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.FormatListBulleted
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.TipsAndUpdates
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.ui.platform.LocalFocusManager
-import com.finlux.app.presentation.transaction.DayFinancialSummary
-import com.finlux.app.presentation.transaction.InsightIconType
-import com.finlux.app.presentation.transaction.SmartInsightUiModel
 import com.finlux.app.presentation.transaction.TransactionViewMode
+import com.finlux.app.presentation.transaction.TransactionsViewModel
 import com.finlux.app.presentation.transaction.prism.PrismSpendingCalendarView
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun PrismTransactionsScreen(
@@ -163,6 +139,9 @@ fun PrismTransactionsScreen(
 
     val isRootTab = onNavigate != null && onAdd != null
 
+    val incomeCount = remember(transactions) { transactions.count { it.type == TransactionType.INCOME } }
+    val expenseCount = remember(transactions) { transactions.count { it.type == TransactionType.EXPENSE } }
+
     Scaffold(
         topBar = {
             // Fixed Top Header matching mockup
@@ -202,7 +181,7 @@ fun PrismTransactionsScreen(
                             ),
                     ) {
                         Icon(
-                            imageVector = if (viewMode == TransactionViewMode.LIST) Icons.Default.CalendarMonth else Icons.Default.FormatListBulleted,
+                            imageVector = if (viewMode == TransactionViewMode.LIST) Icons.Default.CalendarMonth else Icons.AutoMirrored.Filled.FormatListBulleted,
                             contentDescription = if (viewMode == TransactionViewMode.LIST) "Xem dạng lịch" else "Xem dạng danh sách",
                             tint = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary else tokens.onSurface,
                             modifier = Modifier.size(20.dp),
@@ -266,7 +245,7 @@ fun PrismTransactionsScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
             )
 
-            // 2. Inline Instant Search Bar
+            // 2. Inline Instant Live Search Bar
             PrismInlineSearchBar(
                 query = searchQuery,
                 onQueryChange = { viewModel.setSearchQuery(it) },
@@ -274,20 +253,45 @@ fun PrismTransactionsScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
             )
 
-            // 3. Horizontal Quick Filter Chips Row
-            PrismQuickFilterChipsRow(
-                categories = allCategories,
-                wallets = allWallets,
-                selectedCategoryId = selectedCategoryId,
-                selectedWalletId = selectedWalletId,
-                selectedPeriod = periodFilter,
-                onCategoryToggle = { viewModel.toggleQuickCategory(it) },
-                onWalletToggle = { viewModel.toggleQuickWallet(it) },
-                onPeriodSelect = { viewModel.setPeriod(it) },
-                onOpenFullFilter = { showFilterSheet = true },
-                activeFilterCount = activeFilterCount,
-                modifier = Modifier.padding(vertical = 4.dp),
-            )
+            // 3. Segmented Filter Tabs (Tất cả, Thu nhập, Chi tiêu)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                PrismFilterTabPill(
+                    label = "Tất cả",
+                    icon = Icons.Default.GridView,
+                    badgeCount = transactions.size,
+                    isSelected = filter == TransactionFilter.ALL,
+                    activeColor = tokens.primary,
+                    onClick = { viewModel.filter.value = TransactionFilter.ALL },
+                    modifier = Modifier.weight(1f),
+                )
+
+                PrismFilterTabPill(
+                    label = "Thu nhập",
+                    icon = Icons.AutoMirrored.Filled.TrendingUp,
+                    badgeCount = incomeCount,
+                    isSelected = filter == TransactionFilter.INCOME,
+                    activeColor = FinluxColors.IncomeGreen,
+                    onClick = { viewModel.filter.value = TransactionFilter.INCOME },
+                    modifier = Modifier.weight(1f),
+                )
+
+                PrismFilterTabPill(
+                    label = "Chi tiêu",
+                    icon = Icons.AutoMirrored.Filled.TrendingDown,
+                    badgeCount = expenseCount,
+                    isSelected = filter == TransactionFilter.EXPENSE,
+                    activeColor = FinluxColors.ExpenseRed,
+                    onClick = { viewModel.filter.value = TransactionFilter.EXPENSE },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
 
             if (viewMode == TransactionViewMode.CALENDAR) {
                 // Calendar Heatmap View
@@ -316,43 +320,6 @@ fun PrismTransactionsScreen(
                     }
                 }
             } else {
-                // 4. Segmented Filter Pills Bar (Tất cả, Thu nhập, Chi tiêu)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    PrismFilterPill(
-                        label = "Tất cả",
-                        icon = Icons.Default.GridView,
-                        isSelected = filter == TransactionFilter.ALL,
-                        activeColor = tokens.primary,
-                        onClick = { viewModel.filter.value = TransactionFilter.ALL },
-                        modifier = Modifier.weight(1f),
-                    )
-
-                    PrismFilterPill(
-                        label = "Thu nhập",
-                        icon = Icons.Default.ArrowDownward,
-                        isSelected = filter == TransactionFilter.INCOME,
-                        activeColor = FinluxColors.IncomeGreen,
-                        onClick = { viewModel.filter.value = TransactionFilter.INCOME },
-                        modifier = Modifier.weight(1f),
-                    )
-
-                    PrismFilterPill(
-                        label = "Chi tiêu",
-                        icon = Icons.Default.ArrowUpward,
-                        isSelected = filter == TransactionFilter.EXPENSE,
-                        activeColor = FinluxColors.ExpenseRed,
-                        onClick = { viewModel.filter.value = TransactionFilter.EXPENSE },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                Spacer(Modifier.height(4.dp))
-
                 val groupedTransactions = remember(transactions, financeZone) {
                     transactions.groupBy { tx ->
                         tx.date.atZone(financeZone).toLocalDate()
@@ -361,26 +328,27 @@ fun PrismTransactionsScreen(
                 val today = remember(financeZone) { java.time.LocalDate.now(financeZone) }
                 val yesterday = remember(today) { today.minusDays(1) }
 
-                // 5. Transaction List
+                // 4. Transaction List View
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         start = 20.dp,
                         end = 20.dp,
-                        top = 6.dp,
+                        top = 4.dp,
                         bottom = if (isRootTab) 96.dp else 24.dp,
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    // Summary Bento Banner Card
+                    // Summary Bento Banner Cards (Thiết kế hoàn toàn mới chuẩn Prism)
                     item {
-                        PrismSummaryBentoBanner(
+                        PrismFinancialBentoBanner(
                             filter = filter,
                             periodFilter = periodFilter,
                             totalIncome = totalIncome,
                             totalExpense = totalExpense,
                             netCashFlow = netCashFlow,
-                            itemCount = transactions.size,
+                            incomeCount = incomeCount,
+                            expenseCount = expenseCount,
                         )
                     }
 
@@ -416,6 +384,12 @@ fun PrismTransactionsScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CalendarToday,
+                                            contentDescription = null,
+                                            tint = tokens.primary.copy(alpha = 0.8f),
+                                            modifier = Modifier.size(13.dp),
+                                        )
                                         Text(
                                             text = headerTitle,
                                             style = FinluxTextStyles.SectionTitle.copy(
@@ -548,23 +522,44 @@ fun PrismTransactionsScreen(
 }
 
 /**
- * Filter Pill Button matching the mockup
+ * High-End Prism Filter Tab Pill with Badge Count and Luminous Glow
  */
 @Composable
-private fun PrismFilterPill(
+private fun PrismFilterTabPill(
     label: String,
     icon: ImageVector,
+    badgeCount: Int,
     isSelected: Boolean,
     activeColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
+    val containerColor by animateColorAsState(
+        targetValue = if (isSelected) activeColor else tokens.surfaceSoft,
+        animationSpec = tween(220),
+        label = "pill_container_anim",
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) Color.White else tokens.onSurface,
+        animationSpec = tween(220),
+        label = "pill_content_anim",
+    )
+    val iconColor by animateColorAsState(
+        targetValue = if (isSelected) Color.White else activeColor,
+        animationSpec = tween(220),
+        label = "pill_icon_anim",
+    )
 
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (isSelected) activeColor else tokens.surface,
-        border = if (isSelected) null else BorderStroke(1.dp, tokens.onSurface.copy(alpha = 0.08f)),
+        color = containerColor,
+        border = if (isSelected) {
+            BorderStroke(1.2.dp, activeColor.copy(alpha = 0.8f))
+        } else {
+            BorderStroke(1.dp, tokens.border)
+        },
+        shadowElevation = if (isSelected) 4.dp else 0.dp,
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .clickable(
@@ -574,561 +569,349 @@ private fun PrismFilterPill(
             ),
     ) {
         Row(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 10.dp),
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = if (isSelected) Color.White else activeColor,
-                modifier = Modifier.size(17.dp),
+                tint = iconColor,
+                modifier = Modifier.size(16.dp),
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(5.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 13.5.sp,
+                    fontSize = 12.5.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 ),
-                color = if (isSelected) Color.White else tokens.onSurface,
+                color = contentColor,
+                maxLines = 1,
             )
+            if (badgeCount > 0) {
+                Spacer(Modifier.width(4.dp))
+                Surface(
+                    shape = CircleShape,
+                    color = if (isSelected) Color.White.copy(alpha = 0.25f) else tokens.primary.copy(alpha = 0.12f),
+                    modifier = Modifier.size(17.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = if (badgeCount > 99) "99+" else badgeCount.toString(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = if (isSelected) Color.White else activeColor,
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 /**
- * Summary Bento Banner Card with 3D Financial Ledger Illustration
+ * Prism Financial Bento Banner — Liquid Glass Hero + Dual Sub-Cards (Finlux History Redesign 2.1)
  */
 @Composable
-private fun PrismSummaryBentoBanner(
+private fun PrismFinancialBentoBanner(
     filter: TransactionFilter,
     periodFilter: TimePeriodFilter,
     totalIncome: Long,
     totalExpense: Long,
     netCashFlow: Long,
-    itemCount: Int,
+    incomeCount: Int,
+    expenseCount: Int,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
     val periodSuffix = if (periodFilter == TimePeriodFilter.ALL) "" else " (${periodFilter.label})"
-    
-    val summaryTitle = when (filter) {
-        TransactionFilter.ALL -> "Dòng tiền ròng$periodSuffix"
-        TransactionFilter.INCOME -> "Tổng thu nhập$periodSuffix"
-        TransactionFilter.EXPENSE -> "Tổng chi tiêu$periodSuffix"
-    }
 
-    val displayAmount = when (filter) {
-        TransactionFilter.ALL -> (if (netCashFlow > 0) "+" else "") + formatVndAmount(netCashFlow)
-        TransactionFilter.INCOME -> "+" + formatVndAmount(totalIncome)
-        TransactionFilter.EXPENSE -> "-" + formatVndAmount(totalExpense)
-    }
+    val isSurplus = netCashFlow >= 0
+    val totalVolume = (totalIncome + totalExpense).coerceAtLeast(1L)
+    val incomeRatio = (totalIncome.toFloat() / totalVolume).coerceIn(0f, 1f)
 
-    val amountColor = when (filter) {
-        TransactionFilter.ALL -> if (netCashFlow >= 0) Color(0xFF2563EB) else Color(0xFFDC2626)
-        TransactionFilter.INCOME -> Color(0xFF16A34A)
-        TransactionFilter.EXPENSE -> Color(0xFFDC2626)
-    }
-
-    val bannerBg = when (filter) {
-        TransactionFilter.ALL -> listOf(Color(0xFFEFF4FE), Color(0xFFE9F0FD), Color(0xFFF5F2FE))
-        TransactionFilter.INCOME -> listOf(Color(0xFFECFDF5), Color(0xFFE6F9F0), Color(0xFFF0FDF4))
-        TransactionFilter.EXPENSE -> listOf(Color(0xFFFEF2F2), Color(0xFFFEECEB), Color(0xFFFFF1F2))
-    }
-
-    val accentGlowColor = when (filter) {
-        TransactionFilter.ALL -> Color(0xFF6366F1)
-        TransactionFilter.INCOME -> Color(0xFF10B981)
-        TransactionFilter.EXPENSE -> Color(0xFFF43F5E)
-    }
-
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = Color.Transparent,
-        border = BorderStroke(1.dp, accentGlowColor.copy(alpha = if (tokens.isDark) 0.28f else 0.18f)),
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = accentGlowColor.copy(alpha = 0.08f),
-                spotColor = accentGlowColor.copy(alpha = 0.14f),
-            ),
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        colors = if (tokens.isDark) {
-                            listOf(Color(0xFF1E1E38), Color(0xFF151528), Color(0xFF201B3E))
-                        } else {
-                            bannerBg
-                        },
+        // 1. HERO MAIN CARD: Liquid Glass Net Cashflow Card with Prism Chromatic Rim
+        Surface(
+            shape = RoundedCornerShape(26.dp),
+            color = if (tokens.isDark) Color(0xFF1E1E34).copy(alpha = 0.75f) else Color.White.copy(alpha = 0.85f),
+            border = BorderStroke(
+                width = 1.2.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        tokens.primary.copy(alpha = 0.65f),
+                        Color(0xFF67E8F9).copy(alpha = 0.45f),
+                        Color(0xFFA855F7).copy(alpha = 0.35f),
+                        tokens.primary.copy(alpha = 0.55f),
                     ),
-                )
-                .padding(horizontal = 20.dp, vertical = 18.dp),
+                ),
+            ),
+            shadowElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                (if (isSurplus) tokens.primary else Color(0xFFF43F5E)).copy(alpha = if (tokens.isDark) 0.16f else 0.08f),
+                                Color.Transparent,
+                            ),
+                            radius = 600f,
+                        ),
+                    )
+                    .padding(20.dp),
             ) {
-                // Left Column: Text & Amount
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Text(
-                        text = summaryTitle,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF6B7280),
-                        ),
-                    )
-
-                    // Extra Bold Amount
-                    Text(
-                        text = displayAmount,
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.8).sp,
-                        ),
-                        color = amountColor,
-                    )
-
-                    // Details Row (Income & Expense sub-pills or Item count)
-                    if (filter == TransactionFilter.ALL) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Header Tag Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = tokens.primary.copy(alpha = 0.15f),
+                                modifier = Modifier.size(32.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalance,
+                                        contentDescription = null,
+                                        tint = tokens.primary,
+                                        modifier = Modifier.size(17.dp),
+                                    )
+                                }
+                            }
+
                             Text(
-                                text = "Thu: +${formatVndAmount(totalIncome)}",
+                                text = "DÒNG TIỀN RÒNG$periodSuffix",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.8.sp,
                                 ),
-                                color = Color(0xFF16A34A),
-                            )
-                            Text(
-                                text = "•",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                color = Color(0xFF9CA3AF),
-                            )
-                            Text(
-                                text = "Chi: -${formatVndAmount(totalExpense)}",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                color = Color(0xFFDC2626),
+                                color = tokens.onSurfaceVariant,
                             )
                         }
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+
+                        // Surplus / Deficit Badge
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = (if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed).copy(alpha = 0.14f),
+                            border = BorderStroke(
+                                1.dp,
+                                (if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed).copy(alpha = 0.28f),
+                            ),
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                                contentDescription = null,
-                                tint = Color(0xFF9CA3AF),
-                                modifier = Modifier.size(14.dp),
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = if (isSurplus) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                                    contentDescription = null,
+                                    tint = if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
+                                    modifier = Modifier.size(13.dp),
+                                )
+                                Text(
+                                    text = if (isSurplus) "Thặng dư" else "Bội chi",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    color = if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
+                                )
+                            }
+                        }
+                    }
+
+                    // Main Big Net Amount
+                    Text(
+                        text = (if (netCashFlow > 0) "+" else "") + formatVndAmount(netCashFlow),
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-1).sp,
+                        ),
+                        color = if (netCashFlow >= 0) tokens.onSurface else FinluxColors.ExpenseRed,
+                    )
+
+                    // Prism Visual Flow Ratio Bar
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.5.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(tokens.border.copy(alpha = 0.5f)),
+                        ) {
+                            if (totalIncome > 0L) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(incomeRatio.coerceAtLeast(0.01f))
+                                        .height(6.5.dp)
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(FinluxColors.IncomeGreen, Color(0xFF34D399))
+                                            ),
+                                        ),
+                                )
+                            }
+                            if (totalExpense > 0L) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight((1f - incomeRatio).coerceAtLeast(0.01f))
+                                        .height(6.5.dp)
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(Color(0xFFFB7185), FinluxColors.ExpenseRed)
+                                            ),
+                                        ),
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = "Thu: ${(incomeRatio * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold),
+                                color = FinluxColors.IncomeGreen,
                             )
                             Text(
-                                text = "$itemCount ${if (filter == TransactionFilter.INCOME) "khoản thu" else "khoản chi"}",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
-                                color = Color(0xFF6B7280),
+                                text = "Chi: ${((1f - incomeRatio) * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold),
+                                color = FinluxColors.ExpenseRed,
                             )
                         }
                     }
                 }
-
-                Spacer(Modifier.width(12.dp))
-
-                // Right Column: 3D Spatial Transaction Ledger Graphic
-                Prism3DTransactionIllustration(
-                    filter = filter,
-                    modifier = Modifier.size(width = 112.dp, height = 88.dp),
-                )
             }
         }
-    }
-}
 
-/**
- * 3D Spatial Illustration for Transaction History
- */
-@Composable
-private fun Prism3DTransactionIllustration(
-    filter: TransactionFilter,
-    modifier: Modifier = Modifier,
-) {
-    val cardGradient = when (filter) {
-        TransactionFilter.ALL -> listOf(Color(0xFF3B82F6), Color(0xFF1D4ED8), Color(0xFF4338CA))
-        TransactionFilter.INCOME -> listOf(Color(0xFF10B981), Color(0xFF059669), Color(0xFF047857))
-        TransactionFilter.EXPENSE -> listOf(Color(0xFFF43F5E), Color(0xFFE11D48), Color(0xFFBE123C))
-    }
+        // 2. DUAL BENTO SUB-CARDS: Income & Expense Summary Cards
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            // Income Sub-Card
+            PrismSubBentoCard(
+                title = "Tổng thu nhập",
+                amount = "+${formatVndAmount(totalIncome, isCompact = true)}",
+                subtitle = "$incomeCount khoản thu",
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
+                accentColor = FinluxColors.IncomeGreen,
+                modifier = Modifier.weight(1f),
+            )
 
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        // 1. Ambient Luminous Glow
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        cardGradient.first().copy(alpha = 0.35f),
-                        Color.Transparent,
-                    ),
-                ),
-                radius = size.minDimension * 0.65f,
+            // Expense Sub-Card
+            PrismSubBentoCard(
+                title = "Tổng chi tiêu",
+                amount = "-${formatVndAmount(totalExpense, isCompact = true)}",
+                subtitle = "$expenseCount khoản chi",
+                icon = Icons.AutoMirrored.Filled.TrendingDown,
+                accentColor = FinluxColors.ExpenseRed,
+                modifier = Modifier.weight(1f),
             )
         }
-
-        // 2. Back 3D Layer: Frosted Glass Invoice / Receipt Sheet (tilted left)
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color.White.copy(alpha = 0.78f),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.90f)),
-            shadowElevation = 4.dp,
-            modifier = Modifier
-                .size(width = 68.dp, height = 72.dp)
-                .graphicsLayer(
-                    rotationZ = -14f,
-                    translationX = -12f,
-                    translationY = -2f,
-                    cameraDistance = 12f,
-                ),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                // Receipt header line
-                Box(
-                    modifier = Modifier
-                        .size(width = 24.dp, height = 4.dp)
-                        .background(cardGradient.first().copy(alpha = 0.45f), RoundedCornerShape(2.dp)),
-                )
-                // Receipt item lines
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(3.dp)
-                        .background(Color.LightGray.copy(alpha = 0.50f), RoundedCornerShape(2.dp)),
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.65f)
-                        .height(3.dp)
-                        .background(Color.LightGray.copy(alpha = 0.40f), RoundedCornerShape(2.dp)),
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.75f)
-                        .height(3.dp)
-                        .background(Color.LightGray.copy(alpha = 0.40f), RoundedCornerShape(2.dp)),
-                )
-                Spacer(Modifier.weight(1f))
-                // Stamp pill
-                Box(
-                    modifier = Modifier
-                        .size(width = 16.dp, height = 5.dp)
-                        .background(cardGradient.first().copy(alpha = 0.60f), RoundedCornerShape(3.dp)),
-                )
-            }
-        }
-
-        // 3. Front 3D Layer: Metallic Holographic Card (tilted right)
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = Color.Transparent,
-            border = BorderStroke(1.2.dp, Color.White.copy(alpha = 0.85f)),
-            shadowElevation = 8.dp,
-            modifier = Modifier
-                .size(width = 76.dp, height = 54.dp)
-                .graphicsLayer(
-                    rotationZ = 10f,
-                    translationX = 10f,
-                    translationY = 6f,
-                    cameraDistance = 12f,
-                ),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.linearGradient(
-                            colors = cardGradient,
-                            start = Offset(0f, 0f),
-                            end = Offset(200f, 200f),
-                        ),
-                    )
-                    .padding(6.dp),
-            ) {
-                // Gold EMV Chip
-                Box(
-                    modifier = Modifier
-                        .size(12.dp, 9.dp)
-                        .align(Alignment.TopStart)
-                        .background(
-                            Brush.linearGradient(listOf(Color(0xFFFFDF00), Color(0xFFD4AF37))),
-                            RoundedCornerShape(3.dp),
-                        )
-                        .border(0.5.dp, Color(0xFFB8860B), RoundedCornerShape(3.dp)),
-                )
-
-                // Contactless Wave lines
-                Canvas(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .align(Alignment.TopEnd),
-                ) {
-                    drawArc(
-                        color = Color.White.copy(alpha = 0.75f),
-                        startAngle = -45f,
-                        sweepAngle = 90f,
-                        useCenter = false,
-                        style = Stroke(width = 1.2.dp.toPx(), cap = StrokeCap.Round),
-                    )
-                    drawArc(
-                        color = Color.White.copy(alpha = 0.45f),
-                        startAngle = -45f,
-                        sweepAngle = 90f,
-                        useCenter = false,
-                        style = Stroke(width = 1.2.dp.toPx(), cap = StrokeCap.Round),
-                        topLeft = Offset(3.dp.toPx(), 0f),
-                    )
-                }
-
-                // Dual VIP Rings
-                Row(
-                    modifier = Modifier.align(Alignment.BottomEnd),
-                    horizontalArrangement = Arrangement.spacedBy((-4).dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(11.dp)
-                            .background(Color.White.copy(alpha = 0.40f), CircleShape),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(11.dp)
-                            .background(Color.White.copy(alpha = 0.65f), CircleShape),
-                    )
-                }
-            }
-        }
-
-        // 4. Foreground: Floating Golden Coin (₫)
-        Surface(
-            shape = CircleShape,
-            color = Color.Transparent,
-            border = BorderStroke(1.2.dp, Color(0xFFFFF3B0)),
-            shadowElevation = 10.dp,
-            modifier = Modifier
-                .size(34.dp)
-                .align(Alignment.BottomEnd)
-                .graphicsLayer(
-                    translationX = (-4).dp.value,
-                    translationY = 2.dp.value,
-                ),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFEA79),
-                                Color(0xFFF59E0B),
-                                Color(0xFFB45309),
-                            ),
-                        ),
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "₫",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color(0xFF5A2A00),
-                )
-            }
-        }
-
-        // 5. Sparkle Accent (Top-Right)
-        Text(
-            text = "✦",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFFFD700),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .graphicsLayer(translationY = (-6).dp.value, translationX = 4.dp.value),
-        )
     }
 }
 
 /**
- * Transaction Card Item matching the mockup
+ * Sub Bento Glass Card for Income & Expense Breakdown
  */
 @Composable
-private fun PrismTransactionCardItem(
-    transaction: FinanceTransaction,
-    category: Category?,
-    wallet: Wallet?,
-    relatedWallet: Wallet? = null,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
+private fun PrismSubBentoCard(
+    title: String,
+    amount: String,
+    subtitle: String,
+    icon: ImageVector,
+    accentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
-    val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
-    val isIncome = transaction.type == TransactionType.INCOME
-
-    val accentColor = when (transaction.type) {
-        TransactionType.INCOME -> category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.IncomeGreen
-        TransactionType.EXPENSE -> category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.ExpenseRed
-        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
-    }
-
-    val icon = when (transaction.type) {
-        TransactionType.INCOME -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward
-        TransactionType.EXPENSE -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.LocalOffer
-        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Icons.Default.SwapHoriz
-    }
-
-    val title = transaction.note.ifBlank {
-        when (transaction.type) {
-            TransactionType.INCOME -> category?.name ?: "Thu nhập"
-            TransactionType.EXPENSE -> category?.name ?: "Chi tiêu"
-            TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "Chuyển tiền đến ${relatedWallet.name}" else "Chuyển tiền đi"
-            TransactionType.TRANSFER_IN -> if (relatedWallet != null) "Nhận tiền từ ${relatedWallet.name}" else "Nhận tiền chuyển"
-        }
-    }
-
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
-    val dateText = remember(transaction.date) {
-        dateFormatter.format(transaction.date.atZone(ZoneId.systemDefault()))
-    }
-
-    val walletDisplayName = when (transaction.type) {
-        TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "${wallet?.name ?: "Ví"} ➔ ${relatedWallet.name}" else wallet?.name ?: "Ví chính"
-        TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví"}" else wallet?.name ?: "Ví chính"
-        else -> wallet?.name ?: "Ví chính"
-    }
-    val subtitleText = "$dateText • $walletDisplayName"
-
-    val amountFormatted = when (transaction.type) {
-        TransactionType.INCOME -> "+${formatVndAmount(transaction.amount.value)}"
-        TransactionType.EXPENSE -> "-${formatVndAmount(transaction.amount.value)}"
-        TransactionType.TRANSFER_OUT -> "-${formatVndAmount(transaction.amount.value)}"
-        TransactionType.TRANSFER_IN -> "+${formatVndAmount(transaction.amount.value)}"
-    }
-    val amountColor = when (transaction.type) {
-        TransactionType.INCOME -> FinluxColors.IncomeGreen
-        TransactionType.EXPENSE -> FinluxColors.ExpenseRed
-        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
-    }
 
     Surface(
-        shape = RoundedCornerShape(22.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFF3F4F6)),
+        shape = RoundedCornerShape(20.dp),
+        color = if (tokens.isDark) Color(0xFF1E1E34).copy(alpha = 0.65f) else Color.White.copy(alpha = 0.80f),
+        border = BorderStroke(1.dp, accentColor.copy(alpha = if (tokens.isDark) 0.25f else 0.18f)),
         shadowElevation = 3.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = true),
-                onClick = onClick,
-                onLongClick = onLongClick,
-            ),
+        modifier = modifier,
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            // Column 1: Category / Transfer Icon (Fixed 44dp)
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = accentColor.copy(alpha = if (tokens.isDark) 0.18f else 0.12f),
-                modifier = Modifier.size(44.dp),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(22.dp),
-                    )
+                Surface(
+                    shape = CircleShape,
+                    color = accentColor.copy(alpha = 0.16f),
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(15.dp),
+                        )
+                    }
                 }
-            }
 
-            // Column 2: Title + Subtitle (weight 1f, padding start 12dp, end 8dp)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp, end = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 15.sp,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
                     ),
-                    color = tokens.onSurface,
+                    color = tokens.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
-
-                Text(
-                    text = subtitleText,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 12.sp,
-                        color = tokens.onSurfaceVariant,
-                    ),
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
 
-            // Column 3: Amount ONLY (wrapContentWidth, End)
             Text(
-                text = amountFormatted,
+                text = amount,
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 15.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                 ),
-                color = amountColor,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                color = accentColor,
                 maxLines = 1,
+            )
+
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.5.sp,
+                ),
+                color = tokens.onSurfaceVariant.copy(alpha = 0.75f),
             )
         }
     }
 }
 
 /**
- * Smart Micro-Insights Greeting Banner (Finlux History 2.0)
+ * Smart Micro-Insights Greeting Banner (Finlux History 2.1)
  */
 @Composable
 private fun PrismSmartInsightGreeting(
@@ -1191,7 +974,7 @@ private fun PrismSmartInsightGreeting(
 }
 
 /**
- * Inline Instant Search Bar with Instant Live Filtering
+ * Inline Instant Search Bar with Live Filtering
  */
 @Composable
 private fun PrismInlineSearchBar(
@@ -1266,194 +1049,3 @@ private fun PrismInlineSearchBar(
         }
     }
 }
-
-/**
- * Horizontal Quick Filter Chips Row (1-Tap Selection)
- */
-@Composable
-private fun PrismQuickFilterChipsRow(
-    categories: List<Category>,
-    wallets: List<Wallet>,
-    selectedCategoryId: String?,
-    selectedWalletId: String?,
-    selectedPeriod: TimePeriodFilter,
-    onCategoryToggle: (String) -> Unit,
-    onWalletToggle: (String) -> Unit,
-    onPeriodSelect: (TimePeriodFilter) -> Unit,
-    onOpenFullFilter: () -> Unit,
-    activeFilterCount: Int,
-    modifier: Modifier = Modifier,
-) {
-    val tokens = LocalFinluxTokens.current
-
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Quick Period: Tất cả
-        item(key = "period_all") {
-            QuickFilterChipItem(
-                label = "Tất cả",
-                isSelected = selectedPeriod == TimePeriodFilter.ALL && selectedCategoryId == null && selectedWalletId == null,
-                onClick = { onPeriodSelect(TimePeriodFilter.ALL) },
-            )
-        }
-
-        // Quick Period: Kỳ này
-        item(key = "period_current") {
-            QuickFilterChipItem(
-                label = "Kỳ này",
-                isSelected = selectedPeriod == TimePeriodFilter.CURRENT_PERIOD,
-                onClick = {
-                    onPeriodSelect(
-                        if (selectedPeriod == TimePeriodFilter.CURRENT_PERIOD) TimePeriodFilter.ALL else TimePeriodFilter.CURRENT_PERIOD
-                    )
-                },
-            )
-        }
-
-        // Quick Period: Tháng này
-        item(key = "period_month") {
-            QuickFilterChipItem(
-                label = "Tháng này",
-                isSelected = selectedPeriod == TimePeriodFilter.THIS_MONTH,
-                onClick = {
-                    onPeriodSelect(
-                        if (selectedPeriod == TimePeriodFilter.THIS_MONTH) TimePeriodFilter.ALL else TimePeriodFilter.THIS_MONTH
-                    )
-                },
-            )
-        }
-
-        // Categories Quick Chips
-        categories.take(6).forEach { category ->
-            item(key = "cat_${category.id}") {
-                val isSelected = selectedCategoryId == category.id
-                val catColor = colorFromHex(category.colorHex)
-                QuickFilterChipItem(
-                    label = category.name,
-                    icon = categoryIcon(category.icon),
-                    isSelected = isSelected,
-                    customActiveColor = catColor,
-                    onClick = { onCategoryToggle(category.id) },
-                )
-            }
-        }
-
-        // Wallets Quick Chips
-        wallets.take(4).forEach { wallet ->
-            item(key = "wallet_${wallet.id}") {
-                val isSelected = selectedWalletId == wallet.id
-                QuickFilterChipItem(
-                    label = wallet.name,
-                    icon = Icons.Default.AccountBalanceWallet,
-                    isSelected = isSelected,
-                    onClick = { onWalletToggle(wallet.id) },
-                )
-            }
-        }
-
-        // More Filters Chip
-        item(key = "open_full_filter") {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.16f) else tokens.surfaceSoft,
-                border = BorderStroke(1.dp, if (activeFilterCount > 0) tokens.primary else tokens.border),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClick = onOpenFullFilter)
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = "Bộ lọc",
-                        tint = if (activeFilterCount > 0) tokens.primary else tokens.onSurfaceVariant,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        text = if (activeFilterCount > 0) "Bộ lọc ($activeFilterCount)" else "Bộ lọc",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.5.sp,
-                            fontWeight = if (activeFilterCount > 0) FontWeight.Bold else FontWeight.Medium,
-                        ),
-                        color = if (activeFilterCount > 0) tokens.primary else tokens.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickFilterChipItem(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    customActiveColor: Color? = null,
-) {
-    val tokens = LocalFinluxTokens.current
-    val activeColor = customActiveColor ?: tokens.primary
-
-    val containerColor = if (isSelected) {
-        activeColor.copy(alpha = if (tokens.isDark) 0.22f else 0.14f)
-    } else {
-        tokens.surfaceSoft
-    }
-
-    val contentColor = if (isSelected) {
-        activeColor
-    } else {
-        tokens.onSurfaceVariant
-    }
-
-    val borderColor = if (isSelected) {
-        activeColor.copy(alpha = 0.80f)
-    } else {
-        tokens.border
-    }
-
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = containerColor,
-        border = BorderStroke(1.dp, borderColor),
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = true),
-                onClick = onClick,
-            )
-            .padding(horizontal = 12.dp, vertical = 6.5.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.5.dp),
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(13.dp),
-                )
-            }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 12.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                ),
-                color = contentColor,
-            )
-        }
-    }
-}
-
