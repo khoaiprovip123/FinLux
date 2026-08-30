@@ -9,9 +9,10 @@
 - **Mục tiêu đã hoàn thành theo phản hồi người dùng**:
   1. ✅ **Đưa icon Lọc vào bên phải Thanh tìm kiếm**: Nút lọc kèm badge hiển thị số bộ lọc đang áp dụng được đặt ngay trong thanh tìm kiếm bên tay phải.
   2. ✅ **Tăng cường số tiền to và rõ nét hơn**: Tăng kích thước số tiền lên `17sp ExtraBold` với màu tương phản cao (Thu: `#059669`, Chi: `#E11D48`, Chuyển: `#2563EB`).
-  3. ✅ **Bổ sung icon mới và sửa bo text cho 4 Tab [ Tất cả | Thu | Chi | Chuyển ]**:
+  3. ✅ **Bổ sung icon mới, sửa bo text và triệt tiêu hoàn toàn lỗi tô nền chữ bên trong cho 4 Tab [ Tất cả | Thu | Chi | Chuyển ]**:
      - Thêm icon nhận diện trực quan: GridView (Tất cả), TrendingUp (Thu), TrendingDown (Chi), SwapHoriz (Chuyển).
-     - Canh chỉnh padding 4dp và font size 13sp SemiBold/Bold, triệt tiêu hoàn toàn lỗi chật text hoặc tràn viền bo góc.
+     - Thay thế Surface phức tạp bằng Box với Gradient/Border trực tiếp trên `RoundedCornerShape(14.dp)`, loại bỏ 100% hiện tượng bóng/nền chữ thừa bên trong.
+     - Canh chỉnh padding 4dp và font size 13sp SemiBold/Bold, chữ và icon hiển thị sắc nét, thoáng đãng.
 - **Kết quả kiểm thử**: `gradlew testDebugUnitTest` 100% PASS, `gradlew assembleDebug` BUILD SUCCESSFUL.
 - **Files đã sửa đổi**:
   - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`

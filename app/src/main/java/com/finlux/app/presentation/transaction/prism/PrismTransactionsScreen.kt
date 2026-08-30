@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -562,6 +563,15 @@ private fun PrismQuickSegmentedTabsWithIcons(
         TabItem(TransactionFilter.TRANSFER, "Chuyển", Icons.Default.SwapHoriz, Color(0xFF3B82F6)),
     )
 
+    val tabShape = RoundedCornerShape(14.dp)
+    val activeGradient = Brush.horizontalGradient(
+        listOf(
+            Color(0xFF00C6FF),
+            Color(0xFF0072FF),
+            Color(0xFF9B51E0),
+        ),
+    )
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -569,36 +579,32 @@ private fun PrismQuickSegmentedTabsWithIcons(
         filters.forEach { item ->
             val isSelected = selectedFilter == item.filter
 
-            val activeGradient = Brush.horizontalGradient(
-                listOf(
-                    Color(0xFF00C6FF),
-                    Color(0xFF0072FF),
-                    Color(0xFF9B51E0),
-                ),
-            )
-
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = if (isSelected) Color.Transparent else (if (tokens.isDark) tokens.surfaceSoft else Color.White),
-                border = if (isSelected) null else BorderStroke(1.dp, if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.8f)),
-                shadowElevation = if (isSelected) 3.5.dp else (if (tokens.isDark) 0.dp else 1.dp),
+            Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(44.dp)
-                    .clip(RoundedCornerShape(14.dp))
                     .then(
-                        if (isSelected) Modifier.background(activeGradient) else Modifier
+                        if (isSelected) {
+                            Modifier
+                                .shadow(elevation = 4.dp, shape = tabShape, spotColor = Color(0xFF0072FF).copy(alpha = 0.35f))
+                                .background(brush = activeGradient, shape = tabShape)
+                        } else {
+                            Modifier
+                                .shadow(elevation = if (tokens.isDark) 0.dp else 1.dp, shape = tabShape, spotColor = Color.Black.copy(alpha = 0.05f))
+                                .background(color = if (tokens.isDark) tokens.surfaceSoft else Color.White, shape = tabShape)
+                                .border(width = 1.dp, color = if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.8f), shape = tabShape)
+                        }
                     )
+                    .clip(tabShape)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(bounded = true),
                         onClick = { onFilterSelect(item.filter) },
                     ),
+                contentAlignment = Alignment.Center,
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 4.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
