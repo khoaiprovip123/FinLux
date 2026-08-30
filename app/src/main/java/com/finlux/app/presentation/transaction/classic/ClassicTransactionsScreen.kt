@@ -65,6 +65,11 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.finlux.app.core.navigation.Route
 
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.FormatListBulleted
+import com.finlux.app.presentation.transaction.TransactionViewMode
+import com.finlux.app.presentation.transaction.prism.PrismSpendingCalendarView
+
 @Composable
 fun ClassicTransactionsScreen(
     onNavigate: ((String) -> Unit)? = null,
@@ -90,6 +95,9 @@ fun ClassicTransactionsScreen(
     val netCashFlow = viewModel.netCashFlow.collectAsStateWithLifecycle().value
     val activeFilterCount = viewModel.activeFilterCount.collectAsStateWithLifecycle().value
     val financeZone = viewModel.financeZone.collectAsStateWithLifecycle().value
+    val viewMode = viewModel.viewMode.collectAsStateWithLifecycle().value
+    val selectedCalendarDate = viewModel.selectedCalendarDate.collectAsStateWithLifecycle().value
+    val dailySummaries = viewModel.dailySummaries.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
 
     var viewingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
@@ -124,32 +132,46 @@ fun ClassicTransactionsScreen(
                     }
                 },
                 actions = {
-                    Box {
-                        IconButton(onClick = { showFilterSheet = true }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = {
+                            viewModel.setViewMode(
+                                if (viewMode == TransactionViewMode.LIST) TransactionViewMode.CALENDAR else TransactionViewMode.LIST
+                            )
+                        }) {
                             Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = "Bộ lọc",
-                                tint = if (activeFilterCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                imageVector = if (viewMode == TransactionViewMode.LIST) Icons.Default.CalendarMonth else Icons.Default.FormatListBulleted,
+                                contentDescription = "Chuyển chế độ xem",
+                                tint = if (viewMode == TransactionViewMode.CALENDAR) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             )
                         }
-                        if (activeFilterCount > 0) {
-                            Surface(
-                                shape = androidx.compose.foundation.shape.CircleShape,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 4.dp, end = 4.dp)
-                                    .size(16.dp),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = activeFilterCount.toString(),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                        ),
-                                    )
+
+                        Box {
+                            IconButton(onClick = { showFilterSheet = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.FilterList,
+                                    contentDescription = "Bộ lọc",
+                                    tint = if (activeFilterCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                            if (activeFilterCount > 0) {
+                                Surface(
+                                    shape = androidx.compose.foundation.shape.CircleShape,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(top = 4.dp, end = 4.dp)
+                                        .size(16.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = activeFilterCount.toString(),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                            ),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -161,22 +183,42 @@ fun ClassicTransactionsScreen(
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TransactionFilter.entries.forEach { item ->
-                    FilterChip(
-                        selected = filter == item,
-                        onClick = { viewModel.setFilter(item) },
-                        label = { Text(item.label) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                            selectedLabelColor = MaterialTheme.colorScheme.primary,
-                        ),
-                    )
+            if (viewMode == TransactionViewMode.CALENDAR) {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item {
+                        PrismSpendingCalendarView(
+                            dailySummaries = dailySummaries,
+                            selectedDate = selectedCalendarDate,
+                            onSelectDate = { viewModel.setSelectedCalendarDate(it) },
+                            transactions = transactions,
+                            categories = categories,
+                            wallets = wallets,
+                            onTransactionClick = { tx -> viewingTransaction = tx },
+                            onTransactionLongClick = { tx -> actionTransaction = tx },
+                            zone = financeZone,
+                        )
+                    }
                 }
-            }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TransactionFilter.entries.forEach { item ->
+                        FilterChip(
+                            selected = filter == item,
+                            onClick = { viewModel.setFilter(item) },
+                            label = { Text(item.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    }
+                }
 
             val groupedTransactions = remember(transactions, financeZone) {
                 transactions.groupBy { tx ->
@@ -353,6 +395,7 @@ fun ClassicTransactionsScreen(
             }
         }
     }
+}
 
     if (showFilterSheet) {
         TransactionFilterBottomSheet(

@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.15.0] - 2026-08-30
+### Added
+- **Nâng Cấp Toàn Diện Phân Hệ Lịch Sử Giao Dịch 2.0 (Finlux Transaction History 2.0)**:
+  * **Micro-Insights Financial Banner**: Lời nhắn tài chính thông minh, ấm áp thấu hiểu dữ liệu ngữ cảnh (so sánh chi tiêu hôm nay với hôm qua, đánh giá thặng dư dòng tiền ròng).
+  * **Inline Live Search**: Ô tìm kiếm trực tiếp trên đầu trang hỗ trợ tìm kiếm tức thì không dấu tiếng Việt theo ghi chú, danh mục, số tiền.
+  * **Quick Filter Chips Row**: Dải chip 1-chạm lọc nhanh theo Tất cả, Kỳ này, Tháng này, Danh mục, Ví tiền và nút mở bộ lọc chi tiết.
+  * **Dual View Mode (Danh Sách ⟷ Lịch Chi Tiêu Heatmap)**: Chuyển đổi linh hoạt giữa chế độ danh sách phân nhóm ngày và giao diện Lịch tháng tương tác (`PrismSpendingCalendarView`) với chấm nhiệt lượng (🟢 Xanh: Thu nhập/Thặng dư, 🟡 Vàng: Chi tiêu ≤ 500k, 🔴 Đỏ: Chi tiêu lớn > 500k).
+  * **Digital Glass Receipt Slip**: Nâng cấp `TransactionDetailSheet` thành dạng vé thu/chi điện tử với mã tham chiếu `#FLX-XXXXXX`, nút chia sẻ nhanh qua mạng xã hội/tin nhắn và hiển thị tình trạng chứng từ đính kèm.
+
+### Changed
+- **Đồng Bộ Hệ Thống ViewModel & Clean Architecture**:
+  * Bổ sung `TransactionViewMode`, `SmartInsightUiModel`, `DayFinancialSummary`, các bộ tính toán reactive StateFlow vào `TransactionsViewModel`.
+  * Đồng bộ giao diện Lịch và chuyển đổi View Mode trên cả 3 phong cách: Prism Glassmorphism, Modern Luxury, Classic Android.
+
+### Fixed
+- **Bảo Vệ Tính Toàn Vẹn & Trải Nghiệm Thao Tác**:
+  * Khắc phục vấn đề cuộn dọc mượt mà trong `TransactionDetailSheet`.
+  * Đảm bảo 100% kiểm thử Unit Test pass trong `TransactionsViewModelTest`.
+
 ## [1.14.0] - 2026-08-29
 ### Added
 - **Chức năng Sao chép Ngân sách sang Kỳ Tiếp theo (Budget Period Rollover & Manual Copy)**:

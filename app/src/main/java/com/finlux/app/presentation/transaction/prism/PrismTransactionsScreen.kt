@@ -94,6 +94,22 @@ import com.finlux.app.presentation.transaction.TransactionsViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TipsAndUpdates
+import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.platform.LocalFocusManager
+import com.finlux.app.presentation.transaction.DayFinancialSummary
+import com.finlux.app.presentation.transaction.InsightIconType
+import com.finlux.app.presentation.transaction.SmartInsightUiModel
+import com.finlux.app.presentation.transaction.TransactionViewMode
+import com.finlux.app.presentation.transaction.prism.PrismSpendingCalendarView
+
 @Composable
 fun PrismTransactionsScreen(
     onNavigate: ((String) -> Unit)? = null,
@@ -119,6 +135,10 @@ fun PrismTransactionsScreen(
     val netCashFlow = viewModel.netCashFlow.collectAsStateWithLifecycle().value
     val activeFilterCount = viewModel.activeFilterCount.collectAsStateWithLifecycle().value
     val financeZone = viewModel.financeZone.collectAsStateWithLifecycle().value
+    val viewMode = viewModel.viewMode.collectAsStateWithLifecycle().value
+    val selectedCalendarDate = viewModel.selectedCalendarDate.collectAsStateWithLifecycle().value
+    val dailySummaries = viewModel.dailySummaries.collectAsStateWithLifecycle().value
+    val smartInsight = viewModel.smartInsight.collectAsStateWithLifecycle().value
 
     val snackbar = remember { SnackbarHostState() }
     val tokens = LocalFinluxTokens.current
@@ -163,41 +183,69 @@ fun PrismTransactionsScreen(
                     color = tokens.onSurface,
                 )
 
-                Box {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // View Mode Switcher Button (List ⟷ Calendar)
                     IconButton(
-                        onClick = { showFilterSheet = true },
+                        onClick = {
+                            viewModel.setViewMode(
+                                if (viewMode == TransactionViewMode.LIST) TransactionViewMode.CALENDAR else TransactionViewMode.LIST
+                            )
+                        },
                         modifier = Modifier
                             .size(40.dp)
                             .background(
-                                if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.15f) else tokens.surfaceSoft,
+                                if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.16f) else tokens.surfaceSoft,
                                 CircleShape,
                             ),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = "Bộ lọc",
-                            tint = if (activeFilterCount > 0) tokens.primary else tokens.onSurface,
+                            imageVector = if (viewMode == TransactionViewMode.LIST) Icons.Default.CalendarMonth else Icons.Default.FormatListBulleted,
+                            contentDescription = if (viewMode == TransactionViewMode.LIST) "Xem dạng lịch" else "Xem dạng danh sách",
+                            tint = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary else tokens.onSurface,
                             modifier = Modifier.size(20.dp),
                         )
                     }
 
-                    if (activeFilterCount > 0) {
-                        Surface(
-                            shape = CircleShape,
-                            color = tokens.primary,
+                    // Filter Button with Badge
+                    Box {
+                        IconButton(
+                            onClick = { showFilterSheet = true },
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .size(18.dp),
+                                .size(40.dp)
+                                .background(
+                                    if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.15f) else tokens.surfaceSoft,
+                                    CircleShape,
+                                ),
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = activeFilterCount.toString(),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                    ),
-                                )
+                            Icon(
+                                imageVector = Icons.Default.FilterList,
+                                contentDescription = "Bộ lọc",
+                                tint = if (activeFilterCount > 0) tokens.primary else tokens.onSurface,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+
+                        if (activeFilterCount > 0) {
+                            Surface(
+                                shape = CircleShape,
+                                color = tokens.primary,
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(18.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = activeFilterCount.toString(),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                        ),
+                                    )
+                                }
                             }
                         }
                     }
@@ -212,142 +260,199 @@ fun PrismTransactionsScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            // 1. Segmented Filter Pills Bar (Tất cả, Thu nhập, Chi tiêu)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                PrismFilterPill(
-                    label = "Tất cả",
-                    icon = Icons.Default.GridView,
-                    isSelected = filter == TransactionFilter.ALL,
-                    activeColor = tokens.primary,
-                    onClick = { viewModel.filter.value = TransactionFilter.ALL },
-                    modifier = Modifier.weight(1f),
-                )
+            // 1. Smart Micro-Insights Greeting Banner
+            PrismSmartInsightGreeting(
+                insight = smartInsight,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            )
 
-                PrismFilterPill(
-                    label = "Thu nhập",
-                    icon = Icons.Default.ArrowDownward,
-                    isSelected = filter == TransactionFilter.INCOME,
-                    activeColor = FinluxColors.IncomeGreen,
-                    onClick = { viewModel.filter.value = TransactionFilter.INCOME },
-                    modifier = Modifier.weight(1f),
-                )
+            // 2. Inline Instant Search Bar
+            PrismInlineSearchBar(
+                query = searchQuery,
+                onQueryChange = { viewModel.setSearchQuery(it) },
+                onClear = { viewModel.setSearchQuery("") },
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            )
 
-                PrismFilterPill(
-                    label = "Chi tiêu",
-                    icon = Icons.Default.ArrowUpward,
-                    isSelected = filter == TransactionFilter.EXPENSE,
-                    activeColor = FinluxColors.ExpenseRed,
-                    onClick = { viewModel.filter.value = TransactionFilter.EXPENSE },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            // 3. Horizontal Quick Filter Chips Row
+            PrismQuickFilterChipsRow(
+                categories = allCategories,
+                wallets = allWallets,
+                selectedCategoryId = selectedCategoryId,
+                selectedWalletId = selectedWalletId,
+                selectedPeriod = periodFilter,
+                onCategoryToggle = { viewModel.toggleQuickCategory(it) },
+                onWalletToggle = { viewModel.toggleQuickWallet(it) },
+                onPeriodSelect = { viewModel.setPeriod(it) },
+                onOpenFullFilter = { showFilterSheet = true },
+                activeFilterCount = activeFilterCount,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
 
-            Spacer(Modifier.height(6.dp))
-
-            val groupedTransactions = remember(transactions, financeZone) {
-                transactions.groupBy { tx ->
-                    tx.date.atZone(financeZone).toLocalDate()
+            if (viewMode == TransactionViewMode.CALENDAR) {
+                // Calendar Heatmap View
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 6.dp,
+                        bottom = if (isRootTab) 96.dp else 24.dp,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item {
+                        PrismSpendingCalendarView(
+                            dailySummaries = dailySummaries,
+                            selectedDate = selectedCalendarDate,
+                            onSelectDate = { viewModel.setSelectedCalendarDate(it) },
+                            transactions = transactions,
+                            categories = categories,
+                            wallets = wallets,
+                            onTransactionClick = { tx -> viewingTransaction = tx },
+                            onTransactionLongClick = { tx -> actionTransaction = tx },
+                            zone = financeZone,
+                        )
+                    }
                 }
-            }
-            val today = remember(financeZone) { java.time.LocalDate.now(financeZone) }
-            val yesterday = remember(today) { today.minusDays(1) }
+            } else {
+                // 4. Segmented Filter Pills Bar (Tất cả, Thu nhập, Chi tiêu)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    PrismFilterPill(
+                        label = "Tất cả",
+                        icon = Icons.Default.GridView,
+                        isSelected = filter == TransactionFilter.ALL,
+                        activeColor = tokens.primary,
+                        onClick = { viewModel.filter.value = TransactionFilter.ALL },
+                        modifier = Modifier.weight(1f),
+                    )
 
-            // 2. Transaction List
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = 8.dp,
-                    bottom = if (isRootTab) 96.dp else 24.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                // Summary Bento Banner Card
-                item {
-                    PrismSummaryBentoBanner(
-                        filter = filter,
-                        periodFilter = periodFilter,
-                        totalIncome = totalIncome,
-                        totalExpense = totalExpense,
-                        netCashFlow = netCashFlow,
-                        itemCount = transactions.size,
+                    PrismFilterPill(
+                        label = "Thu nhập",
+                        icon = Icons.Default.ArrowDownward,
+                        isSelected = filter == TransactionFilter.INCOME,
+                        activeColor = FinluxColors.IncomeGreen,
+                        onClick = { viewModel.filter.value = TransactionFilter.INCOME },
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    PrismFilterPill(
+                        label = "Chi tiêu",
+                        icon = Icons.Default.ArrowUpward,
+                        isSelected = filter == TransactionFilter.EXPENSE,
+                        activeColor = FinluxColors.ExpenseRed,
+                        onClick = { viewModel.filter.value = TransactionFilter.EXPENSE },
+                        modifier = Modifier.weight(1f),
                     )
                 }
 
-                // Transaction Items or Empty State
-                if (transactions.isEmpty()) {
+                Spacer(Modifier.height(4.dp))
+
+                val groupedTransactions = remember(transactions, financeZone) {
+                    transactions.groupBy { tx ->
+                        tx.date.atZone(financeZone).toLocalDate()
+                    }
+                }
+                val today = remember(financeZone) { java.time.LocalDate.now(financeZone) }
+                val yesterday = remember(today) { today.minusDays(1) }
+
+                // 5. Transaction List
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 6.dp,
+                        bottom = if (isRootTab) 96.dp else 24.dp,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // Summary Bento Banner Card
                     item {
-                        FinluxEmptyState(
-                            title = "Không có giao dịch nào",
-                            description = "Không tìm thấy giao dịch phù hợp với bộ lọc hiện tại.",
+                        PrismSummaryBentoBanner(
+                            filter = filter,
+                            periodFilter = periodFilter,
+                            totalIncome = totalIncome,
+                            totalExpense = totalExpense,
+                            netCashFlow = netCashFlow,
+                            itemCount = transactions.size,
                         )
                     }
-                } else {
-                    groupedTransactions.forEach { (date, txList) ->
-                        item(key = "header_$date") {
-                            val headerTitle = when (date) {
-                                today -> "Hôm nay"
-                                yesterday -> "Hôm qua"
-                                else -> date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                            }
 
-                            val dayIncome = txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
-                            val dayExpense = txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
-                            val dayNet = dayIncome - dayExpense
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 4.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                ) {
-                                    Text(
-                                        text = headerTitle,
-                                        style = FinluxTextStyles.SectionTitle.copy(
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        ),
-                                        color = tokens.onSurface,
-                                    )
-                                    Text(
-                                        text = "(${txList.size})",
-                                        style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
-                                        color = tokens.onSurfaceVariant,
-                                    )
-                                }
-
-                                if (dayExpense > 0L || dayIncome > 0L) {
-                                    Text(
-                                        text = if (dayNet >= 0) "+${formatVndAmount(dayNet, isCompact = true)}" else "-${formatVndAmount(-dayNet, isCompact = true)}",
-                                        style = FinluxTextStyles.Caption.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                        ),
-                                        color = if (dayNet >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
-                                    )
-                                }
-                            }
-                        }
-
-                        item(key = "group_$date") {
-                            FinluxTransactionGroup(
-                                transactions = txList,
-                                categories = categories,
-                                wallets = wallets,
-                                onTransactionClick = { tx -> viewingTransaction = tx },
-                                onTransactionLongClick = { tx -> actionTransaction = tx },
+                    // Transaction Items or Empty State
+                    if (transactions.isEmpty()) {
+                        item {
+                            FinluxEmptyState(
+                                title = "Không có giao dịch nào",
+                                description = if (searchQuery.isNotBlank()) "Không tìm thấy giao dịch với từ khóa \"$searchQuery\"." else "Không tìm thấy giao dịch phù hợp với bộ lọc hiện tại.",
                             )
+                        }
+                    } else {
+                        groupedTransactions.forEach { (date, txList) ->
+                            item(key = "header_$date") {
+                                val headerTitle = when (date) {
+                                    today -> "Hôm nay"
+                                    yesterday -> "Hôm qua"
+                                    else -> date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                }
+
+                                val dayIncome = txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
+                                val dayExpense = txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+                                val dayNet = dayIncome - dayExpense
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    ) {
+                                        Text(
+                                            text = headerTitle,
+                                            style = FinluxTextStyles.SectionTitle.copy(
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                            ),
+                                            color = tokens.onSurface,
+                                        )
+                                        Text(
+                                            text = "(${txList.size})",
+                                            style = FinluxTextStyles.Caption.copy(fontSize = 12.sp),
+                                            color = tokens.onSurfaceVariant,
+                                        )
+                                    }
+
+                                    if (dayExpense > 0L || dayIncome > 0L) {
+                                        Text(
+                                            text = if (dayNet >= 0) "+${formatVndAmount(dayNet, isCompact = true)}" else "-${formatVndAmount(-dayNet, isCompact = true)}",
+                                            style = FinluxTextStyles.Caption.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                            ),
+                                            color = if (dayNet >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
+                                        )
+                                    }
+                                }
+                            }
+
+                            item(key = "group_$date") {
+                                FinluxTransactionGroup(
+                                    transactions = txList,
+                                    categories = categories,
+                                    wallets = wallets,
+                                    onTransactionClick = { tx -> viewingTransaction = tx },
+                                    onTransactionLongClick = { tx -> actionTransaction = tx },
+                                )
+                            }
                         }
                     }
                 }
@@ -1021,3 +1126,334 @@ private fun PrismTransactionCardItem(
         }
     }
 }
+
+/**
+ * Smart Micro-Insights Greeting Banner (Finlux History 2.0)
+ */
+@Composable
+private fun PrismSmartInsightGreeting(
+    insight: SmartInsightUiModel,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+    val (accentColor, iconVector) = when (insight.iconType) {
+        InsightIconType.POSITIVE -> FinluxColors.IncomeGreen to Icons.Default.AutoAwesome
+        InsightIconType.ATTENTION -> Color(0xFFF59E0B) to Icons.Default.Warning
+        InsightIconType.INFO -> tokens.primary to Icons.Default.TipsAndUpdates
+    }
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = accentColor.copy(alpha = if (tokens.isDark) 0.12f else 0.08f),
+        border = BorderStroke(1.dp, accentColor.copy(alpha = if (tokens.isDark) 0.28f else 0.18f)),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = accentColor.copy(alpha = 0.18f),
+                modifier = Modifier.size(34.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = iconVector,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(17.dp),
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
+                Text(
+                    text = insight.title,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    color = tokens.onSurface,
+                )
+                Text(
+                    text = insight.description,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.5.sp,
+                        lineHeight = 15.sp,
+                    ),
+                    color = tokens.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Inline Instant Search Bar with Instant Live Filtering
+ */
+@Composable
+private fun PrismInlineSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+    val focusManager = LocalFocusManager.current
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = tokens.surfaceSoft,
+        border = BorderStroke(1.dp, tokens.border),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Tìm kiếm",
+                tint = if (query.isNotBlank()) tokens.primary else tokens.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+
+            androidx.compose.foundation.text.BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.weight(1f),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 13.5.sp,
+                    color = tokens.onSurface,
+                ),
+                singleLine = true,
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(tokens.primary),
+                decorationBox = { innerTextField ->
+                    if (query.isEmpty()) {
+                        Text(
+                            text = "Tìm theo ghi chú, danh mục, số tiền...",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 13.sp,
+                                color = tokens.onSurfaceVariant.copy(alpha = 0.65f),
+                            ),
+                        )
+                    }
+                    innerTextField()
+                },
+            )
+
+            if (query.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        onClear()
+                        focusManager.clearFocus()
+                    },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Xóa tìm kiếm",
+                        tint = tokens.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Horizontal Quick Filter Chips Row (1-Tap Selection)
+ */
+@Composable
+private fun PrismQuickFilterChipsRow(
+    categories: List<Category>,
+    wallets: List<Wallet>,
+    selectedCategoryId: String?,
+    selectedWalletId: String?,
+    selectedPeriod: TimePeriodFilter,
+    onCategoryToggle: (String) -> Unit,
+    onWalletToggle: (String) -> Unit,
+    onPeriodSelect: (TimePeriodFilter) -> Unit,
+    onOpenFullFilter: () -> Unit,
+    activeFilterCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Quick Period: Tất cả
+        item(key = "period_all") {
+            QuickFilterChipItem(
+                label = "Tất cả",
+                isSelected = selectedPeriod == TimePeriodFilter.ALL && selectedCategoryId == null && selectedWalletId == null,
+                onClick = { onPeriodSelect(TimePeriodFilter.ALL) },
+            )
+        }
+
+        // Quick Period: Kỳ này
+        item(key = "period_current") {
+            QuickFilterChipItem(
+                label = "Kỳ này",
+                isSelected = selectedPeriod == TimePeriodFilter.CURRENT_PERIOD,
+                onClick = {
+                    onPeriodSelect(
+                        if (selectedPeriod == TimePeriodFilter.CURRENT_PERIOD) TimePeriodFilter.ALL else TimePeriodFilter.CURRENT_PERIOD
+                    )
+                },
+            )
+        }
+
+        // Quick Period: Tháng này
+        item(key = "period_month") {
+            QuickFilterChipItem(
+                label = "Tháng này",
+                isSelected = selectedPeriod == TimePeriodFilter.THIS_MONTH,
+                onClick = {
+                    onPeriodSelect(
+                        if (selectedPeriod == TimePeriodFilter.THIS_MONTH) TimePeriodFilter.ALL else TimePeriodFilter.THIS_MONTH
+                    )
+                },
+            )
+        }
+
+        // Categories Quick Chips
+        categories.take(6).forEach { category ->
+            item(key = "cat_${category.id}") {
+                val isSelected = selectedCategoryId == category.id
+                val catColor = colorFromHex(category.colorHex)
+                QuickFilterChipItem(
+                    label = category.name,
+                    icon = categoryIcon(category.icon),
+                    isSelected = isSelected,
+                    customActiveColor = catColor,
+                    onClick = { onCategoryToggle(category.id) },
+                )
+            }
+        }
+
+        // Wallets Quick Chips
+        wallets.take(4).forEach { wallet ->
+            item(key = "wallet_${wallet.id}") {
+                val isSelected = selectedWalletId == wallet.id
+                QuickFilterChipItem(
+                    label = wallet.name,
+                    icon = Icons.Default.AccountBalanceWallet,
+                    isSelected = isSelected,
+                    onClick = { onWalletToggle(wallet.id) },
+                )
+            }
+        }
+
+        // More Filters Chip
+        item(key = "open_full_filter") {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.16f) else tokens.surfaceSoft,
+                border = BorderStroke(1.dp, if (activeFilterCount > 0) tokens.primary else tokens.border),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(onClick = onOpenFullFilter)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Bộ lọc",
+                        tint = if (activeFilterCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = if (activeFilterCount > 0) "Bộ lọc ($activeFilterCount)" else "Bộ lọc",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 11.5.sp,
+                            fontWeight = if (activeFilterCount > 0) FontWeight.Bold else FontWeight.Medium,
+                        ),
+                        color = if (activeFilterCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickFilterChipItem(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    customActiveColor: Color? = null,
+) {
+    val tokens = LocalFinluxTokens.current
+    val activeColor = customActiveColor ?: tokens.primary
+
+    val containerColor = if (isSelected) {
+        activeColor.copy(alpha = if (tokens.isDark) 0.22f else 0.14f)
+    } else {
+        tokens.surfaceSoft
+    }
+
+    val contentColor = if (isSelected) {
+        activeColor
+    } else {
+        tokens.onSurfaceVariant
+    }
+
+    val borderColor = if (isSelected) {
+        activeColor.copy(alpha = 0.80f)
+    } else {
+        tokens.border
+    }
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick,
+            )
+            .padding(horizontal = 12.dp, vertical = 6.5.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.5.dp),
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(13.dp),
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 12.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                ),
+                color = contentColor,
+            )
+        }
+    }
+}
+

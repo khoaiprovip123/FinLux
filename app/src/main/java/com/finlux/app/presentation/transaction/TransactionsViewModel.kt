@@ -41,6 +41,32 @@ enum class TransactionFilter(val label: String, val heading: String) {
     EXPENSE("Chi tiêu", "Chi tiêu"),
 }
 
+enum class TransactionViewMode {
+    LIST,
+    CALENDAR,
+}
+
+enum class InsightIconType {
+    POSITIVE,
+    INFO,
+    ATTENTION,
+}
+
+data class SmartInsightUiModel(
+    val title: String,
+    val description: String,
+    val iconType: InsightIconType = InsightIconType.INFO,
+)
+
+data class DayFinancialSummary(
+    val date: LocalDate,
+    val totalIncome: Long = 0L,
+    val totalExpense: Long = 0L,
+    val transactionCount: Int = 0,
+) {
+    val netAmount: Long get() = totalIncome - totalExpense
+}
+
 enum class TimePeriodFilter(val label: String) {
     ALL("Tất cả thời gian"),
     CURRENT_PERIOD("Kỳ này"),
@@ -90,6 +116,8 @@ class TransactionsViewModel @Inject constructor(
     val searchQuery = MutableStateFlow("")
     val minimumAmount = MutableStateFlow<Long?>(null)
     val maximumAmount = MutableStateFlow<Long?>(null)
+    val viewMode = MutableStateFlow(TransactionViewMode.LIST)
+    val selectedCalendarDate = MutableStateFlow<LocalDate?>(null)
 
     private val lookups = combine(
         categoryRepository.observeCategories(),
@@ -216,8 +244,94 @@ class TransactionsViewModel @Inject constructor(
         .map { FinanceTime.zoneOf(it.financeTimeZone) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ZoneId.systemDefault())
 
+    val dailySummaries: StateFlow<Map<LocalDate, DayFinancialSummary>> = combine(
+        transactions,
+        financeZone,
+    ) { txList, zone ->
+        txList.groupBy { it.date.atZone(zone).toLocalDate() }
+            .mapValues { (date, items) ->
+                val income = items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
+                val expense = items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+                DayFinancialSummary(
+                    date = date,
+                    totalIncome = income,
+                    totalExpense = expense,
+                    transactionCount = items.size,
+                )
+            }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    val smartInsight: StateFlow<SmartInsightUiModel> = combine(
+        transactions,
+        financeZone,
+        netCashFlow,
+        totalIncome,
+        totalExpense,
+    ) { txList, zone, netFlow, income, expense ->
+        val today = LocalDate.now(zone)
+        val todayTxs = txList.filter { it.date.atZone(zone).toLocalDate() == today }
+        val todayExpense = todayTxs.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+        val todayIncome = todayTxs.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
+
+        when {
+            txList.isEmpty() -> SmartInsightUiModel(
+                title = "Sẵn sàng ghi nhận",
+                description = "Chưa có giao dịch nào phù hợp với bộ lọc hiện tại.",
+                iconType = InsightIconType.INFO,
+            )
+            todayTxs.isNotEmpty() && todayExpense > 0L -> SmartInsightUiModel(
+                title = "Hôm nay đã ghi nhận ${todayTxs.size} giao dịch",
+                description = "Chi tiêu hôm nay là ${formatInsightAmount(todayExpense)} đ. Tiếp tục duy trì thói quen ghi chép nhé! 🌟",
+                iconType = InsightIconType.POSITIVE,
+            )
+            todayTxs.isNotEmpty() && todayIncome > 0L -> SmartInsightUiModel(
+                title = "Thu nhập hôm nay +${formatInsightAmount(todayIncome)} đ",
+                description = "Một ngày đầy năng lượng tích cực với nguồn thu mới! 🚀",
+                iconType = InsightIconType.POSITIVE,
+            )
+            netFlow > 0L && income > 0L -> {
+                val savingsPercent = ((netFlow.toDouble() / income.toDouble()) * 100).toInt().coerceIn(1, 100)
+                SmartInsightUiModel(
+                    title = "Dòng tiền thặng dư +${formatInsightAmount(netFlow)} đ",
+                    description = "Bạn đang giữ lại được $savingsPercent% tổng thu nhập. Quản lý tài chính rất xuất sắc! 👏",
+                    iconType = InsightIconType.POSITIVE,
+                )
+            }
+            netFlow < 0L -> SmartInsightUiModel(
+                title = "Chi tiêu đang vượt thu nhập ${formatInsightAmount(-netFlow)} đ",
+                description = "Hãy xem lại các danh mục chi lớn để cân đối lại dòng tiền kỳ này nhé.",
+                iconType = InsightIconType.ATTENTION,
+            )
+            else -> SmartInsightUiModel(
+                title = "Nhịp điệu chi tiêu ổn định",
+                description = "Đã ghi nhận ${txList.size} giao dịch trong khoảng thời gian đã chọn.",
+                iconType = InsightIconType.INFO,
+            )
+        }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        SmartInsightUiModel("FinLux đồng hành", "Theo dõi dòng tiền thông minh mỗi ngày", InsightIconType.INFO),
+    )
+
     private val mutableMessages = MutableSharedFlow<TransactionUiEvent>()
     val messages = mutableMessages.asSharedFlow()
+
+    fun setViewMode(mode: TransactionViewMode) {
+        viewMode.value = mode
+    }
+
+    fun setSelectedCalendarDate(date: LocalDate?) {
+        selectedCalendarDate.value = date
+    }
+
+    fun toggleQuickCategory(categoryId: String) {
+        categoryFilter.value = if (categoryFilter.value == categoryId) null else categoryId
+    }
+
+    fun toggleQuickWallet(walletId: String) {
+        walletFilter.value = if (walletFilter.value == walletId) null else walletId
+    }
 
     fun setFilter(newFilter: TransactionFilter) {
         filter.value = newFilter
@@ -258,6 +372,7 @@ class TransactionsViewModel @Inject constructor(
         searchQuery.value = ""
         minimumAmount.value = null
         maximumAmount.value = null
+        selectedCalendarDate.value = null
     }
 
     fun delete(transaction: FinanceTransaction) = viewModelScope.launch {
@@ -284,3 +399,9 @@ private fun normalizeSearchText(value: String): String = Normalizer
     .normalize(value.lowercase(), Normalizer.Form.NFD)
     .replace("\\p{Mn}+".toRegex(), "")
     .replace('đ', 'd')
+
+private fun formatInsightAmount(amount: Long): String {
+    val formatter = java.text.DecimalFormat("#,###")
+    return formatter.format(amount).replace(',', '.')
+}
+

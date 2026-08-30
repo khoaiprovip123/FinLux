@@ -1,8 +1,37 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.14.0 (versionCode 156)
-- **Trạng thái Build:** ✅ STABLE — Tính năng sao chép ngân sách sang kỳ tiếp theo & sửa lỗi cuộn form màn hình ngang đã hoàn thành. Tests 100% PASS.
+- **Phiên bản hiện tại:** v1.15.0 (versionCode 157)
+- **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất nâng cấp Lịch sử Giao Dịch 2.0 (History Redesign 2.0) với 100% tests PASS và đóng gói APK thành công.
+
+### [Task-TRANSACTION-HISTORY-REDESIGN-V2] — Nâng cấp toàn diện Lịch sử thu chi (History 2.0)
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ Nâng cấp `TransactionsViewModel` hỗ trợ: Chế độ Lịch nhiệt lượng chi tiêu (`TransactionViewMode.LIST` vs `CALENDAR`), chọn ngày `selectedCalendarDate`, tóm tắt thông minh `SmartInsightUiModel`, gom nhóm dữ liệu theo ngày cho Calendar Heatmap.
+  2. ✅ Nâng cấp `PrismTransactionsScreen`:
+     - Tích hợp **Smart Micro-Insights Greeting Banner** (Lời nhắn tài chính ngữ cảnh thấu hiểu).
+     - Tích hợp **Inline Instant Search Bar** (Tìm kiếm trực diện không dấu) & **Horizontal Quick Filter Chips** (Lọc nhanh 1-chạm: Kỳ này, Tháng này, Danh mục, Ví...).
+     - Tích hợp **View Mode Switcher** (Danh sách ⟷ Lịch chi tiêu).
+     - Tích hợp **Spending Calendar Heatmap View** (`PrismSpendingCalendarView` - Lưới lịch tháng kèm chấm nhiệt lượng dòng tiền Xanh/Vàng/Đỏ).
+  3. ✅ Nâng cấp `TransactionDetailSheet` thành **Digital Glass Receipt (Phiếu biên lai kỹ thuật số)**:
+     - Header thương hiệu FinLux, mã giao dịch `#FLX-xxxx`, thẻ loại hình giao dịch.
+     - Section hiển thị tình trạng chứng từ đính kèm.
+     - Nút chia sẻ biên lai nhanh dạng tin nhắn (`[📤 Chia sẻ biên lai]`).
+  4. ✅ Đồng bộ hóa trên `ModernTransactionsScreen` và `ClassicTransactionsScreen`.
+  5. ✅ Viết unit test mới cho ViewModel đảm bảo 100% tests PASS (`testDebugUnitTest`).
+- **Kết quả kiểm thử**: `gradlew testDebugUnitTest` **BUILD SUCCESSFUL** 100% PASS.
+- **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismSpendingCalendarView.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt`
+  - `app/src/test/java/com/finlux/app/presentation/transaction/TransactionsViewModelTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
 
 ### [Task-BUDGET-COPY-AND-LANDSCAPE-FIX] — Sao chép ngân sách & Khắc phục cuộn form màn hình ngang
 - **Status**: `[DONE]`

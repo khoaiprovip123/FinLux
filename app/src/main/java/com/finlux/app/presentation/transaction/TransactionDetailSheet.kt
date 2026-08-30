@@ -1,5 +1,6 @@
 package com.finlux.app.presentation.transaction
 
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,8 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import androidx.compose.material.icons.Icons
@@ -25,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -32,8 +36,10 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -57,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,7 +80,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Bottom Sheet Modal for Transaction Details & Actions (matching UI spec image)
+ * Bottom Sheet Modal for Transaction Details & Digital Glass Receipt (History 2.0)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +94,7 @@ fun TransactionDetailSheet(
     onDelete: (FinanceTransaction) -> Unit = {},
 ) {
     val tokens = LocalFinluxTokens.current
+    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
@@ -119,6 +127,17 @@ fun TransactionDetailSheet(
     val formattedDate = transaction.date.atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("HH:mm · dd/MM/yyyy"))
 
+    val receiptCode = remember(transaction.id) {
+        val hash = if (transaction.id.isNotBlank()) transaction.id.takeLast(6).uppercase() else "000000"
+        "#FLX-$hash"
+    }
+
+    val walletDisplayName = when (transaction.type) {
+        TransactionType.TRANSFER_OUT -> if (relatedWallet != null) "${wallet?.name ?: "Ví nguồn"} ➔ ${relatedWallet.name}" else wallet?.name ?: "Ví nguồn"
+        TransactionType.TRANSFER_IN -> if (relatedWallet != null) "${relatedWallet.name} ➔ ${wallet?.name ?: "Ví nhận"}" else wallet?.name ?: "Ví nhận"
+        else -> wallet?.name ?: "Ví tiền mặt"
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -137,11 +156,12 @@ fun TransactionDetailSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // 1. Header: Icon Category + Title + Close Button
+            // 1. Header: Brand / Receipt Code + Close Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -149,43 +169,92 @@ fun TransactionDetailSheet(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = accentColor.copy(alpha = 0.12f),
-                        modifier = Modifier.size(42.dp),
+                        modifier = Modifier.size(38.dp),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = headerIcon,
                                 contentDescription = null,
                                 tint = accentColor,
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
-                    Text(
-                        text = "Chi tiết giao dịch",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 19.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    Column {
+                        Text(
+                            text = "Biên lai giao dịch",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = receiptCode,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = tokens.primary,
+                        )
+                    }
                 }
 
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), CircleShape),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Đóng",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp),
-                    )
+                    // Nút Chia sẻ biên lai nhanh
+                    IconButton(
+                        onClick = {
+                            val shareSlip = buildString {
+                                append("✨ BIÊN LAI GIAO DỊCH FINLUX\n")
+                                append("-----------------------------\n")
+                                append("Mã GD: $receiptCode\n")
+                                append("Số tiền: $amountPrefix${formatVndAmount(transaction.amount.value)}\n")
+                                append("Loại: $badgeLabel\n")
+                                append("Danh mục: ${category?.name ?: "Tài chính"}\n")
+                                append("Ví: $walletDisplayName\n")
+                                append("Thời gian: $formattedDate\n")
+                                if (transaction.note.isNotBlank()) append("Ghi chú: ${transaction.note}\n")
+                                append("-----------------------------\n")
+                                append("Quản lý tài chính cá nhân cùng FinLux ✨")
+                            }
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, shareSlip)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Chia sẻ biên lai"))
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(tokens.primary.copy(alpha = 0.12f), CircleShape),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Chia sẻ",
+                            tint = tokens.primary,
+                            modifier = Modifier.size(17.dp),
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), CircleShape),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Đóng",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
             }
 
@@ -318,8 +387,8 @@ fun TransactionDetailSheet(
                             icon = Icons.AutoMirrored.Filled.ReceiptLong,
                             iconTint = Color(0xFF2563EB),
                             iconBg = Color(0xFF2563EB).copy(alpha = 0.12f),
-                            label = "Hóa đơn đính kèm",
-                            value = "Có 1 hóa đơn đính kèm",
+                            label = "Hóa đơn & Chứng từ",
+                            value = "Đã lưu chứng từ đính kèm ✓",
                         )
                     }
                 }
@@ -606,6 +675,7 @@ fun TransactionDetailSheet(
         }
     }
 }
+
 
 @Composable
 private fun DetailItemRow(

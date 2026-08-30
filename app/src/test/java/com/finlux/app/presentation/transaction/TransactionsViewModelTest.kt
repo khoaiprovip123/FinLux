@@ -142,4 +142,46 @@ class TransactionsViewModelTest {
 
         coVerify(exactly = 1) { addTransactionUseCase.invoke(sampleTx) }
     }
+
+    @Test
+    fun `view mode switches between LIST and CALENDAR`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        assertEquals(TransactionViewMode.LIST, viewModel.viewMode.value)
+
+        viewModel.setViewMode(TransactionViewMode.CALENDAR)
+        assertEquals(TransactionViewMode.CALENDAR, viewModel.viewMode.value)
+
+        viewModel.setViewMode(TransactionViewMode.LIST)
+        assertEquals(TransactionViewMode.LIST, viewModel.viewMode.value)
+    }
+
+    @Test
+    fun `toggle quick category and wallet works idempotently`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+
+        viewModel.toggleQuickCategory("c1")
+        assertEquals("c1", viewModel.categoryFilter.value)
+
+        viewModel.toggleQuickCategory("c1")
+        assertEquals(null, viewModel.categoryFilter.value)
+
+        viewModel.toggleQuickWallet("w1")
+        assertEquals("w1", viewModel.walletFilter.value)
+
+        viewModel.toggleQuickWallet("w1")
+        assertEquals(null, viewModel.walletFilter.value)
+    }
+
+    @Test
+    fun `smart insight and daily summaries are computed`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.transactions.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.smartInsight.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.dailySummaries.collect() }
+        advanceUntilIdle()
+
+        assertTrue(viewModel.smartInsight.value.title.isNotBlank())
+        assertTrue(viewModel.dailySummaries.value.isNotEmpty())
+    }
 }
+
