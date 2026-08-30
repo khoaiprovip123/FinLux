@@ -4,24 +4,19 @@
 - **Phiên bản hiện tại:** v1.15.0 (versionCode 157)
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Lịch sử Thu Chi chuẩn Liquid Glass Prism (History Redesign 2.1), 100% tests PASS và APK build thành công.
 
-### [Task-TRANSACTION-EXPLORER-REDESIGN-V2.4] — Tối ưu Search Bar (Nút lọc bên phải), Tăng cỡ số tiền & Thêm icon cho 4 Tab
+### [Task-HOME-RECENT-TRANSACTIONS-SYNC] — Đồng bộ giao diện Giao dịch gần nhất trên Trang chủ với màn hình Giao dịch
 - **Status**: `[DONE]`
-- **Mục tiêu đã hoàn thành theo phản hồi người dùng**:
-  1. ✅ **Đưa icon Lọc vào bên phải Thanh tìm kiếm**: Nút lọc kèm badge hiển thị số bộ lọc đang áp dụng được đặt ngay trong thanh tìm kiếm bên tay phải.
-  2. ✅ **Tăng cường số tiền to và rõ nét hơn**: Tăng kích thước số tiền lên `17sp ExtraBold` với màu tương phản cao (Thu: `#059669`, Chi: `#E11D48`, Chuyển: `#2563EB`).
-  3. ✅ **Bổ sung icon mới, sửa bo text và triệt tiêu hoàn toàn lỗi tô nền chữ bên trong cho 4 Tab [ Tất cả | Thu | Chi | Chuyển ]**:
-     - Thêm icon nhận diện trực quan: GridView (Tất cả), TrendingUp (Thu), TrendingDown (Chi), SwapHoriz (Chuyển).
-     - Thay thế Surface phức tạp bằng Box với Gradient/Border trực tiếp trên `RoundedCornerShape(14.dp)`, loại bỏ 100% hiện tượng bóng/nền chữ thừa bên trong.
-     - Canh chỉnh padding 4dp và font size 13sp SemiBold/Bold, chữ và icon hiển thị sắc nét, thoáng đãng.
+- **Mục tiêu đã hoàn thành theo yêu cầu người dùng**:
+  1. ✅ **Đồng bộ hóa 100% thẻ giao dịch trên Trang chủ (`PrismHomeScreen.kt`)**:
+     - Thiết kế theo chuẩn 3 cột: Container Icon 50dp (icon 24dp trắng trên nền gradient nhận diện danh mục), Cột giữa (Tên giao dịch 15.5sp SemiBold + Tên danh mục 13.5sp), Cột phải (Số tiền lớn 17sp ExtraBold + Giờ 12.5sp canh phải).
+     - Card bo góc 20dp, shadow 2dp, nền sáng tinh tế, spacing 8dp.
+  2. ✅ **Giới hạn hiển thị tối đa 5 giao dịch của ngày hôm nay**:
+     - Lọc danh sách giao dịch phát sinh trong ngày hôm nay.
+     - Hiển thị tối đa 5 giao dịch đầu tiên trên Trang chủ.
+     - Nếu có nhiều hơn 5 giao dịch, hiển thị nút CTA `[ Xem thêm X giao dịch trong Lịch sử ]` điều hướng trực tiếp sang tab Giao dịch (`Route.Transactions.value`).
 - **Kết quả kiểm thử**: `gradlew testDebugUnitTest` 100% PASS, `gradlew assembleDebug` BUILD SUCCESSFUL.
 - **Files đã sửa đổi**:
-  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
-  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
-  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt`
-  - `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
-  - `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
-  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
-  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
   - `HANDOVER_LOG.md`
 
 ### [Task-TRANSACTION-HISTORY-REDESIGN-V2] — Nâng cấp toàn diện Lịch sử thu chi (History 2.0)

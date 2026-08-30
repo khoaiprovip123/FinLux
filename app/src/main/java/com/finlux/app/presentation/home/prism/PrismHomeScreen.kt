@@ -140,6 +140,18 @@ fun PrismHomeScreen(
     val walletsMap = remember(state.wallets) { state.wallets.associateBy(Wallet::id) }
     val showBalance = state.showBalance
     val tokens = LocalFinluxTokens.current
+    val today = remember { java.time.LocalDate.now() }
+    val todayTransactions = remember(state.transactions) {
+        state.transactions.filter { tx ->
+            tx.date.atZone(java.time.ZoneId.systemDefault()).toLocalDate() == today
+        }
+    }
+    val displayTransactions = remember(state.transactions, todayTransactions) {
+        if (todayTransactions.isNotEmpty()) todayTransactions.take(5) else state.transactions.take(5)
+    }
+    val totalRecentCount = if (todayTransactions.isNotEmpty()) todayTransactions.size else state.transactions.size
+    val hasMoreTransactions = (todayTransactions.isNotEmpty() && todayTransactions.size > 5) || (todayTransactions.isEmpty() && state.transactions.size > 5)
+    val isTodaySection = todayTransactions.isNotEmpty()
 
     Box(
         modifier = Modifier
@@ -224,7 +236,7 @@ fun PrismHomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Giao dịch gần nhất",
+                        text = if (isTodaySection) "Giao dịch hôm nay" else "Giao dịch gần nhất",
                         style = FinluxTextStyles.SectionTitle,
                         fontWeight = FontWeight.Bold,
                         color = tokens.onSurface,
@@ -238,7 +250,7 @@ fun PrismHomeScreen(
                             .padding(horizontal = 6.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            text = "Xem tất cả",
+                            text = "Xem tất cả ($totalRecentCount)",
                             style = FinluxTextStyles.Caption,
                             fontWeight = FontWeight.SemiBold,
                             color = tokens.primary,
@@ -254,8 +266,8 @@ fun PrismHomeScreen(
                 }
             }
 
-            // 7. Recent Transactions List
-            if (state.transactions.isEmpty()) {
+            // 7. Recent Transactions List (Tối đa 5 giao dịch của ngày hôm nay, vượt quá chuyển qua Lịch sử)
+            if (displayTransactions.isEmpty()) {
                 item {
                     FinluxEmptyState(
                         title = "Chưa có giao dịch nào",
@@ -263,27 +275,35 @@ fun PrismHomeScreen(
                     )
                 }
             } else {
-                item(key = "recent_transaction_group") {
-                    FinluxTransactionGroup(
-                        transactions = state.transactions.take(10),
-                        categories = categoriesMap,
-                        wallets = walletsMap,
-                        showAmounts = showBalance,
-                        onTransactionClick = { tx -> onSelectTransaction?.invoke(tx) },
-                        onTransactionLongClick = onActionTransaction,
+                items(
+                    items = displayTransactions,
+                    key = { it.id },
+                ) { transaction ->
+                    val category = transaction.categoryId?.let { categoriesMap[it] }
+                    val wallet = walletsMap[transaction.walletId]
+
+                    PrismHomeExplorerTransactionCard(
+                        transaction = transaction,
+                        category = category,
+                        wallet = wallet,
+                        showBalance = showBalance,
+                        onClick = { onSelectTransaction?.invoke(transaction) },
+                        onLongClick = { onActionTransaction?.invoke(transaction) },
                     )
                 }
 
-                // "Xem thêm" button when there are more than 10 transactions
-                if (state.transactions.size > 10) {
-                    item {
+                // Nút chuyển sang Lịch sử để xem thêm khi vượt quá 5 giao dịch
+                if (hasMoreTransactions) {
+                    item(key = "see_more_home_tx_btn") {
+                        val remainingCount = if (todayTransactions.isNotEmpty()) todayTransactions.size - 5 else state.transactions.size - 5
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = tokens.surfaceSoft,
-                            border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.20f)),
+                            shape = RoundedCornerShape(18.dp),
+                            color = if (tokens.isDark) tokens.surfaceSoft else Color.White,
+                            border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.8f)),
+                            shadowElevation = if (tokens.isDark) 0.dp else 1.5.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(18.dp))
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = ripple(bounded = true),
@@ -293,24 +313,24 @@ fun PrismHomeScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 14.dp),
+                                    .padding(vertical = 13.dp),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "Xem tất cả ${state.transactions.size} giao dịch",
-                                    style = FinluxTextStyles.Caption.copy(
+                                    text = "Xem thêm $remainingCount giao dịch trong Lịch sử",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
                                         fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontWeight = FontWeight.Bold,
                                     ),
                                     color = tokens.primary,
                                 )
-                                Spacer(Modifier.width(4.dp))
+                                Spacer(Modifier.width(6.dp))
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
                                     contentDescription = null,
                                     tint = tokens.primary,
-                                    modifier = Modifier.size(18.dp),
+                                    modifier = Modifier.size(17.dp),
                                 )
                             }
                         }
@@ -3130,3 +3150,169 @@ private fun PrismRecentTransactionItem(
         }
     }
 }
+
+/**
+ * Thẻ giao dịch đồng bộ chuẩn 3 cột với màn hình Giao dịch (Transaction Explorer)
+ */
+@Composable
+private fun PrismHomeExplorerTransactionCard(
+    transaction: FinanceTransaction,
+    category: Category?,
+    wallet: Wallet?,
+    showBalance: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+    val zone = remember { java.time.ZoneId.systemDefault() }
+
+    val isIncome = transaction.type == TransactionType.INCOME
+    val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
+
+    // Amount Sign & Color
+    val amountPrefix = if (isIncome) "+" else "−"
+    val amountColor = when {
+        isIncome -> Color(0xFF059669) // Deep Emerald Green
+        isTransfer -> Color(0xFF2563EB) // Blue
+        else -> Color(0xFFE11D48) // Vibrant Crimson Red
+    }
+
+    val displayAmount = if (showBalance) {
+        amountPrefix + formatVndAmount(transaction.amount.value).replace("đ", "₫")
+    } else {
+        "••••••••"
+    }
+
+    // Title & Subtitle text
+    val mainTitle = transaction.note.ifBlank {
+        category?.name ?: if (isTransfer) "Chuyển tiền" else "Giao dịch"
+    }
+
+    val subTitle = when {
+        isTransfer -> "Chuyển tiền"
+        transaction.note.isNotBlank() && category != null -> category.name
+        else -> if (isIncome) "Thu nhập" else "Chi tiêu"
+    }
+
+    // Time text (HH:mm)
+    val timeFormatter = remember { java.time.format.DateTimeFormatter.ofPattern("HH:mm") }
+    val timeText = remember(transaction.date, zone) {
+        transaction.date.atZone(zone).format(timeFormatter)
+    }
+
+    // Icon Container Styling
+    val iconColorHex = category?.colorHex
+    val parsedColor = remember(iconColorHex) {
+        if (!iconColorHex.isNullOrBlank()) colorFromHex(iconColorHex) else null
+    }
+
+    val iconBackgroundBrush = remember(transaction.type, parsedColor) {
+        when {
+            isIncome -> Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))
+            isTransfer -> Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))
+            parsedColor != null -> Brush.linearGradient(listOf(parsedColor, parsedColor.copy(alpha = 0.85f)))
+            else -> Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626)))
+        }
+    }
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (tokens.isDark) Color(0xFF1E1E34).copy(alpha = 0.75f) else Color.White,
+        border = BorderStroke(
+            1.dp,
+            if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.7f),
+        ),
+        shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            // 1. CỘT TRÁI: Container Icon 50dp
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .background(iconBackgroundBrush),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = if (isTransfer) Icons.Default.SwapHoriz else categoryIcon(category?.icon.orEmpty()),
+                    contentDescription = category?.name,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+
+            // 2. CỘT GIỮA: Tên giao dịch + Danh mục
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = mainTitle,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 15.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = tokens.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                Text(
+                    text = subTitle,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Normal,
+                    ),
+                    color = tokens.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            // 3. CỘT PHẢI: Số tiền To & Rõ nét + Giờ (Canh phải tuyệt đối)
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = displayAmount,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.4).sp,
+                    ),
+                    color = amountColor,
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                )
+
+                Text(
+                    text = timeText,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Normal,
+                    ),
+                    color = Color(0xFF94A3B8),
+                    textAlign = TextAlign.End,
+                )
+            }
+        }
+    }
+}
+
