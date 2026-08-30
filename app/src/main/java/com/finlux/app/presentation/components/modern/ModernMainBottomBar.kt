@@ -55,7 +55,7 @@ import com.finlux.app.domain.model.VisualStyle
 fun ModernMainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, onAdd: () -> Unit) {
     GlassBottomNav(Modifier.fillMaxWidth()) {
         DestinationItem(Route.Home, "Trang chủ", selectedRoute, onNavigate, Icons.Filled.Home, Icons.Outlined.Home)
-        DestinationItem(Route.Transactions, "Lịch sử", selectedRoute, onNavigate, Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong)
+        DestinationItem(Route.Transactions, "Giao dịch", selectedRoute, onNavigate, Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong)
         Box(
             modifier = Modifier.weight(1.1f),
             contentAlignment = Alignment.Center,

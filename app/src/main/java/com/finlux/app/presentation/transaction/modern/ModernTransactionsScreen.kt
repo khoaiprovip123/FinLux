@@ -222,11 +222,13 @@ fun ModernTransactionsScreen(
                             TransactionFilter.ALL -> (if (netCashFlow > 0) "+" else "") + netCashFlow.toVnd()
                             TransactionFilter.INCOME -> "+" + totalIncome.toVnd()
                             TransactionFilter.EXPENSE -> "-" + totalExpense.toVnd()
+                            TransactionFilter.TRANSFER -> "${transactions.size} giao dịch"
                         }
                         val heading = when (filter) {
                             TransactionFilter.ALL -> "Dòng tiền ròng$periodSuffix"
                             TransactionFilter.INCOME -> "Tổng thu nhập$periodSuffix"
                             TransactionFilter.EXPENSE -> "Tổng chi tiêu$periodSuffix"
+                            TransactionFilter.TRANSFER -> "Chuyển tiền$periodSuffix"
                         }
                         GlassCard(
                             Modifier.fillMaxWidth(),
@@ -479,9 +481,4 @@ fun ModernTransactionsScreen(
     }
 }
 
-private val TransactionFilter.label: String
-    get() = when (this) {
-        TransactionFilter.ALL -> "Tất cả"
-        TransactionFilter.INCOME -> "Thu"
-        TransactionFilter.EXPENSE -> "Chi"
-    }
+

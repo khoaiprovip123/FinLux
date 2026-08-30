@@ -36,9 +36,10 @@ import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 enum class TransactionFilter(val label: String, val heading: String) {
-    ALL("Tất cả", "Dòng tiền"),
-    INCOME("Thu nhập", "Thu nhập"),
-    EXPENSE("Chi tiêu", "Chi tiêu"),
+    ALL("Tất cả", "Tất cả"),
+    INCOME("Thu", "Thu nhập"),
+    EXPENSE("Chi", "Chi tiêu"),
+    TRANSFER("Chuyển", "Chuyển tiền"),
 }
 
 enum class TransactionViewMode {
@@ -185,6 +186,7 @@ class TransactionsViewModel @Inject constructor(
                 TransactionFilter.ALL -> true
                 TransactionFilter.INCOME -> item.type == TransactionType.INCOME
                 TransactionFilter.EXPENSE -> item.type == TransactionType.EXPENSE
+                TransactionFilter.TRANSFER -> item.type == TransactionType.TRANSFER_OUT || item.type == TransactionType.TRANSFER_IN
             }
             val matchesPeriod = (startInstant == null || item.date >= startInstant) && (endExclusive == null || item.date < endExclusive)
             val matchesWallet = selectedWallet == null || item.walletId == selectedWallet || item.relatedWalletId == selectedWallet

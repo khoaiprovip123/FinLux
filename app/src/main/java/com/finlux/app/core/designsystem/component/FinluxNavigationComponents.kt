@@ -58,7 +58,7 @@ data class FinluxNavTab(
 
 val DefaultFinluxNavTabs = listOf(
     FinluxNavTab(Route.Home.value, "Trang chủ", Icons.Default.Home),
-    FinluxNavTab(Route.Transactions.value, "Lịch sử", Icons.AutoMirrored.Filled.ReceiptLong),
+    FinluxNavTab(Route.Transactions.value, "Giao dịch", Icons.AutoMirrored.Filled.ReceiptLong),
     FinluxNavTab(Route.Reports.value, "Báo cáo", Icons.Default.BarChart),
     FinluxNavTab(Route.Settings.value, "Hồ sơ", Icons.Default.Person),
 )

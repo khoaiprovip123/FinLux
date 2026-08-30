@@ -4,16 +4,36 @@
 - **Phiên bản hiện tại:** v1.15.0 (versionCode 157)
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Lịch sử Thu Chi chuẩn Liquid Glass Prism (History Redesign 2.1), 100% tests PASS và APK build thành công.
 
-### [Task-PRISM-HISTORY-REDESIGN-V2.3] — Tinh gọn tối đa khoảng cách dưới thanh tìm kiếm & Carousel Hero Card
+### [Task-TRANSACTION-EXPLORER-REDESIGN] — Thiết kế lại toàn diện màn hình Giao dịch chuẩn Transaction Explorer (14 điểm)
 - **Status**: `[DONE]`
-- **Mục tiêu đã hoàn thành**:
-  1. ✅ Lược bỏ toàn bộ dải thẻ/chip rườm rà dưới thanh tìm kiếm theo đúng yêu cầu, tạo không gian thoáng đãng, sang trọng chuẩn fintech cao cấp.
-  2. ✅ Tích hợp trực tiếp bộ chuyển đổi Dòng tiền / Thu / Chi vào bên trong Thẻ Báo Cáo Hero (`PrismHomeStyleOverviewCard`) bằng **Morphing Capsule Indicator** (`["Dòng tiền", "Thu", "Chi"]`) y hệt Trang chủ Home.
-  3. ✅ Cho phép vuốt ngang (Horizontal Pager) mượt mà giữa các trang báo cáo hoặc chạm vào capsule để chuyển trang.
-  4. ✅ Thẻ hiển thị rõ kỳ thời gian đang lọc ở góc trên bên phải, hỗ trợ chạm mở nhanh bộ lọc nâng cao.
+- **Mục tiêu đã hoàn thành theo 14 điểm chuẩn nghiệp vụ & UI Mockup**:
+  1. ✅ **Đổi tên “Lịch sử” → “Giao dịch”**: Header, Bottom bar dock, navigation routes đồng bộ.
+  2. ✅ **Thiết kế lại Header**: Tiêu đề "Giao dịch" lớn (32sp Bold), bên phải 2 nút bo tròn Prism Light (Lọc kèm Badge & Tùy chọn chuyển chế độ Lịch).
+  3. ✅ **Thanh tìm kiếm chuẩn**: Cao 54dp, bo góc 18dp, nền Prism Light, viền 1dp nhẹ, placeholder `Tìm kiếm giao dịch...`, tìm theo ghi chú, danh mục, ví, số tiền.
+  4. ✅ **Chuẩn hóa bộ lọc nhanh 4 mục `[ Tất cả | Thu | Chi | Chuyển ]`**: Selected dùng gradient Prism Cyan → Blue → Violet (`0xFF00C6FF` → `0xFF0072FF` → `0xFF9B51E0`), unselected nền trắng/xám nhạt.
+  5. ✅ **Nhóm giao dịch theo ngày rõ nét**: `Hôm nay, 30/08`, `Hôm qua, 29/08`, `28/08/2026` với header tách biệt rõ ràng.
+  6. ✅ **Bố cục 3 cột chuẩn cho từng dòng giao dịch**:
+     - Cột trái: Icon container 50dp.
+     - Cột giữa: Tên giao dịch (15.5sp SemiBold) + Tên danh mục (13.5sp).
+     - Cột phải: Số tiền nổi bật (15.5sp Bold) + Giờ (12.5sp) canh phải tuyệt đối.
+  7. ✅ **Icon giao dịch lớn**: Container 50dp, icon 24dp, màu sắc/gradient nhận diện danh mục thực tế.
+  8. ✅ **Số tiền nổi bật**: Thu màu xanh ngọc (`+15.000.000 ₫`), Chi màu đỏ san hô (`−320.000 ₫`), Chuyển màu tím/xanh.
+  9. ✅ **Card giao dịch nhẹ, sạch, thanh lịch**: Nền gần trắng, bo góc 20dp, viền 1dp nhẹ, shadow 2dp mềm, spacing 8dp.
+  10. ✅ **Giảm chữ phụ**: Giữ đúng 4 trường thông tin cốt lõi trên thẻ, thông tin ví & metadata đưa vào màn chi tiết.
+  11. ✅ **Empty States đầy đủ**: Trạng thái rỗng khi tìm kiếm / lọc / chưa có dữ liệu kèm nút CTA `[+ Thêm giao dịch]`.
+  12. ✅ **Thao tác thống nhất**: Chạm mở chi tiết Digital Glass Receipt, nhấn giữ mở menu Sửa / Xóa.
+  13. ✅ **Đồng bộ Prism Light**: Nền sáng thanh nhã `#F6F8FC`, tương phản tối ưu, dễ đọc tuyệt đối.
+  14. ✅ **Khoảng cách & Typography**: Padding 20dp, font chữ lớn rõ ràng (15.5sp title, 15.5sp amount).
+  15. ✅ **Thẻ bảo mật chân trang**: Card `[🛡️] Dữ liệu giao dịch được mã hóa và bảo mật tuyệt đối. ›` chuẩn mockup.
 - **Kết quả kiểm thử**: `gradlew testDebugUnitTest` 100% PASS, `gradlew assembleDebug` BUILD SUCCESSFUL.
 - **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
   - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
+  - `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
   - `HANDOVER_LOG.md`
 
 ### [Task-TRANSACTION-HISTORY-REDESIGN-V2] — Nâng cấp toàn diện Lịch sử thu chi (History 2.0)

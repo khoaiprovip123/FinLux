@@ -47,7 +47,7 @@ fun ClassicMainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, on
     // on 3-button devices that would squeeze the 48dp system inset into the content area.
     GlassBottomNav(Modifier.fillMaxWidth()) {
         DestinationItem(Route.Home, "Trang chủ", selectedRoute, onNavigate, Icons.Filled.Home, Icons.Outlined.Home)
-        DestinationItem(Route.Transactions, "Lịch sử", selectedRoute, onNavigate, Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong)
+        DestinationItem(Route.Transactions, "Giao dịch", selectedRoute, onNavigate, Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong)
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             GlassFab(onClick = onAdd) { Icon(Icons.Default.Add, contentDescription = "Thêm giao dịch") }
         }
