@@ -4,21 +4,15 @@
 - **Phiên bản hiện tại:** v1.15.0 (versionCode 157)
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Lịch sử Thu Chi chuẩn Liquid Glass Prism (History Redesign 2.1), 100% tests PASS và APK build thành công.
 
-### [Task-PRISM-HISTORY-REDESIGN-V2.2] — Tích hợp lọc Hôm nay & Thẻ Báo Cáo Hero chuẩn ngân hàng như Trang Chủ Home
+### [Task-PRISM-HISTORY-REDESIGN-V2.3] — Tinh gọn tối đa khoảng cách dưới thanh tìm kiếm & Carousel Hero Card
 - **Status**: `[DONE]`
 - **Mục tiêu đã hoàn thành**:
-  1. ✅ Bổ sung lọc `TimePeriodFilter.TODAY` ("Hôm nay") vào ViewModel và Bottom Sheet.
-  2. ✅ Thiết kế thanh chọn thời gian nhanh 1-chạm: `[Hôm nay]`, `[Kỳ này]`, `[Tháng này]`, `[Tất cả]` + nút mở bộ lọc nâng cao.
-  3. ✅ Thiết kế lại Thẻ Báo Cáo Tổng Quan y hệt Thẻ Hero trên Trang Chủ Home (`PrismFinancialOverviewCard`):
-     - Nền Gradient đa tầng chuẩn ngân hàng: Deep Sapphire / Indigo cho Dòng tiền, Emerald Green cho Thu nhập, Crimson Velvet cho Chi tiêu.
-     - Watermark texture chìm bảo mật ngân hàng (`PrismHistoryCardBackdropTexture`).
-     - Số tiền lớn siêu nét màu trắng `tokens.onHero`, subtitle thống kê.
-     - Tích hợp **Mini Bar Chart (`PrismMiniBarChart`)** vẽ trực tiếp các cột biến động giao dịch thời gian thực.
-     - Context info badge ("Thặng dư ...", "Thu vượt chi ...", "TB .../khoản").
-  4. ✅ Thẻ phụ Sub-cards thu/chi tinh tế khi ở tab Tất cả.
+  1. ✅ Lược bỏ toàn bộ dải thẻ/chip rườm rà dưới thanh tìm kiếm theo đúng yêu cầu, tạo không gian thoáng đãng, sang trọng chuẩn fintech cao cấp.
+  2. ✅ Tích hợp trực tiếp bộ chuyển đổi Dòng tiền / Thu / Chi vào bên trong Thẻ Báo Cáo Hero (`PrismHomeStyleOverviewCard`) bằng **Morphing Capsule Indicator** (`["Dòng tiền", "Thu", "Chi"]`) y hệt Trang chủ Home.
+  3. ✅ Cho phép vuốt ngang (Horizontal Pager) mượt mà giữa các trang báo cáo hoặc chạm vào capsule để chuyển trang.
+  4. ✅ Thẻ hiển thị rõ kỳ thời gian đang lọc ở góc trên bên phải, hỗ trợ chạm mở nhanh bộ lọc nâng cao.
 - **Kết quả kiểm thử**: `gradlew testDebugUnitTest` 100% PASS, `gradlew assembleDebug` BUILD SUCCESSFUL.
 - **Files đã sửa đổi**:
-  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
   - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
   - `HANDOVER_LOG.md`
 
