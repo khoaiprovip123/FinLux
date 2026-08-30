@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.16.0] - 2026-08-30
+### Added
+- **Nâng Cấp Toàn Diện Màn Hình Giao Dịch Chuẩn "Transaction Explorer"**:
+  * **Đổi Tên Thống Nhất**: Đổi tên phân hệ "Lịch sử" thành "Giao dịch" chuẩn nghiệp vụ tài chính.
+  * **Tích Hợp Nút Lọc Vào Thanh Tìm Kiếm**: Nút mở bộ lọc nâng cao kèm badge số lượng bộ lọc active được đặt ngay bên phải thanh tìm kiếm.
+  * **Bộ 4 Tab Lọc Nhanh Kèm Icon**: Bộ 4 tab `[ Tất cả | Thu | Chi | Chuyển ]` với icon nhận diện trực quan (`GridView`, `TrendingUp`, `TrendingDown`, `SwapHoriz`), hiệu ứng gradient Prism Cyan → Blue → Violet.
+  * **Thẻ Giao Dịch 3 Cột Chuẩn**:
+    - Cột 1: Container Icon tròn 50dp (icon 24dp) nhận diện màu sắc/icon danh mục thực tế.
+    - Cột 2: Tên giao dịch (15.5sp SemiBold) + Tên danh mục (13.5sp).
+    - Cột 3: Số tiền lớn siêu nét (17sp ExtraBold) + Giờ thực hiện (12.5sp) canh phải tuyệt đối.
+  * **Thẻ Bảo Mật Chân Trang**: Card bảo mật mã hóa giao dịch ở cuối danh sách.
+- **Đồng Bộ Giao Dịch Gần Nhất Trên Trang Chủ (`PrismHomeScreen`)**:
+  * Đồng bộ 100% thiết kế thẻ giao dịch 3 cột chuẩn với màn hình Giao dịch.
+  * Giới hạn hiển thị tối đa 5 giao dịch trong ngày hôm nay, tự động hiển thị nút CTA `[ Xem thêm X giao dịch trong Lịch sử ]` điều hướng sang màn hình Giao dịch khi vượt quá 5 khoản.
+
+### Changed
+- Cập nhật nhãn điều hướng "Giao dịch" trên Bottom Navigation Bar trên cả 3 phong cách (Prism, Modern, Classic).
+- Tăng cường kích thước và độ tương phản của số tiền giao dịch (`17sp ExtraBold`, Thu: `#059669`, Chi: `#E11D48`, Chuyển: `#2563EB`).
+
+### Fixed
+- Khắc phục triệt để lỗi ô vuông nền chữ thừa bên trong các tab lọc nhanh bằng Box với gradient trực tiếp.
+- Đảm bảo 100% Unit Test trong `TransactionsViewModelTest` vượt qua thành công.
+
 ## [1.15.0] - 2026-08-30
 ### Added
 - **Nâng Cấp Toàn Diện Phân Hệ Lịch Sử Giao Dịch 2.0 (Finlux Transaction History 2.0)**:

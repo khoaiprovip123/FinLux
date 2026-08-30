@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.15.0 (versionCode 157)
-- **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Lịch sử Thu Chi chuẩn Liquid Glass Prism (History Redesign 2.1), 100% tests PASS và APK build thành công.
+- **Phiên bản hiện tại:** v1.16.0 (versionCode 158)
+- **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Giao dịch chuẩn Transaction Explorer & Đồng bộ Trang chủ, 100% tests PASS và sẵn sàng phát hành.
 
 ### [Task-HOME-RECENT-TRANSACTIONS-SYNC] — Đồng bộ giao diện Giao dịch gần nhất trên Trang chủ với màn hình Giao dịch
 - **Status**: `[DONE]`
