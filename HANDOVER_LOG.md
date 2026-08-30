@@ -4,17 +4,21 @@
 - **Phiên bản hiện tại:** v1.15.0 (versionCode 157)
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Lịch sử Thu Chi chuẩn Liquid Glass Prism (History Redesign 2.1), 100% tests PASS và APK build thành công.
 
-### [Task-PRISM-HISTORY-REDESIGN-V2.1] — Thiết kế lại giao diện Lịch sử chuẩn Liquid Glass Prism
+### [Task-PRISM-HISTORY-REDESIGN-V2.2] — Tích hợp lọc Hôm nay & Thẻ Báo Cáo Hero chuẩn ngân hàng như Trang Chủ Home
 - **Status**: `[DONE]`
 - **Mục tiêu đã hoàn thành**:
-  1. ✅ Giữ lại Live Instant Search Bar phong cách Liquid Glass với nút xóa nhanh và bắt nét trực tiếp.
-  2. ✅ Lược bỏ dải chip phụ ngang theo yêu cầu người dùng, thay thế bằng bộ 3 Tab phân loại chính: `[✨ Tất cả]`, `[📈 Thu nhập]`, `[📉 Chi tiêu]` kèm badge đếm số lượng giao dịch và hiệu ứng phát sáng.
-  3. ✅ Thiết kế lại hoàn toàn hệ thống thẻ tổng tiền Bento Grid chuẩn Prism Liquid Glass:
-     - **Thẻ Dòng tiền ròng Hero Card**: Viền đa sắc Prism Chromatic Rim, Ambient Glow, badge trạng thái Thặng dư/Bội chi, số tiền lớn siêu nét, thanh phân bổ tỷ lệ dòng tiền trực quan (Prism Flow Bar).
-     - **Bộ đôi thẻ phụ Sub-Cards**: Thẻ Tổng thu nhập (Icon Xanh ngọc phát quang) và Thẻ Tổng chi tiêu (Icon Đỏ san hô phát quang).
-  4. ✅ Đồng bộ 100% màu sắc động từ `LocalFinluxTokens` và hiệu ứng kính Liquid Glass.
+  1. ✅ Bổ sung lọc `TimePeriodFilter.TODAY` ("Hôm nay") vào ViewModel và Bottom Sheet.
+  2. ✅ Thiết kế thanh chọn thời gian nhanh 1-chạm: `[Hôm nay]`, `[Kỳ này]`, `[Tháng này]`, `[Tất cả]` + nút mở bộ lọc nâng cao.
+  3. ✅ Thiết kế lại Thẻ Báo Cáo Tổng Quan y hệt Thẻ Hero trên Trang Chủ Home (`PrismFinancialOverviewCard`):
+     - Nền Gradient đa tầng chuẩn ngân hàng: Deep Sapphire / Indigo cho Dòng tiền, Emerald Green cho Thu nhập, Crimson Velvet cho Chi tiêu.
+     - Watermark texture chìm bảo mật ngân hàng (`PrismHistoryCardBackdropTexture`).
+     - Số tiền lớn siêu nét màu trắng `tokens.onHero`, subtitle thống kê.
+     - Tích hợp **Mini Bar Chart (`PrismMiniBarChart`)** vẽ trực tiếp các cột biến động giao dịch thời gian thực.
+     - Context info badge ("Thặng dư ...", "Thu vượt chi ...", "TB .../khoản").
+  4. ✅ Thẻ phụ Sub-cards thu/chi tinh tế khi ở tab Tất cả.
 - **Kết quả kiểm thử**: `gradlew testDebugUnitTest` 100% PASS, `gradlew assembleDebug` BUILD SUCCESSFUL.
 - **Files đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt`
   - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
   - `HANDOVER_LOG.md`
 

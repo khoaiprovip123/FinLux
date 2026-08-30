@@ -68,7 +68,8 @@ data class DayFinancialSummary(
 }
 
 enum class TimePeriodFilter(val label: String) {
-    ALL("Tất cả thời gian"),
+    ALL("Tất cả"),
+    TODAY("Hôm nay"),
     CURRENT_PERIOD("Kỳ này"),
     PREVIOUS_PERIOD("Kỳ trước"),
     THIS_WEEK("Tuần này"),
@@ -147,6 +148,11 @@ class TransactionsViewModel @Inject constructor(
 
         val periodBounds: Pair<Instant?, Instant?> = when (selectedPeriod) {
             TimePeriodFilter.ALL -> null to null
+            TimePeriodFilter.TODAY -> {
+                val startOfDay = localNow.atStartOfDay(zone).toInstant()
+                val endOfDay = localNow.plusDays(1).atStartOfDay(zone).toInstant()
+                startOfDay to endOfDay
+            }
             TimePeriodFilter.CURRENT_PERIOD -> financialPeriodResolver.resolveCurrentPeriod(salaryConfig, now).let { it.start to it.endExclusive }
             TimePeriodFilter.PREVIOUS_PERIOD -> financialPeriodResolver.resolvePreviousPeriod(salaryConfig, now).let { it.start to it.endExclusive }
             TimePeriodFilter.THIS_WEEK -> {

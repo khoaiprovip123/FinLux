@@ -3,8 +3,11 @@ package com.finlux.app.presentation.transaction.prism
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,10 +24,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -33,8 +41,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TipsAndUpdates
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,11 +63,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -144,12 +162,12 @@ fun PrismTransactionsScreen(
 
     Scaffold(
         topBar = {
-            // Fixed Top Header matching mockup
+            // Fixed Top Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 6.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -188,7 +206,7 @@ fun PrismTransactionsScreen(
                         )
                     }
 
-                    // Filter Button with Badge
+                    // Advanced Filter Button with Badge
                     Box {
                         IconButton(
                             onClick = { showFilterSheet = true },
@@ -242,7 +260,7 @@ fun PrismTransactionsScreen(
             // 1. Smart Micro-Insights Greeting Banner
             PrismSmartInsightGreeting(
                 insight = smartInsight,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 3.dp),
             )
 
             // 2. Inline Instant Live Search Bar
@@ -250,14 +268,83 @@ fun PrismTransactionsScreen(
                 query = searchQuery,
                 onQueryChange = { viewModel.setSearchQuery(it) },
                 onClear = { viewModel.setSearchQuery("") },
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 3.dp),
             )
 
-            // 3. Segmented Filter Tabs (Tất cả, Thu nhập, Chi tiêu)
+            // 3. Quick Time Period Filter Row (Bổ sung lọc Hôm nay, Kỳ này, Tháng này, Tất cả)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 3.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PrismTimeFilterChip(
+                    label = "Hôm nay",
+                    isSelected = periodFilter == TimePeriodFilter.TODAY,
+                    onClick = { viewModel.setPeriod(TimePeriodFilter.TODAY) },
+                )
+
+                PrismTimeFilterChip(
+                    label = "Kỳ này",
+                    isSelected = periodFilter == TimePeriodFilter.CURRENT_PERIOD,
+                    onClick = { viewModel.setPeriod(TimePeriodFilter.CURRENT_PERIOD) },
+                )
+
+                PrismTimeFilterChip(
+                    label = "Tháng này",
+                    isSelected = periodFilter == TimePeriodFilter.THIS_MONTH,
+                    onClick = { viewModel.setPeriod(TimePeriodFilter.THIS_MONTH) },
+                )
+
+                PrismTimeFilterChip(
+                    label = "Tất cả",
+                    isSelected = periodFilter == TimePeriodFilter.ALL,
+                    onClick = { viewModel.setPeriod(TimePeriodFilter.ALL) },
+                )
+
+                // Quick button to open full filter sheet
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.12f) else tokens.surfaceSoft,
+                    border = BorderStroke(1.dp, if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.4f) else tokens.border),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(bounded = true),
+                            onClick = { showFilterSheet = true },
+                        ),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = null,
+                            tint = if (activeFilterCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = if (activeFilterCount > 0) "Lọc ($activeFilterCount)" else "Bộ lọc...",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = if (activeFilterCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            // 4. Segmented Filter Tabs (Tất cả, Thu nhập, Chi tiêu)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PrismFilterTabPill(
@@ -291,7 +378,7 @@ fun PrismTransactionsScreen(
                 )
             }
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
 
             if (viewMode == TransactionViewMode.CALENDAR) {
                 // Calendar Heatmap View
@@ -328,7 +415,7 @@ fun PrismTransactionsScreen(
                 val today = remember(financeZone) { java.time.LocalDate.now(financeZone) }
                 val yesterday = remember(today) { today.minusDays(1) }
 
-                // 4. Transaction List View
+                // 5. Transaction List View with Home-Style Bank-Grade Overview Card
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
@@ -339,9 +426,9 @@ fun PrismTransactionsScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    // Summary Bento Banner Cards (Thiết kế hoàn toàn mới chuẩn Prism)
+                    // Bank-Grade Financial Hero Overview Card (Y hệt trang chủ Home)
                     item {
-                        PrismFinancialBentoBanner(
+                        PrismHistoryHeroOverviewCard(
                             filter = filter,
                             periodFilter = periodFilter,
                             totalIncome = totalIncome,
@@ -349,6 +436,7 @@ fun PrismTransactionsScreen(
                             netCashFlow = netCashFlow,
                             incomeCount = incomeCount,
                             expenseCount = expenseCount,
+                            transactions = transactions,
                         )
                     }
 
@@ -357,7 +445,7 @@ fun PrismTransactionsScreen(
                         item {
                             FinluxEmptyState(
                                 title = "Không có giao dịch nào",
-                                description = if (searchQuery.isNotBlank()) "Không tìm thấy giao dịch với từ khóa \"$searchQuery\"." else "Không tìm thấy giao dịch phù hợp với bộ lọc hiện tại.",
+                                description = if (searchQuery.isNotBlank()) "Không tìm thấy giao dịch với từ khóa \"$searchQuery\"." else "Không tìm thấy giao dịch phù hợp với bộ lọc \"${periodFilter.label}\".",
                             )
                         }
                     } else {
@@ -522,6 +610,57 @@ fun PrismTransactionsScreen(
 }
 
 /**
+ * Quick Time Filter Chip (Hôm nay / Kỳ này / Tháng này / Tất cả)
+ */
+@Composable
+private fun PrismTimeFilterChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+    val containerColor by animateColorAsState(
+        targetValue = if (isSelected) tokens.primary else tokens.surfaceSoft,
+        animationSpec = tween(200),
+        label = "time_chip_bg",
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) Color.White else tokens.onSurface,
+        animationSpec = tween(200),
+        label = "time_chip_text",
+    )
+
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = containerColor,
+        border = if (isSelected) {
+            BorderStroke(1.2.dp, tokens.primary)
+        } else {
+            BorderStroke(1.dp, tokens.border)
+        },
+        shadowElevation = if (isSelected) 3.dp else 0.dp,
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick,
+            ),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 12.5.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            ),
+            color = contentColor,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+        )
+    }
+}
+
+/**
  * High-End Prism Filter Tab Pill with Badge Count and Luminous Glow
  */
 @Composable
@@ -613,10 +752,10 @@ private fun PrismFilterTabPill(
 }
 
 /**
- * Prism Financial Bento Banner — Liquid Glass Hero + Dual Sub-Cards (Finlux History Redesign 2.1)
+ * Bank-Grade Financial Overview Hero Card (Đồng bộ 100% với giao diện thẻ Home Prism)
  */
 @Composable
-private fun PrismFinancialBentoBanner(
+private fun PrismHistoryHeroOverviewCard(
     filter: TransactionFilter,
     periodFilter: TimePeriodFilter,
     totalIncome: Long,
@@ -624,211 +763,363 @@ private fun PrismFinancialBentoBanner(
     netCashFlow: Long,
     incomeCount: Int,
     expenseCount: Int,
+    transactions: List<FinanceTransaction>,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
-    val periodSuffix = if (periodFilter == TimePeriodFilter.ALL) "" else " (${periodFilter.label})"
 
-    val isSurplus = netCashFlow >= 0
-    val totalVolume = (totalIncome + totalExpense).coerceAtLeast(1L)
-    val incomeRatio = (totalIncome.toFloat() / totalVolume).coerceIn(0f, 1f)
+    val title = when (filter) {
+        TransactionFilter.ALL -> "Dòng tiền"
+        TransactionFilter.INCOME -> "Tổng thu nhập"
+        TransactionFilter.EXPENSE -> "Tổng chi tiêu"
+    }
+
+    val periodLabel = periodFilter.label
+
+    val displayValue = when (filter) {
+        TransactionFilter.ALL -> (if (netCashFlow > 0) "+" else "") + formatVndAmount(netCashFlow).replace("đ", "₫")
+        TransactionFilter.INCOME -> "+" + formatVndAmount(totalIncome).replace("đ", "₫")
+        TransactionFilter.EXPENSE -> "-" + formatVndAmount(totalExpense).replace("đ", "₫")
+    }
+
+    val subtitle = when (filter) {
+        TransactionFilter.ALL -> "${incomeCount + expenseCount} giao dịch trong kỳ"
+        TransactionFilter.INCOME -> if (incomeCount > 0) "$incomeCount khoản thu" else "Chưa có khoản thu"
+        TransactionFilter.EXPENSE -> if (expenseCount > 0) "$expenseCount khoản chi" else "Chưa có khoản chi"
+    }
+
+    val contextInfo = when (filter) {
+        TransactionFilter.ALL -> {
+            if (netCashFlow > 0L) "Thu vượt chi ${formatVndAmount(netCashFlow).replace("đ", "₫")}"
+            else if (netCashFlow < 0L) "Chi vượt thu ${formatVndAmount(-netCashFlow).replace("đ", "₫")}"
+            else "Thu chi cân bằng"
+        }
+        TransactionFilter.INCOME -> {
+            if (incomeCount > 0) "TB ${formatVndAmount(totalIncome / incomeCount).replace("đ", "₫")}/khoản" else "Chưa phát sinh"
+        }
+        TransactionFilter.EXPENSE -> {
+            if (expenseCount > 0) "TB ${formatVndAmount(totalExpense / expenseCount).replace("đ", "₫")}/khoản" else "Chưa phát sinh"
+        }
+    }
+
+    val backgroundColors = when (filter) {
+        TransactionFilter.ALL -> listOf(
+            Color(0xFF19163F),
+            Color(0xFF2E236C),
+            Color(0xFF3730A3),
+            Color(0xFF4338CA),
+        )
+        TransactionFilter.INCOME -> listOf(
+            Color(0xFF04382B),
+            Color(0xFF065F46),
+            Color(0xFF047857),
+            Color(0xFF0D9488),
+        )
+        TransactionFilter.EXPENSE -> listOf(
+            Color(0xFF6B0E27),
+            Color(0xFF881337),
+            Color(0xFF9F1239),
+            Color(0xFFBE123C),
+        )
+    }
+
+    val chartValues = remember(transactions, filter) {
+        val type = when (filter) {
+            TransactionFilter.ALL -> null
+            TransactionFilter.INCOME -> TransactionType.INCOME
+            TransactionFilter.EXPENSE -> TransactionType.EXPENSE
+        }
+        computePeriodBars(transactions, type)
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // 1. HERO MAIN CARD: Liquid Glass Net Cashflow Card with Prism Chromatic Rim
-        Surface(
-            shape = RoundedCornerShape(26.dp),
-            color = if (tokens.isDark) Color(0xFF1E1E34).copy(alpha = 0.75f) else Color.White.copy(alpha = 0.85f),
-            border = BorderStroke(
-                width = 1.2.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        tokens.primary.copy(alpha = 0.65f),
-                        Color(0xFF67E8F9).copy(alpha = 0.45f),
-                        Color(0xFFA855F7).copy(alpha = 0.35f),
-                        tokens.primary.copy(alpha = 0.55f),
+        // 1. HERO BANK-GRADE CARD
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(178.dp)
+                .shadow(
+                    elevation = 10.dp,
+                    shape = RoundedCornerShape(24.dp),
+                    spotColor = backgroundColors.first().copy(alpha = if (tokens.isDark) 0.40f else 0.25f),
+                    ambientColor = Color.Black.copy(alpha = if (tokens.isDark) 0.25f else 0.10f),
+                )
+                .clip(RoundedCornerShape(24.dp))
+                .background(
+                    Brush.linearGradient(
+                        colors = backgroundColors,
+                        start = Offset(0f, 0f),
+                        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                     ),
-                ),
-            ),
-            shadowElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.radialGradient(
+                )
+                .border(
+                    BorderStroke(
+                        width = 1.dp,
+                        brush = Brush.linearGradient(
                             colors = listOf(
-                                (if (isSurplus) tokens.primary else Color(0xFFF43F5E)).copy(alpha = if (tokens.isDark) 0.16f else 0.08f),
-                                Color.Transparent,
+                                tokens.onHero.copy(alpha = 0.28f),
+                                tokens.onHero.copy(alpha = 0.08f),
+                                tokens.onHero.copy(alpha = 0.20f),
                             ),
-                            radius = 600f,
                         ),
-                    )
-                    .padding(20.dp),
+                    ),
+                    RoundedCornerShape(24.dp),
+                ),
+        ) {
+            // Security Watermark Texture
+            PrismHistoryCardBackdropTexture(
+                tintColor = tokens.onHero,
+                modifier = Modifier.matchParentSize(),
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Header Tag Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = tokens.primary.copy(alpha = 0.15f),
-                                modifier = Modifier.size(32.dp),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.AccountBalance,
-                                        contentDescription = null,
-                                        tint = tokens.primary,
-                                        modifier = Modifier.size(17.dp),
-                                    )
-                                }
-                            }
+                // Top row: Title + Period scope
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = title,
+                        style = FinluxTextStyles.Caption.copy(fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold),
+                        color = tokens.onHeroMuted,
+                    )
+                    Text(
+                        text = periodLabel,
+                        style = FinluxTextStyles.Caption.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                        color = tokens.onHeroMuted,
+                    )
+                }
 
-                            Text(
-                                text = "DÒNG TIỀN RÒNG$periodSuffix",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.8.sp,
-                                ),
-                                color = tokens.onSurfaceVariant,
-                            )
-                        }
-
-                        // Surplus / Deficit Badge
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = (if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed).copy(alpha = 0.14f),
-                            border = BorderStroke(
-                                1.dp,
-                                (if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed).copy(alpha = 0.28f),
+                // Middle row: Amount + Subtitle on Left, Mini Bar Chart on Right
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = displayValue,
+                            style = FinluxTextStyles.DisplayAmount.copy(
+                                fontFamily = FontFamily.Default,
+                                fontSize = if (displayValue.length >= 15) 28.sp else 32.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = (-0.5).sp,
                             ),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                Icon(
-                                    imageVector = if (isSurplus) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                                    contentDescription = null,
-                                    tint = if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
-                                    modifier = Modifier.size(13.dp),
-                                )
-                                Text(
-                                    text = if (isSurplus) "Thặng dư" else "Bội chi",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                    color = if (isSurplus) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
-                                )
-                            }
-                        }
+                            color = tokens.onHero,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            text = subtitle,
+                            style = FinluxTextStyles.Caption.copy(fontSize = 12.5.sp, fontWeight = FontWeight.Medium),
+                            color = tokens.onHeroMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
 
-                    // Main Big Net Amount
+                    Spacer(Modifier.width(12.dp))
+
+                    // Real data mini bar chart
+                    PrismMiniBarChart(
+                        values = chartValues,
+                        barColor = tokens.onHero,
+                    )
+                }
+
+                // Bottom row: Context info
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        text = (if (netCashFlow > 0) "+" else "") + formatVndAmount(netCashFlow),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-1).sp,
-                        ),
-                        color = if (netCashFlow >= 0) tokens.onSurface else FinluxColors.ExpenseRed,
+                        text = contextInfo,
+                        style = FinluxTextStyles.Caption.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                        color = tokens.onHeroMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
 
-                    // Prism Visual Flow Ratio Bar
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.5.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(tokens.border.copy(alpha = 0.5f)),
-                        ) {
-                            if (totalIncome > 0L) {
-                                Box(
-                                    modifier = Modifier
-                                        .weight(incomeRatio.coerceAtLeast(0.01f))
-                                        .height(6.5.dp)
-                                        .background(
-                                            Brush.horizontalGradient(
-                                                listOf(FinluxColors.IncomeGreen, Color(0xFF34D399))
-                                            ),
-                                        ),
-                                )
-                            }
-                            if (totalExpense > 0L) {
-                                Box(
-                                    modifier = Modifier
-                                        .weight((1f - incomeRatio).coerceAtLeast(0.01f))
-                                        .height(6.5.dp)
-                                        .background(
-                                            Brush.horizontalGradient(
-                                                listOf(Color(0xFFFB7185), FinluxColors.ExpenseRed)
-                                            ),
-                                        ),
-                                )
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                text = "Thu: ${(incomeRatio * 100).toInt()}%",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold),
-                                color = FinluxColors.IncomeGreen,
-                            )
-                            Text(
-                                text = "Chi: ${((1f - incomeRatio) * 100).toInt()}%",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold),
-                                color = FinluxColors.ExpenseRed,
-                            )
-                        }
+                    if (filter == TransactionFilter.ALL && totalIncome + totalExpense > 0L) {
+                        val totalVol = (totalIncome + totalExpense).toFloat()
+                        val incPercent = ((totalIncome / totalVol) * 100).toInt()
+                        Text(
+                            text = "Thu: $incPercent% • Chi: ${100 - incPercent}%",
+                            style = FinluxTextStyles.Caption.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
+                            color = tokens.onHero,
+                        )
                     }
                 }
             }
         }
 
-        // 2. DUAL BENTO SUB-CARDS: Income & Expense Summary Cards
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // Income Sub-Card
-            PrismSubBentoCard(
-                title = "Tổng thu nhập",
-                amount = "+${formatVndAmount(totalIncome, isCompact = true)}",
-                subtitle = "$incomeCount khoản thu",
-                icon = Icons.AutoMirrored.Filled.TrendingUp,
-                accentColor = FinluxColors.IncomeGreen,
-                modifier = Modifier.weight(1f),
-            )
+        // 2. DUAL SUB-CARDS (Hiển thị khi xem ở Tab Tất cả)
+        if (filter == TransactionFilter.ALL) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // Income Sub-Card
+                PrismSubBentoCard(
+                    title = "Tổng thu nhập",
+                    amount = "+${formatVndAmount(totalIncome, isCompact = true)}",
+                    subtitle = "$incomeCount khoản thu",
+                    icon = Icons.AutoMirrored.Filled.TrendingUp,
+                    accentColor = FinluxColors.IncomeGreen,
+                    modifier = Modifier.weight(1f),
+                )
 
-            // Expense Sub-Card
-            PrismSubBentoCard(
-                title = "Tổng chi tiêu",
-                amount = "-${formatVndAmount(totalExpense, isCompact = true)}",
-                subtitle = "$expenseCount khoản chi",
-                icon = Icons.AutoMirrored.Filled.TrendingDown,
-                accentColor = FinluxColors.ExpenseRed,
-                modifier = Modifier.weight(1f),
+                // Expense Sub-Card
+                PrismSubBentoCard(
+                    title = "Tổng chi tiêu",
+                    amount = "-${formatVndAmount(totalExpense, isCompact = true)}",
+                    subtitle = "$expenseCount khoản chi",
+                    icon = Icons.AutoMirrored.Filled.TrendingDown,
+                    accentColor = FinluxColors.ExpenseRed,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Mini Bar Chart displaying real transaction frequency
+ */
+@Composable
+private fun PrismMiniBarChart(
+    values: List<Long>,
+    barColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val barCount = 5
+    val paddedValues = if (values.size >= barCount) values.take(barCount) else values + List(barCount - values.size) { 0L }
+    val maxVal = paddedValues.maxOfOrNull { kotlin.math.abs(it) }?.coerceAtLeast(1L) ?: 1L
+    val hasData = paddedValues.any { it != 0L }
+
+    Row(
+        modifier = modifier
+            .width(56.dp)
+            .height(40.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        paddedValues.forEach { rawVal ->
+            val absVal = kotlin.math.abs(rawVal)
+            val heightFraction = if (hasData && absVal > 0L) {
+                (absVal.toFloat() / maxVal).coerceIn(0.18f, 1.0f)
+            } else {
+                0.08f
+            }
+            val isMax = hasData && absVal == maxVal && absVal > 0L
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(heightFraction)
+                    .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp, bottomStart = 1.dp, bottomEnd = 1.dp))
+                    .background(
+                        if (isMax) barColor.copy(alpha = 0.95f)
+                        else if (absVal > 0L) barColor.copy(alpha = 0.45f)
+                        else barColor.copy(alpha = 0.14f)
+                    ),
             )
         }
+    }
+}
+
+private fun computePeriodBars(
+    transactions: List<FinanceTransaction>,
+    type: TransactionType?,
+    barCount: Int = 5,
+): List<Long> {
+    if (transactions.isEmpty()) return List(barCount) { 0L }
+    val filtered = if (type == null) transactions else transactions.filter { it.type == type }
+    if (filtered.isEmpty()) return List(barCount) { 0L }
+
+    val sorted = filtered.sortedBy { it.date }
+    val minEpoch = sorted.first().date.toEpochMilli()
+    val maxEpoch = sorted.last().date.toEpochMilli()
+    val timeSpan = (maxEpoch - minEpoch).coerceAtLeast(1L)
+
+    val buckets = LongArray(barCount)
+    for (tx in sorted) {
+        val fraction = ((tx.date.toEpochMilli() - minEpoch).toFloat() / timeSpan).coerceIn(0f, 0.999f)
+        val bucketIndex = (fraction * barCount).toInt().coerceIn(0, barCount - 1)
+        val amount = if (type == null) {
+            if (tx.type == TransactionType.INCOME) tx.amount.value else -tx.amount.value
+        } else {
+            tx.amount.value
+        }
+        buckets[bucketIndex] += amount
+    }
+    return buckets.toList()
+}
+
+/**
+ * Bank-Grade Watermark Texture for History Card
+ */
+@Composable
+private fun PrismHistoryCardBackdropTexture(
+    tintColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        // 1. Ambient soft radial bloom
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    tintColor.copy(alpha = 0.14f),
+                    tintColor.copy(alpha = 0.03f),
+                    Color.Transparent,
+                ),
+                center = Offset(w * 0.85f, h * 0.35f),
+                radius = w * 0.45f,
+            ),
+        )
+
+        // 2. Optical Security Geometry Curves
+        val path = Path().apply {
+            moveTo(w * 0.40f, 0f)
+            cubicTo(
+                w * 0.65f, h * 0.30f,
+                w * 0.70f, h * 0.75f,
+                w * 1.05f, h * 0.95f,
+            )
+        }
+        drawPath(
+            path = path,
+            color = tintColor.copy(alpha = 0.08f),
+            style = Stroke(width = 1.5f),
+        )
+
+        val path2 = Path().apply {
+            moveTo(w * 0.55f, 0f)
+            cubicTo(
+                w * 0.75f, h * 0.25f,
+                w * 0.82f, h * 0.65f,
+                w * 1.15f, h * 0.85f,
+            )
+        }
+        drawPath(
+            path = path2,
+            color = tintColor.copy(alpha = 0.05f),
+            style = Stroke(width = 1.2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))),
+        )
     }
 }
 
@@ -911,7 +1202,7 @@ private fun PrismSubBentoCard(
 }
 
 /**
- * Smart Micro-Insights Greeting Banner (Finlux History 2.1)
+ * Smart Micro-Insights Greeting Banner
  */
 @Composable
 private fun PrismSmartInsightGreeting(
@@ -932,21 +1223,21 @@ private fun PrismSmartInsightGreeting(
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Surface(
                 shape = CircleShape,
                 color = accentColor.copy(alpha = 0.18f),
-                modifier = Modifier.size(34.dp),
+                modifier = Modifier.size(32.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = iconVector,
                         contentDescription = null,
                         tint = accentColor,
-                        modifier = Modifier.size(17.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
@@ -955,7 +1246,7 @@ private fun PrismSmartInsightGreeting(
                 Text(
                     text = insight.title,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 13.5.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                     color = tokens.onSurface,
@@ -963,8 +1254,8 @@ private fun PrismSmartInsightGreeting(
                 Text(
                     text = insight.description,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.5.sp,
-                        lineHeight = 15.sp,
+                        fontSize = 11.sp,
+                        lineHeight = 14.5.sp,
                     ),
                     color = tokens.onSurfaceVariant,
                 )
