@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.CameraAlt
 import com.finlux.app.presentation.settings.salary.SalaryCycleSettingsSheet
 import androidx.compose.material.icons.filled.Category
@@ -748,6 +749,7 @@ private fun ProfileHero(
 
 @Composable
 private fun ProfileFeatureTiles(walletCount: Int, onNavigate: (String) -> Unit) {
+    val savingSpinAccent = MaterialTheme.colorScheme.primary
     val items = listOf(
         ProfileTile("Ví của tôi", "$walletCount ví", Icons.Default.AccountBalanceWallet, FinluxBlue, Route.Wallets.value),
         ProfileTile("Ngân sách", "Theo dõi", Icons.Default.Savings, FinluxPurple, Route.Budget.value),
@@ -755,6 +757,7 @@ private fun ProfileFeatureTiles(walletCount: Int, onNavigate: (String) -> Unit) 
         ProfileTile("Danh mục", "Tùy chỉnh", Icons.Default.Category, FinluxCyan, Route.Categories.value),
         ProfileTile("Nhắc nhở", "Định kỳ", Icons.Default.Alarm, Color(0xFFFF8A42), Route.Reminders.value),
         ProfileTile("Mục tiêu", "Tích lũy", Icons.Default.Savings, FinluxPurple, Route.Goals.value),
+        ProfileTile("Vòng quay", "Tiết kiệm", Icons.Default.Casino, savingSpinAccent, Route.SavingSpinSettings.value),
     )
     LazyRow(
         modifier = Modifier.fillMaxWidth(),

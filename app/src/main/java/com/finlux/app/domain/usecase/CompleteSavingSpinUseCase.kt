@@ -14,7 +14,7 @@ class CompleteSavingSpinUseCase @Inject constructor(
         session: SavingSpinSession,
         destination: SavingDestination,
     ): AppResult<Unit> {
-        if (session.status != SavingSpinStatus.SPUN_PENDING || session.selectedAmount == null) {
+        if (session.status !in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) || session.selectedAmount == null) {
             return AppResult.Error("Hãy quay và chốt mệnh giá trước khi xác nhận")
         }
         if (!destination.enabled) return AppResult.Error("Nơi tiết kiệm đã bị tắt")

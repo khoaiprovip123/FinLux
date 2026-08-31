@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.CameraAlt
 import com.finlux.app.presentation.settings.salary.SalaryCycleSettingsSheet
 import androidx.compose.material.icons.filled.Category
@@ -111,6 +112,7 @@ internal enum class PrismSettingsAction(val route: String? = null) {
     CATEGORIES("categories"),
     REMINDERS("reminders"),
     NOTIFICATIONS("notifications"),
+    SAVING_SPIN("saving-spin/settings"),
     BACKUP,
     SECURITY,
     SUPPORT,
@@ -368,6 +370,14 @@ fun PrismSettingsScreen(
                             subtitle = "Tính toán thu chi theo ngày nhận lương",
                             badge = "Mới",
                             onClick = { showSalaryCycleSheet = true },
+                        ),
+                        SettingsMenuItem(
+                            Icons.Default.Casino,
+                            "Vòng quay tiết kiệm",
+                            tokens.primary,
+                            subtitle = "Tạo thói quen tiết kiệm theo từng kỳ",
+                            badge = "Mới",
+                            onClick = { navigateTo(PrismSettingsAction.SAVING_SPIN) },
                         ),
                         SettingsMenuItem(Icons.Default.Category, "Danh mục thu chi", Color(0xFF8B5CF6), onClick = { navigateTo(PrismSettingsAction.CATEGORIES) }),
                         SettingsMenuItem(Icons.Default.Alarm, "Nhắc nhở thanh toán", Color(0xFFF59E0B), onClick = { navigateTo(PrismSettingsAction.REMINDERS) }),
