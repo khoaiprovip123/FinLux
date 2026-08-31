@@ -12,6 +12,16 @@ enum class DealStatus {
 }
 
 /**
+ * Phân loại Thương Vụ / Khoản Theo Dõi:
+ * - INVESTMENT: Dự án đầu tư, kinh doanh, lướt sóng (tính ROI %, Lợi nhuận ròng, chốt lời/lỗ).
+ * - LENDING: Cho vay, cho mượn tiền (tập trung thu hồi nợ gốc, tiền lãi, dư nợ còn lại).
+ */
+enum class DealCategory {
+    INVESTMENT, // Đầu tư sinh lời
+    LENDING     // Cho vay / Cho mượn
+}
+
+/**
  * Phân loại dòng tiền trong khuôn khổ Deal để cô lập và xử lý kế toán chính xác.
  */
 enum class DealFlowType {
@@ -22,13 +32,14 @@ enum class DealFlowType {
 }
 
 /**
- * Đại diện cho một Thương vụ / Dự án đầu tư sinh lời ngắn hạn (Deal Tracking).
+ * Đại diện cho một Thương vụ / Dự án đầu tư sinh lời ngắn hạn hoặc Khoản cho vay (Deal Tracking).
  */
 data class FinancialDeal(
     val id: String = "",
     val userId: String = "",
     val title: String,
     val description: String = "",
+    val category: DealCategory = DealCategory.INVESTMENT,
     val targetAmount: Money = Money(0),
     val totalCapitalOutlay: Money = Money(0),
     val totalRecovered: Money = Money(0),

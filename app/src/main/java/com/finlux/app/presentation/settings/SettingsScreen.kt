@@ -62,12 +62,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -153,6 +157,8 @@ fun SettingsScreen(
     val avatarState = viewModel.avatarState.collectAsStateWithLifecycle().value
     val nameState = viewModel.nameState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var showAvatarSource by remember { mutableStateOf(false) }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var showNameEditor by remember { mutableStateOf(false) }
@@ -280,6 +286,7 @@ fun SettingsScreen(
                 )
             },
             containerColor = Color.Transparent,
+            snackbarHost = { FinluxSnackbarHost(snackbarHostState, hasBottomBar = true) },
         ) { padding ->
             LazyColumn(
                 Modifier
@@ -458,7 +465,9 @@ fun SettingsScreen(
                                             if (com.finlux.app.core.security.BiometricHelper.canAuthenticate(context)) {
                                                 onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = true))
                                             } else {
-                                                android.widget.Toast.makeText(context, "Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học", android.widget.Toast.LENGTH_SHORT).show()
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar("Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học")
+                                                }
                                             }
                                         } else {
                                             onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = false))

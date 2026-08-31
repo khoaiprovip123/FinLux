@@ -627,8 +627,11 @@ class DemoFinluxRepository @Inject constructor(
                     it.id == current.id || (counterpartId != null && it.id == counterpartId)
                 }
             } else {
-                if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
-                    return@withLock AppResult.Error("Không tìm thấy ví")
+                val isSettlement = current.walletId == "DEAL_SETTLEMENT" || current.dealFlowType == DealFlowType.CAPITAL_LOSS
+                if (!isSettlement) {
+                    if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
+                        return@withLock AppResult.Error("Không tìm thấy ví")
+                    }
                 }
                 transactionState.value = transactionState.value.filterNot { it.id == current.id }
                 if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
@@ -936,6 +939,24 @@ class DemoFinluxRepository @Inject constructor(
                 date = date,
             )
             transactionState.value = listOf(tx) + transactionState.value
+        }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun revertDealLoss(dealId: String): AppResult<Unit> = mutationMutex.withLock {
+        val lossTxs = transactionState.value.filter { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        val totalLoss = lossTxs.sumOf { it.amount.value }
+
+        transactionState.value = transactionState.value.filterNot { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        dealState.value = dealState.value.map { d ->
+            if (d.id == dealId) {
+                d.copy(
+                    netProfitLoss = Money(d.netProfitLoss.value + totalLoss),
+                    status = DealStatus.ACTIVE,
+                    endDate = null,
+                    updatedAt = Instant.now(),
+                )
+            } else d
         }
         AppResult.Success(Unit)
     }

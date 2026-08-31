@@ -541,6 +541,40 @@ CẤU TRÚC TRANG BÁO CÁO:
 
 ---
 
+## 20. SCREEN: Quản Lý Thương Vụ & Cho Vay (Deals & Lending Hub)
+
+```
+Màn hình: DealsScreen (/deals)
+Entry: Settings -> "Thương vụ & Cho vay" hoặc điều hướng từ Dashboard
+
+1. TopBar & Nút Hành Động:
+   - GlassTopBar với tiêu đề "Thương Vụ & Đầu Tư".
+   - Nút Back bên trái.
+   - Nút Lịch Sử (Icons.AutoMirrored.Filled.ReceiptLong) bên phải mở DealAllTransactionsBottomSheet.
+
+2. Hero Summary Card (Liquid Glass Aura):
+   - Thống kê 3 chỉ số tổng quan:
+     * Tổng vốn/gốc đang lưu động ngoài thị trường (Total Active Remaining Capital).
+     * Tổng lợi nhuận ròng / Tiền lãi tích lũy (Total Accumulated Profit).
+     * Tỷ suất ROI bình quân tổng thể (% ROI).
+
+3. Tab Switcher & Danh Sách Thẻ Deal:
+   - 2 Tab: "Đang Chạy (Active)" và "Đã Hoàn Tất (Completed)".
+   - DealCardItem:
+     * Header: Tên Deal/Người vay + Badge phân loại [📈 Đầu tư] hoặc [🤝 Cho vay].
+     * Badge góc phải: ROI % (nếu Đầu tư) hoặc Trạng thái nợ (Đã thu đủ / Đang trả nợ / Chưa thu hồi nếu Cho vay).
+     * Progress Bar: Thanh tiến độ hoàn vốn / thu hồi nợ (%).
+     * Dòng số liệu: Vốn còn lại / Dư nợ còn lại & Tiền lãi / Lãi ròng thực tế.
+
+4. Modal & Bottom Sheets Liên Quan:
+   - CreateDealSheet: Tạo mới hoặc Chỉnh sửa Deal, Tab chọn Category (Đầu tư / Cho vay), Tiêu đề, Mô tả, Mục tiêu kỳ vọng.
+   - DealDetailBottomSheet: Chi tiết dòng tiền, Nút Sửa deal (cây bút), Nút "Xuất Thêm Vốn / Cho Vay Thêm", "Thu Hồi / Lời / Thu Nợ", "Chốt Lỗ / Xóa Nợ & Đóng", "Hồi Phục Deal", "Xóa Deal / Khoản Vay" (kèm đếm ngược an toàn 5s).
+   - RecordDealOutlaySheet & RecordDealInflowSheet: Nhập số tiền, chọn ví nguồn/nhận tiền, chọn ngày giờ giao dịch, phân rã thông minh dòng tiền gốc vs tiền lãi.
+   - DealAllTransactionsBottomSheet: Nhật ký toàn bộ dòng tiền của tất cả deal, 3 thẻ hero thống kê (Xuất/Cho vay, Thu hồi gốc, Tiền lời/lãi), 5 Filter Chips, gom nhóm theo ngày.
+```
+
+---
+
 ## 14. User Flow tổng quát
 
 ### Điều hướng màn hình chính

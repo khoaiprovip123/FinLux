@@ -48,9 +48,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -159,7 +159,7 @@ fun RemindersScreen(
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { FinluxSnackbarHost(snackbar, hasBottomBar = false) },
         containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(

@@ -26,6 +26,7 @@ class DealUseCasesTest {
     private lateinit var recordDealOutlayUseCase: RecordDealOutlayUseCase
     private lateinit var recordDealInflowUseCase: RecordDealInflowUseCase
     private lateinit var closeDealWithLossUseCase: CloseDealWithLossUseCase
+    private lateinit var revertDealLossUseCase: RevertDealLossUseCase
 
     @BeforeEach
     fun setUp() {
@@ -35,6 +36,7 @@ class DealUseCasesTest {
         recordDealOutlayUseCase = RecordDealOutlayUseCase(fakeRepository)
         recordDealInflowUseCase = RecordDealInflowUseCase(fakeRepository)
         closeDealWithLossUseCase = CloseDealWithLossUseCase(fakeRepository)
+        revertDealLossUseCase = RevertDealLossUseCase(fakeRepository)
     }
 
     @Test
@@ -154,6 +156,42 @@ class DealUseCasesTest {
     }
 
     @Test
+    fun `revert deal loss restores netProfitLoss, removes capital loss tx and reopens deal`() = runTest {
+        val deal = FinancialDeal(
+            id = "deal-1",
+            title = "Deal A",
+            totalCapitalOutlay = Money(100_000_000L),
+            totalRecovered = Money(80_000_000L),
+            netProfitLoss = Money(-20_000_000L),
+            status = DealStatus.COMPLETED,
+            endDate = Instant.now(),
+        )
+        fakeRepository.deals.value = listOf(deal)
+        fakeRepository.recordedTransactions.add(
+            FinanceTransaction(
+                id = "tx-loss",
+                type = TransactionType.EXPENSE,
+                amount = Money(20_000_000L),
+                categoryId = null,
+                walletId = "DEAL_SETTLEMENT",
+                dealId = "deal-1",
+                dealFlowType = DealFlowType.CAPITAL_LOSS,
+                note = "Chốt lỗ đóng deal",
+                date = Instant.now(),
+            )
+        )
+
+        val result = revertDealLossUseCase(dealId = "deal-1")
+
+        assertTrue(result is AppResult.Success)
+        val updated = fakeRepository.deals.value.first()
+        assertEquals(0L, updated.netProfitLoss.value) // Hoàn lại 20tr lỗ
+        assertEquals(DealStatus.ACTIVE, updated.status) // Mở lại deal
+        assertEquals(null, updated.endDate)
+        assertTrue(fakeRepository.recordedTransactions.none { it.dealFlowType == DealFlowType.CAPITAL_LOSS })
+    }
+
+    @Test
     fun `roi percentage calculated correctly for profit, loss, and breakeven`() {
         val profitDeal = FinancialDeal(
             title = "Profit Deal",
@@ -222,6 +260,38 @@ class DealUseCasesTest {
 
         assertTrue(fakeRepository.deals.value.isEmpty())
         assertTrue(fakeRepository.recordedTransactions.isEmpty())
+    }
+
+    @Test
+    fun `lending deal correctly tracks lending principal, recovery and interest gain`() = runTest {
+        val lendingDeal = FinancialDeal(
+            id = "lend-1",
+            title = "Cho bạn Nam mượn",
+            category = com.finlux.app.domain.model.DealCategory.LENDING,
+            totalCapitalOutlay = Money(50_000_000L),
+            totalRecovered = Money(20_000_000L),
+            status = DealStatus.ACTIVE,
+        )
+        fakeRepository.deals.value = listOf(lendingDeal)
+
+        assertEquals(com.finlux.app.domain.model.DealCategory.LENDING, lendingDeal.category)
+        assertEquals(30_000_000L, lendingDeal.remainingCapital.value)
+        assertEquals(0.4f, lendingDeal.recoveryProgress)
+
+        val result = recordDealInflowUseCase(
+            dealId = "lend-1",
+            walletId = "wallet-1",
+            amount = 35_000_000L,
+            note = "Nam trả hết và trả thêm tiền lãi",
+        )
+
+        assertTrue(result is AppResult.Success)
+        val updated = fakeRepository.deals.value.first()
+        assertEquals(50_000_000L, updated.totalRecovered.value)
+        assertEquals(0L, updated.remainingCapital.value)
+        assertEquals(5_000_000L, updated.netProfitLoss.value)
+        assertEquals(DealStatus.COMPLETED, updated.status)
+        assertTrue(updated.isFullyRecovered)
     }
 }
 
@@ -381,6 +451,21 @@ private class FakeDealRepository : DealRepository {
                 )
             )
         }
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun revertDealLoss(dealId: String): AppResult<Unit> {
+        val deal = deals.value.find { it.id == dealId } ?: return AppResult.Error("Not found")
+        val lossTxs = recordedTransactions.filter { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        val totalLoss = lossTxs.sumOf { it.amount.value }
+
+        recordedTransactions.removeAll { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        val updated = deal.copy(
+            netProfitLoss = Money(deal.netProfitLoss.value + totalLoss),
+            status = DealStatus.ACTIVE,
+            endDate = null,
+        )
+        deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
         return AppResult.Success(Unit)
     }
 }

@@ -15,6 +15,7 @@ data class DealsUiState(
     val deals: List<FinancialDeal> = emptyList(),
     val wallets: List<Wallet> = emptyList(),
     val transactions: List<FinanceTransaction> = emptyList(),
+    val allDealTransactions: List<FinanceTransaction> = emptyList(),
     val selectedTab: DealTab = DealTab.ACTIVE,
     val selectedDeal: FinancialDeal? = null,
     val isLoading: Boolean = false,

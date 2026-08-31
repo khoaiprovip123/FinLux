@@ -58,6 +58,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -68,9 +69,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -144,6 +148,8 @@ fun PrismSettingsScreen(
     val avatarState = viewModel.avatarState.collectAsStateWithLifecycle().value
     val nameState = viewModel.nameState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     var showAvatarSource by remember { mutableStateOf(false) }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
@@ -304,6 +310,7 @@ fun PrismSettingsScreen(
     Scaffold(
         topBar = { SettingsTitle() },
         containerColor = tokens.background,
+        snackbarHost = { FinluxSnackbarHost(snackbarHostState, hasBottomBar = true) },
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -415,7 +422,9 @@ fun PrismSettingsScreen(
                                             if (com.finlux.app.core.security.BiometricHelper.canAuthenticate(context)) {
                                                 onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = true))
                                             } else {
-                                                android.widget.Toast.makeText(context, "Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học", android.widget.Toast.LENGTH_SHORT).show()
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar("Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học")
+                                                }
                                             }
                                         } else {
                                             onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = false))
@@ -432,7 +441,9 @@ fun PrismSettingsScreen(
                                     if (com.finlux.app.core.security.BiometricHelper.canAuthenticate(context)) {
                                         onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = true))
                                     } else {
-                                        android.widget.Toast.makeText(context, "Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học", android.widget.Toast.LENGTH_SHORT).show()
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học")
+                                        }
                                     }
                                 } else {
                                     onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = false))

@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.DealStatus
 import com.finlux.app.domain.model.FinancialDeal
@@ -71,6 +72,7 @@ class FirebaseDealRepository(
         val data = mapOf(
             "title" to deal.title,
             "description" to deal.description,
+            "category" to deal.category.name.lowercase(),
             "targetAmount" to deal.targetAmount.value,
             "totalCapitalOutlay" to deal.totalCapitalOutlay.value,
             "totalRecovered" to deal.totalRecovered.value,
@@ -360,15 +362,47 @@ class FirebaseDealRepository(
         }.await()
     }
 
+    override suspend fun revertDealLoss(dealId: String): AppResult<Unit> = firebaseResult("Không thể thu hồi chốt lỗ") {
+        val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
+        val lossDocs = firestore.collection("users").document(uid).collection("transactions")
+            .whereEqualTo("dealId", dealId)
+            .whereEqualTo("dealFlowType", DealFlowType.CAPITAL_LOSS.name.lowercase())
+            .get()
+            .await()
+
+        val totalLossToRevert = lossDocs.documents.sumOf { it.getLong("amount") ?: 0L }
+        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+
+        firestore.runTransaction { tx ->
+            val dealDoc = tx.get(dealRef)
+            if (dealDoc.exists()) {
+                val currentProfitLoss = dealDoc.getLong("netProfitLoss") ?: 0L
+                tx.update(
+                    dealRef,
+                    "netProfitLoss", currentProfitLoss + totalLossToRevert,
+                    "status", DealStatus.ACTIVE.name.lowercase(),
+                    "endDate", null,
+                    "updatedAt", Timestamp.now(),
+                )
+            }
+            for (doc in lossDocs.documents) {
+                tx.delete(doc.reference)
+            }
+        }.await()
+    }
+
     private fun DocumentSnapshot.toFinancialDeal(): FinancialDeal? = runCatching {
         val rawStatus = getString("status") ?: DealStatus.ACTIVE.name
         val status = runCatching { DealStatus.valueOf(rawStatus.uppercase()) }.getOrDefault(DealStatus.ACTIVE)
+        val rawCategory = getString("category") ?: DealCategory.INVESTMENT.name
+        val category = runCatching { DealCategory.valueOf(rawCategory.uppercase()) }.getOrDefault(DealCategory.INVESTMENT)
 
         FinancialDeal(
             id = id,
             userId = auth.currentUser?.uid.orEmpty(),
             title = getString("title").orEmpty(),
             description = getString("description").orEmpty(),
+            category = category,
             targetAmount = Money(getLong("targetAmount") ?: 0L),
             totalCapitalOutlay = Money(getLong("totalCapitalOutlay") ?: 0L),
             totalRecovered = Money(getLong("totalRecovered") ?: 0L),

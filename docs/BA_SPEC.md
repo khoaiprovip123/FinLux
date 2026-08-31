@@ -375,45 +375,49 @@ Business rule:
   BR-NOTI-01: Thanh toán hóa đơn từ thông báo bắt buộc thực thi qua Firestore Atomic Transaction (trừ ví, ghi giao dịch EXPENSE, cập nhật isPaid = true).
 ```
 
-### UC-29: Quản lý thương vụ & Đầu tư sinh lời (Deal Tracking & ROI Matching)
+### UC-29: Quản lý thương vụ & Cho vay (Deal Tracking & Lending Management)
 ```
 Actor: User
 Precondition: Đã đăng nhập
 Main flow:
-  1. Khởi tạo Deal / Thương vụ mới:
+  1. Khởi tạo Deal / Khoản Cho Vay Mới:
      - Người dùng mở màn hình Quản lý Deal (/deals) hoặc nhấn "Tạo Deal mới".
-     - Nhập Tiêu đề (title), Mô tả (description), Mục tiêu kỳ vọng (targetAmount), Ngày bắt đầu (startDate).
-     - Hệ thống tạo bản ghi FinancialDeal (status = ACTIVE, totalCapitalOutlay = 0, totalRecovered = 0, netProfitLoss = 0).
-  2. Ghi nhận Khoản Chi Xuất Vốn (Capital Outlay):
+     - Chọn Phân Loại (Category): [📈 Đầu Tư] hoặc [🤝 Cho Vay / Mượn].
+     - Nhập Tiêu đề (title), Mô tả / Đối tác (description), Mục tiêu / Kỳ vọng thu hồi (targetAmount), Ngày bắt đầu (startDate).
+     - Hệ thống tạo bản ghi FinancialDeal (category, status = ACTIVE, totalCapitalOutlay = 0, totalRecovered = 0, netProfitLoss = 0).
+  2. Chỉnh Sửa Thông Tin Deal & Khoản Vay:
+     - Nhấn nút Sửa (icon Edit) trên Header chi tiết deal để cập nhật Tiêu đề, Mô tả, Mục tiêu và Category linh hoạt.
+  3. Ghi nhận Khoản Chi Xuất Vốn / Cho Vay Thêm (Capital Outlay):
      - Người dùng thêm giao dịch Chi gắn với dealId (dealFlowType = OUTLAY_CAPITAL).
      - Hệ thống thực thi Firestore Atomic Transaction:
-       * Trừ số dư ví xuất vốn tương ứng.
+       * Trừ số dư ví xuất vốn/cho vay tương ứng.
        * Tăng totalCapitalOutlay của Deal.
        * Ghi bản ghi FinanceTransaction với cờ dealFlowType = OUTLAY_CAPITAL (Được loại trừ khỏi Chi tiêu sinh hoạt gia đình).
-  3. Ghi nhận Khoản Thu Hồi & Lợi Nhuận (Recovery & Capital Gain):
-     - Người dùng ghi nhận khoản tiền thu về gắn với Deal.
-     - Hệ thống tự động tính Vốn còn lại (Remaining Capital = totalCapitalOutlay - totalRecovered):
-       * Trường hợp 3.1: Số tiền thu về <= Vốn còn lại:
-         -> 100% số tiền được ghi nhận là Hoàn vốn gốc (dealFlowType = PRINCIPAL_RECOVERY).
+  4. Ghi nhận Khoản Thu Hồi Nợ / Vốn & Lợi Nhuận / Tiền Lãi (Recovery & Capital Gain):
+     - Người dùng ghi nhận khoản tiền thu về gắn với Deal / Khoản vay.
+     - Hệ thống tự động tính Vốn / Dư nợ còn lại (Remaining Capital = totalCapitalOutlay - totalRecovered):
+       * Trường hợp 4.1: Số tiền thu về <= Vốn/Dư nợ còn lại:
+         -> 100% số tiền được ghi nhận là Hoàn gốc (dealFlowType = PRINCIPAL_RECOVERY).
          -> Cộng số dư ví, tăng totalRecovered của Deal. KHÔNG tính vào Thu nhập báo cáo.
-       * Trường hợp 3.2: Số tiền thu về > Vốn còn lại:
-         -> Phần bằng Vốn còn lại được ghi nhận là Hoàn vốn gốc (dealFlowType = PRINCIPAL_RECOVERY).
-         -> Phần dôi dư (Thu về - Vốn còn lại) tự động tách thành giao dịch Lợi nhuận ròng (dealFlowType = CAPITAL_GAIN).
+       * Trường hợp 4.2: Số tiền thu về > Vốn/Dư nợ còn lại:
+         -> Phần bằng Vốn còn lại được ghi nhận là Hoàn gốc (dealFlowType = PRINCIPAL_RECOVERY).
+         -> Phần dôi dư (Thu về - Vốn còn lại) tự động tách thành giao dịch Lợi nhuận ròng / Tiền lãi (dealFlowType = CAPITAL_GAIN).
          -> Cộng số dư ví, cập nhật totalRecovered = totalCapitalOutlay, tăng netProfitLoss tương ứng.
          -> Khoản CAPITAL_GAIN được ghi nhận vào Báo cáo Thu nhập thực tế của tháng.
-  4. Đóng Thương Vụ & Chốt Lỗ (Settlement / Stop-loss):
-     - Khi thương vụ hoàn tất và đã thu hồi xong vốn kèm lời: Hệ thống tự động chuyển Deal sang trạng thái COMPLETED.
-     - Trường hợp thương vụ kết thúc nhưng số tiền thu về nhỏ hơn vốn ban đầu (totalRecovered < totalCapitalOutlay):
-       * Người dùng nhấn "Chốt lỗ & Đóng Deal" (Stop-loss).
-       * Hệ thống tính Khoản lỗ ròng = totalCapitalOutlay - totalRecovered.
-       * Tự động sinh giao dịch Lỗ đầu tư (dealFlowType = CAPITAL_LOSS) cho khoản thiếu hụt này.
+  5. Đóng Deal / Xóa Nợ Xấu & Chốt Lỗ (Settlement / Stop-loss):
+     - Khi deal / khoản vay đã thu hồi đủ gốc kèm lãi: Hệ thống tự động chuyển sang trạng thái COMPLETED.
+     - Trường hợp kết thúc nhưng số tiền thu về nhỏ hơn vốn/gốc ban đầu (totalRecovered < totalCapitalOutlay):
+       * Người dùng nhấn "Chốt lỗ & Đóng Deal" / "Xóa nợ & Đóng".
+       * Hệ thống tính Khoản lỗ / Nợ xấu = totalCapitalOutlay - totalRecovered.
+       * Tự động sinh giao dịch Lỗ đầu tư / Thất thoát (dealFlowType = CAPITAL_LOSS) cho khoản thiếu hụt này.
        * Khoản CAPITAL_LOSS được ghi nhận vào Báo cáo Chi tiêu của tháng, cập nhật netProfitLoss âm và đổi status = COMPLETED.
-  5. Xem Báo Cáo Phân Tích Deal & ROI Thời Gian Thực:
-     - Hiển thị tỷ suất sinh lời ROI: ROI = (Tổng thu - Tổng vốn) / Tổng vốn * 100%.
-     - Hiển thị thanh tiến độ hoàn vốn (Capital Recovery Progress Bar) và thời gian quay vòng vốn.
+  6. Xem Nhật Ký Toàn Bộ Dòng Tiền & Báo Cáo Phân Tích:
+     - Nhấn nút Lịch sử ở góc trên bên phải để xem toàn bộ giao dịch dòng tiền của các deal, kèm thẻ thống kê tổng hợp và bộ lọc phân loại.
+     - Đầu tư: Hiển thị ROI = (totalRecovered + netProfitLoss - totalCapitalOutlay) / totalCapitalOutlay * 100%.
+     - Cho vay: Hiển thị Dư nợ gốc còn lại, Tiền lãi nhận được, Tiến độ hoàn nợ (không ép hiển thị ROI âm).
 Business rule:
   BR-DEAL-01: Phân rã dòng tiền thu hồi vốn & Lợi nhuận ròng (Capital Gain) tự động theo thuật toán ngưỡng vốn còn lại.
-  BR-DEAL-02: Tính toán ROI thời gian thực: ROI = (totalRecovered + netProfitLoss - totalCapitalOutlay) / totalCapitalOutlay * 100%.
+  BR-DEAL-02: Phân tách ngữ cảnh giao diện và chỉ số giữa Đầu Tư (Vốn xuất, ROI %, Lợi nhuận) và Cho Vay (Gốc cho vay, Dư nợ, Tiền lãi, Tiến độ hoàn nợ).
   BR-DEAL-03: Tuyệt đối loại trừ OUTLAY_CAPITAL và PRINCIPAL_RECOVERY khỏi Ngân sách sinh hoạt (Budget) và Báo cáo Thu/Chi sinh hoạt hàng ngày.
   BR-DEAL-04: Ghi nhận CAPITAL_GAIN vào Báo cáo Thu nhập và CAPITAL_LOSS vào Báo cáo Chi tiêu tại thời điểm phát sinh/chốt lỗ.
   BR-DEAL-05: Mọi thao tác xuất vốn, thu hồi, phân tách lãi/lỗ và đóng Deal bắt buộc chạy qua Firestore Atomic Transaction để bảo toàn số dư ví và tính toàn vẹn dữ liệu.

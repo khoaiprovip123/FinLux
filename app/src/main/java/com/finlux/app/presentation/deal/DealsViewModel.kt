@@ -11,6 +11,7 @@ import com.finlux.app.domain.usecase.DeleteDealUseCase
 import com.finlux.app.domain.usecase.GetDealsUseCase
 import com.finlux.app.domain.usecase.RecordDealInflowUseCase
 import com.finlux.app.domain.usecase.RecordDealOutlayUseCase
+import com.finlux.app.domain.usecase.RevertDealLossUseCase
 import com.finlux.app.domain.usecase.SaveDealUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ class DealsViewModel @Inject constructor(
     private val recordDealOutlayUseCase: RecordDealOutlayUseCase,
     private val recordDealInflowUseCase: RecordDealInflowUseCase,
     private val closeDealWithLossUseCase: CloseDealWithLossUseCase,
+    private val revertDealLossUseCase: RevertDealLossUseCase,
 ) : ViewModel() {
 
     private val selectedTab = MutableStateFlow(DealTab.ACTIVE)
@@ -43,7 +45,7 @@ class DealsViewModel @Inject constructor(
     private val dataFlow = combine(
         getDealsUseCase(),
         walletRepository.observeWallets(),
-        transactionRepository.observeRecent(limit = 100),
+        transactionRepository.observeRecent(limit = 500),
     ) { deals, wallets, transactions ->
         Triple(deals, wallets, transactions)
     }
@@ -68,11 +70,13 @@ class DealsViewModel @Inject constructor(
         val dealTransactions = transactions.filter { tx ->
             updatedCurrentDeal != null && tx.dealId == updatedCurrentDeal.id
         }
+        val allDealTransactions = transactions.filter { it.dealId != null }
 
         DealsUiState(
             deals = deals,
             wallets = wallets,
             transactions = dealTransactions,
+            allDealTransactions = allDealTransactions,
             selectedTab = controls.tab,
             selectedDeal = updatedCurrentDeal,
             isSubmitting = controls.submitting,
@@ -167,6 +171,22 @@ class DealsViewModel @Inject constructor(
             is AppResult.Success -> {
                 isSubmitting.value = false
                 successMessage.value = "Đã chốt lỗ và đóng thương vụ"
+                onSuccess()
+            }
+            is AppResult.Error -> {
+                isSubmitting.value = false
+                errorMessage.value = result.message
+            }
+        }
+    }
+
+    fun revertDealLoss(dealId: String, onSuccess: () -> Unit = {}) = viewModelScope.launch {
+        isSubmitting.value = true
+        errorMessage.value = null
+        when (val result = revertDealLossUseCase(dealId)) {
+            is AppResult.Success -> {
+                isSubmitting.value = false
+                successMessage.value = "Đã thu hồi chốt lỗ và mở lại thương vụ"
                 onSuccess()
             }
             is AppResult.Error -> {

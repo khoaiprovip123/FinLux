@@ -30,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Info
@@ -38,6 +39,8 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -46,8 +49,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.platform.LocalContext
+import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Switch
@@ -88,8 +99,9 @@ import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
 import com.finlux.app.presentation.wallet.WalletsViewModel
+import com.finlux.app.presentation.wallet.WalletTransactionsBottomSheet
 import com.finlux.app.core.navigation.Route
-import java.time.Instant
+import com.finlux.app.domain.model.FinanceTransaction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,18 +109,35 @@ fun ClassicWalletsScreen(
     onBack: (() -> Unit)? = null,
     onNavigate: ((String) -> Unit)? = null,
     onAdd: (() -> Unit)? = null,
+    onSelectWallet: ((Wallet) -> Unit)? = null,
+    onSelectTransaction: ((FinanceTransaction) -> Unit)? = null,
     transferRequestKey: Int = 0,
     viewModel: WalletsViewModel = hiltViewModel(),
 ) {
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
+    val categories = viewModel.categories.collectAsStateWithLifecycle().value
+    val recentTransactions = viewModel.recentTransactions.collectAsStateWithLifecycle().value
+    val financeZone = viewModel.financeZone.collectAsStateWithLifecycle().value
     val action = viewModel.actionState.collectAsStateWithLifecycle().value
     var selectedFilter by remember { mutableStateOf<WalletType?>(null) }
     val displayedWallets = if (selectedFilter == null) wallets else wallets.filter { it.type == selectedFilter }
     val snackbar = remember { SnackbarHostState() }
+    var viewingWalletTransactions by remember { mutableStateOf<Wallet?>(null) }
     var editing by remember { mutableStateOf<Wallet?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var showTransfer by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<Wallet?>(null) }
+    var deleteCountdown by remember(pendingDelete) { mutableStateOf(5) }
+
+    LaunchedEffect(pendingDelete) {
+        if (pendingDelete != null) {
+            deleteCountdown = 5
+            while (deleteCountdown > 0) {
+                kotlinx.coroutines.delay(1000)
+                deleteCountdown--
+            }
+        }
+    }
 
     LaunchedEffect(transferRequestKey) {
         if (transferRequestKey > 0) {
@@ -146,7 +175,7 @@ fun ClassicWalletsScreen(
                     },
                 )
             },
-            snackbarHost = { SnackbarHost(snackbar) },
+            snackbarHost = { FinluxSnackbarHost(snackbar, hasBottomBar = onBack == null) },
             containerColor = Color.Transparent,
         ) { padding ->
             LazyColumn(
@@ -234,7 +263,13 @@ fun ClassicWalletsScreen(
                         ) {
                             GlassCard(
                                 modifier = Modifier.fillMaxWidth(),
-                                onClick = { editing = wallet; showEditor = true },
+                                onClick = {
+                                    viewingWalletTransactions = wallet
+                                },
+                                onLongClick = {
+                                    editing = wallet
+                                    showEditor = true
+                                },
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -308,6 +343,28 @@ fun ClassicWalletsScreen(
         }
     }
 
+    // Wallet Transactions Bottom Sheet (Nhấn vào thẻ ví)
+    viewingWalletTransactions?.let { targetWallet ->
+        val currentWallet = wallets.find { it.id == targetWallet.id } ?: targetWallet
+        WalletTransactionsBottomSheet(
+            wallet = currentWallet,
+            allTransactions = recentTransactions,
+            categories = categories,
+            financeZone = financeZone,
+            onDismiss = { viewingWalletTransactions = null },
+            onEditWallet = { walletToEdit ->
+                viewingWalletTransactions = null
+                editing = walletToEdit
+                showEditor = true
+            },
+            onTransferFromWallet = {
+                viewingWalletTransactions = null
+                showTransfer = true
+            },
+            onSelectTransaction = onSelectTransaction,
+        )
+    }
+
     if (showEditor) {
         WalletEditor(
             initial = editing,
@@ -324,21 +381,28 @@ fun ClassicWalletsScreen(
         )
     }
     if (showTransfer) {
-        TransferEditor(wallets, action.busy, { showTransfer = false }) { source, destination, amount, note ->
-            viewModel.transfer(source, destination, amount, note) { showTransfer = false }
+        TransferEditor(wallets, action.busy, { showTransfer = false }) { source, destination, amount, note, date ->
+            viewModel.transfer(source, destination, amount, note, date) { showTransfer = false }
         }
     }
     pendingDelete?.let { wallet ->
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text("Xóa ví ${wallet.name}?") },
-            text = { Text("Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví này sẽ bị ảnh hưởng.") },
+            text = { Text("Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví này sẽ bị ảnh hưởng. Thao tác này không thể hoàn tác!") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.delete(wallet)
-                    pendingDelete = null
-                }) {
-                    Text("Xóa vĩnh viễn", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                TextButton(
+                    onClick = {
+                        viewModel.delete(wallet)
+                        pendingDelete = null
+                    },
+                    enabled = deleteCountdown == 0,
+                ) {
+                    Text(
+                        if (deleteCountdown > 0) "Xác nhận xóa (${deleteCountdown}s)" else "Xóa Vĩnh Viễn",
+                        color = if (deleteCountdown == 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             },
             dismissButton = {
@@ -365,6 +429,17 @@ private fun WalletEditor(
     var color by remember(initial) { mutableStateOf(initial?.colorHex ?: FinanceAccentHexes.first()) }
     var isDefault by remember(initial) { mutableStateOf(initial?.isDefault ?: (walletsCount == 0)) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteCountdown by remember(showDeleteConfirm) { mutableStateOf(5) }
+
+    LaunchedEffect(showDeleteConfirm) {
+        if (showDeleteConfirm) {
+            deleteCountdown = 5
+            while (deleteCountdown > 0) {
+                kotlinx.coroutines.delay(1000)
+                deleteCountdown--
+            }
+        }
+    }
 
     val isEditing = initial != null
     val isDefaultWallet = initial?.isDefault == true
@@ -579,13 +654,20 @@ private fun WalletEditor(
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Xóa ví ${initial.name}?") },
-            text = { Text("Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng.") },
+            text = { Text("Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng. Thao tác này không thể hoàn tác!") },
             confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    onDelete?.invoke(initial)
-                }) {
-                    Text("Xóa vĩnh viễn", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete?.invoke(initial)
+                    },
+                    enabled = deleteCountdown == 0,
+                ) {
+                    Text(
+                        if (deleteCountdown > 0) "Xác nhận xóa (${deleteCountdown}s)" else "Xóa Vĩnh Viễn",
+                        color = if (deleteCountdown == 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             },
             dismissButton = {
@@ -602,12 +684,15 @@ private fun TransferEditor(
     wallets: List<Wallet>,
     busy: Boolean,
     onDismiss: () -> Unit,
-    onTransfer: (String, String, Long, String) -> Unit,
+    onTransfer: (String, String, Long, String, Instant) -> Unit,
 ) {
     var source by remember { mutableStateOf(wallets.firstOrNull()?.id.orEmpty()) }
     var destination by remember { mutableStateOf(wallets.getOrNull(1)?.id.orEmpty()) }
     var amount by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf(Instant.now()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val sourceWallet = wallets.find { it.id == source }
     val sourceBalance = sourceWallet?.balance?.value ?: 0L
@@ -615,6 +700,17 @@ private fun TransferEditor(
     val parsedAmount = amount.toLongOrNull() ?: 0L
     val isInsufficientFunds = !isSourceCard && sourceWallet != null && parsedAmount > sourceBalance
     val tokens = LocalFinluxTokens.current
+
+    val localDate = selectedDate.atZone(ZoneId.systemDefault()).toLocalDate()
+    val today = LocalDate.now()
+    val dayPrefix = when (localDate) {
+        today -> "Hôm nay, "
+        today.minusDays(1) -> "Hôm qua, "
+        else -> ""
+    }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
+    val formattedDate = dayPrefix + selectedDate.atZone(ZoneId.systemDefault()).format(dateFormatter)
+
     GlassBottomSheet(onDismiss = onDismiss) {
         Column(
             Modifier
@@ -685,8 +781,19 @@ private fun TransferEditor(
                 shape = RoundedCornerShape(16.dp),
             )
 
+            // Ergonomic Date/Time Row
+            ErgonomicFormRow(
+                label = "THỜI GIAN CHUYỂN TIỀN",
+                primaryValue = formattedDate,
+                secondaryValue = null,
+                icon = Icons.Default.CalendarMonth,
+                iconTintColor = tokens.primary,
+                iconBgColor = tokens.primary.copy(alpha = 0.12f),
+                onClick = { showDatePicker = true },
+            )
+
             Button(
-                onClick = { onTransfer(source, destination, amount.toLongOrNull() ?: 0, note.trim()) },
+                onClick = { onTransfer(source, destination, amount.toLongOrNull() ?: 0, note.trim(), selectedDate) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = parsedAmount > 0L && source.isNotBlank() && destination.isNotBlank() && source != destination && !isInsufficientFunds && !busy,
                 shape = RoundedCornerShape(16.dp),
@@ -697,6 +804,57 @@ private fun TransferEditor(
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
+        }
+    }
+
+    // Dialog chọn ngày & giờ
+    if (showDatePicker) {
+        val currentZoned = selectedDate.atZone(ZoneId.systemDefault())
+        val initialDateUtcMillis = currentZoned.toLocalDate()
+            .atStartOfDay(ZoneOffset.UTC)
+            .toInstant()
+            .toEpochMilli()
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = initialDateUtcMillis,
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selectedMillis = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                    if (selectedMillis != null) {
+                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
+                            .atZone(ZoneOffset.UTC)
+                            .toLocalDate()
+
+                        val timePickerDialog = android.app.TimePickerDialog(
+                            context,
+                            { _, hourOfDay, minute ->
+                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
+                                selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                            },
+                            currentZoned.hour,
+                            currentZoned.minute,
+                            true,
+                        )
+                        timePickerDialog.setOnCancelListener {
+                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
+                            selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                        }
+                        timePickerDialog.show()
+                    }
+                }) {
+                    Text("Tiếp tục (Chọn giờ)")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Hủy")
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }

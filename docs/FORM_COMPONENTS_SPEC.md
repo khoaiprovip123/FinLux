@@ -223,17 +223,51 @@ PrincipalInterestSplitCard(
 
 ---
 
+### 7️⃣ `FinluxSnackbarHost` & `FinluxGlassSnackbar` — Floating Liquid Glass Toast / Snackbar Chuẩn
+Bộ đôi Component hiển thị thông báo Toast / Snackbar tiêu chuẩn lấy cảm hứng từ Native Toast HyperOS cao cấp, tích hợp hiệu ứng Liquid Glass, tự động né thanh điều hướng (Bottom Bar) và hỗ trợ nút hành động ("Hoàn tác" / Undo).
+
+* **Đặc điểm thiết kế:**
+  - Phom dáng **Floating Capsule** (viên nang nổi) bo góc `24dp` đặt ở chính giữa màn hình (`Alignment.BottomCenter`).
+  - Nền kính mờ `LocalFinluxTokens.current.surface.copy(alpha = 0.94f..0.96f)` viền sáng tán sắc mảnh `1dp`.
+  - Icon badge thương hiệu `ic_finlux` (hoặc icon trạng thái) bên trái.
+  - Text thông điệp rõ ràng, độ tương phản tuyệt đối trên nền kính.
+  - Tích hợp nút hành động / *"Hoàn tác"* (`actionLabel`) màu Accent phát sáng bên phải khi người dùng xóa hoặc sửa dữ liệu.
+  - Tự động nhận diện insets và né thanh Bottom Navigation Bar (`hasBottomBar = true` nâng cao thêm `bottomBarClearance + 12dp` = ~108dp, chống bị che khuất).
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+
+val snackbarHostState = remember { SnackbarHostState() }
+
+// Trong Scaffold:
+Scaffold(
+    snackbarHost = { FinluxSnackbarHost(snackbarHostState, hasBottomBar = isRootTab) },
+) { padding -> ... }
+
+// Kích hoạt thông báo:
+snackbarHostState.showSnackbar(
+    message = "Đã lưu thông tin thành công",
+    actionLabel = "Hoàn tác", // Hoặc null nếu chỉ là thông báo nhanh
+)
+```
+
+---
+
 ## 📱 4. DANH SÁCH MÀN HÌNH ĐÃ KẾ THỪA BỘ COMPONENT CHUẨN
 
 | Màn hình / Modal | Component được áp dụng |
 | :--- | :--- |
+| **Giao Dịch (`PrismTransactionsScreen`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`)** | `FinluxSnackbarHost` (né BottomBar), `FinluxCategoryPickerBottomSheet`, `ErgonomicFormRow` |
+| **Quản Lý Ví (`PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`)** | `FinluxSnackbarHost` (né BottomBar), `ErgonomicCompactAmountCard`, `FinluxWalletPickerBottomSheet` |
+| **Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxSnackbarHost` (né BottomBar), `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` |
+| **Quản Lý Nợ & Tín Dụng (`DebtDashboardScreen.kt`, `DebtPaymentSheet.kt`, `AddEditDebtSheet.kt`)** | `FinluxSnackbarHost`, `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicCompactAmountCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
+| **Thương Vụ Đầu Tư (`DealsScreen.kt`, `CreateDealDialog.kt`, `RecordDealInflowDialog.kt`)** | `FinluxSnackbarHost`, `FinluxStyleBackdrop`, `GlassTopBar`, `DealDetailBottomSheet` |
+| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxSnackbarHost`, `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard` |
+| **Nhắc Nhở Định Kỳ (`RemindersScreen.kt`)** | `FinluxSnackbarHost`, `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow` |
+| **Quản Lý Danh Mục (`CategoriesScreen.kt`)** | `FinluxSnackbarHost`, `GlassTopBar`, `FinluxLazyColumn` |
+| **Hồ Sơ & Cài Đặt (`PrismSettingsScreen.kt`, `SettingsScreen.kt`)** | `FinluxSnackbarHost` (né BottomBar), `ProfileCard`, `BiometricSwitch` |
 | **Thêm Giao Dịch (`AddTransactionSheet.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow` |
-| **Thanh Toán Nợ (`DebtPaymentSheet.kt`)** | `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicCompactAmountCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
-| **Thêm / Sửa Nợ & Tín Dụng (`AddEditDebtSheet.kt`)** | `ErgonomicCompactAmountCard` (3 trường tiền), `FinluxCategoryPickerBottomSheet` |
-| **Thêm / Sửa Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` (Smart Decimal Magnitude Scaling Chips) |
-| **Quản Lý Ví (`PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`)** | `ErgonomicCompactAmountCard` (Số dư ban đầu & Chuyển tiền liên ví), `FinluxWalletPickerBottomSheet` |
 | **Mục Tiêu Tài Chính (`GoalsScreen.kt`)** | `ErgonomicCompactAmountCard` (Nạp/Rút & Mục tiêu / Tích lũy tháng) |
-| **Nhắc Nhở Định Kỳ (`RemindersScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow`, Native `TimePickerDialog` |
 | **Cài Đặt Lương (`SalaryCycleSettingsSheet.kt`)** | `ErgonomicCompactAmountCard` (Mức lương dự kiến) |
-| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, Thẻ `NotificationItemCard` chuẩn Glass |
 

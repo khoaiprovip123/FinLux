@@ -49,13 +49,14 @@ users/{uid}
   │    ├─ createdAt: timestamp
   │    └─ updatedAt: timestamp
   │
-  ├─ deals/{dealId}                 -- quản lý thương vụ & đầu tư sinh lời (UC-29, BR-DEAL-01..05)
-  │    ├─ title: string              -- "Mua bán xe lướt", "Đầu tư hàng hóa", ...
+  ├─ deals/{dealId}                 -- quản lý thương vụ & đầu tư sinh lời / cho vay (UC-29, BR-DEAL-01..05)
+  │    ├─ title: string              -- "Mua bán xe lướt", "Cho bạn Nam mượn", ...
   │    ├─ description: string
+  │    ├─ category: "investment" | "lending" -- phân loại: Đầu tư hoặc Cho vay
   │    ├─ targetAmount: number       -- mục tiêu thu về kỳ vọng
-  │    ├─ totalCapitalOutlay: number -- tổng vốn đã chi xuất (cập nhật qua Transaction)
-  │    ├─ totalRecovered: number     -- tổng vốn đã thu hồi
-  │    ├─ netProfitLoss: number      -- lợi nhuận/lỗ ròng thực hiện tích lũy
+  │    ├─ totalCapitalOutlay: number -- tổng vốn đã chi xuất / nợ gốc đã cho vay (cập nhật qua Transaction)
+  │    ├─ totalRecovered: number     -- tổng vốn/nợ gốc đã thu hồi
+  │    ├─ netProfitLoss: number      -- lợi nhuận ròng / tiền lãi thực hiện tích lũy
   │    ├─ status: "ACTIVE" | "COMPLETED" | "CANCELLED"
   │    ├─ startDate: timestamp
   │    ├─ endDate: timestamp?

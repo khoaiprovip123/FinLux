@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Payments
@@ -19,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,9 +32,15 @@ import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon
+import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.home.toVnd
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,11 +48,13 @@ fun RecordDealInflowSheet(
     deal: FinancialDeal,
     wallets: List<Wallet>,
     onDismiss: () -> Unit,
-    onConfirm: (walletId: String, amount: Long, note: String) -> Unit,
+    onConfirm: (walletId: String, amount: Long, date: Instant, note: String) -> Unit,
     isSubmitting: Boolean = false,
 ) {
     val tokens = LocalFinluxTokens.current
+    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isLending = deal.category == DealCategory.LENDING
 
     var selectedWalletId by remember {
         mutableStateOf(wallets.firstOrNull { it.isDefault }?.id ?: wallets.firstOrNull()?.id.orEmpty())
@@ -53,6 +63,8 @@ fun RecordDealInflowSheet(
 
     var amountDigits by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf(Instant.now()) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     val cleanDigits = amountDigits.filter { it.isDigit() }.trimStart('0')
     val amount = cleanDigits.toLongOrNull() ?: 0L
@@ -61,6 +73,17 @@ fun RecordDealInflowSheet(
     val gainPortion = if (amount > remainingCapital) amount - remainingCapital else 0L
 
     val selectedWallet = wallets.find { it.id == selectedWalletId }
+
+    // Date formatting with "Hôm nay" / "Hôm qua" smart labels
+    val localDate = selectedDate.atZone(ZoneId.systemDefault()).toLocalDate()
+    val today = LocalDate.now()
+    val dayPrefix = when (localDate) {
+        today -> "Hôm nay, "
+        today.minusDays(1) -> "Hôm qua, "
+        else -> ""
+    }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
+    val formattedDate = dayPrefix + selectedDate.atZone(ZoneId.systemDefault()).format(dateFormatter)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -86,7 +109,7 @@ fun RecordDealInflowSheet(
             ) {
                 Column {
                     Text(
-                        text = "Thu Hồi Vốn & Lợi Nhuận",
+                        text = if (isLending) "Thu Hồi Nợ / Tiền Lãi" else "Thu Hồi Vốn & Lợi Nhuận",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -160,17 +183,22 @@ fun RecordDealInflowSheet(
                                     color = tokens.onSurfaceVariant,
                                 ),
                             )
-                            val estimatedNewRoi = if (deal.totalCapitalOutlay.value > 0) {
-                                val newRecovered = (deal.totalRecovered.value + principalPortion).coerceAtMost(deal.totalCapitalOutlay.value)
-                                val newGain = deal.netProfitLoss.value + gainPortion
-                                val totalReturn = newRecovered + newGain
-                                ((totalReturn - deal.totalCapitalOutlay.value).toDouble() / deal.totalCapitalOutlay.value) * 100.0
-                            } else 0.0
+                            val headerTag = if (isLending) {
+                                if (gainPortion > 0) "+${gainPortion.toVnd()} tiền lãi" else "Thu nợ gốc"
+                            } else {
+                                val estimatedNewRoi = if (deal.totalCapitalOutlay.value > 0) {
+                                    val newRecovered = (deal.totalRecovered.value + principalPortion).coerceAtMost(deal.totalCapitalOutlay.value)
+                                    val newGain = deal.netProfitLoss.value + gainPortion
+                                    val totalReturn = newRecovered + newGain
+                                    ((totalReturn - deal.totalCapitalOutlay.value).toDouble() / deal.totalCapitalOutlay.value) * 100.0
+                                } else 0.0
+                                String.format(java.util.Locale.US, "ROI mới: %+.1f%%", estimatedNewRoi)
+                            }
                             Text(
-                                text = String.format(java.util.Locale.US, "ROI mới: %+.1f%%", estimatedNewRoi),
+                                text = headerTag,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = if (estimatedNewRoi >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                                    color = if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981),
                                 ),
                             )
                         }
@@ -182,7 +210,7 @@ fun RecordDealInflowSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
-                                text = "• Hoàn vốn gốc (không tính Thu nhập):",
+                                text = if (isLending) "• Thu hồi nợ gốc (không tính Thu nhập):" else "• Hoàn vốn gốc (không tính Thu nhập):",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     color = tokens.onSurface,
                                 ),
@@ -201,9 +229,9 @@ fun RecordDealInflowSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
-                                text = "• Lợi nhuận ròng (ghi vào Báo cáo):",
+                                text = if (isLending) "• Tiền lãi nhận thêm (ghi vào Báo cáo):" else "• Lợi nhuận ròng (ghi vào Báo cáo):",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = if (gainPortion > 0) Color(0xFF10B981) else tokens.onSurfaceVariant,
+                                    color = if (gainPortion > 0) (if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)) else tokens.onSurfaceVariant,
                                     fontWeight = if (gainPortion > 0) FontWeight.Bold else FontWeight.Normal,
                                 ),
                             )
@@ -211,7 +239,7 @@ fun RecordDealInflowSheet(
                                 text = if (gainPortion > 0) "+${gainPortion.toVnd()}" else "0 ₫",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = if (gainPortion > 0) Color(0xFF10B981) else tokens.onSurfaceVariant,
+                                    color = if (gainPortion > 0) (if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)) else tokens.onSurfaceVariant,
                                 ),
                             )
                         }
@@ -224,11 +252,22 @@ fun RecordDealInflowSheet(
                 label = "GHI CHÚ (TÙY CHỌN)",
                 value = note,
                 onValueChange = { note = it },
-                placeholder = "Ví dụ: Thu đợt 1, Tiền lời bán xe...",
+                placeholder = if (isLending) "Ví dụ: Trả đợt 1, Tiền lãi tháng 8..." else "Ví dụ: Thu đợt 1, Tiền lời bán xe...",
                 icon = Icons.Default.Description,
                 iconBgColor = Color(0xFF10B981).copy(alpha = 0.12f),
                 iconTintColor = Color(0xFF10B981),
                 onClear = { note = "" },
+            )
+
+            // 5. Thời gian giao dịch (ErgonomicFormRow)
+            ErgonomicFormRow(
+                label = if (isLending) "THỜI GIAN THU NỢ" else "THỜI GIAN THU TIỀN",
+                primaryValue = formattedDate,
+                secondaryValue = null,
+                icon = Icons.Default.CalendarMonth,
+                iconBgColor = Color(0xFF10B981).copy(alpha = 0.14f),
+                iconTintColor = Color(0xFF10B981),
+                onClick = { showDatePicker = true },
             )
 
             Spacer(Modifier.height(8.dp))
@@ -237,7 +276,7 @@ fun RecordDealInflowSheet(
             Button(
                 onClick = {
                     if (amount > 0 && selectedWalletId.isNotBlank()) {
-                        onConfirm(selectedWalletId, amount, note.trim())
+                        onConfirm(selectedWalletId, amount, selectedDate, note.trim())
                     }
                 },
                 enabled = amount > 0 && selectedWalletId.isNotBlank() && !isSubmitting,
@@ -246,7 +285,7 @@ fun RecordDealInflowSheet(
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF10B981),
+                    containerColor = if (isLending) Color(0xFFD97706) else Color(0xFF10B981),
                     contentColor = Color.White,
                 ),
             ) {
@@ -254,7 +293,7 @@ fun RecordDealInflowSheet(
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
                     Text(
-                        text = "Ghi Nhận Thu Tiền",
+                        text = if (isLending) "Ghi Nhận Thu Nợ" else "Ghi Nhận Thu Tiền",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
                         ),
@@ -275,5 +314,56 @@ fun RecordDealInflowSheet(
             },
             onDismiss = { showWalletPicker = false },
         )
+    }
+
+    // Dialog chọn ngày & giờ
+    if (showDatePicker) {
+        val currentZoned = selectedDate.atZone(ZoneId.systemDefault())
+        val initialDateUtcMillis = currentZoned.toLocalDate()
+            .atStartOfDay(ZoneOffset.UTC)
+            .toInstant()
+            .toEpochMilli()
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = initialDateUtcMillis,
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selectedMillis = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                    if (selectedMillis != null) {
+                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
+                            .atZone(ZoneOffset.UTC)
+                            .toLocalDate()
+
+                        val timePickerDialog = android.app.TimePickerDialog(
+                            context,
+                            { _, hourOfDay, minute ->
+                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
+                                selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                            },
+                            currentZoned.hour,
+                            currentZoned.minute,
+                            true,
+                        )
+                        timePickerDialog.setOnCancelListener {
+                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
+                            selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                        }
+                        timePickerDialog.show()
+                    }
+                }) {
+                    Text("Tiếp tục (Chọn giờ)")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Hủy")
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 }

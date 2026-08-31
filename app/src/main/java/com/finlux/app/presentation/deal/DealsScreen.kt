@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,13 +19,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.GlassTopBar
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.presentation.home.toVnd
 
@@ -35,21 +41,23 @@ fun DealsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val tokens = LocalFinluxTokens.current
-    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showHistorySheet by remember { mutableStateOf(false) }
+    var editingDeal by remember { mutableStateOf<FinancialDeal?>(null) }
     var showInflowDialog by remember { mutableStateOf(false) }
     var showOutlayDialog by remember { mutableStateOf(false) }
     var targetDealForAction by remember { mutableStateOf<FinancialDeal?>(null) }
 
-    // Xử lý thông báo Snackbar
+    // Xử lý thông báo Toast
     LaunchedEffect(state.errorMessage, state.successMessage) {
         state.errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
         }
         state.successMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
         }
     }
@@ -79,6 +87,15 @@ fun DealsScreen(
                             )
                         }
                     },
+                    actions = {
+                        IconButton(onClick = { showHistorySheet = true }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                                contentDescription = "Lịch sử dòng tiền",
+                                tint = tokens.textPrimary,
+                            )
+                        }
+                    },
                 )
             },
             floatingActionButton = {
@@ -98,7 +115,6 @@ fun DealsScreen(
                     }
                 }
             },
-            snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { paddingValues ->
             LazyColumn(
                 modifier = Modifier
@@ -151,6 +167,10 @@ fun DealsScreen(
                 deal = selected,
                 transactions = state.transactions,
                 onDismiss = { viewModel.selectDeal(null) },
+                onEditDeal = {
+                    editingDeal = selected
+                    viewModel.selectDeal(null)
+                },
                 onAddOutlay = {
                     targetDealForAction = selected
                     showOutlayDialog = true
@@ -160,15 +180,23 @@ fun DealsScreen(
                     showInflowDialog = true
                 },
                 onCloseWithLoss = {
-                    viewModel.closeDealWithLoss(selected.id)
+                    val dealId = selected.id
+                    viewModel.closeDealWithLoss(dealId)
+                },
+                onRevertStopLoss = {
+                    val dealId = selected.id
+                    viewModel.revertDealLoss(dealId)
                 },
                 onDelete = {
-                    viewModel.deleteDeal(selected.id)
+                    val dealId = selected.id
+                    viewModel.deleteDeal(dealId, onSuccess = {
+                        viewModel.selectDeal(null)
+                    })
                 },
             )
         }
 
-        // Sheet Tạo Deal
+        // Sheet Tạo Deal Mới
         if (showCreateDialog) {
             CreateDealSheet(
                 onDismiss = { showCreateDialog = false },
@@ -177,6 +205,32 @@ fun DealsScreen(
                     viewModel.createOrUpdateDeal(newDeal)
                 },
                 isSubmitting = state.isSubmitting,
+            )
+        }
+
+        // Sheet Chỉnh Sửa Deal
+        editingDeal?.let { currentDeal ->
+            CreateDealSheet(
+                initialDeal = currentDeal,
+                onDismiss = { editingDeal = null },
+                onConfirm = { updatedDeal ->
+                    editingDeal = null
+                    viewModel.createOrUpdateDeal(updatedDeal)
+                },
+                isSubmitting = state.isSubmitting,
+            )
+        }
+
+        // Sheet Nhật Ký Dòng Tiền Toàn Bộ Deal & Khoản Vay
+        if (showHistorySheet) {
+            DealAllTransactionsBottomSheet(
+                deals = state.deals,
+                transactions = state.allDealTransactions,
+                wallets = state.wallets,
+                onDismiss = { showHistorySheet = false },
+                onSelectDeal = { deal ->
+                    viewModel.selectDeal(deal)
+                },
             )
         }
 
@@ -189,11 +243,11 @@ fun DealsScreen(
                     showInflowDialog = false
                     targetDealForAction = null
                 },
-                onConfirm = { walletId, amount, note ->
+                onConfirm = { walletId, amount, date, note ->
                     val dealId = targetDealForAction!!.id
                     showInflowDialog = false
                     targetDealForAction = null
-                    viewModel.recordInflow(dealId, walletId, amount, note = note)
+                    viewModel.recordInflow(dealId, walletId, amount, date = date, note = note)
                 },
                 isSubmitting = state.isSubmitting,
             )
@@ -208,11 +262,11 @@ fun DealsScreen(
                     showOutlayDialog = false
                     targetDealForAction = null
                 },
-                onConfirm = { walletId, amount, note ->
+                onConfirm = { walletId, amount, date, note ->
                     val dealId = targetDealForAction!!.id
                     showOutlayDialog = false
                     targetDealForAction = null
-                    viewModel.recordOutlay(dealId, walletId, amount, note = note)
+                    viewModel.recordOutlay(dealId, walletId, amount, date = date, note = note)
                 },
                 isSubmitting = state.isSubmitting,
             )
@@ -380,6 +434,8 @@ private fun DealCardItem(
     onClick: () -> Unit,
 ) {
     val tokens = LocalFinluxTokens.current
+    val isLending = deal.category == DealCategory.LENDING
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = tokens.surface),
@@ -392,20 +448,45 @@ private fun DealCardItem(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Row 1: Title & ROI
+            // Row 1: Title, Category Badge & Status/ROI
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = deal.title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = tokens.textPrimary,
-                        ),
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = deal.title,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = tokens.textPrimary,
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+
+                        // Category Tag
+                        Surface(
+                            shape = RoundedCornerShape(5.dp),
+                            color = if (isLending) Color(0xFFF59E0B).copy(alpha = 0.14f) else tokens.primary.copy(alpha = 0.14f),
+                        ) {
+                            Text(
+                                text = if (isLending) "Cho vay" else "Đầu tư",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = if (isLending) Color(0xFFD97706) else tokens.primary,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
+                            )
+                        }
+                    }
+
                     if (deal.description.isNotBlank()) {
                         Text(
                             text = deal.description,
@@ -413,25 +494,58 @@ private fun DealCardItem(
                                 color = tokens.textSecondary,
                             ),
                             maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
 
-                // ROI
-                val roi = deal.roiPercentage
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (roi >= 0) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFEF4444).copy(alpha = 0.15f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = String.format(java.util.Locale.US, "%+.1f%%", roi),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (roi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
-                        ),
-                    )
+                // Top Right Badge (ROI nếu là Đầu tư, Trạng thái thu nợ nếu là Cho vay)
+                if (isLending) {
+                    val debtLabel = when {
+                        deal.isFullyRecovered -> "Đã thu đủ"
+                        deal.totalRecovered.value > 0 -> "Đang trả nợ"
+                        else -> "Chưa thu hồi"
+                    }
+                    val debtBg = when {
+                        deal.isFullyRecovered -> Color(0xFF10B981).copy(alpha = 0.15f)
+                        deal.totalRecovered.value > 0 -> Color(0xFF3B82F6).copy(alpha = 0.15f)
+                        else -> Color(0xFFF59E0B).copy(alpha = 0.15f)
+                    }
+                    val debtColor = when {
+                        deal.isFullyRecovered -> Color(0xFF059669)
+                        deal.totalRecovered.value > 0 -> Color(0xFF2563EB)
+                        else -> Color(0xFFD97706)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(debtBg)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = debtLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = debtColor,
+                            ),
+                        )
+                    }
+                } else {
+                    val roi = deal.roiPercentage
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (roi >= 0) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFEF4444).copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = String.format(java.util.Locale.US, "%+.1f%%", roi),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = if (roi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
+                            ),
+                        )
+                    }
                 }
             }
 
@@ -451,7 +565,7 @@ private fun DealCardItem(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "Vốn xuất: ${deal.totalCapitalOutlay.value.toVnd()}",
+                        text = if (isLending) "Đã cho vay: ${deal.totalCapitalOutlay.value.toVnd()}" else "Vốn xuất: ${deal.totalCapitalOutlay.value.toVnd()}",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = tokens.textSecondary,
                             fontSize = 11.sp,
@@ -470,7 +584,7 @@ private fun DealCardItem(
 
             HorizontalDivider(color = tokens.border, thickness = 0.5.dp)
 
-            // Row 3: Vốn còn lại & Lợi nhuận ròng
+            // Row 3: Vốn/Dư nợ còn lại & Lợi nhuận / Lãi
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -481,7 +595,7 @@ private fun DealCardItem(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Vốn còn lại:",
+                        text = if (isLending) "Dư nợ còn:" else "Vốn còn lại:",
                         style = MaterialTheme.typography.bodySmall.copy(color = tokens.textSecondary),
                     )
                     Text(
@@ -498,7 +612,7 @@ private fun DealCardItem(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Lãi ròng:",
+                        text = if (isLending) "Tiền lãi:" else "Lãi ròng:",
                         style = MaterialTheme.typography.bodySmall.copy(color = tokens.textSecondary),
                     )
                     val profit = deal.netProfitLoss.value
@@ -507,7 +621,7 @@ private fun DealCardItem(
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Bold,
                             color = when {
-                                profit > 0 -> Color(0xFF10B981)
+                                profit > 0 -> if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)
                                 profit < 0 -> Color(0xFFEF4444)
                                 else -> tokens.textSecondary
                             },
@@ -540,7 +654,7 @@ private fun EmptyDealsView(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Rounded.TrendingUp,
+                imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                 contentDescription = null,
                 tint = tokens.textSecondary,
                 modifier = Modifier.size(32.dp),

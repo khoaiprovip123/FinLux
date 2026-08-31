@@ -1,6 +1,7 @@
 package com.finlux.app.domain.usecase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
@@ -81,6 +82,22 @@ class TransactionUseCasesTest {
         assertInstanceOf(AppResult.Error::class.java, result)
         assertEquals("Số dư ví [Tiền mặt] không đủ để thực hiện chi tiêu", (result as AppResult.Error).message)
         assertEquals(0, repository.editCalls)
+    }
+
+    @Test
+    fun `edit allows deal transaction without category`() = runTest {
+        val original = validTransaction(id = "tx-1").copy(
+            categoryId = null,
+            dealId = "deal-1",
+            dealFlowType = DealFlowType.OUTLAY_CAPITAL,
+            walletId = "cash",
+            amount = Money(100_000),
+        )
+        val updated = original.copy(amount = Money(200_000))
+        val result = EditTransactionUseCase(repository, walletRepository)(original, updated)
+
+        assertEquals(AppResult.Success(Unit), result)
+        assertEquals(1, repository.editCalls)
     }
 
     @Test

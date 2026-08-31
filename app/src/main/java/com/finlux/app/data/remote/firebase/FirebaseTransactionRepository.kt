@@ -316,10 +316,14 @@ class FirebaseTransactionRepository(
                 )
             } else {
                 // Normal deletion for INCOME / EXPENSE
-                val walletRef = firestore.userWallets(uid).document(stored.walletId)
-                val walletDoc = atomic.get(walletRef)
-                val balance = walletDoc.getLong("balance") ?: error("Không tìm thấy ví")
-                val isCard = walletDoc.getString("type").equals("CARD", ignoreCase = true)
+                val isSettlement = stored.walletId == "DEAL_SETTLEMENT" || stored.dealFlowType == DealFlowType.CAPITAL_LOSS
+                val walletRef = if (!isSettlement) firestore.userWallets(uid).document(stored.walletId) else null
+                val walletDoc = if (walletRef != null) atomic.get(walletRef) else null
+                val balance = walletDoc?.getLong("balance")
+                if (!isSettlement && (walletDoc == null || balance == null)) {
+                    error("Không tìm thấy ví")
+                }
+                val isCard = walletDoc?.getString("type")?.equals("CARD", ignoreCase = true) == true
                 val budgetRef = stored.budgetRef(firestore, uid)
                 val budgetDoc = if (budgetRef != null && stored.type == TransactionType.EXPENSE) {
                     atomic.get(budgetRef)
@@ -330,19 +334,22 @@ class FirebaseTransactionRepository(
                 } else null
                 val dealDoc = if (dealRef != null) atomic.get(dealRef) else null
 
-                val finalBalance = Math.subtractExact(balance, stored.balanceDelta())
-                if (!isCard && finalBalance < 0) {
-                    error("Không thể xóa giao dịch vì số dư ví hiện tại không đủ để hoàn tác")
+                if (!isSettlement && walletRef != null && balance != null) {
+                    val finalBalance = Math.subtractExact(balance, stored.balanceDelta())
+                    if (!isCard && finalBalance < 0) {
+                        error("Không thể xóa giao dịch vì số dư ví hiện tại không đủ để hoàn tác")
+                    }
+                    atomic.update(
+                        walletRef,
+                        mapOf(
+                            "balance" to finalBalance,
+                            "lastTransactionId" to transactionRef.id
+                        )
+                    )
                 }
 
                 atomic.delete(transactionRef)
-                atomic.update(
-                    walletRef,
-                    mapOf(
-                        "balance" to finalBalance,
-                        "lastTransactionId" to transactionRef.id
-                    )
-                )
+
                 // BR-06: reverse spentAmount when deleting an EXPENSE transaction based on stored
                 if (budgetDoc != null && budgetDoc.exists() && budgetRef != null) {
                     atomic.update(budgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
@@ -362,6 +369,7 @@ class FirebaseTransactionRepository(
                         DealFlowType.CAPITAL_LOSS -> {
                             atomic.update(dealRef, "netProfitLoss", FieldValue.increment(stored.amount.value))
                             atomic.update(dealRef, "status", "active")
+                            atomic.update(dealRef, "endDate", null)
                         }
                     }
                 }

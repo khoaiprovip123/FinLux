@@ -340,6 +340,11 @@ fun FinluxNavHost(
             composable(Route.Wallets.value) {
                 WalletsScreen(
                     onBack = navController::popBackStack,
+                    onNavigate = { route ->
+                        if (route in MainSwipeRoutes) navigateMain(route)
+                        else navController.navigate(route)
+                    },
+                    onSelectTransaction = { viewingTransaction = it },
                     transferRequestKey = walletTransferRequest,
                 )
             }

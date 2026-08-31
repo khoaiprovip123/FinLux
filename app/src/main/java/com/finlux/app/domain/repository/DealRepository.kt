@@ -70,4 +70,12 @@ interface DealRepository {
         date: Instant = Instant.now(),
         note: String = "",
     ): AppResult<Unit>
+
+    /**
+     * Thu Hồi Chốt Lỗ & Mở Lại Deal:
+     * - Xóa giao dịch CAPITAL_LOSS đã phát sinh.
+     * - Hoàn lại netProfitLoss.
+     * - Chuyển trạng thái Deal về ACTIVE và xóa endDate.
+     */
+    suspend fun revertDealLoss(dealId: String): AppResult<Unit>
 }

@@ -108,3 +108,15 @@ class CloseDealWithLossUseCase @Inject constructor(
         return dealRepository.closeDealWithLoss(dealId, date, note)
     }
 }
+
+/**
+ * UseCase Thu Hồi Chốt Lỗ & Mở Lại Thương Vụ (Revert Stop-loss & Reopen Deal).
+ */
+class RevertDealLossUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(dealId: String): AppResult<Unit> {
+        if (dealId.isBlank()) return AppResult.Error("ID thương vụ không hợp lệ")
+        return dealRepository.revertDealLoss(dealId)
+    }
+}

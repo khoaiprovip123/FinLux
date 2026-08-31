@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
@@ -42,6 +43,8 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,9 +56,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.platform.LocalContext
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -95,13 +106,16 @@ import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon
+import com.finlux.app.core.navigation.Route
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
 import com.finlux.app.presentation.wallet.WalletsViewModel
-import java.time.Instant
+import com.finlux.app.presentation.wallet.WalletTransactionsBottomSheet
+
+import com.finlux.app.domain.model.FinanceTransaction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,19 +123,37 @@ fun PrismWalletsScreen(
     onBack: (() -> Unit)? = null,
     onNavigate: ((String) -> Unit)? = null,
     onAdd: (() -> Unit)? = null,
+    onSelectWallet: ((Wallet) -> Unit)? = null,
+    onSelectTransaction: ((FinanceTransaction) -> Unit)? = null,
     transferRequestKey: Int = 0,
     viewModel: WalletsViewModel = hiltViewModel(),
 ) {
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
+    val categories = viewModel.categories.collectAsStateWithLifecycle().value
+    val recentTransactions = viewModel.recentTransactions.collectAsStateWithLifecycle().value
+    val financeZone = viewModel.financeZone.collectAsStateWithLifecycle().value
     val actionState = viewModel.actionState.collectAsStateWithLifecycle().value
     val totalBalance = wallets.sumOf { it.balance.value }
     val snackbar = remember { SnackbarHostState() }
     val tokens = LocalFinluxTokens.current
 
+    var viewingWalletTransactions by remember { mutableStateOf<Wallet?>(null) }
     var editingWallet by remember { mutableStateOf<Wallet?>(null) }
     var isCreatingWallet by remember { mutableStateOf(false) }
     var isTransferring by remember { mutableStateOf(false) }
+    var initialTransferSourceId by remember { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<Wallet?>(null) }
+    var deleteCountdown by remember(pendingDelete) { mutableStateOf(5) }
+
+    LaunchedEffect(pendingDelete) {
+        if (pendingDelete != null) {
+            deleteCountdown = 5
+            while (deleteCountdown > 0) {
+                kotlinx.coroutines.delay(1000)
+                deleteCountdown--
+            }
+        }
+    }
 
     LaunchedEffect(transferRequestKey) {
         if (transferRequestKey > 0) isTransferring = true
@@ -143,7 +175,7 @@ fun PrismWalletsScreen(
             )
         },
         containerColor = tokens.background,
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { FinluxSnackbarHost(snackbar, hasBottomBar = onBack == null) },
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -221,7 +253,12 @@ fun PrismWalletsScreen(
 
                     FinluxSoftCard(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { editingWallet = wallet },
+                        onClick = {
+                            viewingWalletTransactions = wallet
+                        },
+                        onLongClick = {
+                            editingWallet = wallet
+                        },
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -327,17 +364,54 @@ fun PrismWalletsScreen(
         )
     }
 
+    // Wallet Transactions Bottom Sheet (Nhấn vào thẻ ví)
+    viewingWalletTransactions?.let { targetWallet ->
+        val currentWallet = wallets.find { it.id == targetWallet.id } ?: targetWallet
+        WalletTransactionsBottomSheet(
+            wallet = currentWallet,
+            allTransactions = recentTransactions,
+            categories = categories,
+            financeZone = financeZone,
+            onDismiss = { viewingWalletTransactions = null },
+            onEditWallet = { walletToEdit ->
+                viewingWalletTransactions = null
+                editingWallet = walletToEdit
+            },
+            onTransferFromWallet = { walletToTransfer ->
+                viewingWalletTransactions = null
+                initialTransferSourceId = walletToTransfer.id
+                isTransferring = true
+            },
+            onSelectTransaction = onSelectTransaction,
+        )
+    }
+
     // Transfer Money Bottom Sheet
     if (isTransferring && wallets.size >= 2) {
-        var sourceWalletId by remember(wallets) { mutableStateOf(wallets.firstOrNull()?.id.orEmpty()) }
+        var sourceWalletId by remember(wallets, initialTransferSourceId) {
+            mutableStateOf(initialTransferSourceId ?: wallets.firstOrNull()?.id.orEmpty())
+        }
         var destWalletId by remember(wallets) { mutableStateOf(wallets.getOrNull(1)?.id.orEmpty()) }
         var transferAmount by remember { mutableStateOf("") }
         var note by remember { mutableStateOf("") }
+        var selectedDate by remember { mutableStateOf(Instant.now()) }
+        var showDatePicker by remember { mutableStateOf(false) }
+        val context = LocalContext.current
 
         val sourceWallet = wallets.find { it.id == sourceWalletId }
         val destWallet = wallets.find { it.id == destWalletId }
         val parsedAmount = transferAmount.toLongOrNull() ?: 0L
         val isInsufficientFunds = sourceWallet != null && sourceWallet.type != WalletType.CARD && parsedAmount > sourceWallet.balance.value
+
+        val localDate = selectedDate.atZone(ZoneId.systemDefault()).toLocalDate()
+        val today = LocalDate.now()
+        val dayPrefix = when (localDate) {
+            today -> "Hôm nay, "
+            today.minusDays(1) -> "Hôm qua, "
+            else -> ""
+        }
+        val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
+        val formattedDate = dayPrefix + selectedDate.atZone(ZoneId.systemDefault()).format(dateFormatter)
 
         FinluxBottomSheet(
             onDismissRequest = { isTransferring = false },
@@ -388,44 +462,58 @@ fun PrismWalletsScreen(
                     Text(
                         text = "Ví nguồn (Chuyển đi)",
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = tokens.onSurface,
                     )
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 2.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp),
                     ) {
-                        items(wallets) { wallet ->
+                        items(wallets, key = { it.id }) { wallet ->
                             val isSelected = wallet.id == sourceWalletId
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
+                            val accentColor = colorFromHex(wallet.colorHex)
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isSelected) accentColor.copy(alpha = 0.18f) else tokens.surfaceSoft,
+                                border = BorderStroke(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) accentColor else tokens.border.copy(alpha = 0.5f),
+                                ),
+                                modifier = Modifier.clickable {
                                     sourceWalletId = wallet.id
                                     if (destWalletId == wallet.id) {
                                         destWalletId = wallets.firstOrNull { it.id != wallet.id }?.id.orEmpty()
                                     }
                                 },
-                                label = {
-                                    Text(
-                                        text = "${wallet.name} (${wallet.balance.value.toShortVnd()})",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    val icon = if (wallet.type == WalletType.CARD) Icons.Default.CreditCard else Icons.Default.AccountBalanceWallet
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) accentColor else tokens.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp),
                                     )
-                                },
-                                shape = RoundedCornerShape(tokens.radius.smallChip),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = tokens.primary.copy(alpha = 0.15f),
-                                    selectedLabelColor = tokens.primary,
-                                    containerColor = tokens.surfaceSoft,
-                                    labelColor = tokens.onSurface,
-                                ),
-                                border = FilterChipDefaults.filterChipBorder(
-                                    enabled = true,
-                                    selected = isSelected,
-                                    borderColor = if (isSelected) tokens.primary else tokens.border,
-                                    borderWidth = if (isSelected) 1.5.dp else 1.dp,
-                                ),
-                            )
+                                    Column {
+                                        Text(
+                                            text = wallet.name,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) tokens.onSurface else tokens.onSurfaceVariant,
+                                        )
+                                        Text(
+                                            text = formatVndAmount(wallet.balance.value),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSelected) accentColor else tokens.onSurfaceVariant.copy(alpha = 0.7f),
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -435,47 +523,63 @@ fun PrismWalletsScreen(
                     Text(
                         text = "Ví nhận (Chuyển đến)",
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = tokens.onSurface,
                     )
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 2.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp),
                     ) {
-                        items(wallets.filter { it.id != sourceWalletId }) { wallet ->
+                        items(wallets.filter { it.id != sourceWalletId }, key = { it.id }) { wallet ->
                             val isSelected = wallet.id == destWalletId
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { destWalletId = wallet.id },
-                                label = {
-                                    Text(
-                                        text = "${wallet.name} (${wallet.balance.value.toShortVnd()})",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    )
+                            val accentColor = colorFromHex(wallet.colorHex)
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isSelected) accentColor.copy(alpha = 0.18f) else tokens.surfaceSoft,
+                                border = BorderStroke(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) accentColor else tokens.border.copy(alpha = 0.5f),
+                                ),
+                                modifier = Modifier.clickable {
+                                    destWalletId = wallet.id
                                 },
-                                shape = RoundedCornerShape(tokens.radius.smallChip),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = tokens.primary.copy(alpha = 0.15f),
-                                    selectedLabelColor = tokens.primary,
-                                    containerColor = tokens.surfaceSoft,
-                                    labelColor = tokens.onSurface,
-                                ),
-                                border = FilterChipDefaults.filterChipBorder(
-                                    enabled = true,
-                                    selected = isSelected,
-                                    borderColor = if (isSelected) tokens.primary else tokens.border,
-                                    borderWidth = if (isSelected) 1.5.dp else 1.dp,
-                                ),
-                            )
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    val icon = if (wallet.type == WalletType.CARD) Icons.Default.CreditCard else Icons.Default.AccountBalanceWallet
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) accentColor else tokens.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Column {
+                                        Text(
+                                            text = wallet.name,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) tokens.onSurface else tokens.onSurfaceVariant,
+                                        )
+                                        Text(
+                                            text = formatVndAmount(wallet.balance.value),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSelected) accentColor else tokens.onSurfaceVariant.copy(alpha = 0.7f),
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                // Ô nhập số tiền & Cảnh báo số dư
+                // Nhập số tiền chuyển (ErgonomicCompactAmountCard)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     ErgonomicCompactAmountCard(
-                        label = "Số tiền chuyển",
+                        label = "SỐ TIỀN CHUYỂN",
                         amountText = transferAmount,
                         onAmountChange = { transferAmount = it },
                         placeholder = "0",
@@ -505,6 +609,17 @@ fun PrismWalletsScreen(
                     onClear = { note = "" },
                 )
 
+                // Ergonomic Date/Time Row
+                ErgonomicFormRow(
+                    label = "THỜI GIAN CHUYỂN TIỀN",
+                    primaryValue = formattedDate,
+                    secondaryValue = null,
+                    icon = Icons.Default.CalendarMonth,
+                    iconTintColor = tokens.primary,
+                    iconBgColor = tokens.primary.copy(alpha = 0.12f),
+                    onClick = { showDatePicker = true },
+                )
+
                 Button(
                     onClick = {
                         if (parsedAmount > 0L && sourceWalletId.isNotBlank() && destWalletId.isNotBlank() && sourceWalletId != destWalletId && !isInsufficientFunds) {
@@ -513,6 +628,7 @@ fun PrismWalletsScreen(
                                 destinationId = destWalletId,
                                 amount = parsedAmount,
                                 note = note.trim(),
+                                date = selectedDate,
                             ) {
                                 isTransferring = false
                             }
@@ -538,6 +654,57 @@ fun PrismWalletsScreen(
                 Spacer(Modifier.height(16.dp))
             }
         }
+
+        // Dialog chọn ngày & giờ
+        if (showDatePicker) {
+            val currentZoned = selectedDate.atZone(ZoneId.systemDefault())
+            val initialDateUtcMillis = currentZoned.toLocalDate()
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant()
+                .toEpochMilli()
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = initialDateUtcMillis,
+            )
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val selectedMillis = datePickerState.selectedDateMillis
+                        showDatePicker = false
+                        if (selectedMillis != null) {
+                            val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
+                                .atZone(ZoneOffset.UTC)
+                                .toLocalDate()
+
+                            val timePickerDialog = android.app.TimePickerDialog(
+                                context,
+                                { _, hourOfDay, minute ->
+                                    val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
+                                    selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                                },
+                                currentZoned.hour,
+                                currentZoned.minute,
+                                true,
+                            )
+                            timePickerDialog.setOnCancelListener {
+                                val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
+                                selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                            }
+                            timePickerDialog.show()
+                        }
+                    }) {
+                        Text("Tiếp tục (Chọn giờ)")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Hủy")
+                    }
+                },
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
     }
 
     // Delete Wallet Dialog
@@ -545,8 +712,10 @@ fun PrismWalletsScreen(
         FinluxDialog(
             onDismissRequest = { pendingDelete = null },
             title = "Xóa ví ${wallet.name}?",
-            message = "Ví này đang có số dư ${formatVndAmount(wallet.balance.value)}. Khi xóa, ví sẽ bị gỡ bỏ khỏi danh sách.",
-            confirmLabel = "Xác nhận xóa",
+            message = "Ví này đang có số dư ${formatVndAmount(wallet.balance.value)}. Tất cả giao dịch thuộc ví này sẽ bị ảnh hưởng. Thao tác này không thể hoàn tác!",
+            confirmLabel = if (deleteCountdown > 0) "Xác nhận xóa (${deleteCountdown}s)" else "Xóa Vĩnh Viễn",
+            confirmEnabled = deleteCountdown == 0,
+            isConfirmDestructive = true,
             dismissLabel = "Hủy",
             onConfirm = {
                 viewModel.delete(wallet)
@@ -607,6 +776,17 @@ private fun PrismWalletEditor(
     var color by remember(initial) { mutableStateOf(initial?.colorHex ?: FinanceAccentHexes.first()) }
     var isDefault by remember(initial) { mutableStateOf(initial?.isDefault ?: (walletsCount == 0)) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteCountdown by remember(showDeleteConfirm) { mutableStateOf(5) }
+
+    LaunchedEffect(showDeleteConfirm) {
+        if (showDeleteConfirm) {
+            deleteCountdown = 5
+            while (deleteCountdown > 0) {
+                kotlinx.coroutines.delay(1000)
+                deleteCountdown--
+            }
+        }
+    }
 
     val isEditing = initial != null
     val isDefaultWallet = initial?.isDefault == true
@@ -846,8 +1026,10 @@ private fun PrismWalletEditor(
         FinluxDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = "Xóa ví ${initial.name}?",
-            message = "Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng.",
-            confirmLabel = "Xóa vĩnh viễn",
+            message = "Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng. Thao tác này không thể hoàn tác!",
+            confirmLabel = if (deleteCountdown > 0) "Xác nhận xóa (${deleteCountdown}s)" else "Xóa Vĩnh Viễn",
+            confirmEnabled = deleteCountdown == 0,
+            isConfirmDestructive = true,
             dismissLabel = "Hủy",
             onConfirm = {
                 showDeleteConfirm = false
