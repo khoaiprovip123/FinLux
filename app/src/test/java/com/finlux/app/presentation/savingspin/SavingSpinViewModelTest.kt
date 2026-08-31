@@ -110,12 +110,28 @@ class SavingSpinViewModelTest {
         if (withDestination) repository.upsertDestination(SavingDestination("piggy", "Heo đất", SavingMethod.CASH))
         val scheduler = mockk<SavingSpinScheduler>(relaxed = true)
         val transactionRepository = mockk<com.finlux.app.domain.repository.TransactionRepository>(relaxed = true)
+        io.mockk.coEvery { transactionRepository.addWithBalanceUpdate(any()) } returns com.finlux.app.core.common.AppResult.Success("tx-id")
+        io.mockk.coEvery { transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any()) } returns com.finlux.app.core.common.AppResult.Success(Unit)
         val walletRepository = mockk<com.finlux.app.domain.repository.WalletRepository>(relaxed = true)
+        io.mockk.every { walletRepository.observeWallets() } returns kotlinx.coroutines.flow.flowOf(
+            listOf(
+                com.finlux.app.domain.model.Wallet(
+                    id = "test-wallet-1",
+                    name = "Ví Tiền Mặt",
+                    balance = Money(1_000_000),
+                    type = com.finlux.app.domain.model.WalletType.CASH,
+                    colorHex = "#2563EB",
+                    isDefault = true,
+                    createdAt = now,
+                )
+            )
+        )
         val financialResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator())
         return Fixture(
             viewModel = SavingSpinViewModel(
                 repository = repository,
                 salaryCycleRepository = DemoSalaryCycleRepository(),
+                walletRepository = walletRepository,
                 resolveScheduleKey = ResolveSavingSpinScheduleKeyUseCase(financialResolver),
                 getOrCreateSession = GetOrCreateSavingSpinSessionUseCase(repository, GenerateSavingSpinWheelUseCase()),
                 spinWheel = SpinSavingWheelUseCase(repository),

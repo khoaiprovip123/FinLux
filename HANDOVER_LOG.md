@@ -4,6 +4,43 @@
 - **Phiên bản hiện tại:** v1.16.0 (versionCode 158)
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Giao dịch chuẩn Transaction Explorer & Đồng bộ Trang chủ, 100% tests PASS và sẵn sàng phát hành.
 
+### [Task-SAVING-SPIN-TRANSFER-STREAK-SETTINGS-FIX] — Cơ chế Chuyển tiền vào Ví tiết kiệm, Chuỗi nạp động, Dialog nhập Min/Max & Lưu Cài đặt vào DB
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Chuyển tiền vào ví tiết kiệm (Transfer)**: Hỗ trợ trích tiền từ ví nguồn (mặc định Ví Tiền mặt `WalletType.CASH` hoặc ví mặc định) chuyển sang ví tiết kiệm đã chọn bằng `transactionRepository.transferBetweenWallets(...)` cập nhật số dư nguyên tử. Cho phép người dùng linh hoạt đổi ví nguồn và ví đích.
+  2. ✅ **Chuỗi thực hiện động (Dynamic Streak)**: Tính chuỗi theo số lần nạp thành công thực tế qua `repository.observeSessions`, hiển thị sinh động `🔥 Chuỗi X lần nạp`.
+  3. ✅ **Điều chỉnh Min/Max trong Cài đặt**: Bổ sung `AlertDialog` nhập số tiền trực tiếp bằng bàn phím số cho Mức tối thiểu & Mức tối đa, tự động làm tròn theo bội số bước tiền (`step`) và cập nhật cấu hình tức thì.
+  4. ✅ **Lưu cấu hình vào DB Firestore**: ViewModel đồng bộ ngay giá trị min/max vào config, kiểm tra validation và lưu trực tiếp qua `repository.saveConfig(config)`, kèm banner cảnh báo lỗi nếu có.
+- **Kiểm thử**: `testDebugUnitTest` PASS 100%, `assembleDebug` thành công và đã cài đặt trực tiếp lên thiết bị `7f4ca06a` qua ADB.
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinResultContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinGameSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsViewModel.kt`
+  - `app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt`
+
+### [Task-SAVING-SPIN-ANIMATION-WALLETS-AND-SETTINGS-FIX] — Fix hoạt ảnh quay bánh xe, Chọn ví từ hệ thống & Tinh chỉnh Cài đặt
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Hoạt ảnh bánh xe**: `SavingSpinGameSheet` giữ bánh xe hiển thị và chạy animation quay 3.2s mượt mà vào đúng ô trúng thưởng, chỉ chuyển sang màn hình kết quả khi animation kết thúc.
+  2. ✅ **Chọn ví từ hệ thống**: Chuyển sang nạp tiền trực tiếp từ danh mục ví thực tế của người dùng (`WalletRepository.observeWallets()`), hỗ trợ hiển thị icon/số dư và ghi nhận giao dịch `EXPENSE` (danh mục `savings`) cập nhật số dư qua Firestore Transaction (BR-14).
+  3. ✅ **Cài đặt & Giao diện**: Bổ sung `statusBarsPadding()` tránh đè status bar, sửa click touch target cho pill Bước mệnh giá và auto-persist cấu hình khi bấm chọn.
+- **Kiểm thử**: `gradlew testDebugUnitTest` PASS 100% (264/264 tests), `assembleDebug` build APK thành công.
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinGameSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinResultContent.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt`
+
 ### [Task-SAVING-SPIN-DEMO-RESET-AND-WALLET-SYNC] — Bật chế độ thử nghiệm reset vòng quay & Ghi nhận biến động số dư ví vào DB
 - **Status**: `[DONE]`
 - **Mục tiêu hoàn thành**:

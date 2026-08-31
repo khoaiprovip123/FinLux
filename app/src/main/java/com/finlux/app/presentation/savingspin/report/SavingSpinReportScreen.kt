@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -69,7 +70,11 @@ fun SavingSpinReportScreen(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFFF8FAFC), // Nền xám nhạt cao cấp giống mockup
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+        ) {
             // Top Bar: Back button, Tiêu đề "Báo cáo vòng quay", Bell + Avatar
             Row(
                 modifier = Modifier

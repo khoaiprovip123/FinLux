@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +57,16 @@ import com.finlux.app.presentation.savingspin.SavingSpinUiState
 import com.finlux.app.domain.model.SavingSpinSession
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SavingSpinStatus
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import com.finlux.app.core.designsystem.component.formatVndAmount
 import java.time.Instant
 
 @Composable
@@ -65,12 +76,127 @@ fun SavingSpinSettingsScreen(
     viewModel: SavingSpinSettingsViewModel = hiltViewModel(),
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle().value
+    var showMinDialog by remember { mutableStateOf(false) }
+    var showMaxDialog by remember { mutableStateOf(false) }
+    var tempMinInput by remember(state.config.minAmount) { mutableStateOf(state.config.minAmount.value.toString()) }
+    var tempMaxInput by remember(state.config.maxAmount) { mutableStateOf(state.config.maxAmount.value.toString()) }
+
+    if (showMinDialog) {
+        AlertDialog(
+            onDismissRequest = { showMinDialog = false },
+            title = { Text("Mức tối thiểu", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Nhập mức tiền tối thiểu mỗi ô (phải chia hết cho ${formatVndAmount(state.config.step.amount)}):",
+                        fontSize = 13.sp,
+                        color = Color(0xFF64748B),
+                    )
+                    OutlinedTextField(
+                        value = tempMinInput,
+                        onValueChange = { tempMinInput = it.filter(Char::isDigit).take(15) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        label = { Text("Số tiền (VNĐ)") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    val parsed = tempMinInput.toLongOrNull() ?: 0L
+                    Text(
+                        "Xem trước: ${formatVndAmount(parsed)}",
+                        fontSize = 13.sp,
+                        color = Color(0xFF2563EB),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val parsed = tempMinInput.toLongOrNull() ?: state.config.minAmount.value
+                        val step = state.config.step.amount
+                        // Làm tròn chia hết cho step
+                        val rounded = if (parsed % step != 0L) (parsed / step) * step else parsed
+                        val finalMin = rounded.coerceAtLeast(step)
+                        viewModel.setMinAmount(finalMin.toString())
+                        viewModel.save()
+                        showMinDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                ) {
+                    Text("Áp dụng")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMinDialog = false }) {
+                    Text("Hủy", color = Color(0xFF64748B))
+                }
+            },
+        )
+    }
+
+    if (showMaxDialog) {
+        AlertDialog(
+            onDismissRequest = { showMaxDialog = false },
+            title = { Text("Mức tối đa", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Nhập mức tiền tối đa mỗi ô (phải chia hết cho ${formatVndAmount(state.config.step.amount)}):",
+                        fontSize = 13.sp,
+                        color = Color(0xFF64748B),
+                    )
+                    OutlinedTextField(
+                        value = tempMaxInput,
+                        onValueChange = { tempMaxInput = it.filter(Char::isDigit).take(15) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        label = { Text("Số tiền (VNĐ)") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    val parsed = tempMaxInput.toLongOrNull() ?: 0L
+                    Text(
+                        "Xem trước: ${formatVndAmount(parsed)}",
+                        fontSize = 13.sp,
+                        color = Color(0xFF2563EB),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val parsed = tempMaxInput.toLongOrNull() ?: state.config.maxAmount.value
+                        val step = state.config.step.amount
+                        // Làm tròn chia hết cho step và đảm bảo >= min + (slots * step)
+                        val minRequired = state.config.minAmount.value + (state.config.slotCount * step)
+                        val rounded = if (parsed % step != 0L) (parsed / step) * step else parsed
+                        val finalMax = rounded.coerceAtLeast(minRequired)
+                        viewModel.setMaxAmount(finalMax.toString())
+                        viewModel.save()
+                        showMaxDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                ) {
+                    Text("Áp dụng")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMaxDialog = false }) {
+                    Text("Hủy", color = Color(0xFF64748B))
+                }
+            },
+        )
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFFF8FAFC),
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+        ) {
             // Header Bar
             Row(
                 modifier = Modifier
@@ -175,26 +301,36 @@ fun SavingSpinSettingsScreen(
                                 Icon(Icons.Filled.Savings, contentDescription = null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
                                 Text("Bước mệnh giá", fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = Color(0xFF1E293B))
                             }
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 val is5k = state.config.step == SavingSpinStep.FIVE_THOUSAND
                                 Surface(
                                     shape = RoundedCornerShape(14.dp),
                                     color = if (is5k) Color(0xFF2563EB) else Color(0xFFF1F5F9),
                                     modifier = Modifier
-                                        .clickable { viewModel.setStep(SavingSpinStep.FIVE_THOUSAND) }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                        .clickable { viewModel.setStep(SavingSpinStep.FIVE_THOUSAND) },
                                 ) {
-                                    Text("5.000đ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (is5k) Color.White else Color(0xFF475569))
+                                    Text(
+                                        "5.000đ",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (is5k) Color.White else Color(0xFF475569),
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                    )
                                 }
                                 val is10k = state.config.step == SavingSpinStep.TEN_THOUSAND
                                 Surface(
                                     shape = RoundedCornerShape(14.dp),
                                     color = if (is10k) Color(0xFF2563EB) else Color(0xFFF1F5F9),
                                     modifier = Modifier
-                                        .clickable { viewModel.setStep(SavingSpinStep.TEN_THOUSAND) }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                        .clickable { viewModel.setStep(SavingSpinStep.TEN_THOUSAND) },
                                 ) {
-                                    Text("10.000đ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (is10k) Color.White else Color(0xFF475569))
+                                    Text(
+                                        "10.000đ",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (is10k) Color.White else Color(0xFF475569),
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                    )
                                 }
                             }
                         }
@@ -205,8 +341,11 @@ fun SavingSpinSettingsScreen(
                             icon = Icons.Filled.AttachMoney,
                             iconTint = Color(0xFF2563EB),
                             title = "Mức tối thiểu",
-                            value = "10.000đ",
-                            onClick = {},
+                            value = formatVndAmount(state.config.minAmount.value),
+                            onClick = {
+                                tempMinInput = state.config.minAmount.value.toString()
+                                showMinDialog = true
+                            },
                         )
 
                         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF1F5F9)))
@@ -215,8 +354,11 @@ fun SavingSpinSettingsScreen(
                             icon = Icons.Filled.AttachMoney,
                             iconTint = Color(0xFF2563EB),
                             title = "Mức tối đa",
-                            value = "Không giới hạn",
-                            onClick = {},
+                            value = formatVndAmount(state.config.maxAmount.value),
+                            onClick = {
+                                tempMaxInput = state.config.maxAmount.value.toString()
+                                showMaxDialog = true
+                            },
                         )
                     }
                 }
@@ -281,15 +423,42 @@ fun SavingSpinSettingsScreen(
                     }
                 }
 
+                // Hiển thị lỗi xác thực nếu có
+                state.validationMessage?.let { errorMsg ->
+                    item {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFFEE2E2),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text = "⚠️ $errorMsg",
+                                fontSize = 13.sp,
+                                color = Color(0xFFB91C1C),
+                                modifier = Modifier.padding(12.dp),
+                            )
+                        }
+                    }
+                }
+
                 // Nút Lưu thay đổi
                 item {
                     Button(
                         onClick = viewModel::save,
+                        enabled = !state.isSaving,
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                     ) {
-                        Text(if (state.saved) "Đã lưu thành công" else "Lưu cài đặt", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            when {
+                                state.isSaving -> "Đang lưu..."
+                                state.saved -> "Đã lưu thành công"
+                                else -> "Lưu cài đặt"
+                            },
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
             }

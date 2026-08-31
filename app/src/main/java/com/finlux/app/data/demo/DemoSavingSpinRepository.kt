@@ -99,7 +99,6 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
         require(current.status in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) && current.selectedAmount != null) {
             "Lượt quay chưa có kết quả để hoàn tất"
         }
-        require(destinations.value[destinationId]?.enabled == true) { "Nơi tiết kiệm không hợp lệ" }
         current.copy(
             status = SavingSpinStatus.COMPLETED,
             destinationId = destinationId,

@@ -109,7 +109,7 @@ fun SavingSpinHomeCard(
                     }
 
                     Text(
-                        "Quay thử xem hôm nay\nđể dành bao nhiêu nhé",
+                        "Quay xem hôm nay\nđể dành bao nhiêu nhé",
                         fontSize = 13.5.sp,
                         lineHeight = 19.sp,
                         color = Color(0xFF64748B),

@@ -79,17 +79,34 @@ class SavingSpinSettingsViewModel @Inject constructor(
     fun setReminderMinute(value: Int) = updateConfig { it.copy(reminderMinute = value.coerceIn(0, 59)) }
     fun setDefaultDestination(id: String?) = updateConfig { it.copy(defaultDestinationId = id) }
     fun setMinAmount(value: String) = mutableUiState.update {
-        it.copy(minAmountInput = value.filter(Char::isDigit).take(15), validationMessage = null, saved = false)
+        val digits = value.filter(Char::isDigit).take(15)
+        val amount = digits.toLongOrNull() ?: 0L
+        it.copy(
+            minAmountInput = digits,
+            config = it.config.copy(minAmount = Money(amount)),
+            validationMessage = null,
+            saved = false,
+        )
     }
+
     fun setMaxAmount(value: String) = mutableUiState.update {
-        it.copy(maxAmountInput = value.filter(Char::isDigit).take(15), validationMessage = null, saved = false)
+        val digits = value.filter(Char::isDigit).take(15)
+        val amount = digits.toLongOrNull() ?: 0L
+        it.copy(
+            maxAmountInput = digits,
+            config = it.config.copy(maxAmount = Money(amount)),
+            validationMessage = null,
+            saved = false,
+        )
     }
 
     fun save() = viewModelScope.launch {
         val state = uiState.value
+        val min = state.minAmountInput.toLongOrNull() ?: state.config.minAmount.value
+        val max = state.maxAmountInput.toLongOrNull() ?: state.config.maxAmount.value
         val config = state.config.copy(
-            minAmount = Money(state.minAmountInput.toLongOrNull() ?: 0L),
-            maxAmount = Money(state.maxAmountInput.toLongOrNull() ?: 0L),
+            minAmount = Money(min),
+            maxAmount = Money(max),
             updatedAt = clock.now(),
         )
         val validation = validator(config)
@@ -103,16 +120,20 @@ class SavingSpinSettingsViewModel @Inject constructor(
     private suspend fun persist(config: SavingSpinConfig) {
         val validation = validator(config)
         if (!validation.isValid) {
-            mutableUiState.update { it.copy(validationMessage = validation.errors.first().message) }
+            mutableUiState.update { it.copy(validationMessage = validation.errors.first().message, saved = false) }
             return
         }
         mutableUiState.update { it.copy(isSaving = true, validationMessage = null, saved = false) }
         when (val result = repository.saveConfig(config)) {
-            is AppResult.Error -> mutableUiState.update { it.copy(isSaving = false, validationMessage = result.message) }
+            is AppResult.Error -> mutableUiState.update {
+                it.copy(isSaving = false, validationMessage = result.message, saved = false)
+            }
             is AppResult.Success -> {
                 if (!config.enabled || !config.reminderEnabled) scheduler.cancel()
                 else scheduler.schedule(config, nextTrigger(config, salaryCycleRepository.observeConfig().first(), clock.now()))
-                mutableUiState.update { it.copy(isSaving = false, saved = true, config = config) }
+                mutableUiState.update {
+                    it.copy(isSaving = false, saved = true, config = config, validationMessage = null)
+                }
             }
         }
     }

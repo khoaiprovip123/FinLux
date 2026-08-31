@@ -157,15 +157,12 @@ class FirebaseSavingSpinRepository(
     ): AppResult<Unit> = firebaseResult("Không thể xác nhận khoản tiết kiệm") {
         val uid = requireUid()
         val sessionRef = sessionRef(uid, scheduleKey)
-        val destinationRef = userRef(uid).collection(DESTINATIONS).document(destinationId)
         val now = Instant.now()
         firestore.runTransaction { transaction ->
             val current = requireNotNull(SavingSpinFirestoreMapper.sessionFromDocument(transaction.get(sessionRef)))
             require(current.status in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) && current.selectedAmount != null) {
                 "Lượt quay chưa có kết quả để hoàn tất"
             }
-            val destination = transaction.get(destinationRef)
-            require(destination.exists() && destination.getBoolean("enabled") != false) { "Nơi tiết kiệm không hợp lệ" }
             transaction.update(sessionRef, mapOf(
                 "status" to SavingSpinStatus.COMPLETED.name,
                 "destinationId" to destinationId,

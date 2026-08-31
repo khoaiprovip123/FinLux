@@ -246,16 +246,44 @@ fun SavingSpinGameSheet(
                     }
                 }
                 SavingSpinStatus.SPUN_PENDING,
-                SavingSpinStatus.SNOOZED -> SavingSpinResultContent(
-                    session = session,
-                    destinations = state.destinations,
-                    selectedDestinationId = state.selectedDestinationId,
-                    allowSkip = state.config.allowSkip,
-                    onSelectDestination = { onAction(SavingSpinAction.SelectDestination(it)) },
-                    onConfirm = { onAction(SavingSpinAction.ConfirmDeposit) },
-                    onSnooze = { onAction(SavingSpinAction.Snooze(Instant.now().plusSeconds(30L * 60L))) },
-                    onSkip = { onAction(SavingSpinAction.Skip) },
-                )
+                SavingSpinStatus.SNOOZED -> {
+                    if (state.isWheelAnimating) {
+                        // Vẫn đang quay hoạt ảnh bánh xe: tiếp tục render bánh xe quay 3.2s
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                "Đang quay tìm mệnh giá...",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2563EB),
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SavingSpinWheel(
+                                values = session.wheelValues,
+                                selectedIndex = session.selectedIndex,
+                                isSpinning = true,
+                                onAnimationFinished = { onAction(SavingSpinAction.WheelAnimationFinished) },
+                                modifier = Modifier.size(270.dp),
+                            )
+                        }
+                    } else {
+                        SavingSpinResultContent(
+                            session = session,
+                            wallets = state.wallets,
+                            sourceWalletId = state.sourceWalletId,
+                            selectedWalletId = state.selectedWalletId,
+                            streakCount = state.streakCount,
+                            allowSkip = state.config.allowSkip,
+                            onSelectSourceWallet = { onAction(SavingSpinAction.SelectSourceWallet(it)) },
+                            onSelectWallet = { onAction(SavingSpinAction.SelectWallet(it)) },
+                            onConfirm = { onAction(SavingSpinAction.ConfirmDeposit) },
+                            onSnooze = { onAction(SavingSpinAction.Snooze(Instant.now().plusSeconds(30L * 60L))) },
+                            onSkip = { onAction(SavingSpinAction.Skip) },
+                        )
+                    }
+                }
                 SavingSpinStatus.COMPLETED -> {
                     Text("🎉 Đã hoàn thành!", style = FinluxTextStyles.SectionTitle, color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -276,14 +304,6 @@ fun SavingSpinGameSheet(
                     ) {
                         Text("Xong", fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    androidx.compose.material3.OutlinedButton(
-                        onClick = { onAction(SavingSpinAction.ResetGame) },
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth().height(46.dp),
-                    ) {
-                        Text("🔄 Quay tiếp lượt mới (Thử nghiệm)", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB))
-                    }
                 }
                 SavingSpinStatus.SKIPPED -> {
                     Text("Đã bỏ qua hôm nay", style = FinluxTextStyles.SectionTitle, color = Color(0xFF64748B))
@@ -295,14 +315,6 @@ fun SavingSpinGameSheet(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                     ) {
                         Text("Đóng")
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    androidx.compose.material3.OutlinedButton(
-                        onClick = { onAction(SavingSpinAction.ResetGame) },
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth().height(46.dp),
-                    ) {
-                        Text("🔄 Quay lại ngay (Thử nghiệm)", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB))
                     }
                 }
             }
