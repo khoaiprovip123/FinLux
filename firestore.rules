@@ -136,9 +136,9 @@ service cloud.firestore {
 
     function validSavingSpinTransition(before, after) {
       return before.status == after.status
-        || (before.status == 'READY' && after.status in ['SPUN_PENDING', 'SNOOZED', 'SKIPPED'])
-        || (before.status == 'SNOOZED' && after.status in ['READY', 'SNOOZED', 'SKIPPED'])
-        || (before.status == 'SPUN_PENDING' && after.status == 'COMPLETED');
+        || (before.status == 'READY' && after.status in ['SPUN_PENDING', 'SKIPPED'])
+        || (before.status == 'SNOOZED' && after.status in ['SPUN_PENDING', 'COMPLETED', 'SNOOZED', 'SKIPPED'])
+        || (before.status == 'SPUN_PENDING' && after.status in ['COMPLETED', 'SNOOZED', 'SKIPPED']);
     }
 
     // Root user profile document

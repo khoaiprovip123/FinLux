@@ -7,6 +7,7 @@ import com.finlux.app.data.demo.DemoSavingSpinRepository
 import com.finlux.app.data.demo.DemoTransactionRangeRepository
 import com.finlux.app.data.local.datastore.DataStoreThemePreferenceRepository
 import com.finlux.app.data.local.reminder.AlarmReminderScheduler
+import com.finlux.app.data.local.savingspin.AlarmSavingSpinScheduler
 import com.finlux.app.data.remote.firebase.FirebaseAuthRepository
 import com.finlux.app.data.remote.firebase.FirebaseBudgetRepository
 import com.finlux.app.data.remote.firebase.FirebaseCategoryRepository
@@ -39,6 +40,7 @@ import com.finlux.app.domain.repository.ReminderRepository
 import com.finlux.app.domain.repository.ReminderScheduler
 import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.SavingSpinRepository
+import com.finlux.app.domain.repository.SavingSpinScheduler
 import com.finlux.app.domain.repository.ThemePreferenceRepository
 import com.finlux.app.domain.repository.TransactionRangeRepository
 import com.finlux.app.domain.repository.TransactionRepository
@@ -105,6 +107,12 @@ abstract class LocalRepositoryModule {
     abstract fun bindSalaryCycleScheduler(
         implementation: com.finlux.app.data.local.salary.AlarmSalaryCycleScheduler,
     ): com.finlux.app.domain.repository.SalaryCycleScheduler
+
+    @Binds
+    @Singleton
+    abstract fun bindSavingSpinScheduler(
+        implementation: AlarmSavingSpinScheduler,
+    ): SavingSpinScheduler
 }
 
 @Module

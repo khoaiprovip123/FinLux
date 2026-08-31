@@ -96,7 +96,7 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
         destinationId: String,
         method: SavingMethod,
     ): AppResult<Unit> = updateSession(scheduleKey) { current ->
-        require(current.status == SavingSpinStatus.SPUN_PENDING && current.selectedAmount != null) {
+        require(current.status in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) && current.selectedAmount != null) {
             "Lượt quay chưa có kết quả để hoàn tất"
         }
         require(destinations.value[destinationId]?.enabled == true) { "Nơi tiết kiệm không hợp lệ" }
@@ -111,12 +111,12 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
 
     override suspend fun snoozeSession(scheduleKey: String, until: Instant): AppResult<Unit> =
         updateSession(scheduleKey) { current ->
-            require(current.status == SavingSpinStatus.READY || current.status == SavingSpinStatus.SNOOZED)
+            require(current.status == SavingSpinStatus.SPUN_PENDING || current.status == SavingSpinStatus.SNOOZED)
             current.copy(status = SavingSpinStatus.SNOOZED, snoozedUntil = until, updatedAt = Instant.now())
         }
 
     override suspend fun skipSession(scheduleKey: String): AppResult<Unit> = updateSession(scheduleKey) { current ->
-        require(current.status == SavingSpinStatus.READY || current.status == SavingSpinStatus.SNOOZED)
+        require(current.status in setOf(SavingSpinStatus.READY, SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED))
         current.copy(status = SavingSpinStatus.SKIPPED, skippedAt = Instant.now(), updatedAt = Instant.now())
     }
 

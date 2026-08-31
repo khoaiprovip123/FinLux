@@ -161,7 +161,7 @@ class FirebaseSavingSpinRepository(
         val now = Instant.now()
         firestore.runTransaction { transaction ->
             val current = requireNotNull(SavingSpinFirestoreMapper.sessionFromDocument(transaction.get(sessionRef)))
-            require(current.status == SavingSpinStatus.SPUN_PENDING && current.selectedAmount != null) {
+            require(current.status in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) && current.selectedAmount != null) {
                 "Lượt quay chưa có kết quả để hoàn tất"
             }
             val destination = transaction.get(destinationRef)
@@ -178,10 +178,22 @@ class FirebaseSavingSpinRepository(
     }
 
     override suspend fun snoozeSession(scheduleKey: String, until: Instant): AppResult<Unit> =
-        transitionBeforeSpin(scheduleKey, SavingSpinStatus.SNOOZED, "snoozedUntil", until)
+        transitionSession(
+            scheduleKey = scheduleKey,
+            allowedStatuses = setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED),
+            status = SavingSpinStatus.SNOOZED,
+            timestampField = "snoozedUntil",
+            timestamp = until,
+        )
 
     override suspend fun skipSession(scheduleKey: String): AppResult<Unit> =
-        transitionBeforeSpin(scheduleKey, SavingSpinStatus.SKIPPED, "skippedAt", Instant.now())
+        transitionSession(
+            scheduleKey = scheduleKey,
+            allowedStatuses = setOf(SavingSpinStatus.READY, SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED),
+            status = SavingSpinStatus.SKIPPED,
+            timestampField = "skippedAt",
+            timestamp = Instant.now(),
+        )
 
     override fun observeSessions(fromInclusive: Instant, toExclusive: Instant): Flow<List<SavingSpinSession>> = callbackFlow {
         val uid = auth.currentUser?.uid
@@ -201,8 +213,9 @@ class FirebaseSavingSpinRepository(
         awaitClose { registration.remove() }
     }
 
-    private suspend fun transitionBeforeSpin(
+    private suspend fun transitionSession(
         scheduleKey: String,
+        allowedStatuses: Set<SavingSpinStatus>,
         status: SavingSpinStatus,
         timestampField: String,
         timestamp: Instant,
@@ -211,7 +224,7 @@ class FirebaseSavingSpinRepository(
         val now = Instant.now()
         firestore.runTransaction { transaction ->
             val current = requireNotNull(SavingSpinFirestoreMapper.sessionFromDocument(transaction.get(ref)))
-            require(current.status == SavingSpinStatus.READY || current.status == SavingSpinStatus.SNOOZED) {
+            require(current.status in allowedStatuses) {
                 "Lượt quay đã được xử lý"
             }
             transaction.update(ref, mapOf(

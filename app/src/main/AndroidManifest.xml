@@ -41,6 +41,9 @@
             </intent-filter>
         </receiver>
         <receiver
+            android:name=".data.local.savingspin.SavingSpinReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".data.local.reminder.BootReceiver"
             android:exported="true">
             <intent-filter>
