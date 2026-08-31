@@ -543,6 +543,37 @@ CẤU TRÚC TRANG BÁO CÁO:
 
 ## 14. User Flow tổng quát
 
+## 21. FEATURE: Vòng quay tiết kiệm
+
+```
+Routes: modal trên /home | /saving-spin/settings | /saving-spin/report
+
+HOME LAUNCHER (chỉ khi enabled && showOnHome):
+  - Nằm sau tổng quan tài chính, trước analytics/giao dịch.
+  - Trạng thái READY/SPUN_PENDING/SNOOZED/COMPLETED có CTA và copy riêng.
+  - Dùng chung state/content; shell Classic Liquid, Modern Luxury và Prism theo theme hiện hành.
+
+GAME SHEET:
+  - Modal bo góc lớn, wheel Canvas responsive 230-280dp, 6/8/10/12 ô.
+  - Persist kết quả trước animation; animations disabled chuyển nhanh 150-250ms.
+  - READY hiển thị QUAY NGAY; SPUN_PENDING/SNOOZED hiển thị Result/Confirm.
+
+RESULT:
+  - Số tiền 38-52sp, chọn destination CASH/BANK_TRANSFER, CTA XÁC NHẬN ĐÃ NẠP.
+  - Không có destination thì hiển thị CTA thêm mới; allowSkip=false ẩn action bỏ qua.
+
+SETTINGS:
+  - Toggle feature/Home, giờ nhắc/snooze, bước 5K/10K, min/max, slot count,
+    frequency, allowSkip, destination mặc định và preview dùng chính Home card.
+
+REPORT:
+  - Filter 7 ngày/30 ngày/Tháng/Kỳ lương; summary, daily chart, theo destination và history.
+  - Chỉ session COMPLETED đóng góp savedAmount/chart/streak.
+```
+
+ACCESSIBILITY: touch target >=48dp, wheel/result có contentDescription, hỗ trợ font scale 1.3x,
+selected destination có check + semantic selected state; màu lấy từ tokens/Material color scheme.
+
 ### Điều hướng màn hình chính
 
 - Bốn màn hình chính `Home ↔ Transactions ↔ Reports ↔ Settings` hỗ trợ vuốt ngang hai chiều và bấm bottom navigation.

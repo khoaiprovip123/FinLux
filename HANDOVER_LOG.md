@@ -4,6 +4,18 @@
 - **Phiên bản hiện tại:** v1.16.0 (versionCode 158)
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Giao dịch chuẩn Transaction Explorer & Đồng bộ Trang chủ, 100% tests PASS và sẵn sàng phát hành.
 
+### [Task-SAVING-SPIN-MINIGAME] — Vòng quay tiết kiệm
+- **Status**: `[IN PROGRESS]`
+- **Ngày bắt đầu**: 2026-08-31
+- **Mục tiêu**: Triển khai đầy đủ feature opt-in `Saving Spin` theo `docs/FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md`: cấu hình mệnh giá/lịch, khóa kết quả chống reroll, xác nhận nơi tiết kiệm, nhắc 09:00/snooze, launcher Home, Settings và Report.
+- **Scope dự kiến**:
+  - Domain models/repository/use cases và unit tests.
+  - Firebase/demo repository, mapper, Firestore rules và DI.
+  - AlarmManager scheduler/receiver, ViewModel/state machine.
+  - Wheel Canvas, game/result sheet, launcher cho Classic/Modern/Prism, Settings, Report, navigation/deep link.
+  - Đồng bộ `BA_SPEC.md`, `UI_SPEC.md`, `DATA_SPEC.md`, `CONTEXT.md`, `PLAN.md`, `BACKLOG.md`, `CHANGELOG.md` sau verification gate.
+- **Ràng buộc**: Không tạo giao dịch Thu/Chi và không cập nhật số dư ví ở v1; chỉ session `COMPLETED` được tính tiết kiệm; kết quả/wheel phải persist và không được reroll.
+
 ### [Task-HOME-RECENT-TRANSACTIONS-SYNC] — Đồng bộ giao diện Giao dịch gần nhất trên Trang chủ với màn hình Giao dịch
 - **Status**: `[DONE]`
 - **Mục tiêu đã hoàn thành theo yêu cầu người dùng**:
