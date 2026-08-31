@@ -100,3 +100,72 @@ describe("Firestore Rules: Budgets", () => {
         }));
     });
 });
+
+describe("Firestore Rules: Saving Spin", () => {
+    const validConfig = {
+        enabled: true,
+        showOnHome: true,
+        minAmount: 10000,
+        maxAmount: 100000,
+        stepAmount: 5000,
+        slotCount: 8,
+        frequency: "DAILY",
+        selectedWeekdays: [],
+        weeklyDay: 1,
+        reminderEnabled: true,
+        reminderHour: 9,
+        reminderMinute: 0,
+        snoozeEnabled: true,
+        allowSkip: true,
+        defaultDestinationId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+
+    it("allows owner config and denies another user", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const bob = testEnv.authenticatedContext("bob");
+        const path = "users/alice/savingSpinConfigs/default";
+
+        await assertSucceeds(alice.firestore().doc(path).set(validConfig));
+        await assertSucceeds(alice.firestore().doc(path).get());
+        await assertFails(bob.firestore().doc(path).get());
+        await assertFails(bob.firestore().doc(path).set(validConfig));
+    });
+
+    it("prevents changing a result after it has been locked", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const path = "users/alice/savingSpinSessions/day_2026-08-31";
+        const locked = {
+            scheduleKey: "day:2026-08-31",
+            wheelValues: [10000, 15000, 20000, 25000, 30000, 35000],
+            selectedIndex: 2,
+            selectedAmount: 20000,
+            status: "SPUN_PENDING",
+            destinationId: null,
+            method: null,
+            spunAt: new Date(),
+            completedAt: null,
+            skippedAt: null,
+            snoozedUntil: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc(path).set(locked);
+        });
+
+        await assertFails(alice.firestore().doc(path).update({
+            selectedIndex: 3,
+            selectedAmount: 25000,
+            updatedAt: new Date(),
+        }));
+        await assertSucceeds(alice.firestore().doc(path).update({
+            status: "COMPLETED",
+            destinationId: "piggy_cash",
+            method: "CASH",
+            completedAt: new Date(),
+            updatedAt: new Date(),
+        }));
+    });
+});

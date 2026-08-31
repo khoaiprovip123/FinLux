@@ -68,6 +68,79 @@ service cloud.firestore {
         && (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
+    function validSavingSpinConfig(data) {
+      return data.keys().hasOnly([
+          'enabled', 'showOnHome', 'minAmount', 'maxAmount', 'stepAmount',
+          'slotCount', 'frequency', 'selectedWeekdays', 'weeklyDay',
+          'reminderEnabled', 'reminderHour', 'reminderMinute', 'snoozeEnabled',
+          'allowSkip', 'defaultDestinationId', 'createdAt', 'updatedAt'
+        ])
+        && data.enabled is bool
+        && data.showOnHome is bool
+        && isPositiveMoney(data.minAmount)
+        && isPositiveMoney(data.maxAmount)
+        && data.maxAmount >= data.minAmount
+        && data.maxAmount <= 999999999999999
+        && data.stepAmount in [5000, 10000]
+        && data.minAmount % data.stepAmount == 0
+        && data.maxAmount % data.stepAmount == 0
+        && data.slotCount in [6, 8, 10, 12]
+        && data.frequency in ['DAILY', 'SELECTED_WEEKDAYS', 'WEEKLY', 'SALARY_CYCLE']
+        && data.selectedWeekdays is list
+        && data.weeklyDay is int && data.weeklyDay >= 1 && data.weeklyDay <= 7
+        && data.reminderEnabled is bool
+        && data.reminderHour is int && data.reminderHour >= 0 && data.reminderHour <= 23
+        && data.reminderMinute is int && data.reminderMinute >= 0 && data.reminderMinute <= 59
+        && data.snoozeEnabled is bool
+        && data.allowSkip is bool
+        && (data.defaultDestinationId == null || data.defaultDestinationId is string)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validSavingDestination(data) {
+      return data.keys().hasOnly([
+          'name', 'method', 'linkedWalletId', 'institutionId', 'accountHint',
+          'enabled', 'createdAt', 'updatedAt'
+        ])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.method in ['CASH', 'BANK_TRANSFER']
+        && (data.linkedWalletId == null || data.linkedWalletId is string)
+        && (data.institutionId == null || data.institutionId is string)
+        && (data.accountHint == null || (data.accountHint is string && data.accountHint.size() <= 40))
+        && data.enabled is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validSavingSpinSession(data) {
+      return data.keys().hasOnly([
+          'scheduleKey', 'wheelValues', 'selectedIndex', 'selectedAmount', 'status',
+          'destinationId', 'method', 'spunAt', 'completedAt', 'skippedAt',
+          'snoozedUntil', 'createdAt', 'updatedAt'
+        ])
+        && data.scheduleKey is string && data.scheduleKey.size() > 0
+        && data.wheelValues is list && data.wheelValues.size() in [6, 8, 10, 12]
+        && (data.selectedIndex == null || data.selectedIndex is int)
+        && (data.selectedAmount == null || isPositiveMoney(data.selectedAmount))
+        && data.status in ['READY', 'SPUN_PENDING', 'COMPLETED', 'SNOOZED', 'SKIPPED']
+        && (data.destinationId == null || data.destinationId is string)
+        && (data.method == null || data.method in ['CASH', 'BANK_TRANSFER'])
+        && (data.spunAt == null || data.spunAt is timestamp)
+        && (data.completedAt == null || data.completedAt is timestamp)
+        && (data.skippedAt == null || data.skippedAt is timestamp)
+        && (data.snoozedUntil == null || data.snoozedUntil is timestamp)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validSavingSpinTransition(before, after) {
+      return before.status == after.status
+        || (before.status == 'READY' && after.status in ['SPUN_PENDING', 'SNOOZED', 'SKIPPED'])
+        || (before.status == 'SNOOZED' && after.status in ['READY', 'SNOOZED', 'SKIPPED'])
+        || (before.status == 'SPUN_PENDING' && after.status == 'COMPLETED');
+    }
+
     // Root user profile document
     match /users/{uid} {
       allow read: if isOwner(uid);
@@ -218,6 +291,42 @@ service cloud.firestore {
           && request.resource.data.cycleKey is string
           && request.resource.data.processedAt is timestamp;
         allow update: if false;
+        allow delete: if false;
+      }
+
+      match /savingSpinConfigs/{configId} {
+        allow read: if isOwner(uid) && configId == 'default';
+        allow create, update: if isOwner(uid)
+          && configId == 'default'
+          && validSavingSpinConfig(request.resource.data);
+        allow delete: if isOwner(uid) && configId == 'default';
+      }
+
+      match /savingSpinDestinations/{destinationId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && validSavingDestination(request.resource.data)
+          && (!('accountHint' in request.resource.data)
+            || request.resource.data.accountHint == null
+            || !request.resource.data.accountHint.matches('.*[0-9]{7,}.*'));
+      }
+
+      match /savingSpinSessions/{sessionId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && validSavingSpinSession(request.resource.data)
+          && request.resource.data.status == 'READY'
+          && request.resource.data.selectedIndex == null
+          && request.resource.data.selectedAmount == null;
+        allow update: if isOwner(uid)
+          && validSavingSpinSession(request.resource.data)
+          && request.resource.data.scheduleKey == resource.data.scheduleKey
+          && request.resource.data.wheelValues == resource.data.wheelValues
+          && request.resource.data.createdAt == resource.data.createdAt
+          && validSavingSpinTransition(resource.data, request.resource.data)
+          && (resource.data.selectedAmount == null
+            || (request.resource.data.selectedAmount == resource.data.selectedAmount
+              && request.resource.data.selectedIndex == resource.data.selectedIndex));
         allow delete: if false;
       }
 
