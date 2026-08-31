@@ -4,6 +4,36 @@
 - **Phiên bản hiện tại:** v1.19.0 (versionCode 161) [DONE]
 - **Trạng thái Build:** ✅ 100% PASS (239/239 Unit Tests) — Build & Kiểm thử thành công.
 
+---
+
+## [DONE] Task: Chuẩn Hóa Ghi Chú Giao Dịch Deal theo DealCategory & Tên Thương Vụ
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Thay thế toàn bộ ghi chú mặc định hardcode cũ (`"Xuất vốn thương vụ"`, `"Thu hồi vốn gốc"`, ...) bằng định dạng `"[<Category>] <Hành động>: <Tên thương vụ>"`.
+- Phân biệt 2 category: `INVESTMENT` (Đầu tư) và `LENDING` (Cho vay) — 5 loại hành động.
+- Khi user nhập note thủ công → giữ nguyên nguyên xi, không thêm suffix nào.
+- Refactor kiến trúc: thêm `deal: FinancialDeal` vào signature Repository & UseCase để tự build note.
+
+### File đã thực sự chỉnh sửa
+1. `domain/repository/DealRepository.kt` — thêm `deal: FinancialDeal` vào 3 hàm signature
+2. `domain/usecase/DealUseCases.kt` — thêm `deal: FinancialDeal` vào 3 UseCase invoke
+3. `data/remote/firebase/FirebaseDealRepository.kt` — thêm `buildDefaultNote()`, sửa 5 điểm ghi note + thay `dealId` → `deal.id`
+4. `data/demo/DemoFinluxRepository.kt` — đồng bộ signature + logic note + thêm `buildDefaultNote()` + import `DealCategory`
+5. `presentation/deal/DealsViewModel.kt` — truyền `deal` object trong 3 hàm
+6. `presentation/deal/DealsScreen.kt` — cập nhật 3 call site
+7. `test/domain/usecase/DealUseCasesTest.kt` — cập nhật call sites + `FakeDealRepository` implement đúng interface mới
+
+### Kết quả test
+- ✅ `BUILD SUCCESSFUL` — 0 lỗi compile
+- ✅ Unit Tests: **100% PASS** (toàn bộ bộ test deal pass)
+
+### Trạng thái
+`[DONE]`
+
+---
+
 ### [Task-DEAL-LENDING-CATEGORY-AND-HISTORY] — Nâng cấp module Thương Vụ & Đầu Tư: Nút Sửa Deal, Nút Lịch Sử Toàn Bộ, Phân Tách 2 Category (Đầu Tư & Cho Vay) & Cơ Chế Mở Lại Deal/Khoản Vay Đã Hoàn Tất
 - **Status**: `[DONE]`
 - **Mục tiêu đã hoàn thành**:

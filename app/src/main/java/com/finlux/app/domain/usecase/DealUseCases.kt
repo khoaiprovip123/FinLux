@@ -60,16 +60,16 @@ class RecordDealOutlayUseCase @Inject constructor(
     private val dealRepository: DealRepository,
 ) {
     suspend operator fun invoke(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant = Instant.now(),
         note: String = "",
     ): AppResult<Unit> {
-        if (dealId.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
+        if (deal.id.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
         if (walletId.isBlank()) return AppResult.Error("Vui lòng chọn ví xuất vốn")
         if (amount <= 0) return AppResult.Error("Số tiền xuất vốn phải lớn hơn 0")
-        return dealRepository.recordDealOutlay(dealId, walletId, amount, date, note)
+        return dealRepository.recordDealOutlay(deal, walletId, amount, date, note)
     }
 }
 
@@ -80,16 +80,16 @@ class RecordDealInflowUseCase @Inject constructor(
     private val dealRepository: DealRepository,
 ) {
     suspend operator fun invoke(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant = Instant.now(),
         note: String = "",
     ): AppResult<Unit> {
-        if (dealId.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
+        if (deal.id.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
         if (walletId.isBlank()) return AppResult.Error("Vui lòng chọn ví nhận tiền")
         if (amount <= 0) return AppResult.Error("Số tiền thu hồi phải lớn hơn 0")
-        return dealRepository.recordDealInflow(dealId, walletId, amount, date, note)
+        return dealRepository.recordDealInflow(deal, walletId, amount, date, note)
     }
 }
 
@@ -100,12 +100,12 @@ class CloseDealWithLossUseCase @Inject constructor(
     private val dealRepository: DealRepository,
 ) {
     suspend operator fun invoke(
-        dealId: String,
+        deal: FinancialDeal,
         date: Instant = Instant.now(),
         note: String = "",
     ): AppResult<Unit> {
-        if (dealId.isBlank()) return AppResult.Error("ID thương vụ không hợp lệ")
-        return dealRepository.closeDealWithLoss(dealId, date, note)
+        if (deal.id.isBlank()) return AppResult.Error("ID thương vụ không hợp lệ")
+        return dealRepository.closeDealWithLoss(deal, date, note)
     }
 }
 

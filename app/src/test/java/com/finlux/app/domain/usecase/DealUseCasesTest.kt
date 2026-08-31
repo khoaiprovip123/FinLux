@@ -52,7 +52,7 @@ class DealUseCasesTest {
         fakeRepository.deals.value = listOf(deal)
 
         val result = recordDealOutlayUseCase(
-            dealId = "deal-1",
+            deal = deal,
             walletId = "wallet-1",
             amount = 100_000_000L,
             note = "Xuất vốn đợt 1",
@@ -81,7 +81,7 @@ class DealUseCasesTest {
 
         // Thu về 60 triệu (nhỏ hơn 100 triệu vốn còn lại)
         val result = recordDealInflowUseCase(
-            dealId = "deal-1",
+            deal = deal,
             walletId = "wallet-1",
             amount = 60_000_000L,
             note = "Thu hồi đợt 1",
@@ -109,7 +109,7 @@ class DealUseCasesTest {
 
         // Thu về 55 triệu (vượt 40 triệu vốn còn lại -> 40tr hoàn gốc + 15tr lãi ròng)
         val result = recordDealInflowUseCase(
-            dealId = "deal-1",
+            deal = deal,
             walletId = "wallet-1",
             amount = 55_000_000L,
             note = "Thu hồi tất toán",
@@ -143,7 +143,7 @@ class DealUseCasesTest {
         )
         fakeRepository.deals.value = listOf(deal)
 
-        val result = closeDealWithLossUseCase(dealId = "deal-1", note = "Chốt lỗ đóng deal")
+        val result = closeDealWithLossUseCase(deal = deal, note = "Chốt lỗ đóng deal")
 
         assertTrue(result is AppResult.Success)
         val updated = fakeRepository.deals.value.first()
@@ -281,7 +281,7 @@ class DealUseCasesTest {
         assertEquals(0.4f, lendingDeal.recoveryProgress)
 
         val result = recordDealInflowUseCase(
-            dealId = "lend-1",
+            deal = lendingDeal,
             walletId = "wallet-1",
             amount = 35_000_000L,
             note = "Nam trả hết và trả thêm tiền lãi",
@@ -346,18 +346,17 @@ private class FakeDealRepository : DealRepository {
     }
 
     override suspend fun recordDealOutlay(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant,
         note: String,
     ): AppResult<Unit> {
-        val deal = deals.value.find { it.id == dealId } ?: return AppResult.Error("Not found")
         val updated = deal.copy(
             totalCapitalOutlay = Money(deal.totalCapitalOutlay.value + amount),
             status = DealStatus.ACTIVE,
         )
-        deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
+        deals.value = listOf(updated) + deals.value.filterNot { it.id == deal.id }
         recordedTransactions.add(
             FinanceTransaction(
                 id = "tx-outlay",
@@ -365,7 +364,7 @@ private class FakeDealRepository : DealRepository {
                 amount = Money(amount),
                 categoryId = null,
                 walletId = walletId,
-                dealId = dealId,
+                dealId = deal.id,
                 dealFlowType = DealFlowType.OUTLAY_CAPITAL,
                 note = note,
                 date = date,
@@ -375,13 +374,12 @@ private class FakeDealRepository : DealRepository {
     }
 
     override suspend fun recordDealInflow(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant,
         note: String,
     ): AppResult<Unit> {
-        val deal = deals.value.find { it.id == dealId } ?: return AppResult.Error("Not found")
         val totalOutlay = deal.totalCapitalOutlay.value
         val totalRecovered = deal.totalRecovered.value
         val currentProfit = deal.netProfitLoss.value
@@ -393,7 +391,7 @@ private class FakeDealRepository : DealRepository {
                 totalRecovered = Money(newRecovered),
                 status = if (newRecovered >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED else DealStatus.ACTIVE,
             )
-            deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
+            deals.value = listOf(updated) + deals.value.filterNot { it.id == deal.id }
             recordedTransactions.add(
                 FinanceTransaction(
                     id = "tx-recovery",
@@ -401,7 +399,7 @@ private class FakeDealRepository : DealRepository {
                     amount = Money(amount),
                     categoryId = null,
                     walletId = walletId,
-                    dealId = dealId,
+                    dealId = deal.id,
                     dealFlowType = DealFlowType.PRINCIPAL_RECOVERY,
                     note = note,
                     date = date,
@@ -415,7 +413,7 @@ private class FakeDealRepository : DealRepository {
                 netProfitLoss = Money(currentProfit + gainPortion),
                 status = DealStatus.COMPLETED,
             )
-            deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
+            deals.value = listOf(updated) + deals.value.filterNot { it.id == deal.id }
 
             if (principalPortion > 0) {
                 recordedTransactions.add(
@@ -425,7 +423,7 @@ private class FakeDealRepository : DealRepository {
                         amount = Money(principalPortion),
                         categoryId = null,
                         walletId = walletId,
-                        dealId = dealId,
+                        dealId = deal.id,
                         dealFlowType = DealFlowType.PRINCIPAL_RECOVERY,
                         note = note,
                         date = date,
@@ -439,7 +437,7 @@ private class FakeDealRepository : DealRepository {
                     amount = Money(gainPortion),
                     categoryId = null,
                     walletId = walletId,
-                    dealId = dealId,
+                    dealId = deal.id,
                     dealFlowType = DealFlowType.CAPITAL_GAIN,
                     note = note,
                     date = date,
@@ -450,11 +448,10 @@ private class FakeDealRepository : DealRepository {
     }
 
     override suspend fun closeDealWithLoss(
-        dealId: String,
+        deal: FinancialDeal,
         date: Instant,
         note: String,
     ): AppResult<Unit> {
-        val deal = deals.value.find { it.id == dealId } ?: return AppResult.Error("Not found")
         val totalOutlay = deal.totalCapitalOutlay.value
         val totalRecovered = deal.totalRecovered.value
         val lossAmount = (totalOutlay - totalRecovered).coerceAtLeast(0L)
@@ -464,7 +461,7 @@ private class FakeDealRepository : DealRepository {
             status = DealStatus.COMPLETED,
             endDate = date,
         )
-        deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
+        deals.value = listOf(updated) + deals.value.filterNot { it.id == deal.id }
 
         if (lossAmount > 0) {
             recordedTransactions.add(
@@ -474,7 +471,7 @@ private class FakeDealRepository : DealRepository {
                     amount = Money(lossAmount),
                     categoryId = null,
                     walletId = "DEAL_SETTLEMENT",
-                    dealId = dealId,
+                    dealId = deal.id,
                     dealFlowType = DealFlowType.CAPITAL_LOSS,
                     note = note,
                     date = date,

@@ -149,7 +149,7 @@ class FirebaseDealRepository(
     }
 
     override suspend fun recordDealOutlay(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant,
@@ -159,7 +159,7 @@ class FirebaseDealRepository(
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
 
         val walletRef = firestore.collection("users").document(uid).collection("wallets").document(walletId)
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
         val txId = UUID.randomUUID().toString()
         val txRef = firestore.collection("users").document(uid).collection("transactions").document(txId)
 
@@ -190,9 +190,9 @@ class FirebaseDealRepository(
                 "categoryId" to null,
                 "walletId" to walletId,
                 "relatedWalletId" to null,
-                "dealId" to dealId,
+                "dealId" to deal.id,
                 "dealFlowType" to DealFlowType.OUTLAY_CAPITAL.name.lowercase(),
-                "note" to note.ifBlank { "Xuất vốn thương vụ" },
+                "note" to note.ifBlank { buildDefaultNote(deal, DealFlowType.OUTLAY_CAPITAL) },
                 "receiptImageUrl" to null,
                 "date" to Timestamp(Date.from(date)),
                 "createdAt" to Timestamp.now(),
@@ -203,7 +203,7 @@ class FirebaseDealRepository(
     }
 
     override suspend fun recordDealInflow(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant,
@@ -213,7 +213,7 @@ class FirebaseDealRepository(
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
 
         val walletRef = firestore.collection("users").document(uid).collection("wallets").document(walletId)
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
 
         firestore.runTransaction { tx ->
             val walletDoc = tx.get(walletRef)
@@ -252,9 +252,9 @@ class FirebaseDealRepository(
                     "categoryId" to null,
                     "walletId" to walletId,
                     "relatedWalletId" to null,
-                    "dealId" to dealId,
+                    "dealId" to deal.id,
                     "dealFlowType" to DealFlowType.PRINCIPAL_RECOVERY.name.lowercase(),
-                    "note" to note.ifBlank { "Thu hồi vốn gốc" },
+                    "note" to note.ifBlank { buildDefaultNote(deal, DealFlowType.PRINCIPAL_RECOVERY, isSplitPrincipal = false) },
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(date)),
                     "createdAt" to Timestamp.now(),
@@ -283,9 +283,9 @@ class FirebaseDealRepository(
                         "categoryId" to null,
                         "walletId" to walletId,
                         "relatedWalletId" to null,
-                        "dealId" to dealId,
+                        "dealId" to deal.id,
                         "dealFlowType" to DealFlowType.PRINCIPAL_RECOVERY.name.lowercase(),
-                        "note" to if (note.isNotBlank()) "$note (Hoàn vốn gốc)" else "Thu hồi vốn gốc",
+                        "note" to note.ifBlank { buildDefaultNote(deal, DealFlowType.PRINCIPAL_RECOVERY, isSplitPrincipal = true) },
                         "receiptImageUrl" to null,
                         "date" to Timestamp(Date.from(date)),
                         "createdAt" to Timestamp.now(),
@@ -302,9 +302,9 @@ class FirebaseDealRepository(
                     "categoryId" to null,
                     "walletId" to walletId,
                     "relatedWalletId" to null,
-                    "dealId" to dealId,
+                    "dealId" to deal.id,
                     "dealFlowType" to DealFlowType.CAPITAL_GAIN.name.lowercase(),
-                    "note" to if (note.isNotBlank()) "$note (Lợi nhuận ròng)" else "Lợi nhuận thương vụ",
+                    "note" to note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_GAIN) },
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(date)),
                     "createdAt" to Timestamp.now(),
@@ -316,12 +316,12 @@ class FirebaseDealRepository(
     }
 
     override suspend fun closeDealWithLoss(
-        dealId: String,
+        deal: FinancialDeal,
         date: Instant,
         note: String,
     ): AppResult<Unit> = firebaseResult("Không thể chốt lỗ thương vụ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
 
         firestore.runTransaction { tx ->
             val dealDoc = tx.get(dealRef)
@@ -349,9 +349,9 @@ class FirebaseDealRepository(
                     "categoryId" to null,
                     "walletId" to "DEAL_SETTLEMENT",
                     "relatedWalletId" to null,
-                    "dealId" to dealId,
+                    "dealId" to deal.id,
                     "dealFlowType" to DealFlowType.CAPITAL_LOSS.name.lowercase(),
-                    "note" to if (note.isNotBlank()) "$note (Chốt lỗ thương vụ)" else "Chốt lỗ thương vụ",
+                    "note" to note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_LOSS) },
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(date)),
                     "createdAt" to Timestamp.now(),
@@ -401,6 +401,39 @@ class FirebaseDealRepository(
                 "updatedAt" to Timestamp.now(),
             )
         ).await()
+    }
+
+    /**
+     * Build ghi chú mặc định cho giao dịch Deal theo category và tên thương vụ.
+     * Định dạng: "[<Category>] <Hành động>: <Tên thương vụ>"
+     *
+     * @param isSplitPrincipal true khi PRINCIPAL_RECOVERY được tạo trong nhánh tách đôi
+     *   (tống hoà về > vốn còn lại) để phân biệt "Thu hồi vốn" vs "Thu hồi vốn gốc".
+     */
+    private fun buildDefaultNote(
+        deal: FinancialDeal,
+        flowType: DealFlowType,
+        isSplitPrincipal: Boolean = false,
+    ): String {
+        val prefix = when (deal.category) {
+            DealCategory.INVESTMENT -> "[Đầu tư]"
+            DealCategory.LENDING    -> "[Cho vay]"
+        }
+        val action = when (deal.category) {
+            DealCategory.INVESTMENT -> when (flowType) {
+                DealFlowType.OUTLAY_CAPITAL     -> "Xuất vốn"
+                DealFlowType.PRINCIPAL_RECOVERY -> if (isSplitPrincipal) "Thu hồi vốn" else "Thu hồi vốn gốc"
+                DealFlowType.CAPITAL_GAIN       -> "Lợi nhuận"
+                DealFlowType.CAPITAL_LOSS       -> "Lỗ vốn"
+            }
+            DealCategory.LENDING -> when (flowType) {
+                DealFlowType.OUTLAY_CAPITAL     -> "Xuất vốn vay"
+                DealFlowType.PRINCIPAL_RECOVERY -> "Thu hồi vốn vay"
+                DealFlowType.CAPITAL_GAIN       -> "Lợi nhuận vay"
+                DealFlowType.CAPITAL_LOSS       -> "Mất vốn"
+            }
+        }
+        return "$prefix $action: ${deal.title}"
     }
 
     private fun DocumentSnapshot.toFinancialDeal(): FinancialDeal? = runCatching {

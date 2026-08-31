@@ -181,7 +181,7 @@ fun DealsScreen(
                 },
                 onCloseWithLoss = {
                     val dealId = selected.id
-                    viewModel.closeDealWithLoss(dealId)
+                    viewModel.closeDealWithLoss(selected)
                 },
                 onRevertStopLoss = {
                     val dealId = selected.id
@@ -248,10 +248,10 @@ fun DealsScreen(
                     targetDealForAction = null
                 },
                 onConfirm = { walletId, amount, date, note ->
-                    val dealId = targetDealForAction!!.id
+                    val deal = targetDealForAction!!
                     showInflowDialog = false
                     targetDealForAction = null
-                    viewModel.recordInflow(dealId, walletId, amount, date = date, note = note)
+                    viewModel.recordInflow(deal, walletId, amount, date = date, note = note)
                 },
                 isSubmitting = state.isSubmitting,
             )
@@ -267,10 +267,10 @@ fun DealsScreen(
                     targetDealForAction = null
                 },
                 onConfirm = { walletId, amount, date, note ->
-                    val dealId = targetDealForAction!!.id
+                    val deal = targetDealForAction!!
                     showOutlayDialog = false
                     targetDealForAction = null
-                    viewModel.recordOutlay(dealId, walletId, amount, date = date, note = note)
+                    viewModel.recordOutlay(deal, walletId, amount, date = date, note = note)
                 },
                 isSubmitting = state.isSubmitting,
             )

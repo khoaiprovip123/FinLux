@@ -43,6 +43,7 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.DealStatus
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.repository.DealRepository
@@ -797,13 +798,12 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun recordDealOutlay(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant,
         note: String,
     ): AppResult<Unit> = mutationMutex.withLock {
-        val deal = dealState.value.find { it.id == dealId } ?: return@withLock AppResult.Error("Thương vụ không tồn tại")
         if (!changeWalletBalance(walletId, -amount)) return@withLock AppResult.Error("Ví không tồn tại hoặc lỗi số dư")
 
         val updatedDeal = deal.copy(
@@ -811,7 +811,7 @@ class DemoFinluxRepository @Inject constructor(
             status = DealStatus.ACTIVE,
             updatedAt = Instant.now()
         )
-        dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == dealId }
+        dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
 
         val tx = FinanceTransaction(
             id = UUID.randomUUID().toString(),
@@ -819,9 +819,9 @@ class DemoFinluxRepository @Inject constructor(
             amount = Money(amount),
             categoryId = null,
             walletId = walletId,
-            dealId = dealId,
+            dealId = deal.id,
             dealFlowType = DealFlowType.OUTLAY_CAPITAL,
-            note = note.ifBlank { "Xuất vốn thương vụ" },
+            note = note.ifBlank { buildDefaultNote(deal, DealFlowType.OUTLAY_CAPITAL) },
             date = date,
         )
         transactionState.value = listOf(tx) + transactionState.value
@@ -829,13 +829,12 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun recordDealInflow(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant,
         note: String,
     ): AppResult<Unit> = mutationMutex.withLock {
-        val deal = dealState.value.find { it.id == dealId } ?: return@withLock AppResult.Error("Thương vụ không tồn tại")
         if (!changeWalletBalance(walletId, amount)) return@withLock AppResult.Error("Ví không tồn tại")
 
         val totalOutlay = deal.totalCapitalOutlay.value
@@ -853,7 +852,7 @@ class DemoFinluxRepository @Inject constructor(
                 status = newStatus,
                 updatedAt = Instant.now()
             )
-            dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == dealId }
+            dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
 
             newTransactions.add(
                 FinanceTransaction(
@@ -862,9 +861,9 @@ class DemoFinluxRepository @Inject constructor(
                     amount = Money(amount),
                     categoryId = null,
                     walletId = walletId,
-                    dealId = dealId,
+                    dealId = deal.id,
                     dealFlowType = DealFlowType.PRINCIPAL_RECOVERY,
-                    note = note.ifBlank { "Thu hồi vốn gốc" },
+                    note = note.ifBlank { buildDefaultNote(deal, DealFlowType.PRINCIPAL_RECOVERY, isSplitPrincipal = false) },
                     date = date,
                 )
             )
@@ -878,7 +877,7 @@ class DemoFinluxRepository @Inject constructor(
                 status = DealStatus.COMPLETED,
                 updatedAt = Instant.now()
             )
-            dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == dealId }
+            dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
 
             if (principalPortion > 0) {
                 newTransactions.add(
@@ -888,9 +887,9 @@ class DemoFinluxRepository @Inject constructor(
                         amount = Money(principalPortion),
                         categoryId = null,
                         walletId = walletId,
-                        dealId = dealId,
+                        dealId = deal.id,
                         dealFlowType = DealFlowType.PRINCIPAL_RECOVERY,
-                        note = if (note.isNotBlank()) "$note (Hoàn vốn gốc)" else "Thu hồi vốn gốc",
+                        note = note.ifBlank { buildDefaultNote(deal, DealFlowType.PRINCIPAL_RECOVERY, isSplitPrincipal = true) },
                         date = date,
                     )
                 )
@@ -902,9 +901,9 @@ class DemoFinluxRepository @Inject constructor(
                     amount = Money(gainPortion),
                     categoryId = null,
                     walletId = walletId,
-                    dealId = dealId,
+                    dealId = deal.id,
                     dealFlowType = DealFlowType.CAPITAL_GAIN,
-                    note = if (note.isNotBlank()) "$note (Lợi nhuận ròng)" else "Lợi nhuận thương vụ",
+                    note = note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_GAIN) },
                     date = date,
                 )
             )
@@ -914,11 +913,10 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun closeDealWithLoss(
-        dealId: String,
+        deal: FinancialDeal,
         date: Instant,
         note: String,
     ): AppResult<Unit> = mutationMutex.withLock {
-        val deal = dealState.value.find { it.id == dealId } ?: return@withLock AppResult.Error("Thương vụ không tồn tại")
         val totalOutlay = deal.totalCapitalOutlay.value
         val totalRecovered = deal.totalRecovered.value
         val currentProfit = deal.netProfitLoss.value
@@ -930,7 +928,7 @@ class DemoFinluxRepository @Inject constructor(
             endDate = date,
             updatedAt = Instant.now()
         )
-        dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == dealId }
+        dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
 
         if (lossAmount > 0) {
             val tx = FinanceTransaction(
@@ -939,9 +937,9 @@ class DemoFinluxRepository @Inject constructor(
                 amount = Money(lossAmount),
                 categoryId = null,
                 walletId = "DEAL_SETTLEMENT",
-                dealId = dealId,
+                dealId = deal.id,
                 dealFlowType = DealFlowType.CAPITAL_LOSS,
-                note = if (note.isNotBlank()) "$note (Chốt lỗ thương vụ)" else "Chốt lỗ thương vụ",
+                note = note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_LOSS) },
                 date = date,
             )
             transactionState.value = listOf(tx) + transactionState.value
@@ -1233,5 +1231,35 @@ class DemoFinluxRepository @Inject constructor(
                 monthlyContribution = Money(4_500_000L),
             ),
         )
+    }
+
+    /**
+     * Build ghi chú mặc định cho giao dịch Deal (Demo mode).
+     * Đồng bộ logic với FirebaseDealRepository.buildDefaultNote().
+     */
+    private fun buildDefaultNote(
+        deal: FinancialDeal,
+        flowType: DealFlowType,
+        isSplitPrincipal: Boolean = false,
+    ): String {
+        val prefix = when (deal.category) {
+            DealCategory.INVESTMENT -> "[Đầu tư]"
+            DealCategory.LENDING    -> "[Cho vay]"
+        }
+        val action = when (deal.category) {
+            DealCategory.INVESTMENT -> when (flowType) {
+                DealFlowType.OUTLAY_CAPITAL     -> "Xuất vốn"
+                DealFlowType.PRINCIPAL_RECOVERY -> if (isSplitPrincipal) "Thu hồi vốn" else "Thu hồi vốn gốc"
+                DealFlowType.CAPITAL_GAIN       -> "Lợi nhuận"
+                DealFlowType.CAPITAL_LOSS       -> "Lỗ vốn"
+            }
+            DealCategory.LENDING -> when (flowType) {
+                DealFlowType.OUTLAY_CAPITAL     -> "Xuất vốn vay"
+                DealFlowType.PRINCIPAL_RECOVERY -> "Thu hồi vốn vay"
+                DealFlowType.CAPITAL_GAIN       -> "Lợi nhuận vay"
+                DealFlowType.CAPITAL_LOSS       -> "Mất vốn"
+            }
+        }
+        return "$prefix $action: ${deal.title}"
     }
 }

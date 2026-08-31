@@ -34,9 +34,10 @@ interface DealRepository {
      * - Trừ số dư ví nguồn (walletId).
      * - Tăng totalCapitalOutlay của Deal.
      * - Tạo giao dịch FinanceTransaction với dealFlowType = OUTLAY_CAPITAL.
+     * @param deal Object FinancialDeal đầy đủ để build ghi chú mặc định theo category và tên thương vụ.
      */
     suspend fun recordDealOutlay(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant = Instant.now(),
@@ -50,9 +51,10 @@ interface DealRepository {
      *   + Nếu amount <= Remaining Capital: 100% Hoàn gốc (PRINCIPAL_RECOVERY), cộng ví, tăng totalRecovered.
      *   + Nếu amount > Remaining Capital: Tách C_rem Hoàn gốc (PRINCIPAL_RECOVERY) và phần vượt (amount - C_rem) là Lợi nhuận ròng (CAPITAL_GAIN).
      * - Cập nhật ví và Deal tương ứng.
+     * @param deal Object FinancialDeal đầy đủ để build ghi chú mặc định theo category và tên thương vụ.
      */
     suspend fun recordDealInflow(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant = Instant.now(),
@@ -64,9 +66,10 @@ interface DealRepository {
      * - Nếu Deal kết thúc mà totalRecovered < totalCapitalOutlay:
      * - Tự động tạo giao dịch CAPITAL_LOSS cho phần vốn còn thiếu.
      * - Cập nhật netProfitLoss âm và chuyển trạng thái status = COMPLETED.
+     * @param deal Object FinancialDeal đầy đủ để build ghi chú mặc định theo category và tên thương vụ.
      */
     suspend fun closeDealWithLoss(
-        dealId: String,
+        deal: FinancialDeal,
         date: Instant = Instant.now(),
         note: String = "",
     ): AppResult<Unit>

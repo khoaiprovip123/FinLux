@@ -116,7 +116,7 @@ class DealsViewModel @Inject constructor(
     }
 
     fun recordOutlay(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant = Instant.now(),
@@ -125,7 +125,7 @@ class DealsViewModel @Inject constructor(
     ) = viewModelScope.launch {
         isSubmitting.value = true
         errorMessage.value = null
-        when (val result = recordDealOutlayUseCase(dealId, walletId, amount, date, note)) {
+        when (val result = recordDealOutlayUseCase(deal, walletId, amount, date, note)) {
             is AppResult.Success -> {
                 isSubmitting.value = false
                 successMessage.value = "Đã ghi nhận xuất vốn thành công"
@@ -139,7 +139,7 @@ class DealsViewModel @Inject constructor(
     }
 
     fun recordInflow(
-        dealId: String,
+        deal: FinancialDeal,
         walletId: String,
         amount: Long,
         date: Instant = Instant.now(),
@@ -148,7 +148,7 @@ class DealsViewModel @Inject constructor(
     ) = viewModelScope.launch {
         isSubmitting.value = true
         errorMessage.value = null
-        when (val result = recordDealInflowUseCase(dealId, walletId, amount, date, note)) {
+        when (val result = recordDealInflowUseCase(deal, walletId, amount, date, note)) {
             is AppResult.Success -> {
                 isSubmitting.value = false
                 successMessage.value = "Đã thu hồi vốn và phân tách dòng tiền thành công"
@@ -162,14 +162,14 @@ class DealsViewModel @Inject constructor(
     }
 
     fun closeDealWithLoss(
-        dealId: String,
+        deal: FinancialDeal,
         date: Instant = Instant.now(),
         note: String = "",
         onSuccess: () -> Unit = {},
     ) = viewModelScope.launch {
         isSubmitting.value = true
         errorMessage.value = null
-        when (val result = closeDealWithLossUseCase(dealId, date, note)) {
+        when (val result = closeDealWithLossUseCase(deal, date, note)) {
             is AppResult.Success -> {
                 isSubmitting.value = false
                 successMessage.value = "Đã chốt lỗ và đóng thương vụ"
