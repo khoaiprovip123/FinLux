@@ -1,0 +1,65 @@
+package com.finlux.app.domain.model
+
+import java.time.Instant
+
+/**
+ * Trạng thái của một Thương Vụ / Deal đầu tư.
+ */
+enum class DealStatus {
+    ACTIVE,      // Đang hoạt động (đang chi xuất vốn hoặc đang thu hồi)
+    COMPLETED,   // Đã hoàn tất (đã thu hồi xong, chốt lời hoặc chốt lỗ đóng deal)
+    CANCELLED    // Đã hủy bỏ
+}
+
+/**
+ * Phân loại dòng tiền trong khuôn khổ Deal để cô lập và xử lý kế toán chính xác.
+ */
+enum class DealFlowType {
+    OUTLAY_CAPITAL,      // Tiền xuất vốn ban đầu (Trừ ví, Tăng vốn Deal, KHÔNG tính vào Chi tiêu sinh hoạt)
+    PRINCIPAL_RECOVERY,  // Tiền thu hồi vốn gốc (Cộng ví, Tăng thu hồi Deal, KHÔNG tính vào Thu nhập)
+    CAPITAL_GAIN,        // Tiền Lợi nhuận ròng / Tiền Lời vượt vốn (Cộng ví, TÍNH VÀO Thu nhập thực tế)
+    CAPITAL_LOSS         // Tiền Lỗ khi chốt đóng deal (TÍNH VÀO Chi tiêu thực tế)
+}
+
+/**
+ * Đại diện cho một Thương vụ / Dự án đầu tư sinh lời ngắn hạn (Deal Tracking).
+ */
+data class FinancialDeal(
+    val id: String = "",
+    val userId: String = "",
+    val title: String,
+    val description: String = "",
+    val targetAmount: Money = Money(0),
+    val totalCapitalOutlay: Money = Money(0),
+    val totalRecovered: Money = Money(0),
+    val netProfitLoss: Money = Money(0),
+    val status: DealStatus = DealStatus.ACTIVE,
+    val startDate: Instant = Instant.now(),
+    val endDate: Instant? = null,
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now(),
+) {
+    /** Vốn gốc còn lại chưa thu hồi */
+    val remainingCapital: Money
+        get() = Money((totalCapitalOutlay.value - totalRecovered.value).coerceAtLeast(0L))
+
+    /** Tỷ suất sinh lời ROI (%) theo thời gian thực */
+    val roiPercentage: Double
+        get() = if (totalCapitalOutlay.value > 0) {
+            if (status == DealStatus.COMPLETED) {
+                (netProfitLoss.value.toDouble() / totalCapitalOutlay.value) * 100.0
+            } else {
+                ((totalRecovered.value + netProfitLoss.value - totalCapitalOutlay.value).toDouble() / totalCapitalOutlay.value) * 100.0
+            }
+        } else 0.0
+
+    /** Tiến độ thu hồi vốn gốc (0.0 .. 1.0) */
+    val recoveryProgress: Float
+        get() = if (totalCapitalOutlay.value > 0) {
+            (totalRecovered.value.toFloat() / totalCapitalOutlay.value.toFloat()).coerceIn(0f, 1f)
+        } else 0f
+
+    /** Kiểm tra xem Deal đã thu hồi xong 100% vốn chưa */
+    val isFullyRecovered: Boolean
+        get() = totalCapitalOutlay.value > 0 && totalRecovered.value >= totalCapitalOutlay.value
+}

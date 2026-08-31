@@ -251,4 +251,15 @@ object FinanceRepositoryModule {
         if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
             FirebaseSalaryCycleRepository(auth, firestore)
         } else demo
+
+    @Provides
+    @Singleton
+    fun provideDealRepository(
+        demo: DemoFinluxRepository,
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): com.finlux.app.domain.repository.DealRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            com.finlux.app.data.remote.firebase.FirebaseDealRepository(auth, firestore)
+        } else demo
 }

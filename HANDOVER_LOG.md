@@ -1,8 +1,65 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.16.0 (versionCode 158)
-- **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Giao dịch chuẩn Transaction Explorer & Đồng bộ Trang chủ, 100% tests PASS và sẵn sàng phát hành.
+- **Phiên bản hiện tại:** v1.17.0 (versionCode 159) [DONE]
+- **Trạng thái Build:** ✅ 100% PASS (235/235 Unit Tests) — Build APK Debug thành công.
+
+### [Task-DEAL-TRACKING-ROI-MATCHING] — Triển khai tính năng Thương Vụ & Đầu Tư Sinh Lời (UC-29)
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Data & Domain Layer**:
+     - Tạo `DealModels.kt` chứa `FinancialDeal`, `DealStatus`, `DealFlowType`.
+     - Mở rộng `FinanceTransaction` bổ sung `dealId` và `dealFlowType`.
+     - Tạo `DealRepository` interface & `FirebaseDealRepository` (kèm Firestore collection `users/{uid}/deals`).
+     - Tạo `DealUseCases.kt` với 6 UseCase: `GetDealsUseCase`, `GetDealDetailUseCase`, `SaveDealUseCase`, `DeleteDealUseCase`, `RecordDealOutlayUseCase`, `RecordDealInflowUseCase`, `CloseDealWithLossUseCase`.
+     - Tích hợp `DemoFinluxRepository` & DI `RepositoryModule`.
+  2. ✅ **Cơ Chế Phân Rã Dòng Tiền Nguyên Tử (Atomic Flow Decomposition)**:
+     - Tự động tách phần hoàn gốc và tiền lời ròng trong 1 Firestore Transaction duy nhất.
+     - Hỗ trợ chốt lỗ đóng deal (`closeDealWithLoss`) sinh giao dịch `CAPITAL_LOSS`.
+  3. ✅ **Cô Lập Ngân Sách & Báo Cáo (Isolation Engine)**:
+     - `ReportsViewModel`: Loại trừ `OUTLAY_CAPITAL` khỏi Chi phí và `PRINCIPAL_RECOVERY` khỏi Thu nhập; đưa `CAPITAL_GAIN` vào Thu nhập và `CAPITAL_LOSS` vào Chi phí.
+     - `BudgetViewModel`: Vốn xuất không làm cạn kiệt ngân sách chi tiêu hàng tháng.
+     - `HomeViewModel`: Tổng quan tài chính hiển thị chính xác dòng tiền sinh hoạt.
+  4. ✅ **Giao Diện Liquid Glass Hiện Đại (`presentation/deal/`)**:
+     - `DealsScreen`: Hero Summary Card (Vốn lưu động, Lợi nhuận tích lũy, ROI %), Tab switcher (Active vs Completed), Card thương vụ kèm thanh tiến độ hoàn vốn (Progress bar).
+     - `DealDetailBottomSheet`: Dòng thời gian giao dịch và 4 nút thao tác nghiệp vụ.
+     - `CreateDealDialog`, `RecordDealInflowDialog` (Live Preview phân rã dòng tiền), `RecordDealOutlayDialog`.
+     - Đăng ký `Route.Deals` trong `Routes.kt` & `FinluxNavHost.kt`, gắn entry point trong `SettingsScreen` & `PrismSettingsScreen`.
+  5. ✅ **Kiểm Thử & Đóng Gói Release**:
+     - Viết bộ test `DealUseCasesTest.kt` kiểm tra toàn bộ kịch bản nghiệp vụ.
+     - Chạy `./gradlew testDebugUnitTest`: **235/235 tests PASS 100%**.
+     - Chạy `./gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+     - Tự động bump version lên `v1.17.0` (versionCode `159`), cập nhật `CHANGELOG.md` & `HANDOVER_LOG.md`.
+- **Danh sách file đã tạo mới/chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DealModels.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/DealRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/DealUseCases.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsUiState.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsViewModel.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/CreateDealDialog.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowDialog.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlayDialog.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealDetailBottomSheet.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsScreen.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/core/navigation/Routes.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/presentation/settings/prism/PrismSettingsMenuTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+  - `docs/BA_SPEC.md`
+  - `docs/DATA_SPEC.md`
 
 ### [Task-HOME-RECENT-TRANSACTIONS-SYNC] — Đồng bộ giao diện Giao dịch gần nhất trên Trang chủ với màn hình Giao dịch
 - **Status**: `[DONE]`

@@ -503,6 +503,8 @@ private fun FinanceTransaction.toFirestoreMap(): Map<String, Any?> = mapOf(
     "categoryId" to categoryId,
     "walletId" to walletId,
     "relatedWalletId" to relatedWalletId,
+    "dealId" to dealId,
+    "dealFlowType" to dealFlowType?.name?.lowercase(),
     "note" to note,
     "receiptImageUrl" to receiptImageUrl,
     "date" to Timestamp(Date.from(date)),
@@ -519,6 +521,10 @@ internal fun com.google.firebase.firestore.DocumentSnapshot.toFinanceTransaction
             categoryId = getString("categoryId"),
             walletId = requireNotNull(getString("walletId")),
             relatedWalletId = getString("relatedWalletId"),
+            dealId = getString("dealId"),
+            dealFlowType = getString("dealFlowType")?.let { raw ->
+                runCatching { com.finlux.app.domain.model.DealFlowType.valueOf(raw.uppercase()) }.getOrNull()
+            },
             note = getString("note").orEmpty(),
             receiptImageUrl = getString("receiptImageUrl"),
             date = requireNotNull(getTimestamp("date")).toDate().toInstant(),

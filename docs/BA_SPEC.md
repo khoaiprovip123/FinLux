@@ -41,6 +41,8 @@ Không có vai trò Admin/Manager trong V1 (app cá nhân, không multi-user).
 | UC-25 | Quản lý mục tiêu tài chính | User |
 | UC-26 | Quản lý và thoát nợ (Debt Freedom & Credit Hub) | User |
 | UC-27 | Cấu hình và theo dõi Tháng tài chính / Chu kỳ lương | User |
+| UC-28 | Trung tâm thông báo & Tương tác cử chỉ điều hướng | User |
+| UC-29 | Quản lý thương vụ & Đầu tư sinh lời (Deal Tracking & ROI Matching) | User |
 
 ---
 
@@ -373,6 +375,50 @@ Business rule:
   BR-NOTI-01: Thanh toán hóa đơn từ thông báo bắt buộc thực thi qua Firestore Atomic Transaction (trừ ví, ghi giao dịch EXPENSE, cập nhật isPaid = true).
 ```
 
+### UC-29: Quản lý thương vụ & Đầu tư sinh lời (Deal Tracking & ROI Matching)
+```
+Actor: User
+Precondition: Đã đăng nhập
+Main flow:
+  1. Khởi tạo Deal / Thương vụ mới:
+     - Người dùng mở màn hình Quản lý Deal (/deals) hoặc nhấn "Tạo Deal mới".
+     - Nhập Tiêu đề (title), Mô tả (description), Mục tiêu kỳ vọng (targetAmount), Ngày bắt đầu (startDate).
+     - Hệ thống tạo bản ghi FinancialDeal (status = ACTIVE, totalCapitalOutlay = 0, totalRecovered = 0, netProfitLoss = 0).
+  2. Ghi nhận Khoản Chi Xuất Vốn (Capital Outlay):
+     - Người dùng thêm giao dịch Chi gắn với dealId (dealFlowType = OUTLAY_CAPITAL).
+     - Hệ thống thực thi Firestore Atomic Transaction:
+       * Trừ số dư ví xuất vốn tương ứng.
+       * Tăng totalCapitalOutlay của Deal.
+       * Ghi bản ghi FinanceTransaction với cờ dealFlowType = OUTLAY_CAPITAL (Được loại trừ khỏi Chi tiêu sinh hoạt gia đình).
+  3. Ghi nhận Khoản Thu Hồi & Lợi Nhuận (Recovery & Capital Gain):
+     - Người dùng ghi nhận khoản tiền thu về gắn với Deal.
+     - Hệ thống tự động tính Vốn còn lại (Remaining Capital = totalCapitalOutlay - totalRecovered):
+       * Trường hợp 3.1: Số tiền thu về <= Vốn còn lại:
+         -> 100% số tiền được ghi nhận là Hoàn vốn gốc (dealFlowType = PRINCIPAL_RECOVERY).
+         -> Cộng số dư ví, tăng totalRecovered của Deal. KHÔNG tính vào Thu nhập báo cáo.
+       * Trường hợp 3.2: Số tiền thu về > Vốn còn lại:
+         -> Phần bằng Vốn còn lại được ghi nhận là Hoàn vốn gốc (dealFlowType = PRINCIPAL_RECOVERY).
+         -> Phần dôi dư (Thu về - Vốn còn lại) tự động tách thành giao dịch Lợi nhuận ròng (dealFlowType = CAPITAL_GAIN).
+         -> Cộng số dư ví, cập nhật totalRecovered = totalCapitalOutlay, tăng netProfitLoss tương ứng.
+         -> Khoản CAPITAL_GAIN được ghi nhận vào Báo cáo Thu nhập thực tế của tháng.
+  4. Đóng Thương Vụ & Chốt Lỗ (Settlement / Stop-loss):
+     - Khi thương vụ hoàn tất và đã thu hồi xong vốn kèm lời: Hệ thống tự động chuyển Deal sang trạng thái COMPLETED.
+     - Trường hợp thương vụ kết thúc nhưng số tiền thu về nhỏ hơn vốn ban đầu (totalRecovered < totalCapitalOutlay):
+       * Người dùng nhấn "Chốt lỗ & Đóng Deal" (Stop-loss).
+       * Hệ thống tính Khoản lỗ ròng = totalCapitalOutlay - totalRecovered.
+       * Tự động sinh giao dịch Lỗ đầu tư (dealFlowType = CAPITAL_LOSS) cho khoản thiếu hụt này.
+       * Khoản CAPITAL_LOSS được ghi nhận vào Báo cáo Chi tiêu của tháng, cập nhật netProfitLoss âm và đổi status = COMPLETED.
+  5. Xem Báo Cáo Phân Tích Deal & ROI Thời Gian Thực:
+     - Hiển thị tỷ suất sinh lời ROI: ROI = (Tổng thu - Tổng vốn) / Tổng vốn * 100%.
+     - Hiển thị thanh tiến độ hoàn vốn (Capital Recovery Progress Bar) và thời gian quay vòng vốn.
+Business rule:
+  BR-DEAL-01: Phân rã dòng tiền thu hồi vốn & Lợi nhuận ròng (Capital Gain) tự động theo thuật toán ngưỡng vốn còn lại.
+  BR-DEAL-02: Tính toán ROI thời gian thực: ROI = (totalRecovered + netProfitLoss - totalCapitalOutlay) / totalCapitalOutlay * 100%.
+  BR-DEAL-03: Tuyệt đối loại trừ OUTLAY_CAPITAL và PRINCIPAL_RECOVERY khỏi Ngân sách sinh hoạt (Budget) và Báo cáo Thu/Chi sinh hoạt hàng ngày.
+  BR-DEAL-04: Ghi nhận CAPITAL_GAIN vào Báo cáo Thu nhập và CAPITAL_LOSS vào Báo cáo Chi tiêu tại thời điểm phát sinh/chốt lỗ.
+  BR-DEAL-05: Mọi thao tác xuất vốn, thu hồi, phân tách lãi/lỗ và đóng Deal bắt buộc chạy qua Firestore Atomic Transaction để bảo toàn số dư ví và tính toàn vẹn dữ liệu.
+```
+
 ---
 
 ## 4. Ma trận Business Rule tổng hợp
@@ -406,6 +452,11 @@ Business rule:
 | BR-TRANSFER-UI-01 | Cặp `TRANSFER_OUT`/`TRANSFER_IN` của một lần chuyển nội bộ được trình bày thành một dòng logic; vẫn giữ double-entry ở data layer và không tính vào Thu/Chi |
 | BR-SAVING-01 | `Dòng tiền còn lại = Thu - Chi`; `Tỷ lệ giữ lại = (Thu - Chi) / Thu`; `Đã phân bổ mục tiêu = Nạp savings - Rút savings`, ba số liệu không được dùng thay thế nhau |
 | BR-ASSET-01 | Tổng tài sản chỉ cộng ví hoạt động không phải `CARD`; tài sản ròng bằng tổng tài sản trừ tổng dư nợ chưa tất toán |
+| BR-DEAL-01 | Phân rã dòng tiền thu hồi vốn & Lợi nhuận ròng (Capital Gain) tự động theo thuật toán ngưỡng vốn còn lại |
+| BR-DEAL-02 | Tính toán ROI thời gian thực: `ROI = (Tổng thu - Tổng vốn) / Tổng vốn * 100%` |
+| BR-DEAL-03 | Loại trừ `OUTLAY_CAPITAL` và `PRINCIPAL_RECOVERY` khỏi Ngân sách sinh hoạt và Báo cáo Thu/Chi thông thường |
+| BR-DEAL-04 | Ghi nhận `CAPITAL_GAIN` vào Báo cáo Thu nhập và `CAPITAL_LOSS` vào Báo cáo Chi tiêu |
+| BR-DEAL-05 | Toàn bộ vòng đời Deal (xuất vốn, thu hồi, phân tách, chốt sổ) bắt buộc qua Firestore Atomic Transaction |
 
 ---
 
@@ -414,10 +465,39 @@ Business rule:
 | Nhóm | Yêu cầu |
 |------|---------|
 | Hiệu năng | Danh sách giao dịch dùng phân trang (paging 20-30 item/lần), hiệu ứng Liquid Glass (blur) phải giữ ≥ 50-60fps trên thiết bị tầm trung (dùng `RenderEffect`/`Modifier.blur` phần cứng-tăng-tốc, tránh blur bằng vẽ tay tốn CPU) |
-| Bảo mật | Firestore Security Rules chặn user chỉ đọc/ghi dữ liệu của chính mình (`request.auth.uid == resource.data.ownerId`); mật khẩu không lưu client; tùy chọn khóa app bằng biometric/PIN `[Cần xác nhận]` |
-| Khả năng mở rộng | Cấu trúc Firestore theo subcollection `users/{uid}/transactions` để scale tốt, tránh document 1MB limit |
+| Bảo mật | Firestore Security Rules chặn user chỉ đọc/ghi dữ liệu của chính mình (`request.auth.uid == resource.data.ownerId`); mật khẩu không lưu client; tùy chọn khóa app bằng biometric/PIN |
+| Khả năng mở rộng | Cấu trúc Firestore theo subcollection `users/{uid}/transactions`, `users/{uid}/deals` để scale tốt, tránh document 1MB limit |
 | Offline-first | App phải dùng được khi mất mạng (Firestore offline cache), đồng bộ lại khi có mạng |
-| Khả năng tương thích | Hỗ trợ Android 8.0 (API 26)+; hiệu ứng blur thời gian thực (RenderEffect) chỉ có từ Android 12 (API 31) — thiết bị cũ hơn dùng fallback (lớp overlay bán trong suốt + gradient, không blur động) |
+| Khả năng tương thích | Hỗ trợ Android 8.0 (API 26)+; hiệu ứng blur thời gian thực (RenderEffect) chỉ có từ Android 12 (API 31) — thiết bị cũ hơn dùng fallback |
 | Giám sát | Tích hợp Firebase Crashlytics + Analytics để theo dõi lỗi và hành vi sử dụng |
-| Đa ngôn ngữ | V1: chỉ Tiếng Việt. `[Cần xác nhận]` nếu cần thêm English |
-| Accessibility | Contrast tối thiểu WCAG AA cho text trên nền kính mờ (glass), tránh chữ mờ khó đọc |
+| Đa ngôn ngữ | V1: Tiếng Việt |
+| Accessibility | Contrast tối thiểu WCAG AA cho text trên nền kính mờ (glass) |
+
+---
+
+## 6. Phân định Ranh giới Nghiệp vụ: Module Quản lý Nợ (Debt Hub) vs Module Thương Vụ & Đầu Tư (Deal Tracking)
+
+| Tiêu Chí Phân Định | Module Quản Lý Nợ (`Debt Hub` - UC-26) | Module Thương Vụ & Đầu Tư (`Deal Tracking` - UC-29) |
+| :--- | :--- | :--- |
+| **Bản chất nghiệp vụ** | Quản lý các nghĩa vụ tài chính cố định (Obligations) | Quản lý các cơ hội sinh lời và xoay vòng vốn (Ventures & Opportunities) |
+| **Các trường hợp áp dụng** | • Dư nợ Thẻ tín dụng (Credit Cards)<br/>• Vay ngân hàng mua nhà / mua xe (Bank Loans)<br/>• Vay tiêu dùng cá nhân (Personal Loans)<br/>• Trả góp mua sắm 0% / BNPL | • Mua đi bán lại tài sản ngắn hạn (Flipping: xe, đồ công nghệ, vàng...)<br/>• Góp vốn kinh doanh theo thương vụ (Short-term Capital Investment)<br/>• Chi hộ có thu phí hoa hồng / chênh lệch (Reimbursable with Margin)<br/>• Cho vay cá nhân sinh lời ngắn hạn |
+| **Hình thức thanh toán** | Trả góp định kỳ, có lãi suất cố định (%/năm), kỳ hạn rõ ràng | Thu hồi vốn linh hoạt 1 lần hoặc nhiều đợt, không cố định lãi suất |
+| **Kết quả tài chính** | Giảm dần dư nợ về 0 (Mục tiêu thoát nợ) | Tạo ra **Lợi nhuận ròng (Capital Gain)** hoặc **Chấp nhận Lỗ (Capital Loss)** |
+| **Chỉ số đo lường chính** | Dư nợ còn lại, Hạn thanh toán, Tiết kiệm lãi (Snowball / Avalanche) | **Tỷ suất sinh lời ROI (%)**, Tiền lời ròng, Tốc độ hoàn vốn |
+
+---
+
+## 7. Quy tắc Tác động Báo cáo & Ngân sách (Budget & Reporting Isolation Engine)
+
+Để giữ nguyên tính toàn vẹn của báo cáo tài chính gia đình và không làm méo mó các chỉ tiêu sinh hoạt hàng ngày:
+
+1. **Ngân sách sinh hoạt (`BudgetViewModel` / `GetBudgetStatusUseCase`):**
+   - **LOẠI BỎ HOÀN TOÀN** các giao dịch `OUTLAY_CAPITAL` (Xuất vốn) và `PRINCIPAL_RECOVERY` (Hoàn gốc).
+   - Xuất vốn 100 triệu mua hàng **KHÔNG** bị tính là "vượt ngân sách ăn uống/mua sắm".
+   - Ngân sách chỉ theo dõi các khoản chi tiêu tiêu dùng thuần túy (`EXPENSE` không gắn deal hoặc danh mục sinh hoạt).
+
+2. **Báo cáo Thu nhập & Chi tiêu (`ReportsViewModel` / `DashboardSummary`):**
+   - **Tổng Thu nhập (Income)**: Chỉ ghi nhận các khoản thu nhập định kỳ (Lương, Thưởng...) + Khoản **`CAPITAL_GAIN`** (Lợi nhuận ròng thực nhận từ Deal). Số tiền hoàn gốc `PRINCIPAL_RECOVERY` tuyệt đối không tính vào Thu nhập.
+   - **Tổng Chi tiêu (Expense)**: Chỉ ghi nhận Chi tiêu sinh hoạt + Khoản **`CAPITAL_LOSS`** (khoản lỗ thực tế khi chốt đóng deal thất bại). Số tiền xuất vốn `OUTLAY_CAPITAL` tuyệt đối không tính vào Chi tiêu.
+   - **Dòng tiền ròng (Net Cash Flow)**: Phản ánh đúng thực chất hiệu quả tăng trưởng tài sản thực của người dùng.
+

@@ -1,0 +1,110 @@
+package com.finlux.app.domain.usecase
+
+import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.repository.DealRepository
+import kotlinx.coroutines.flow.Flow
+import java.time.Instant
+import javax.inject.Inject
+
+/**
+ * UseCase lắng nghe danh sách toàn bộ các Deal của người dùng theo thời gian thực.
+ */
+class GetDealsUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    operator fun invoke(): Flow<List<FinancialDeal>> = dealRepository.observeDeals()
+}
+
+/**
+ * UseCase lắng nghe chi tiết một Deal theo ID.
+ */
+class GetDealDetailUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    operator fun invoke(dealId: String): Flow<FinancialDeal?> = dealRepository.observeDeal(dealId)
+}
+
+/**
+ * UseCase tạo mới hoặc cập nhật thông tin Thương vụ (Deal).
+ */
+class SaveDealUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(deal: FinancialDeal): AppResult<String> {
+        if (deal.title.isBlank()) {
+            return AppResult.Error("Tiêu đề thương vụ không được để trống")
+        }
+        return dealRepository.upsertDeal(deal)
+    }
+}
+
+/**
+ * UseCase xóa thương vụ.
+ */
+class DeleteDealUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(dealId: String): AppResult<Unit> {
+        if (dealId.isBlank()) {
+            return AppResult.Error("ID thương vụ không hợp lệ")
+        }
+        return dealRepository.deleteDeal(dealId)
+    }
+}
+
+/**
+ * UseCase ghi nhận khoản chi Xuất Vốn (Capital Outlay) vào Deal.
+ */
+class RecordDealOutlayUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(
+        dealId: String,
+        walletId: String,
+        amount: Long,
+        date: Instant = Instant.now(),
+        note: String = "",
+    ): AppResult<Unit> {
+        if (dealId.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
+        if (walletId.isBlank()) return AppResult.Error("Vui lòng chọn ví xuất vốn")
+        if (amount <= 0) return AppResult.Error("Số tiền xuất vốn phải lớn hơn 0")
+        return dealRepository.recordDealOutlay(dealId, walletId, amount, date, note)
+    }
+}
+
+/**
+ * UseCase ghi nhận khoản Thu Hồi Vốn & Lợi Nhuận (Atomic Decomposition).
+ */
+class RecordDealInflowUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(
+        dealId: String,
+        walletId: String,
+        amount: Long,
+        date: Instant = Instant.now(),
+        note: String = "",
+    ): AppResult<Unit> {
+        if (dealId.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
+        if (walletId.isBlank()) return AppResult.Error("Vui lòng chọn ví nhận tiền")
+        if (amount <= 0) return AppResult.Error("Số tiền thu hồi phải lớn hơn 0")
+        return dealRepository.recordDealInflow(dealId, walletId, amount, date, note)
+    }
+}
+
+/**
+ * UseCase Chốt Lỗ & Đóng Thương Vụ (Stop-loss Settlement).
+ */
+class CloseDealWithLossUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(
+        dealId: String,
+        date: Instant = Instant.now(),
+        note: String = "",
+    ): AppResult<Unit> {
+        if (dealId.isBlank()) return AppResult.Error("ID thương vụ không hợp lệ")
+        return dealRepository.closeDealWithLoss(dealId, date, note)
+    }
+}

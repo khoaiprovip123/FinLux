@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
@@ -107,6 +108,7 @@ internal enum class PrismSettingsAction(val route: String? = null) {
     WALLETS("wallets"),
     BUDGET("budget"),
     DEBT("debt"),
+    DEALS("deals"),
     APPEARANCE,
     CATEGORIES("categories"),
     REMINDERS("reminders"),
@@ -362,11 +364,18 @@ fun PrismSettingsScreen(
                             onClick = { navigateTo(PrismSettingsAction.DEBT) },
                         ),
                         SettingsMenuItem(
+                            Icons.Default.TrendingUp,
+                            "Thương vụ & Đầu tư sinh lời",
+                            Color(0xFF10B981),
+                            subtitle = "Theo dõi vốn xuất, hoàn vốn & lợi nhuận ROI",
+                            badge = "Mới",
+                            onClick = { navigateTo(PrismSettingsAction.DEALS) },
+                        ),
+                        SettingsMenuItem(
                             Icons.Default.CalendarMonth,
                             "Tháng tài chính & Chu kỳ lương",
-                            Color(0xFF10B981),
+                            Color(0xFF059669),
                             subtitle = "Tính toán thu chi theo ngày nhận lương",
-                            badge = "Mới",
                             onClick = { showSalaryCycleSheet = true },
                         ),
                         SettingsMenuItem(Icons.Default.Category, "Danh mục thu chi", Color(0xFF8B5CF6), onClick = { navigateTo(PrismSettingsAction.CATEGORIES) }),

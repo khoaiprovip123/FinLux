@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -324,6 +325,7 @@ fun SettingsScreen(
                         Column {
                             ProfileMenuRow(Icons.Default.Edit, "Thông tin cá nhân") { openNameEditor() }
                             ProfileMenuRow(Icons.Default.AccountBalanceWallet, "Ví và tài khoản") { onNavigate(Route.Wallets.value) }
+                            ProfileMenuRow(Icons.Default.TrendingUp, "Thương vụ & Đầu tư sinh lời") { onNavigate(Route.Deals.value) }
                             ProfileMenuRow(Icons.Default.Savings, "Ngân sách cá nhân") { onNavigate(Route.Budget.value) }
                             ProfileMenuRow(Icons.Default.CalendarMonth, "Tháng tài chính & Chu kỳ lương") { showSalaryCycleSheet = true }
                             ProfileMenuRow(Icons.Default.Category, "Quản lý danh mục") { onNavigate(Route.Categories.value) }
@@ -750,6 +752,7 @@ private fun ProfileHero(
 private fun ProfileFeatureTiles(walletCount: Int, onNavigate: (String) -> Unit) {
     val items = listOf(
         ProfileTile("Ví của tôi", "$walletCount ví", Icons.Default.AccountBalanceWallet, FinluxBlue, Route.Wallets.value),
+        ProfileTile("Thương vụ", "Đầu tư / ROI", Icons.Default.TrendingUp, Color(0xFF10B981), Route.Deals.value),
         ProfileTile("Ngân sách", "Theo dõi", Icons.Default.Savings, FinluxPurple, Route.Budget.value),
         ProfileTile("Nợ & Tín dụng", "Thoát nợ", Icons.Default.CreditCard, Color(0xFFE11D48), Route.Debt.value),
         ProfileTile("Danh mục", "Tùy chỉnh", Icons.Default.Category, FinluxCyan, Route.Categories.value),

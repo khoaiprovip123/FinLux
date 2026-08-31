@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.17.0] - 2026-08-31
+### Added
+- **Tính Năng "Thương Vụ & Đầu Tư Sinh Lời" (Deal Tracking & ROI Matching)**:
+  * **Entity & Data Model Mới**: Bổ sung `FinancialDeal`, `DealStatus` (ACTIVE, COMPLETED, CANCELLED), `DealFlowType` (OUTLAY_CAPITAL, PRINCIPAL_RECOVERY, CAPITAL_GAIN, CAPITAL_LOSS).
+  * **Cơ Chế Phân Rã Dòng Tiền Nguyên Tử (Atomic Flow Decomposition)**: Khi ghi nhận tiền thu về, tự động phân tách phần Hoàn Vốn Gốc ($\min(A, C_{rem})$) và phần Lợi Nhuận Ròng ($\max(0, A - C_{rem})$) trong 1 Firestore Transaction duy nhất.
+  * **Chốt Lỗ & Đóng Thương Vụ (Stop-loss Settlement)**: Cho phép kết thúc deal với khoản lỗ thực tế, tự động ghi nhận giao dịch `CAPITAL_LOSS` vào chi phí thực tế.
+  * **Cô Lập Ngân Sách & Báo Cáo (Isolation Engine)**:
+    - Báo cáo tài chính (`ReportsViewModel`): Loại bỏ vốn xuất (`OUTLAY_CAPITAL`) và vốn hoàn gốc (`PRINCIPAL_RECOVERY`) khỏi chi tiêu/thu nhập sinh hoạt, chỉ tính Lãi ròng (`CAPITAL_GAIN`) vào Thu nhập và Lỗ chốt deal (`CAPITAL_LOSS`) vào Chi phí.
+    - Ngân sách (`BudgetViewModel`): Khoản xuất vốn không làm hao hụt hạn mức chi tiêu hàng tháng.
+    - Tổng quan Dashboard (`HomeViewModel`): Hiển thị dòng tiền sinh hoạt thực tế chuẩn xác.
+  * **Giao Diện Liquid Glass Hiện Đại (`DealsScreen`)**:
+    - Hero Summary Card: Thống kê Vốn đang lưu động ngoài thị trường, Tổng lợi nhuận tích lũy, Tỷ suất ROI tổng thể (%).
+    - Tab Switcher: "Đang Chạy (Active)" và "Đã Hoàn Tất (Completed)".
+    - Card Thương Vụ: Thanh tiến độ hoàn vốn (Progress bar), Badge ROI (%), Vốn còn lại và Lãi ròng.
+    - Dialog Thu Hồi Vốn & Lời: Live Preview tính toán tức thì phần Hoàn gốc vs Tiền lời ròng.
+    - Bottom Sheet Chi Tiết: Dòng thời gian giao dịch chi tiết và các nút thao tác xuất thêm vốn, thu hồi, chốt lỗ, xóa deal.
+  * **Điều Hướng & Entry Points**: Bổ sung route `Route.Deals` ("deals") và lối vào trên màn hình Cài đặt (`SettingsScreen`, `PrismSettingsScreen`).
+
+### Changed
+- Mở rộng `FinanceTransaction` bổ sung 2 trường `dealId` và `dealFlowType`.
+- Nâng cấp `FirebaseTransactionRepository` và `DemoFinluxRepository` để lưu trữ và truy vấn giao dịch liên kết thương vụ.
+
+### Fixed
+- Đảm bảo 100% (235/235) Unit Test vượt qua thành công bao gồm toàn bộ kịch bản kiểm thử nghiệp vụ Deal Tracking (`DealUseCasesTest`).
+
 ## [1.16.0] - 2026-08-30
 ### Added
 - **Nâng Cấp Toàn Diện Màn Hình Giao Dịch Chuẩn "Transaction Explorer"**:

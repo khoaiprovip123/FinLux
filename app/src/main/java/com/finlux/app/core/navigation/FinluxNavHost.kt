@@ -379,6 +379,7 @@ fun FinluxNavHost(
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
             composable(Route.Debt.value) { DebtDashboardScreen(onBack = navController::popBackStack) }
+            composable(Route.Deals.value) { com.finlux.app.presentation.deal.DealsScreen(onNavigateBack = navController::popBackStack) }
         }
         if (showAddTransaction) {
             AddTransactionSheet(
