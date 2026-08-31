@@ -362,6 +362,14 @@ class FirebaseTransactionRepository(
                         }
                         DealFlowType.PRINCIPAL_RECOVERY -> {
                             atomic.update(dealRef, "totalRecovered", FieldValue.increment(-stored.amount.value))
+                            val currentOutlay = dealDoc.getLong("totalCapitalOutlay") ?: 0L
+                            val currentRecovered = dealDoc.getLong("totalRecovered") ?: 0L
+                            val newRecovered = currentRecovered - stored.amount.value
+                            val currentStatus = dealDoc.getString("status") ?: "active"
+                            if (currentStatus.equals("completed", ignoreCase = true) && newRecovered < currentOutlay) {
+                                atomic.update(dealRef, "status", "active")
+                                atomic.update(dealRef, "endDate", null)
+                            }
                         }
                         DealFlowType.CAPITAL_GAIN -> {
                             atomic.update(dealRef, "netProfitLoss", FieldValue.increment(-stored.amount.value))

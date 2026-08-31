@@ -11,6 +11,7 @@ import com.finlux.app.domain.usecase.DeleteDealUseCase
 import com.finlux.app.domain.usecase.GetDealsUseCase
 import com.finlux.app.domain.usecase.RecordDealInflowUseCase
 import com.finlux.app.domain.usecase.RecordDealOutlayUseCase
+import com.finlux.app.domain.usecase.ReopenDealUseCase
 import com.finlux.app.domain.usecase.RevertDealLossUseCase
 import com.finlux.app.domain.usecase.SaveDealUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +35,7 @@ class DealsViewModel @Inject constructor(
     private val recordDealInflowUseCase: RecordDealInflowUseCase,
     private val closeDealWithLossUseCase: CloseDealWithLossUseCase,
     private val revertDealLossUseCase: RevertDealLossUseCase,
+    private val reopenDealUseCase: ReopenDealUseCase,
 ) : ViewModel() {
 
     private val selectedTab = MutableStateFlow(DealTab.ACTIVE)
@@ -187,6 +189,22 @@ class DealsViewModel @Inject constructor(
             is AppResult.Success -> {
                 isSubmitting.value = false
                 successMessage.value = "Đã thu hồi chốt lỗ và mở lại thương vụ"
+                onSuccess()
+            }
+            is AppResult.Error -> {
+                isSubmitting.value = false
+                errorMessage.value = result.message
+            }
+        }
+    }
+
+    fun reopenDeal(dealId: String, onSuccess: () -> Unit = {}) = viewModelScope.launch {
+        isSubmitting.value = true
+        errorMessage.value = null
+        when (val result = reopenDealUseCase(dealId)) {
+            is AppResult.Success -> {
+                isSubmitting.value = false
+                successMessage.value = "Đã mở lại thương vụ / khoản vay"
                 onSuccess()
             }
             is AppResult.Error -> {

@@ -391,6 +391,18 @@ class FirebaseDealRepository(
         }.await()
     }
 
+    override suspend fun reopenDeal(dealId: String): AppResult<Unit> = firebaseResult("Không thể mở lại thương vụ") {
+        val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
+        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        dealRef.update(
+            mapOf(
+                "status" to DealStatus.ACTIVE.name.lowercase(),
+                "endDate" to null,
+                "updatedAt" to Timestamp.now(),
+            )
+        ).await()
+    }
+
     private fun DocumentSnapshot.toFinancialDeal(): FinancialDeal? = runCatching {
         val rawStatus = getString("status") ?: DealStatus.ACTIVE.name
         val status = runCatching { DealStatus.valueOf(rawStatus.uppercase()) }.getOrDefault(DealStatus.ACTIVE)

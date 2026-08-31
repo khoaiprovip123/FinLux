@@ -27,6 +27,7 @@ class DealUseCasesTest {
     private lateinit var recordDealInflowUseCase: RecordDealInflowUseCase
     private lateinit var closeDealWithLossUseCase: CloseDealWithLossUseCase
     private lateinit var revertDealLossUseCase: RevertDealLossUseCase
+    private lateinit var reopenDealUseCase: ReopenDealUseCase
 
     @BeforeEach
     fun setUp() {
@@ -37,6 +38,7 @@ class DealUseCasesTest {
         recordDealInflowUseCase = RecordDealInflowUseCase(fakeRepository)
         closeDealWithLossUseCase = CloseDealWithLossUseCase(fakeRepository)
         revertDealLossUseCase = RevertDealLossUseCase(fakeRepository)
+        reopenDealUseCase = ReopenDealUseCase(fakeRepository)
     }
 
     @Test
@@ -293,6 +295,24 @@ class DealUseCasesTest {
         assertEquals(DealStatus.COMPLETED, updated.status)
         assertTrue(updated.isFullyRecovered)
     }
+
+    @Test
+    fun `reopen deal changes status to active and clears endDate`() = runTest {
+        val deal = FinancialDeal(
+            id = "deal-completed",
+            title = "Khoản vay đã xong",
+            status = DealStatus.COMPLETED,
+            endDate = Instant.now(),
+        )
+        fakeRepository.deals.value = listOf(deal)
+
+        val result = reopenDealUseCase("deal-completed")
+
+        assertTrue(result is AppResult.Success)
+        val updated = fakeRepository.deals.value.first()
+        assertEquals(DealStatus.ACTIVE, updated.status)
+        assertEquals(null, updated.endDate)
+    }
 }
 
 private class FakeDealRepository : DealRepository {
@@ -312,6 +332,16 @@ private class FakeDealRepository : DealRepository {
     override suspend fun deleteDeal(dealId: String): AppResult<Unit> {
         deals.value = deals.value.filterNot { it.id == dealId }
         recordedTransactions.removeAll { it.dealId == dealId }
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun reopenDeal(dealId: String): AppResult<Unit> {
+        val deal = deals.value.find { it.id == dealId } ?: return AppResult.Error("Not found")
+        val updated = deal.copy(
+            status = DealStatus.ACTIVE,
+            endDate = null,
+        )
+        deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
         return AppResult.Success(Unit)
     }
 

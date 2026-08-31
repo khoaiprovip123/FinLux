@@ -120,3 +120,15 @@ class RevertDealLossUseCase @Inject constructor(
         return dealRepository.revertDealLoss(dealId)
     }
 }
+
+/**
+ * UseCase Mở Lại Deal đã hoàn tất (Chuyển trạng thái Deal về ACTIVE).
+ */
+class ReopenDealUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(dealId: String): AppResult<Unit> {
+        if (dealId.isBlank()) return AppResult.Error("ID thương vụ không hợp lệ")
+        return dealRepository.reopenDeal(dealId)
+    }
+}

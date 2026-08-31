@@ -653,7 +653,13 @@ class DemoFinluxRepository @Inject constructor(
                                 }
                                 DealFlowType.PRINCIPAL_RECOVERY -> {
                                     val newRecovered = (d.totalRecovered.value - current.amount.value).coerceAtLeast(0L)
-                                    d.copy(totalRecovered = Money(newRecovered), updatedAt = Instant.now())
+                                    val newStatus = if (d.status == DealStatus.COMPLETED && newRecovered < d.totalCapitalOutlay.value) DealStatus.ACTIVE else d.status
+                                    d.copy(
+                                        totalRecovered = Money(newRecovered),
+                                        status = newStatus,
+                                        endDate = if (newStatus == DealStatus.ACTIVE) null else d.endDate,
+                                        updatedAt = Instant.now(),
+                                    )
                                 }
                                 DealFlowType.CAPITAL_GAIN -> {
                                     val newGain = d.netProfitLoss.value - current.amount.value
@@ -952,6 +958,19 @@ class DemoFinluxRepository @Inject constructor(
             if (d.id == dealId) {
                 d.copy(
                     netProfitLoss = Money(d.netProfitLoss.value + totalLoss),
+                    status = DealStatus.ACTIVE,
+                    endDate = null,
+                    updatedAt = Instant.now(),
+                )
+            } else d
+        }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun reopenDeal(dealId: String): AppResult<Unit> = mutationMutex.withLock {
+        dealState.value = dealState.value.map { d ->
+            if (d.id == dealId) {
+                d.copy(
                     status = DealStatus.ACTIVE,
                     endDate = null,
                     updatedAt = Instant.now(),

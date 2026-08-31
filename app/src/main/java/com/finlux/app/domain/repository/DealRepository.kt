@@ -78,4 +78,9 @@ interface DealRepository {
      * - Chuyển trạng thái Deal về ACTIVE và xóa endDate.
      */
     suspend fun revertDealLoss(dealId: String): AppResult<Unit>
+
+    /**
+     * Mở Lại Deal đã hoàn tất (Chuyển trạng thái Deal về ACTIVE).
+     */
+    suspend fun reopenDeal(dealId: String): AppResult<Unit>
 }

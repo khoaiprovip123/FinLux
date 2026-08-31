@@ -28,6 +28,7 @@ import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicInputRow
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DealCategory
+import com.finlux.app.domain.model.DealStatus
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.model.Money
 import java.time.Instant
@@ -44,6 +45,7 @@ fun CreateDealSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var category by remember { mutableStateOf(initialDeal?.category ?: DealCategory.INVESTMENT) }
+    var status by remember { mutableStateOf(initialDeal?.status ?: DealStatus.ACTIVE) }
     var title by remember { mutableStateOf(initialDeal?.title.orEmpty()) }
     var description by remember { mutableStateOf(initialDeal?.description.orEmpty()) }
     var targetAmountText by remember {
@@ -251,6 +253,80 @@ fun CreateDealSheet(
                 amountColor = if (isLending) Color(0xFFD97706) else tokens.primary,
             )
 
+            if (initialDeal != null) {
+                // Trạng thái Deal
+                Text(
+                    text = "TRẠNG THÁI",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.textSecondary,
+                        letterSpacing = 0.5.sp,
+                    ),
+                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = tokens.surfaceSoft,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(bounded = true),
+                                    onClick = { status = DealStatus.ACTIVE },
+                                ),
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (status == DealStatus.ACTIVE) tokens.surface else Color.Transparent,
+                            border = if (status == DealStatus.ACTIVE) BorderStroke(1.dp, tokens.border) else null,
+                            shadowElevation = if (status == DealStatus.ACTIVE) 1.dp else 0.dp,
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "Đang Chạy",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = if (status == DealStatus.ACTIVE) FontWeight.Bold else FontWeight.Normal,
+                                    ),
+                                    color = if (status == DealStatus.ACTIVE) tokens.primary else tokens.onSurfaceVariant,
+                                )
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(bounded = true),
+                                    onClick = { status = DealStatus.COMPLETED },
+                                ),
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (status == DealStatus.COMPLETED) tokens.surface else Color.Transparent,
+                            border = if (status == DealStatus.COMPLETED) BorderStroke(1.dp, tokens.border) else null,
+                            shadowElevation = if (status == DealStatus.COMPLETED) 1.dp else 0.dp,
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "Đã Hoàn Tất",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = if (status == DealStatus.COMPLETED) FontWeight.Bold else FontWeight.Normal,
+                                    ),
+                                    color = if (status == DealStatus.COMPLETED) Color(0xFF10B981) else tokens.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(Modifier.height(8.dp))
 
             // Action Button
@@ -262,6 +338,8 @@ fun CreateDealSheet(
                         description = description.trim(),
                         category = category,
                         targetAmount = Money(targetVal),
+                        status = status,
+                        endDate = if (status == DealStatus.ACTIVE) null else initialDeal.endDate,
                         updatedAt = Instant.now(),
                     ) ?: FinancialDeal(
                         title = title.trim(),

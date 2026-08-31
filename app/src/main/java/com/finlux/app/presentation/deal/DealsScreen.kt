@@ -187,6 +187,10 @@ fun DealsScreen(
                     val dealId = selected.id
                     viewModel.revertDealLoss(dealId)
                 },
+                onReopenDeal = {
+                    val dealId = selected.id
+                    viewModel.reopenDeal(dealId)
+                },
                 onDelete = {
                     val dealId = selected.id
                     viewModel.deleteDeal(dealId, onSuccess = {

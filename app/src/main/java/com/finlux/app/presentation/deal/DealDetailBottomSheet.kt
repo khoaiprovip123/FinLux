@@ -41,6 +41,7 @@ fun DealDetailBottomSheet(
     onAddInflow: () -> Unit,
     onCloseWithLoss: () -> Unit,
     onRevertStopLoss: () -> Unit = {},
+    onReopenDeal: () -> Unit = {},
     onDelete: () -> Unit,
 ) {
     val tokens = LocalFinluxTokens.current
@@ -48,6 +49,7 @@ fun DealDetailBottomSheet(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showStopLossConfirm by remember { mutableStateOf(false) }
     var showRevertStopLossConfirm by remember { mutableStateOf(false) }
+    var showReopenDealConfirm by remember { mutableStateOf(false) }
 
     val isLending = deal.category == DealCategory.LENDING
 
@@ -507,16 +509,29 @@ fun DealDetailBottomSheet(
                         ) {
                             Text(if (isLending) "Xóa Nợ & Đóng" else "Chốt Lỗ & Đóng", fontSize = 13.sp)
                         }
-                    } else if (hasStopLoss) {
-                        OutlinedButton(
-                            onClick = { showRevertStopLossConfirm = true },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF3B82F6)),
-                        ) {
-                            Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Hồi Phục Deal", fontSize = 13.sp)
+                    } else if (deal.status == DealStatus.COMPLETED) {
+                        if (hasStopLoss) {
+                            OutlinedButton(
+                                onClick = { showRevertStopLossConfirm = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF3B82F6)),
+                            ) {
+                                Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (isLending) "Khôi Phục Nợ" else "Hồi Phục Deal", fontSize = 13.sp)
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { showReopenDealConfirm = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF10B981)),
+                            ) {
+                                Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (isLending) "Mở Lại Khoản Vay" else "Mở Lại Deal", fontSize = 13.sp)
+                            }
                         }
                     }
 
@@ -699,6 +714,54 @@ fun DealDetailBottomSheet(
             dismissButton = {
                 TextButton(
                     onClick = { showRevertStopLossConfirm = false },
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("Hủy", color = tokens.textPrimary)
+                }
+            },
+        )
+    }
+
+    // Dialog xác nhận mở lại deal / khoản vay đã hoàn tất
+    if (showReopenDealConfirm) {
+        AlertDialog(
+            onDismissRequest = { showReopenDealConfirm = false },
+            containerColor = tokens.surface,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    text = if (isLending) "Mở Lại Khoản Vay?" else "Mở Lại Thương Vụ?",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.onSurface,
+                    ),
+                )
+            },
+            text = {
+                Text(
+                    text = if (isLending) {
+                        "Chuyển khoản vay \"${deal.title}\" từ trạng thái Đã Hoàn Tất về Đang Chạy để tiếp tục ghi nhận thu nợ và xuất vốn."
+                    } else {
+                        "Chuyển thương vụ \"${deal.title}\" từ trạng thái Đã Hoàn Tất về Đang Chạy để tiếp tục ghi nhận dòng tiền thu hồi và xuất vốn."
+                    },
+                    style = MaterialTheme.typography.bodyMedium.copy(color = tokens.onSurface),
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showReopenDealConfirm = false
+                        onReopenDeal()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("Mở Lại", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showReopenDealConfirm = false },
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text("Hủy", color = tokens.textPrimary)
