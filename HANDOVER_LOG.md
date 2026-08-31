@@ -2,7 +2,34 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.19.0 (versionCode 161) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (239/239 Unit Tests) — Build & Kiểm thử thành công.
+- **Trạng thái Build:** ✅ 100% PASS (274/274 Unit Tests) — Build & Merge thành công.
+
+---
+
+## [DONE] Task: Giải Quyết Merge Conflict Nhánh Tính Năng (Saving Spin & Deal Tracking)
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Hợp nhất an toàn và chính xác các thay đổi giữa nhánh hiện tại (HEAD: Deals & Deal Tracking) và nhánh nhập vào (Colleague: Saving Spin).
+- Giữ đầy đủ tất cả routes, DI injection, navigation endpoints, test assertions và tài liệu BA_SPEC của cả hai tính năng.
+- Chạy toàn bộ Unit Test để đảm bảo 100% test PASS và không có lỗi biên dịch.
+
+### Danh sách file đã chỉnh sửa
+1. `app/src/main/java/com/finlux/app/core/navigation/Routes.kt` (giữ cả Deals và SavingSpin routes)
+2. `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt` (giữ cả màn hình DealsScreen và SavingSpin composables)
+3. `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt` (cung cấp cả DealRepository và SavingSpinRepository)
+4. `app/src/test/java/com/finlux/app/presentation/settings/prism/PrismSettingsMenuTest.kt` (bổ sung cả "deals" và "saving-spin/settings" vào route assertion)
+5. `docs/BA_SPEC.md` (giữ cả UC-29 Deal Tracking, UC-30 Saving Spin và toàn bộ quy tắc nghiệp vụ BR-DEAL + BR-SS)
+6. `scripts/build_and_install.bat` & `scripts/build_and_install.ps1` (sửa lỗi cú pháp batch và tương thích cross-machine)
+7. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (274/274 tests, 0 failure)**
+- ✅ Biên dịch thành công không có lỗi syntax/DI.
+
+### Trạng thái
+`[DONE]`
 
 ---
 
@@ -256,6 +283,91 @@
   - `HANDOVER_LOG.md`
   - `docs/BA_SPEC.md`
   - `docs/DATA_SPEC.md`
+
+### [Task-SAVING-SPIN-TRANSFER-STREAK-SETTINGS-FIX] — Cơ chế Chuyển tiền vào Ví tiết kiệm, Chuỗi nạp động, Dialog nhập Min/Max & Lưu Cài đặt vào DB
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Chuyển tiền vào ví tiết kiệm (Transfer)**: Hỗ trợ trích tiền từ ví nguồn (mặc định Ví Tiền mặt `WalletType.CASH` hoặc ví mặc định) chuyển sang ví tiết kiệm đã chọn bằng `transactionRepository.transferBetweenWallets(...)` cập nhật số dư nguyên tử. Cho phép người dùng linh hoạt đổi ví nguồn và ví đích.
+  2. ✅ **Chuỗi thực hiện động (Dynamic Streak)**: Tính chuỗi theo số lần nạp thành công thực tế qua `repository.observeSessions`, hiển thị sinh động `🔥 Chuỗi X lần nạp`.
+  3. ✅ **Điều chỉnh Min/Max trong Cài đặt**: Bổ sung `AlertDialog` nhập số tiền trực tiếp bằng bàn phím số cho Mức tối thiểu & Mức tối đa, tự động làm tròn theo bội số bước tiền (`step`) và cập nhật cấu hình tức thì.
+  4. ✅ **Lưu cấu hình vào DB Firestore**: ViewModel đồng bộ ngay giá trị min/max vào config, kiểm tra validation và lưu trực tiếp qua `repository.saveConfig(config)`, kèm banner cảnh báo lỗi nếu có.
+- **Kiểm thử**: `testDebugUnitTest` PASS 100%, `assembleDebug` thành công và đã cài đặt trực tiếp lên thiết bị `7f4ca06a` qua ADB.
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinResultContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinGameSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsViewModel.kt`
+  - `app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt`
+
+### [Task-SAVING-SPIN-ANIMATION-WALLETS-AND-SETTINGS-FIX] — Fix hoạt ảnh quay bánh xe, Chọn ví từ hệ thống & Tinh chỉnh Cài đặt
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Hoạt ảnh bánh xe**: `SavingSpinGameSheet` giữ bánh xe hiển thị và chạy animation quay 3.2s mượt mà vào đúng ô trúng thưởng, chỉ chuyển sang màn hình kết quả khi animation kết thúc.
+  2. ✅ **Chọn ví từ hệ thống**: Chuyển sang nạp tiền trực tiếp từ danh mục ví thực tế của người dùng (`WalletRepository.observeWallets()`), hỗ trợ hiển thị icon/số dư và ghi nhận giao dịch `EXPENSE` (danh mục `savings`) cập nhật số dư qua Firestore Transaction (BR-14).
+  3. ✅ **Cài đặt & Giao diện**: Bổ sung `statusBarsPadding()` tránh đè status bar, sửa click touch target cho pill Bước mệnh giá và auto-persist cấu hình khi bấm chọn.
+- **Kiểm thử**: `gradlew testDebugUnitTest` PASS 100% (264/264 tests), `assembleDebug` build APK thành công.
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinGameSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinResultContent.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt`
+
+### [Task-SAVING-SPIN-DEMO-RESET-AND-WALLET-SYNC] — Bật chế độ thử nghiệm reset vòng quay & Ghi nhận biến động số dư ví vào DB
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Reset lượt quay để test liên tục**: Bổ sung `resetSession` vào `SavingSpinRepository`, `DemoSavingSpinRepository` và `FirebaseSavingSpinRepository`. Khi ở trạng thái hoàn thành hoặc bỏ qua, người dùng có nút bấm `🔄 Quay tiếp lượt mới (Thử nghiệm)` để reset trạng thái và quay thử nghiệm không giới hạn mà không bị khóa sang ngày hôm sau.
+  2. ✅ **Ghi nhận biến động số dư ví và lưu trữ DB**: Khi bấm `XÁC NHẬN ĐÃ NẠP`, `CompleteSavingSpinUseCase` tạo một giao dịch loại `EXPENSE` thuộc danh mục `savings` ("Vòng quay tiết kiệm: Cất vào [Nơi tiết kiệm]") và gọi `transactionRepository.addWithBalanceUpdate(...)` bằng Firestore Transaction (BR-14) để tự động trừ số dư ví nguồn tương ứng, đồng bộ vào báo cáo thu chi của FinLux.
+  3. ✅ **Kiểm thử**: Toàn bộ unit test PASS 100% (264/264 tests), nạp APK thành công lên thiết bị `7f4ca06a`.
+
+### [Task-SAVING-SPIN-UI-POLISH] — Tinh chỉnh UI Vòng quay tiết kiệm bám sát 100% Mockup
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ `SavingSpinHomeCard.kt`: Redesign thẻ Trang chủ với nền gradient kem cam nhẹ, badge giờ nhắc tròn, bánh xe mini và nút QUAY xanh dương nổi bật.
+  2. ✅ `SavingSpinWheel.kt`: Vẽ lại Canvas bánh xe viền vàng ngọc, ngôi sao trung tâm sắc nét, kim chỉ đỏ và 8 múi màu tương phản rực rỡ.
+  3. ✅ `SavingSpinGameSheet.kt`: Redesign bottom sheet với icon ✨ lấp lánh, badge 1 lượt quay, nút QUAY NGAY lớn và thanh điều khiển Nhắc sau/Đóng.
+  4. ✅ `SavingSpinResultContent.kt`: Thẻ kết quả số tiền xanh dương lớn kèm hiệu ứng ánh sao, banner chuỗi ngày và 3 card chọn nơi cất tiền nằm ngang.
+  5. ✅ `SavingSpinReportScreen.kt`: Nâng cấp giao diện Báo cáo với thẻ tổng quan, 3 stat pills, biểu đồ cột tiết kiệm theo ngày và cơ cấu ví.
+  6. ✅ `SavingSpinSettingsScreen.kt`: Redesign cài đặt theo dạng iOS settings cards, switch xanh, bộ chọn mệnh giá và preview trực tiếp.
+- **Kiểm thử**: `testDebugUnitTest` 100% PASS, `assembleDebug` BUILD SUCCESSFUL.
+
+### [Task-SAVING-SPIN-MINIGAME] — Vòng quay tiết kiệm
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-08-31
+- **Mục tiêu đã hoàn thành theo kế hoạch**:
+  1. ✅ **Domain & Logic**: Triển khai models, use cases (`ValidateSavingSpinConfigUseCase`, `GenerateSavingSpinWheelUseCase`, `ResolveSavingSpinScheduleKeyUseCase`, `GetOrCreateSavingSpinSessionUseCase`, `SpinSavingWheelUseCase`, `CompleteSavingSpinUseCase`, `CalculateSavingSpinStreakUseCase`, `GetSavingSpinReportUseCase`, `SyncSavingSpinScheduleUseCase`). Khóa kết quả chống reroll, thuật toán sinh ô $O(1)$ RAM chống OOM.
+  2. ✅ **Data Layer & Security**: `FirebaseSavingSpinRepository`, `DemoSavingSpinRepository`, Firestore mapper và cập nhật Security Rules (`savingSpinConfigs`, `savingSpinDestinations`, `savingSpinSessions`).
+  3. ✅ **Scheduler & Reminders**: `AlarmSavingSpinScheduler`, `SavingSpinReceiver` hỗ trợ nhắc nhở lúc 09:00 mặc định và tính năng Snooze/Skip.
+  4. ✅ **UI & Presentation**:
+     - `SavingSpinWheel`: Canvas vẽ bánh xe chia 6/8/10/12 slot, animation mượt và hỗ trợ tắt animation.
+     - `SavingSpinGameSheet` & `SavingSpinResultContent`: Flow quay và chọn nơi nạp tiền (Heo tiền mặt/Ngân hàng).
+     - `SavingSpinHomeCard`: Tích hợp launcher hiển thị đồng bộ trên cả 3 theme (`Modern Luxury`, `Classic Liquid`, `Prism`).
+     - `SavingSpinSettingsScreen`: Cấu hình bước mệnh giá 5K/10K, min/max, tần suất, giờ nhắc và xem trước.
+     - `SavingSpinReportScreen`: Báo cáo tích lũy theo khoảng thời gian (7 ngày, 30 ngày, tháng này, kỳ lương), thống kê chuỗi streak và cơ cấu nơi nạp.
+  5. ✅ **Verification**: `gradlew testDebugUnitTest` PASS 100% (264/264 tests).
+- **Files đã sửa đổi & tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/SavingSpinModels.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/repository/SavingSpinRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/repository/SavingSpinScheduler.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/*` (9 use cases mới)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/SavingSpinFirestoreMapper.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSavingSpinRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/local/savingspin/*` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/*` [NEW]
+  - `app/src/main/java/com/finlux/app/core/navigation/Routes.kt` & `FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt` & các HomeScreen theme
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt` & `PrismSettingsScreen.kt`
+  - `firestore.rules`
+  - `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/UI_SPEC.md`
 
 ### [Task-HOME-RECENT-TRANSACTIONS-SYNC] — Đồng bộ giao diện Giao dịch gần nhất trên Trang chủ với màn hình Giao dịch
 - **Status**: `[DONE]`

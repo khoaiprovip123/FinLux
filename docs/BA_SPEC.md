@@ -43,6 +43,7 @@ Không có vai trò Admin/Manager trong V1 (app cá nhân, không multi-user).
 | UC-27 | Cấu hình và theo dõi Tháng tài chính / Chu kỳ lương | User |
 | UC-28 | Trung tâm thông báo & Tương tác cử chỉ điều hướng | User |
 | UC-29 | Quản lý thương vụ & Đầu tư sinh lời (Deal Tracking & ROI Matching) | User |
+| UC-30 | Vòng quay tiết kiệm (Saving Spin) | User |
 
 ---
 
@@ -427,6 +428,25 @@ Business rule:
 
 ## 4. Ma trận Business Rule tổng hợp
 
+### UC-29: Vòng quay tiết kiệm
+```
+Actor: User
+Precondition: Đã đăng nhập; feature do người dùng chủ động bật trong Cài đặt.
+Main flow:
+  1. Người dùng cấu hình mức tối thiểu/tối đa, bước 5.000đ hoặc 10.000đ, số ô 6/8/10/12,
+     tần suất, giờ nhắc và nơi tiết kiệm mặc định.
+  2. Đến kỳ, Home hiển thị launcher; mở game sẽ tạo một session và khóa danh sách mệnh giá.
+  3. Nhấn Quay; hệ thống persist kết quả nguyên tử trước khi chạy animation.
+  4. Người dùng chọn nơi tiết kiệm CASH/BANK_TRANSFER và tự xác nhận đã nạp.
+  5. Chỉ session COMPLETED được cộng vào tổng tiết kiệm, streak, chart và tỷ lệ hoàn thành.
+Alternative flow:
+  A1. Nhắc lại -> session SNOOZED và tạo exact alarm mới.
+  A2. Bỏ qua khi allowSkip=true -> SKIPPED; giữ selectedAmount để audit nhưng không tính tiết kiệm.
+  A3. Offline không khóa được kết quả -> không chạy animation giả, giữ nguyên session hiện hữu.
+Postcondition: Lịch sử minigame được giữ trong ledger riêng, không thay đổi Thu/Chi/Net Worth/số dư ví.
+Business rules: BR-SS-01..14 theo FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md.
+```
+
 | Mã | Mô tả |
 |----|-------|
 | BR-01 | Mật khẩu ≥ 8 ký tự, có chữ + số |
@@ -461,6 +481,14 @@ Business rule:
 | BR-DEAL-03 | Loại trừ `OUTLAY_CAPITAL` và `PRINCIPAL_RECOVERY` khỏi Ngân sách sinh hoạt và Báo cáo Thu/Chi thông thường |
 | BR-DEAL-04 | Ghi nhận `CAPITAL_GAIN` vào Báo cáo Thu nhập và `CAPITAL_LOSS` vào Báo cáo Chi tiêu |
 | BR-DEAL-05 | Toàn bộ vòng đời Deal (xuất vốn, thu hồi, phân tách, chốt sổ) bắt buộc qua Firestore Atomic Transaction |
+| BR-SS-01 | Bước mệnh giá chỉ 5.000đ hoặc 10.000đ; min/max là bội số của bước và tối đa 15 chữ số |
+| BR-SS-02 | Số ô chỉ 6/8/10/12; range phải đủ số mệnh giá và generator không materialize toàn bộ range |
+| BR-SS-03 | Wheel values và selected result được khóa theo schedule period; không reroll sau khi persist |
+| BR-SS-04 | State machine chỉ cho READY -> SPUN_PENDING -> COMPLETED/SNOOZED/SKIPPED theo transition hợp lệ |
+| BR-SS-05 | Chỉ COMPLETED được tính tiết kiệm/streak/report; Saving Spin dùng ledger riêng và không tạo Thu/Chi |
+| BR-SS-06 | Feature opt-in; tắt feature hủy alarm nhưng giữ history/destination |
+| BR-SS-07 | Hỗ trợ DAILY/SELECTED_WEEKDAYS/WEEKLY/SALARY_CYCLE và dùng FinancialPeriodResolver cho kỳ lương |
+| BR-SS-08 | Reminder mặc định 09:00, tối đa 3 lần/kỳ/ngày; hỗ trợ snooze và allowSkip |
 
 ---
 

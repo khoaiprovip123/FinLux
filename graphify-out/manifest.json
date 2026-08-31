@@ -1,7 +1,7 @@
 {
   "app/build.gradle.kts": {
-    "mtime": 1787821103.0078151,
-    "ast_hash": "7f26c6bcb5720714897bf741bc5fe66c",
+    "mtime": 1788144040.4522724,
+    "ast_hash": "3a0de7ecfaccb77fd1ba0c9a82b8e158",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/FinluxApplication.kt": {
@@ -70,38 +70,38 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt": {
-    "mtime": 1787821056.8672936,
-    "ast_hash": "4650b8bf002274850eef35104c66919d",
+    "mtime": 1788151528.8006232,
+    "ast_hash": "3bdedef1882adc690b49d11955158a20",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/navigation/Routes.kt": {
-    "mtime": 1787373189.9595706,
-    "ast_hash": "9d02662828d9078a0c5f67e70437ab84",
+    "mtime": 1788148939.8186798,
+    "ast_hash": "14ffbfc4c054c484386249d19c19d2c1",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt": {
-    "mtime": 1787821056.8683314,
-    "ast_hash": "5f4a5768b2d10fdd43eb2754f4992a65",
+    "mtime": 1788144040.4635773,
+    "ast_hash": "f8673dfabd0c130d46dacc6a9b0e42a7",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt": {
-    "mtime": 1787623893.37347,
-    "ast_hash": "30882bb73d3d811b07c6ecb407851830",
+    "mtime": 1788147125.7905917,
+    "ast_hash": "43e9f69bdcf4a9e9f2cc46be584f1738",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt": {
-    "mtime": 1787373189.9635694,
-    "ast_hash": "d224f79b5cfd376011b1674dcaf00925",
+    "mtime": 1788144040.4645898,
+    "ast_hash": "ce83b18ac56d2cd3490d69b37ead9cf8",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt": {
-    "mtime": 1787724858.0746617,
-    "ast_hash": "bc74c8dccc1beb74284c091334c4dc6e",
+    "mtime": 1788144040.4655879,
+    "ast_hash": "37a337d2ef3c76573be4bdd23c3d1634",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt": {
-    "mtime": 1787561366.3410492,
-    "ast_hash": "53ce0ed1da0d449624e36a0de868cb50",
+    "mtime": 1788144040.4655879,
+    "ast_hash": "10ab2a5f4777d81e6d581d5046f8d869",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt": {
-    "mtime": 1787633059.8000867,
-    "ast_hash": "7a30f0e22cef6729fd04af4a7e7f7afa",
+    "mtime": 1788144040.469588,
+    "ast_hash": "981498449a3593d942a6f7a25c5ec318",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/domain/repository/AuthRepository.kt": {
@@ -145,24 +145,24 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/RootViewModel.kt": {
-    "mtime": 1786959610.7866392,
-    "ast_hash": "64bbab608285af06e0c13158d9026e16",
+    "mtime": 1787882515.091007,
+    "ast_hash": "263445fa4290c1532756472af2a13833",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt": {
-    "mtime": 1787364020.6766548,
-    "ast_hash": "c9415442d222e105cef8f2be4b2e859e",
+    "mtime": 1788144040.4715889,
+    "ast_hash": "816d5f4f678a3e779423ef8e6f667759",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/auth/AuthViewModel.kt": {
-    "mtime": 1787708970.227766,
-    "ast_hash": "c12e265035e69fb4d476c188f7a70889",
+    "mtime": 1788144040.4725878,
+    "ast_hash": "1e4a22f1de25efae5ab267357288cd71",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/auth/SplashViewModel.kt": {
-    "mtime": 1786441010.0951445,
-    "ast_hash": "7482374be2a16f34603ccfbc693102e1",
-    "semantic_hash": "7482374be2a16f34603ccfbc693102e1"
+    "mtime": 1788144040.4735897,
+    "ast_hash": "cd0dd6b8215f4cdfaefc3f84e7898cc7",
+    "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/budget/BudgetScreen.kt": {
     "mtime": 1787218412.812227,
@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt": {
-    "mtime": 1787816841.3177457,
-    "ast_hash": "d7c65a5692a27a9db64744281b7aab1b",
+    "mtime": 1788144040.4735897,
+    "ast_hash": "fb8b675f3b23030b1b3de113febf5d13",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/category/CategoriesScreen.kt": {
@@ -195,43 +195,43 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt": {
-    "mtime": 1787816841.3216462,
-    "ast_hash": "b5c1d40446dcc6740271985e8b4d0c91",
+    "mtime": 1787889808.127453,
+    "ast_hash": "045e17094703e4ed35844d0fef0bad9c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/expense/ExpenseViewModel.kt": {
-    "mtime": 1786518116.9376526,
-    "ast_hash": "34f482b3cff971e7d6bda590209ceb48",
-    "semantic_hash": "34f482b3cff971e7d6bda590209ceb48"
+    "mtime": 1787890150.2361772,
+    "ast_hash": "7c185861240c0e2d16bb3c97268ac53c",
+    "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt": {
-    "mtime": 1787218412.8154967,
-    "ast_hash": "1562fe48fae6c453465317672b48a031",
+    "mtime": 1788148284.6513615,
+    "ast_hash": "2bca21133119bab54fe975b2c5cfa100",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt": {
-    "mtime": 1787635649.1796174,
-    "ast_hash": "1f5bdd09462065e28aa941071a5af9cc",
+    "mtime": 1788144040.4805892,
+    "ast_hash": "d71057c477cc91fc77dbefbcd01b290d",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt": {
-    "mtime": 1787816841.3237045,
-    "ast_hash": "bd821d32bb902842cdf94cc4e890c47b",
+    "mtime": 1787889766.7408829,
+    "ast_hash": "e3446b1139720be2ea3c03c24c3e7918",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/income/IncomeViewModel.kt": {
-    "mtime": 1787705597.6307862,
-    "ast_hash": "316a28a0b06c900d8338dde3edd0a2f6",
+    "mtime": 1787890328.219389,
+    "ast_hash": "a435762f57092bce86236519a9cabc6f",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt": {
-    "mtime": 1787821056.8711457,
-    "ast_hash": "3e7530d0641b788a48dae063ed728e58",
+    "mtime": 1788144040.4872346,
+    "ast_hash": "10126f0f31801b2acfd53516b7af20f6",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt": {
-    "mtime": 1787724858.0931325,
-    "ast_hash": "508712b92412a799c62dbcfc25ba3e09",
+    "mtime": 1787882515.0915387,
+    "ast_hash": "12611371d227cd0598e6cfa3389af19f",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/reminders/RemindersViewModel.kt": {
@@ -245,13 +245,13 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt": {
-    "mtime": 1787734113.5745828,
-    "ast_hash": "83228b5f3b0fa9dfe2198207811821c9",
+    "mtime": 1787894117.9778795,
+    "ast_hash": "7c9a4a41f454df688deb42a59cf0e519",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "92d423bb0a83941291f75b414bdcbec5",
+    "mtime": 1788148939.8206832,
+    "ast_hash": "a07149b3e0d5e23c6ddb3cbe82b2751f",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/settings/SettingsViewModel.kt": {
@@ -260,8 +260,8 @@
     "semantic_hash": "f28e46de2af80569e5ce33343a6ba6b6"
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt": {
-    "mtime": 1787821056.8721974,
-    "ast_hash": "199f1c772d68b5a3cc158f0421e722ca",
+    "mtime": 1787897663.258845,
+    "ast_hash": "7b0682cb848a397bb26fd691cfa0a6ae",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionViewModel.kt": {
@@ -275,8 +275,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt": {
-    "mtime": 1787734618.3608701,
-    "ast_hash": "4c808127d269f343a4d32eacba870ced",
+    "mtime": 1788144040.4942362,
+    "ast_hash": "34c5356f7f707f002e93f75f3c9ad79c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/wallet/WalletsScreen.kt": {
@@ -300,8 +300,8 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "d707c97966c0922e9b764d01a976fcb3",
+    "mtime": 1788144040.510236,
+    "ast_hash": "8eb624bd9abbaeb415536d3ae619af92",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/domain/usecase/UpdateDisplayNameUseCaseTest.kt": {
@@ -325,8 +325,8 @@
     "semantic_hash": "914b90b05c30bf9328521ce9cde9c5e3"
   },
   "app/src/main/java/com/finlux/app/core/designsystem/FinancialInstitutions.kt": {
-    "mtime": 1787821063.3536935,
-    "ast_hash": "7298e237b85f92150772ddb1d4ec77ee",
+    "mtime": 1788144040.4532726,
+    "ast_hash": "086649f94641f23b64307a05650f5eca",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/NotificationPermissionHandler.kt": {
@@ -345,13 +345,13 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt": {
-    "mtime": 1787218412.801126,
-    "ast_hash": "2de72c4f03430d2aa64715d1326d81fa",
+    "mtime": 1787886730.4050584,
+    "ast_hash": "d8342379dfef9b0c755565af42ae489e",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt": {
-    "mtime": 1787821056.8662486,
-    "ast_hash": "9d1b44066cb495d72592a71b042a3d01",
+    "mtime": 1788144040.4542716,
+    "ast_hash": "6581a4d590a9e18099fc0ff89b90f066",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxHeaderComponents.kt": {
@@ -370,18 +370,18 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxNavigationComponents.kt": {
-    "mtime": 1787303662.2972655,
-    "ast_hash": "bfdfe92a0efc765d5335acac384094cf",
+    "mtime": 1788144040.4577928,
+    "ast_hash": "34c922c0d7a3ff825a7d83489ff3537e",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxScreenScaffold.kt": {
-    "mtime": 1787816841.314617,
-    "ast_hash": "b87dc2b8057293ef0da5ff3ddaab6d02",
+    "mtime": 1788144040.4583292,
+    "ast_hash": "89226a5bb382db57c7425f451067256f",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt": {
-    "mtime": 1787816841.314617,
-    "ast_hash": "52addeca2b66cfd7ba0714a3e267aca7",
+    "mtime": 1787908281.8929079,
+    "ast_hash": "2bba2335b972a4b25fa430a2f0d593ab",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/modern/ModernFinluxComponents.kt": {
@@ -390,8 +390,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt": {
-    "mtime": 1787218412.8082266,
-    "ast_hash": "23a6bec6d7f223051464aba5b9d918ca",
+    "mtime": 1788144040.4588387,
+    "ast_hash": "8d90554a5cd54cde57bec410b40aabe7",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/modern/ModernStyleBackdrop.kt": {
@@ -405,8 +405,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt": {
-    "mtime": 1787816841.315125,
-    "ast_hash": "6f2a83b6b644b9f19a03ffbc31d4d97c",
+    "mtime": 1787825509.0086198,
+    "ast_hash": "ede7ffc9ed8af82176a7c18cec26704c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/core/export/ReportExporter.kt": {
@@ -460,13 +460,13 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/local/notification/SystemNotificationHelper.kt": {
-    "mtime": 1787724858.073441,
-    "ast_hash": "50116fc6f0abcb71f5de87ffa8960aa3",
+    "mtime": 1787825508.0890462,
+    "ast_hash": "a22bf103c75c69207ef8ea65f512f4e6",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/local/reminder/BootReceiver.kt": {
-    "mtime": 1786608985.3677218,
-    "ast_hash": "3d5c2b776f949e8d6639c057bb98d661",
+    "mtime": 1787825508.0895517,
+    "ast_hash": "cf6d81d93d6266854475bb39f6c9d68f",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/remote/firebase/FinluxMessagingService.kt": {
@@ -500,8 +500,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseNotificationRepository.kt": {
-    "mtime": 1787724858.0779393,
-    "ast_hash": "e4cbf8e86379375156500ece31559d0b",
+    "mtime": 1788144040.466586,
+    "ast_hash": "fc13e0b16f257cd2e8b8ca05ce4434f4",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseReceiptStorageRepository.kt": {
@@ -565,8 +565,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/domain/repository/NotificationRepository.kt": {
-    "mtime": 1787724858.0817554,
-    "ast_hash": "b87f25ebad36ee76a3d69244ef048cf6",
+    "mtime": 1788144040.469588,
+    "ast_hash": "79b8fbd8b8d5ab213d5640ce8a58dd5e",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt": {
@@ -650,8 +650,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/domain/usecase/FinancialPeriodResolver.kt": {
-    "mtime": 1787623877.0179508,
-    "ast_hash": "0e13852338e40d56aac1fda41f5ac210",
+    "mtime": 1788144040.4705882,
+    "ast_hash": "7b8571080a15a99fe6232ed62f1fb2cb",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/domain/usecase/GetDebtPaymentHistoryUseCase.kt": {
@@ -735,28 +735,28 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt": {
-    "mtime": 1787816841.318558,
-    "ast_hash": "370da286e86bced47c78d2e64a4a839f",
+    "mtime": 1788144040.4765897,
+    "ast_hash": "1002f10b8932d0de6b92042305501805",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt": {
-    "mtime": 1787816841.318558,
-    "ast_hash": "76f04ca947882030f95c751941d5dd7e",
+    "mtime": 1788144040.4775863,
+    "ast_hash": "d2d40073bc2520dd6ffc628291ee939d",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt": {
-    "mtime": 1787816841.3190727,
-    "ast_hash": "7fff40cdb1510795376f83514951a23f",
+    "mtime": 1788144040.4785893,
+    "ast_hash": "c428a6b0cb3c530faa294a3e1184cb3c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt": {
-    "mtime": 1787816841.3195872,
-    "ast_hash": "b8ebeac452d72448a582b94251b209c7",
+    "mtime": 1788144040.4785893,
+    "ast_hash": "398292eb46dbc64140669d428239929b",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt": {
-    "mtime": 1787303662.2982624,
-    "ast_hash": "208cb6b8bca5de2aec548cfcfcdfd9b0",
+    "mtime": 1788144040.4805892,
+    "ast_hash": "478dfbc0fd82f2baaccde067911fe826",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt": {
@@ -825,23 +825,23 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt": {
-    "mtime": 1787816841.32216,
-    "ast_hash": "bea6350ae2bd77cbd7a4a8005ea2ff64",
+    "mtime": 1788148320.2170434,
+    "ast_hash": "9618f2e96a0ff6507ffd1a33ce4eab56",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt": {
-    "mtime": 1787816841.322678,
-    "ast_hash": "31160bcae5503c24c1f3e20335a84b67",
+    "mtime": 1788148320.2180421,
+    "ast_hash": "df6f6294636c0cc36765df53e3c93318",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt": {
-    "mtime": 1787816841.3231916,
-    "ast_hash": "8a6fa6e8c9662891020b4e4d5a584aa2",
+    "mtime": 1788148320.2210429,
+    "ast_hash": "68d11780b7f288871224f88244f1ed6c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/notifications/NotificationsViewModel.kt": {
-    "mtime": 1787724858.0911272,
-    "ast_hash": "809e32303b173a4d94b538f02b3a5cb0",
+    "mtime": 1788144040.4872346,
+    "ast_hash": "084aa725ae6d9705c5161fbde86c5a9b",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/receipt/ReceiptCaptureScreen.kt": {
@@ -860,58 +860,58 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt": {
-    "mtime": 1787734430.9281971,
-    "ast_hash": "1af120ac1b2b1ae25a20f6242a8f7c77",
+    "mtime": 1788144040.4902372,
+    "ast_hash": "16a7682d425fd5f49a8759b47e903f8c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt": {
-    "mtime": 1787734438.71403,
-    "ast_hash": "b1f2df107a28a689e56b31e2e9125ef3",
+    "mtime": 1788144040.4902372,
+    "ast_hash": "b6bf16d412113c3fb1203dc492592e70",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "67827d891a987929e83fa8430cb85565",
+    "mtime": 1787890646.879627,
+    "ast_hash": "14ddbcc92e3cf2f8f34199d7cd7be255",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "c79f64cd71c229edaf78c18fecb4b7b5",
+    "mtime": 1788148939.8226864,
+    "ast_hash": "fd79a5682379a0fdb037873ea7b3cb14",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "cfac77083fe972b720076e3c8a1d1a26",
+    "mtime": 1788144040.492237,
+    "ast_hash": "f45ffd514a634184d2c7ee89cafaaff8",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModel.kt": {
-    "mtime": 1787566441.4720707,
-    "ast_hash": "193535fcdcc97f6a7c1d0a28d32c52b4",
+    "mtime": 1787825508.0927122,
+    "ast_hash": "16ad0fece56606f709b15489d123b307",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt": {
-    "mtime": 1787821056.873258,
-    "ast_hash": "8948449ca39c6e94581e5e3837260e6b",
+    "mtime": 1788144040.4932346,
+    "ast_hash": "3293805fb489e1b4335e9c5d39c52670",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/TransactionFilterBottomSheet.kt": {
-    "mtime": 1787816841.324733,
-    "ast_hash": "2996a8e98cefb36854e656b0439c13e8",
+    "mtime": 1787890512.8012083,
+    "ast_hash": "aa53809374941af4facbb0e2bacdb3f7",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt": {
-    "mtime": 1787821056.8737867,
-    "ast_hash": "b30c22644efa58a521523f42af288002",
+    "mtime": 1788144040.495236,
+    "ast_hash": "e945e12c6645f53b44e33b9b70e4f9c1",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt": {
-    "mtime": 1787821056.874837,
-    "ast_hash": "a340200041acb86dee2811a73a6c9682",
+    "mtime": 1788144040.4962358,
+    "ast_hash": "8d0225cf0debdcd88213e6e1b186d611",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt": {
-    "mtime": 1787821056.8753788,
-    "ast_hash": "fd2573098246579080193b874d8aacba",
+    "mtime": 1788144040.5022366,
+    "ast_hash": "77b674394fc6a4c843d2ddea0228ebc4",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/updater/AppUpdateDialog.kt": {
@@ -930,8 +930,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt": {
-    "mtime": 1787821056.877492,
-    "ast_hash": "7ba46c434f1dac893667004cce9a0835",
+    "mtime": 1788144040.503237,
+    "ast_hash": "75dd2ab9764149441849c0aaa6a4a96e",
     "semantic_hash": ""
   },
   "app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt": {
@@ -945,8 +945,8 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/core/designsystem/FinluxDesignSystemTest.kt": {
-    "mtime": 1787218412.8297265,
-    "ast_hash": "39c77f344c46bdb24cda4bb41d6b3438",
+    "mtime": 1787825509.0106199,
+    "ast_hash": "91728a83b5f6d427897852a8ad3232e7",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/core/export/XlsxReportWriterTest.kt": {
@@ -1055,8 +1055,8 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/RootViewModelTest.kt": {
-    "mtime": 1786959610.7964365,
-    "ast_hash": "1ba2ec6a3cf05176aecd43d3375acca6",
+    "mtime": 1787882515.0926015,
+    "ast_hash": "88c92f7d91bc2cd4b34c843444f1b771",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/auth/AuthViewModelTest.kt": {
@@ -1065,8 +1065,8 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/budget/BudgetViewModelTest.kt": {
-    "mtime": 1787636966.3490689,
-    "ast_hash": "69a3f89dcbae61c5748a9d266e4324b2",
+    "mtime": 1788144040.511236,
+    "ast_hash": "ff78b0c1ad21dacfb99d64ba424c00f5",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt": {
@@ -1080,13 +1080,13 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt": {
-    "mtime": 1787724858.101128,
-    "ast_hash": "579b8ede81feda8ffd669aabcc3f55fd",
+    "mtime": 1788144040.5122342,
+    "ast_hash": "aa3d62dd6b25dec1d148ec378b1ff85f",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/notifications/NotificationsViewModelTest.kt": {
-    "mtime": 1787724858.101128,
-    "ast_hash": "48d910f0fa1350da241057f10219232f",
+    "mtime": 1788144040.5122342,
+    "ast_hash": "c8f51697e04e6e5b866700d1abacc8d6",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/reports/ReportQueryWindowResolverTest.kt": {
@@ -1100,8 +1100,8 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/settings/prism/PrismSettingsMenuTest.kt": {
-    "mtime": 1787373189.999819,
-    "ast_hash": "5afd93f90520364a6bd5cc5c9adb040d",
+    "mtime": 1788151838.5549693,
+    "ast_hash": "a137e4321cb2e3d73892d7857b681349",
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModelTest.kt": {
@@ -1115,13 +1115,13 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/finlux/app/presentation/transaction/TransactionsViewModelTest.kt": {
-    "mtime": 1787115912.244694,
-    "ast_hash": "4a2098f36cb715d351791d8fa9a33db3",
+    "mtime": 1788144040.513235,
+    "ast_hash": "5a45c1d6980afb87802afff31a391726",
     "semantic_hash": ""
   },
   "functions/package.json": {
-    "mtime": 1787707972.4067056,
-    "ast_hash": "60945fcd96b82e5b0924351eff290014",
+    "mtime": 1787882515.094216,
+    "ast_hash": "dc011578bf8df704cb866074de16ead1",
     "semantic_hash": ""
   },
   "functions/src/index.ts": {
@@ -1130,8 +1130,8 @@
     "semantic_hash": ""
   },
   "functions/test/firestore.rules.test.ts": {
-    "mtime": 1787707979.2460637,
-    "ast_hash": "7f612806564d8a33f399d4f7ccbabb50",
+    "mtime": 1788146459.9754274,
+    "ast_hash": "169c38ce4f66f721e491e31719414b29",
     "semantic_hash": ""
   },
   "functions/tsconfig.json": {
@@ -1140,8 +1140,8 @@
     "semantic_hash": ""
   },
   "scripts/build_and_install.ps1": {
-    "mtime": 1787705597.6318457,
-    "ast_hash": "03e0ccd2b2c63d5a7324ac2f25a67404",
+    "mtime": 1788144040.5238724,
+    "ast_hash": "c390203ad0ecae82308813ea6a50462b",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1787821094.7182422,
-    "ast_hash": "9ea2bb13868542a1115c3d4515bd0a15",
+    "mtime": 1788144040.4431767,
+    "ast_hash": "0869df10a33170a44edc9661a173de6e",
     "semantic_hash": ""
   },
   "GEMINI.md": {
@@ -1195,8 +1195,8 @@
     "semantic_hash": ""
   },
   "HANDOVER_LOG.md": {
-    "mtime": 1787821107.5301025,
-    "ast_hash": "70778788c72450c3ecec7b128403ddd8",
+    "mtime": 1788169570.8149595,
+    "ast_hash": "6bff06f2b903312a3b501d8e3f9bad55",
     "semantic_hash": ""
   },
   "README.md": {
@@ -1205,23 +1205,23 @@
     "semantic_hash": ""
   },
   "docs/BACKLOG.md": {
-    "mtime": 1787821063.3547258,
-    "ast_hash": "07fa6ed2aa8d445f60e0a0e7cc7763ae",
+    "mtime": 1787891067.9420142,
+    "ast_hash": "96f7c5c294a33c88d306321cf8b79000",
     "semantic_hash": ""
   },
   "docs/BA_SPEC.md": {
-    "mtime": 1787821063.355244,
-    "ast_hash": "95820b81aec4e912d339a154c9f6768c",
+    "mtime": 1788145178.8409462,
+    "ast_hash": "1c43b292e9cc12c63c8934aab4f99310",
     "semantic_hash": ""
   },
   "docs/CONTEXT.md": {
-    "mtime": 1787821063.3557568,
-    "ast_hash": "9aeea46430b6298be7b2b9f9423b6825",
+    "mtime": 1787968578.7055264,
+    "ast_hash": "031134805b2a2c7f655bd20954e27fee",
     "semantic_hash": ""
   },
   "docs/DATA_SPEC.md": {
-    "mtime": 1787821063.3562675,
-    "ast_hash": "8d5354ca3d943fcf7b28f3f01b6cae31",
+    "mtime": 1788145178.843951,
+    "ast_hash": "fc0b965af3a117dd7be0f72790c26d40",
     "semantic_hash": ""
   },
   "docs/FIX_PLAN.md": {
@@ -1235,8 +1235,8 @@
     "semantic_hash": ""
   },
   "docs/PLAN.md": {
-    "mtime": 1787821063.3567853,
-    "ast_hash": "60c74bf908ceeedb0f93d067dc1c1bb7",
+    "mtime": 1787968578.707636,
+    "ast_hash": "bbcaa4220aca9472999f9c198b639bd0",
     "semantic_hash": ""
   },
   "docs/PROJECT_PROFILE.md": {
@@ -1245,8 +1245,8 @@
     "semantic_hash": ""
   },
   "docs/UI_SPEC.md": {
-    "mtime": 1787821063.3573012,
-    "ast_hash": "7838fea51aa7841749039d1ecaabd202",
+    "mtime": 1788145178.842951,
+    "ast_hash": "e8b8539b648e8db9073d75d4a1d3d356",
     "semantic_hash": ""
   },
   "docs/fix_plan.txt": {
@@ -1662,6 +1662,291 @@
   "app/src/main/res/drawable-nodpi/ic_vietqr_999888.png": {
     "mtime": 1787821063.4445224,
     "ast_hash": "16fd95362e7648ca07aa04d5b714397c",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/demo/DemoSavingSpinRepository.kt": {
+    "mtime": 1788167046.3331838,
+    "ast_hash": "957cdccdb7e11cbe1b5b4871f6e70dad",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/local/reminder/ReminderSyncObserver.kt": {
+    "mtime": 1787882515.0894003,
+    "ast_hash": "f0805a25e15d34e40f9cdff34c2957d7",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/local/salary/AlarmSalaryCycleScheduler.kt": {
+    "mtime": 1787825508.090606,
+    "ast_hash": "71d0b0d062e708f05db1ee6c2ea64fe3",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/local/salary/SalaryCycleReceiver.kt": {
+    "mtime": 1787825508.0911334,
+    "ast_hash": "44ae39d9656353c53fbe00b7b6266431",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/local/savingspin/AlarmSavingSpinScheduler.kt": {
+    "mtime": 1788147125.7772074,
+    "ast_hash": "c660aca0b139be1f6fd109b558b6f5d8",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/local/savingspin/SavingSpinReceiver.kt": {
+    "mtime": 1788147125.784227,
+    "ast_hash": "30ac428ebc19e3afbc19f510231a543b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt": {
+    "mtime": 1788167053.316801,
+    "ast_hash": "1dfe53b8e266093b3b8138547a8515fc",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/data/remote/firebase/SavingSpinFirestoreMapper.kt": {
+    "mtime": 1788146141.5756383,
+    "ast_hash": "647b84f9372ad1e9b9624961a3316c8c",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/model/ReminderUtils.kt": {
+    "mtime": 1787882515.0904753,
+    "ast_hash": "64d9d8935335f8de4048f4078b0f820d",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/model/SavingSpinModels.kt": {
+    "mtime": 1788145218.9715555,
+    "ast_hash": "558381b720ebf9bd98683759952ad411",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt": {
+    "mtime": 1787894110.3332248,
+    "ast_hash": "749e8033541eefe648a2675d4327035c",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/repository/SalaryCycleScheduler.kt": {
+    "mtime": 1787825508.0911334,
+    "ast_hash": "2976cea95fc86f0ab4c432375ed252c8",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/repository/SavingSpinRepository.kt": {
+    "mtime": 1788165118.715991,
+    "ast_hash": "26777c961f703ab1f364f87b843b1cdd",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/repository/SavingSpinScheduler.kt": {
+    "mtime": 1788145218.9745655,
+    "ast_hash": "8e1ad4328a01d4a3530aca37953a643a",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/CalculateSavingSpinStreakUseCase.kt": {
+    "mtime": 1788146852.5126743,
+    "ast_hash": "fa190358a0e4276941aca76bc91d146c",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCase.kt": {
+    "mtime": 1788169087.9341567,
+    "ast_hash": "92d70dc0733bcc7bd3d227d7fc25870a",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/CopyBudgetUseCase.kt": {
+    "mtime": 1788144040.4705882,
+    "ast_hash": "a0638f5da2a3f39336b1c9e64b2d4d11",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/GenerateSavingSpinWheelUseCase.kt": {
+    "mtime": 1788145684.0428674,
+    "ast_hash": "0ab23ee097f091a7e47d7ce46bf9691a",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/GetOrCreateSavingSpinSessionUseCase.kt": {
+    "mtime": 1788146852.5088456,
+    "ast_hash": "a53046a873c14e8a829e671004307626",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/GetSavingSpinReportUseCase.kt": {
+    "mtime": 1788146852.5156813,
+    "ast_hash": "e128b4e176b289d7645d4fed189a2778",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/ResolveSavingSpinScheduleKeyUseCase.kt": {
+    "mtime": 1788145910.1564038,
+    "ast_hash": "3bf6a64a08d75d48cb497fdb019eea88",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/SpinSavingWheelUseCase.kt": {
+    "mtime": 1788146852.5088456,
+    "ast_hash": "daa23423ef99dc4257edddae5ad6d579",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/SyncSavingSpinScheduleUseCase.kt": {
+    "mtime": 1788147125.7851036,
+    "ast_hash": "fc587775dd8e39782494ecff92427618",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/domain/usecase/ValidateSavingSpinConfigUseCase.kt": {
+    "mtime": 1788145684.0418677,
+    "ast_hash": "e58237f9b441930b11989e10874f1258",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinUiState.kt": {
+    "mtime": 1788169094.6182508,
+    "ast_hash": "dd78dc223c91ef0b3aab10ca07d19ae6",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinViewModel.kt": {
+    "mtime": 1788169106.2560399,
+    "ast_hash": "3372a91f4babb554bcd30cf41e6bd0ab",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingDestinationCard.kt": {
+    "mtime": 1788148067.4874969,
+    "ast_hash": "ddac93cb58de417edf96fe1898e4b352",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinGameSheet.kt": {
+    "mtime": 1788169141.1862247,
+    "ast_hash": "80468d3697d6f3b5104148dac18ad994",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinHomeCard.kt": {
+    "mtime": 1788165198.6704872,
+    "ast_hash": "d017b96631ed5d6a68859a118e81d246",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinResultContent.kt": {
+    "mtime": 1788169130.5883057,
+    "ast_hash": "77452bc15df0f5b1a50b27efb3d56474",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinWheel.kt": {
+    "mtime": 1788157086.2118104,
+    "ast_hash": "3d0df1bce9ebb926a763643f713adc4e",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportScreen.kt": {
+    "mtime": 1788166449.9413025,
+    "ast_hash": "eadfa3aaf3d703fb38dc71491fedb8d2",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportUiState.kt": {
+    "mtime": 1788151496.5312033,
+    "ast_hash": "c9fb96eaeeba63724729a3f37a0fc455",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportViewModel.kt": {
+    "mtime": 1788151610.5475483,
+    "ast_hash": "7a9ce99315d6e99f879323c074871465",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt": {
+    "mtime": 1788169211.091732,
+    "ast_hash": "b0f84784f1dbb37c1b5895cb78bb8a46",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsUiState.kt": {
+    "mtime": 1788148502.2808096,
+    "ast_hash": "9cd81ecb1b06c72e764202379e5d1d5f",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsViewModel.kt": {
+    "mtime": 1788169177.437886,
+    "ast_hash": "e7a5acb9043eecf32db803437546e2bf",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismSpendingCalendarView.kt": {
+    "mtime": 1788144040.5012355,
+    "ast_hash": "c374155b4c76c4c0db33fc6184729164",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/data/demo/DemoSavingSpinRepositoryTest.kt": {
+    "mtime": 1788146217.0668766,
+    "ast_hash": "07d1406de4ca7c079edc1197436de716",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/data/local/reminder/AlarmReminderSchedulerTest.kt": {
+    "mtime": 1788144040.507238,
+    "ast_hash": "95055e4c890005a8dd9272cfc9f171bb",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/data/local/reminder/ReminderSyncObserverTest.kt": {
+    "mtime": 1787882515.0920722,
+    "ast_hash": "572aeaa24253da577c0326da29a569e2",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/data/local/salary/AlarmSalaryCycleSchedulerTest.kt": {
+    "mtime": 1787825508.093241,
+    "ast_hash": "83d77f6e8f489b580507af55b2378ec3",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/data/local/savingspin/AlarmSavingSpinSchedulerTest.kt": {
+    "mtime": 1788147147.4096775,
+    "ast_hash": "b51d670eb52103af4958e8fca9b1c2ef",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/model/ReminderUtilsTest.kt": {
+    "mtime": 1787882515.0920722,
+    "ast_hash": "e0101458247419c5941bb5adc96bae0f",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/model/TransactionSemanticsTest.kt": {
+    "mtime": 1787894125.8689322,
+    "ast_hash": "799438d19b2a890314fa2969e970968b",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/usecase/CalculateSavingSpinStreakUseCaseTest.kt": {
+    "mtime": 1788146852.5166757,
+    "ast_hash": "b110b40be31e25880b8cc3c42876de98",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/usecase/CopyBudgetUseCaseTest.kt": {
+    "mtime": 1788144040.507238,
+    "ast_hash": "b702edb889a31625dbf0ffeeab16bfb0",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/usecase/GenerateSavingSpinWheelUseCaseTest.kt": {
+    "mtime": 1788145684.0418677,
+    "ast_hash": "d42753bd02ea9aee27c54c7634bd335b",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/usecase/ResolveSavingSpinScheduleKeyUseCaseTest.kt": {
+    "mtime": 1788145910.1584094,
+    "ast_hash": "db00e46371aa99e4ae43aacf6dc28915",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/usecase/SpinSavingWheelUseCaseTest.kt": {
+    "mtime": 1788146852.5166757,
+    "ast_hash": "5828785b30b4d6fde7e90c124e5d8fb9",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/domain/usecase/ValidateSavingSpinConfigUseCaseTest.kt": {
+    "mtime": 1788145684.0408652,
+    "ast_hash": "b6090a6ea795316bbd7c0789c0c28639",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/presentation/home/prism/PrismHomeLayoutTest.kt": {
+    "mtime": 1787970523.2118554,
+    "ast_hash": "44a669baa87dd696b863769c63c7042e",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt": {
+    "mtime": 1788169221.7427797,
+    "ast_hash": "6ae82eaa74c4bc823701aa4feed7f55b",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsViewModelTest.kt": {
+    "mtime": 1788149001.813396,
+    "ast_hash": "06d15d1ac6da64732ca33362a048d3d1",
+    "semantic_hash": ""
+  },
+  "docs/AUDIT_REPORT_CLUSTER_1.md": {
+    "mtime": 1788144040.5172367,
+    "ast_hash": "2bd7a0971b022935b2f7be7c5787c441",
+    "semantic_hash": ""
+  },
+  "docs/FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md": {
+    "mtime": 1788144487.599624,
+    "ast_hash": "2fd10220dcbf30c5f89998f226d5eb39",
+    "semantic_hash": ""
+  },
+  "docs/UI_UX_AUDIT_FINDINGS.md": {
+    "mtime": 1788144040.5233653,
+    "ast_hash": "3cd7b81fcf439b0717185b4dcd3116fc",
     "semantic_hash": ""
   }
 }

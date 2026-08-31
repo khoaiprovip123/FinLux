@@ -146,6 +146,41 @@ users/{uid}
 
 ---
 
+### 1.1. Saving Spin ledger (UC-29)
+
+```
+users/{uid}/savingSpinConfigs/default
+  ├─ enabled, showOnHome: boolean
+  ├─ minAmount, maxAmount, stepAmount: number
+  ├─ slotCount: 6 | 8 | 10 | 12
+  ├─ frequency: DAILY | SELECTED_WEEKDAYS | WEEKLY | SALARY_CYCLE
+  ├─ selectedWeekdays: number[]
+  ├─ weeklyDay, reminderHour, reminderMinute: number
+  ├─ reminderEnabled, snoozeEnabled, allowSkip: boolean
+  ├─ defaultDestinationId: string?
+  └─ schemaVersion, createdAt, updatedAt
+
+users/{uid}/savingSpinDestinations/{destinationId}
+  ├─ name: string
+  ├─ method: CASH | BANK_TRANSFER
+  ├─ linkedWalletId, institutionId, accountHint: string?
+  └─ enabled, createdAt, updatedAt
+
+users/{uid}/savingSpinSessions/{scheduleId}
+  ├─ scheduleKey: string
+  ├─ wheelValues: number[]
+  ├─ selectedIndex, selectedAmount: number?
+  ├─ status: READY | SPUN_PENDING | COMPLETED | SNOOZED | SKIPPED
+  ├─ destinationId, method: string?
+  └─ spunAt, completedAt, skippedAt, snoozedUntil, createdAt, updatedAt
+```
+
+- `lockSpinResult` và `getOrCreateSession` chạy bằng Firestore transaction; selected result đã khóa
+  không được ghi đè.
+- Saving Spin là ledger riêng, không tự tạo transaction và không cập nhật `wallet.balance` ở v1.
+- Query report range theo `createdAt`; nếu production yêu cầu composite index phải bổ sung vào
+  `firestore.indexes.json` trước release.
+
 ## 2. Firebase Storage
 
 ```

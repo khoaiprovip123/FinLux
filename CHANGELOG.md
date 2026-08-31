@@ -42,7 +42,7 @@
 - Bỏ qua validate bắt buộc danh mục (`categoryId`) cho các giao dịch thuộc Thương vụ đầu tư.
 - Đạt 100% (237/237) Unit Tests PASS.
 
-## [1.17.0] - 2026-08-31
+## [1.17.1] - 2026-08-31
 ### Added
 - **Tính Năng "Thương Vụ & Đầu Tư Sinh Lời" (Deal Tracking & ROI Matching)**:
   * **Entity & Data Model Mới**: Bổ sung `FinancialDeal`, `DealStatus` (ACTIVE, COMPLETED, CANCELLED), `DealFlowType` (OUTLAY_CAPITAL, PRINCIPAL_RECOVERY, CAPITAL_GAIN, CAPITAL_LOSS).
@@ -66,6 +66,26 @@
 
 ### Fixed
 - Đảm bảo 100% (235/235) Unit Test vượt qua thành công bao gồm toàn bộ kịch bản kiểm thử nghiệp vụ Deal Tracking (`DealUseCasesTest`).
+
+
+## [1.17.0] - 2026-08-31
+### Added
+- **Cơ Chế Chuyển Tiền (Transfer) Ví Nguồn ➔ Ví Tiết Kiệm**:
+  * Tích hợp trích xuất tiền từ ví nguồn (mặc định Ví Tiền mặt `WalletType.CASH` hoặc ví mặc định) chuyển sang ví tiết kiệm đã chọn (Heo đất / Tài khoản tiết kiệm).
+  * Thực hiện ghi nhận biến động số dư qua `transferBetweenWallets` bảo toàn tính nguyên tử với Firestore Transaction (BR-14).
+  * Bổ sung bộ chọn ví nguồn và ví đích trực tiếp trên màn hình kết quả quay thưởng (`SavingSpinResultContent`).
+- **Chuỗi Nạp Tiền Thực Tế (Dynamic Streak)**:
+  * Tự động tính toán số lần nạp thành công thực tế qua `repository.observeSessions`.
+  * Hiển thị badge trực quan `🔥 Chuỗi X lần nạp`.
+- **Dialog Nhập Số Tiền Trực Tiếp Trong Cài Đặt**:
+  * Hỗ trợ `AlertDialog` nhập bàn phím số cho Mức tối thiểu và Mức tối đa, có kiểm tra và làm tròn theo bước tiền (`step`).
+
+### Changed
+- Gỡ bỏ hoàn toàn các nút/chế độ quay thử nghiệm trong `SavingSpinGameSheet` để chuyển sang chế độ hoạt động chính thức.
+- Tinh chỉnh thông điệp trên Thẻ Trang chủ: "Quay xem hôm nay để dành bao nhiêu nhé".
+
+### Fixed
+- Khắc phục lỗi lưu cấu hình vòng quay vào Firestore DB, đồng bộ state tức thì và hiển thị thông báo lỗi/thành công rõ ràng.
 
 ## [1.16.0] - 2026-08-30
 ### Added

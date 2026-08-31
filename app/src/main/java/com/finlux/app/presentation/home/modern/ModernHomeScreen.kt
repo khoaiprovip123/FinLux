@@ -83,6 +83,9 @@ import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.VisualStyle
 import com.finlux.app.presentation.components.MainBottomBar
+import com.finlux.app.presentation.savingspin.SavingSpinAction
+import com.finlux.app.presentation.savingspin.SavingSpinUiState
+import com.finlux.app.presentation.savingspin.components.SavingSpinHomeCard
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -98,6 +101,8 @@ fun ModernHomeScreen(
     onActionTransaction: ((FinanceTransaction) -> Unit)? = null,
     onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: HomeViewModel = hiltViewModel(),
+    savingSpinState: SavingSpinUiState = SavingSpinUiState(),
+    onSavingSpinAction: (SavingSpinAction) -> Unit = {},
 ) {
     NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
@@ -159,6 +164,14 @@ fun ModernHomeScreen(
                             accent = FinluxBlue,
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigate(Route.Budget.value) },
+                        )
+                    }
+                }
+                if (savingSpinState.config.enabled && savingSpinState.config.showOnHome && savingSpinState.session != null) {
+                    item {
+                        SavingSpinHomeCard(
+                            state = savingSpinState,
+                            onOpen = { onSavingSpinAction(SavingSpinAction.OpenGame) },
                         )
                     }
                 }
