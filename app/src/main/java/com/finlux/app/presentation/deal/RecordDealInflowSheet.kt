@@ -23,9 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicFormRow
 import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
 import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -127,18 +127,12 @@ fun RecordDealInflowSheet(
                 onClick = { showWalletPicker = true },
             )
 
-            // 2. Nhập số tiền thu về (FinluxAmountInputCard)
-            FinluxAmountInputCard(
-                amountDigits = amountDigits,
+            // 2. Nhập số tiền thu về (ErgonomicCompactAmountCard)
+            ErgonomicCompactAmountCard(
+                label = "SỐ TIỀN THỰC NHẬN VỀ",
+                amountText = amountDigits,
                 onAmountChange = { amountDigits = it },
-                label = "SỐ TIỀN THỰC NHẬN VỀ (VNĐ)",
-                primaryColor = Color(0xFF10B981),
-                quickAmounts = if (remainingCapital > 0) listOf(
-                    remainingCapital / 2,
-                    remainingCapital,
-                    remainingCapital + 5_000_000L,
-                    remainingCapital + 10_000_000L,
-                ).filter { it > 0 } else listOf(5_000_000L, 10_000_000L, 20_000_000L, 50_000_000L),
+                amountColor = Color(0xFF10B981),
             )
 
             // 3. LIVE DYNAMIC DECOMPOSITION CARD

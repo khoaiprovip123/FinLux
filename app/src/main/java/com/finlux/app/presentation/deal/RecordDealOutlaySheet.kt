@@ -18,9 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicFormRow
 import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
 import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -117,13 +117,12 @@ fun RecordDealOutlaySheet(
                 onClick = { showWalletPicker = true },
             )
 
-            // 2. Nhập số tiền xuất vốn (FinluxAmountInputCard)
-            FinluxAmountInputCard(
-                amountDigits = amountDigits,
+            // 2. Nhập số tiền xuất vốn (ErgonomicCompactAmountCard)
+            ErgonomicCompactAmountCard(
+                label = "SỐ TIỀN XUẤT VỐN",
+                amountText = amountDigits,
                 onAmountChange = { amountDigits = it },
-                label = "SỐ TIỀN XUẤT VỐN (VNĐ)",
-                primaryColor = tokens.primary,
-                quickAmounts = listOf(5_000_000L, 10_000_000L, 20_000_000L, 50_000_000L, 100_000_000L),
+                amountColor = tokens.primary,
             )
 
             // 3. Ghi chú (ErgonomicInputRow)

@@ -19,8 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.model.Money
@@ -120,13 +120,12 @@ fun CreateDealSheet(
                 onClear = { description = "" },
             )
 
-            // Mục tiêu kỳ vọng (FinluxAmountInputCard)
-            FinluxAmountInputCard(
-                amountDigits = targetAmountText,
+            // Mục tiêu kỳ vọng (ErgonomicCompactAmountCard)
+            ErgonomicCompactAmountCard(
+                label = "MỤC TIÊU THU VỀ KỲ VỌNG",
+                amountText = targetAmountText,
                 onAmountChange = { targetAmountText = it },
-                label = "MỤC TIÊU THU VỀ KỲ VỌNG (VNĐ)",
-                primaryColor = tokens.primary,
-                quickAmounts = listOf(10_000_000L, 20_000_000L, 50_000_000L, 100_000_000L, 200_000_000L),
+                amountColor = tokens.primary,
             )
 
             Spacer(Modifier.height(8.dp))
