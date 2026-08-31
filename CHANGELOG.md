@@ -1,5 +1,72 @@
 # Changelog
 
+## [1.19.0] - 2026-08-31
+### Added
+- **Nâng Cấp Toàn Diện Phân Hệ Thương Vụ & Cho Vay (Deals & Lending Management)**:
+  * **Phân Tách 2 Category (`DealCategory`: `INVESTMENT` & `LENDING`)**:
+    - `INVESTMENT` (Đầu tư): Giữ nguyên thuật ngữ và cách tính (Vốn xuất, Thu hồi, Lợi nhuận ròng, ROI %, Chốt lời/lỗ).
+    - `LENDING` (Cho vay / Mượn): Trình bày chuẩn thuật ngữ cho vay (Gốc cho vay, Nợ gốc đã thu hồi, Dư nợ còn lại, Tiền lãi nhận được, Tiến độ hoàn nợ). Không ép hiển thị ROI âm (-100%) khi vừa giải ngân cho mượn tiền.
+  * **Nút Chỉnh Sửa Deal (`CreateDealSheet`, `DealDetailBottomSheet`)**: Bổ sung icon cây bút trên header cho phép cập nhật tiêu đề, mô tả/đối tác, mục tiêu kỳ vọng và chuyển đổi qua lại giữa 2 category.
+  * **Nhật Ký Dòng Tiền Toàn Bộ Deal (`DealAllTransactionsBottomSheet`)**:
+    - Nút Lịch sử trên TopBar `DealsScreen` mở sheet tổng hợp dòng tiền.
+    - Hero Summary Card 3 cột: Tổng Xuất/Cho vay, Gốc đã thu hồi, Tiền lời/lãi.
+    - 5 Filter Chips phân loại dòng tiền (Tất cả, Xuất vốn/Cho vay, Thu hồi gốc, Tiền lời/lãi, Chốt lỗ/Xóa nợ).
+    - Danh sách giao dịch gom nhóm theo ngày (`Hôm nay`, `Hôm qua`, `dd/MM/yyyy`) kèm thông tin deal, tag category, ví và số tiền.
+- **Xem Giao Dịch Của Ví Trên Màn Hình Ví (`WalletTransactionsBottomSheet`)**:
+  * Chạm (Tap/Click) vào thẻ ví mở ngay Bottom Sheet hiển thị danh sách giao dịch và thống kê thu/chi của riêng ví đó trên cả 3 theme Prism, Modern, Classic.
+  * Nhấn giữ (Long press) vào thẻ ví để mở Bottom Sheet Chỉnh sửa ví.
+  * Tích hợp cơ chế đếm ngược 5 giây bảo vệ dữ liệu khi xóa ví.
+
+### Changed
+- Cập nhật `RecordDealInflowSheet` và `RecordDealOutlaySheet` để hiển thị nhãn, phân rã dòng tiền (thu nợ gốc vs tiền lãi) và nút bấm chuẩn ngữ cảnh Cho Vay vs Đầu Tư.
+- Nâng cấp `DealsViewModel` và `DealsUiState` hỗ trợ quan sát `allDealTransactions` với dung lượng 500 giao dịch gần nhất.
+
+### Fixed
+- Đạt 100% (238/238) Unit Tests PASS bao gồm toàn bộ kịch bản kiểm thử mới cho `DealCategory.LENDING`.
+
+## [1.18.0] - 2026-08-31
+### Added
+- **Chọn Ngày & Giờ Giao Dịch Toàn Diện (Full Date & Time Picking Ecosystem)**:
+  * **Chuyển Tiền Giữa Các Ví (`TransferMoneyUseCase`)**: Bổ sung hàng `ErgonomicFormRow` ("THỜI GIAN CHUYỂN TIỀN") kèm định dạng thông minh (`Hôm nay, dd/MM/yyyy • HH:mm` / `Hôm qua, ...`) và tích hợp liền mạch `DatePickerDialog` (Material 3) + `TimePickerDialog` (24h) trên cả 3 theme Prism, Modern, Classic.
+  * **Thương Vụ Đầu Tư (`RecordDealInflowSheet`, `RecordDealOutlaySheet`)**: Thêm mục chọn Ngày & Giờ khi xuất vốn và thu tiền hồi vốn/lời.
+- **Bảo Vệ Dữ Liệu & Thu Hồi Chốt Lỗ (Data Safety & Loss Recovery)**:
+  * **Đếm Ngược 5 Giây Khi Xóa Deal**: Nút xóa khóa an toàn 5s kèm bộ đếm ngược trước khi mở khóa nút "Xóa Vĩnh Viễn" (`DealDetailBottomSheet`).
+  * **Nút & Dialog Thu Hồi Chốt Lỗ**: Cho phép hoàn tác giao dịch `CAPITAL_LOSS`, khôi phục `netProfitLoss` của deal và mở lại trạng thái `ACTIVE` của Deal (`RevertDealLossUseCase`).
+
+### Changed
+- Nâng cấp `TransferMoneyUseCase` và `WalletsViewModel.transfer` hỗ trợ tham số `date: Instant = Instant.now()`.
+- Chuẩn hóa toàn bộ hệ thống Feedback Toast/Snackbar sang `FinluxSnackbarHost` dạng Liquid Glass Capsule với clearance an toàn né BottomBar.
+
+### Fixed
+- Sửa lỗi xóa giao dịch chốt lỗ liên kết `DEAL_SETTLEMENT` không còn yêu cầu ví tiền mặt thực tế.
+- Bỏ qua validate bắt buộc danh mục (`categoryId`) cho các giao dịch thuộc Thương vụ đầu tư.
+- Đạt 100% (237/237) Unit Tests PASS.
+
+## [1.17.0] - 2026-08-31
+### Added
+- **Tính Năng "Thương Vụ & Đầu Tư Sinh Lời" (Deal Tracking & ROI Matching)**:
+  * **Entity & Data Model Mới**: Bổ sung `FinancialDeal`, `DealStatus` (ACTIVE, COMPLETED, CANCELLED), `DealFlowType` (OUTLAY_CAPITAL, PRINCIPAL_RECOVERY, CAPITAL_GAIN, CAPITAL_LOSS).
+  * **Cơ Chế Phân Rã Dòng Tiền Nguyên Tử (Atomic Flow Decomposition)**: Khi ghi nhận tiền thu về, tự động phân tách phần Hoàn Vốn Gốc ($\min(A, C_{rem})$) và phần Lợi Nhuận Ròng ($\max(0, A - C_{rem})$) trong 1 Firestore Transaction duy nhất.
+  * **Chốt Lỗ & Đóng Thương Vụ (Stop-loss Settlement)**: Cho phép kết thúc deal với khoản lỗ thực tế, tự động ghi nhận giao dịch `CAPITAL_LOSS` vào chi phí thực tế.
+  * **Cô Lập Ngân Sách & Báo Cáo (Isolation Engine)**:
+    - Báo cáo tài chính (`ReportsViewModel`): Loại bỏ vốn xuất (`OUTLAY_CAPITAL`) và vốn hoàn gốc (`PRINCIPAL_RECOVERY`) khỏi chi tiêu/thu nhập sinh hoạt, chỉ tính Lãi ròng (`CAPITAL_GAIN`) vào Thu nhập và Lỗ chốt deal (`CAPITAL_LOSS`) vào Chi phí.
+    - Ngân sách (`BudgetViewModel`): Khoản xuất vốn không làm hao hụt hạn mức chi tiêu hàng tháng.
+    - Tổng quan Dashboard (`HomeViewModel`): Hiển thị dòng tiền sinh hoạt thực tế chuẩn xác.
+  * **Giao Diện Liquid Glass Hiện Đại (`DealsScreen`)**:
+    - Hero Summary Card: Thống kê Vốn đang lưu động ngoài thị trường, Tổng lợi nhuận tích lũy, Tỷ suất ROI tổng thể (%).
+    - Tab Switcher: "Đang Chạy (Active)" và "Đã Hoàn Tất (Completed)".
+    - Card Thương Vụ: Thanh tiến độ hoàn vốn (Progress bar), Badge ROI (%), Vốn còn lại và Lãi ròng.
+    - Dialog Thu Hồi Vốn & Lời: Live Preview tính toán tức thì phần Hoàn gốc vs Tiền lời ròng.
+    - Bottom Sheet Chi Tiết: Dòng thời gian giao dịch chi tiết và các nút thao tác xuất thêm vốn, thu hồi, chốt lỗ, xóa deal.
+  * **Điều Hướng & Entry Points**: Bổ sung route `Route.Deals` ("deals") và lối vào trên màn hình Cài đặt (`SettingsScreen`, `PrismSettingsScreen`).
+
+### Changed
+- Mở rộng `FinanceTransaction` bổ sung 2 trường `dealId` và `dealFlowType`.
+- Nâng cấp `FirebaseTransactionRepository` và `DemoFinluxRepository` để lưu trữ và truy vấn giao dịch liên kết thương vụ.
+
+### Fixed
+- Đảm bảo 100% (235/235) Unit Test vượt qua thành công bao gồm toàn bộ kịch bản kiểm thử nghiệp vụ Deal Tracking (`DealUseCasesTest`).
+
 ## [1.16.0] - 2026-08-30
 ### Added
 - **Nâng Cấp Toàn Diện Màn Hình Giao Dịch Chuẩn "Transaction Explorer"**:

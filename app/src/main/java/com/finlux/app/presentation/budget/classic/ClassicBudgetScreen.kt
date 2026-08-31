@@ -38,8 +38,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -120,7 +120,7 @@ fun ClassicBudgetScreen(
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { FinluxSnackbarHost(snackbar, hasBottomBar = onBack == null) },
         containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(

@@ -38,12 +38,28 @@ users/{uid}
   ├─ transactions/{transactionId}
   │    ├─ type: "income" | "expense" | "transfer_out" | "transfer_in"  (BR-07)
   │    ├─ amount: number            -- luôn dương (BR-05)
-  │    ├─ categoryId: string        -- null nếu type = transfer
+  │    ├─ categoryId: string?       -- null nếu type = transfer hoặc deal capital outlay
   │    ├─ walletId: string
-  │    ├─ relatedWalletId: string   -- chỉ dùng cho transfer (ví đối ứng)
+  │    ├─ relatedWalletId: string?  -- chỉ dùng cho transfer (ví đối ứng)
+  │    ├─ dealId: string?           -- liên kết với Deal (UC-29)
+  │    ├─ dealFlowType: "OUTLAY_CAPITAL" | "PRINCIPAL_RECOVERY" | "CAPITAL_GAIN" | "CAPITAL_LOSS" | null
   │    ├─ note: string
-  │    ├─ receiptImageUrl: string   -- optional
+  │    ├─ receiptImageUrl: string?  -- optional
   │    ├─ date: timestamp           -- ngày giao dịch thực tế (dùng để tính báo cáo, BR-10)
+  │    ├─ createdAt: timestamp
+  │    └─ updatedAt: timestamp
+  │
+  ├─ deals/{dealId}                 -- quản lý thương vụ & đầu tư sinh lời / cho vay (UC-29, BR-DEAL-01..05)
+  │    ├─ title: string              -- "Mua bán xe lướt", "Cho bạn Nam mượn", ...
+  │    ├─ description: string
+  │    ├─ category: "investment" | "lending" -- phân loại: Đầu tư hoặc Cho vay
+  │    ├─ targetAmount: number       -- mục tiêu thu về kỳ vọng
+  │    ├─ totalCapitalOutlay: number -- tổng vốn đã chi xuất / nợ gốc đã cho vay (cập nhật qua Transaction)
+  │    ├─ totalRecovered: number     -- tổng vốn/nợ gốc đã thu hồi
+  │    ├─ netProfitLoss: number      -- lợi nhuận ròng / tiền lãi thực hiện tích lũy
+  │    ├─ status: "ACTIVE" | "COMPLETED" | "CANCELLED"
+  │    ├─ startDate: timestamp
+  │    ├─ endDate: timestamp?
   │    ├─ createdAt: timestamp
   │    └─ updatedAt: timestamp
   │

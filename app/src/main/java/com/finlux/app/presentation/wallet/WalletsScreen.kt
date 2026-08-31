@@ -9,12 +9,17 @@ import com.finlux.app.presentation.wallet.classic.ClassicWalletsScreen
 import com.finlux.app.presentation.wallet.modern.ModernWalletsScreen
 import com.finlux.app.presentation.wallet.prism.PrismWalletsScreen
 
+import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.Wallet
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WalletsScreen(
     onBack: (() -> Unit)? = null,
     onNavigate: ((String) -> Unit)? = null,
     onAdd: (() -> Unit)? = null,
+    onSelectWallet: ((Wallet) -> Unit)? = null,
+    onSelectTransaction: ((FinanceTransaction) -> Unit)? = null,
     transferRequestKey: Int = 0,
     viewModel: WalletsViewModel = hiltViewModel(),
 ) {
@@ -23,6 +28,8 @@ fun WalletsScreen(
             onBack = onBack,
             onNavigate = onNavigate,
             onAdd = onAdd,
+            onSelectWallet = onSelectWallet,
+            onSelectTransaction = onSelectTransaction,
             transferRequestKey = transferRequestKey,
             viewModel = viewModel,
         )
@@ -30,6 +37,8 @@ fun WalletsScreen(
             onBack = onBack,
             onNavigate = onNavigate,
             onAdd = onAdd,
+            onSelectWallet = onSelectWallet,
+            onSelectTransaction = onSelectTransaction,
             transferRequestKey = transferRequestKey,
             viewModel = viewModel,
         )
@@ -37,6 +46,8 @@ fun WalletsScreen(
             onBack = onBack,
             onNavigate = onNavigate,
             onAdd = onAdd,
+            onSelectWallet = onSelectWallet,
+            onSelectTransaction = onSelectTransaction,
             transferRequestKey = transferRequestKey,
             viewModel = viewModel,
         )

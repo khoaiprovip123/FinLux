@@ -15,6 +15,7 @@ class PrismSettingsMenuTest {
                     PrismSettingsAction.WALLETS,
                     PrismSettingsAction.BUDGET,
                     PrismSettingsAction.DEBT,
+                    PrismSettingsAction.DEALS,
                     PrismSettingsAction.APPEARANCE,
                     PrismSettingsAction.CATEGORIES,
                     PrismSettingsAction.REMINDERS,
@@ -33,6 +34,6 @@ class PrismSettingsMenuTest {
     fun `navigable settings actions use existing app routes`() {
         val routes = prismSettingsActions.mapNotNull(PrismSettingsAction::route).toSet()
 
-        assertEquals(setOf("wallets", "budget", "debt", "categories", "reminders", "notifications"), routes)
+        assertEquals(setOf("wallets", "budget", "debt", "deals", "categories", "reminders", "notifications"), routes)
     }
 }

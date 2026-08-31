@@ -126,7 +126,11 @@ class HomeViewModel @Inject constructor(
             notificationRepository.observeNotifications(),
         ) { defaultSummary, budgets, periodTransactions, notifications ->
             val spentByCategory = periodTransactions
-                .filter { it.type == TransactionType.EXPENSE && it.categoryId != null }
+                .filter {
+                    it.type == TransactionType.EXPENSE &&
+                    it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL &&
+                    it.categoryId != null
+                }
                 .groupBy { it.categoryId!! }
                 .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
             val limit = budgets.sumOf { it.limitAmount.value }
@@ -136,8 +140,12 @@ class HomeViewModel @Inject constructor(
             val unread = notifications.count { !it.isRead }
 
             val effectiveSummary = if (isSalaryCycleActive) {
-                val inc = periodTransactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
-                val exp = periodTransactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+                val inc = periodTransactions
+                    .filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }
+                    .sumOf { it.amount.value }
+                val exp = periodTransactions
+                    .filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }
+                    .sumOf { it.amount.value }
                 DashboardSummary(
                     income = Money(inc),
                     expense = Money(exp),

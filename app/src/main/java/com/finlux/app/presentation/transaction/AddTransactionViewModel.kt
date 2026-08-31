@@ -61,11 +61,12 @@ class AddTransactionViewModel @Inject constructor(
                 .collect { (wallets, categories) ->
                     mutableState.update { current ->
                         val categoryType = current.type.toCategoryType()
+                        val defaultCatId = if (current.editingTransaction?.dealId != null) current.categoryId else (current.categoryId ?: categories.firstOrNull { it.type == categoryType }?.id)
                         current.copy(
                             wallets = wallets,
                             categories = categories,
                             walletId = current.walletId ?: wallets.firstOrNull()?.id,
-                            categoryId = current.categoryId ?: categories.firstOrNull { it.type == categoryType }?.id,
+                            categoryId = defaultCatId,
                         )
                     }
                 }
@@ -98,11 +99,13 @@ class AddTransactionViewModel @Inject constructor(
             return
         }
         mutableState.update { current ->
+            val isDeal = !tx.dealId.isNullOrBlank()
+            val effectiveCategoryId = if (isDeal) tx.categoryId else (tx.categoryId ?: current.categories.firstOrNull { it.type == tx.type.toCategoryType() }?.id)
             current.copy(
                 editingTransaction = tx,
                 type = tx.type,
                 amountInput = if (tx.amount.value > 0) tx.amount.value.toString() else "",
-                categoryId = tx.categoryId ?: current.categories.firstOrNull { it.type == tx.type.toCategoryType() }?.id,
+                categoryId = effectiveCategoryId,
                 walletId = tx.walletId.ifBlank { current.wallets.firstOrNull()?.id },
                 note = tx.note,
                 date = tx.date,
@@ -115,9 +118,11 @@ class AddTransactionViewModel @Inject constructor(
     }
 
     fun setType(type: TransactionType) = mutableState.update { current ->
+        val isDeal = !current.editingTransaction?.dealId.isNullOrBlank()
+        val nextCatId = if (isDeal) current.categoryId else current.categories.firstOrNull { it.type == type.toCategoryType() }?.id
         current.copy(
             type = type,
-            categoryId = current.categories.firstOrNull { it.type == type.toCategoryType() }?.id,
+            categoryId = nextCatId,
             error = null,
         )
     }
@@ -137,6 +142,9 @@ class AddTransactionViewModel @Inject constructor(
             amount = Money(snapshot.amountInput.toLongOrNull() ?: 0L),
             categoryId = snapshot.categoryId,
             walletId = snapshot.walletId.orEmpty(),
+            dealId = original?.dealId,
+            dealFlowType = original?.dealFlowType,
+            relatedWalletId = original?.relatedWalletId,
             note = snapshot.note.trim(),
             date = snapshot.date,
             receiptImageUrl = original?.receiptImageUrl,

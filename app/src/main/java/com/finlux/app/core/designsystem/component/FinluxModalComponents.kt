@@ -117,6 +117,7 @@ fun FinluxDialog(
     confirmLabel: String = "Xác nhận",
     onConfirm: (() -> Unit)? = null,
     isConfirmDestructive: Boolean = false,
+    confirmEnabled: Boolean = true,
     dismissLabel: String = "Hủy",
     properties: DialogProperties = DialogProperties(),
     content: (@Composable () -> Unit)? = null,
@@ -185,10 +186,13 @@ fun FinluxDialog(
                         Spacer(modifier = Modifier.width(12.dp))
                         Button(
                             onClick = onConfirm,
+                            enabled = confirmEnabled,
                             shape = RoundedCornerShape(tokens.radius.smallChip),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (isConfirmDestructive) FinluxColors.ExpenseRed else tokens.primary,
+                                disabledContainerColor = (if (isConfirmDestructive) FinluxColors.ExpenseRed else tokens.primary).copy(alpha = 0.35f),
                                 contentColor = if (isConfirmDestructive) Color.White else if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                                disabledContentColor = Color.White.copy(alpha = 0.5f),
                             ),
                         ) {
                             Text(confirmLabel, style = FinluxTextStyles.Caption, fontWeight = FontWeight.Bold)

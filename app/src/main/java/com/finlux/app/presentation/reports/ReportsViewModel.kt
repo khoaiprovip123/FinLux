@@ -255,8 +255,12 @@ class ReportsViewModel @Inject constructor(
         }
 
         val filtered = transactions.filter { inRange(it.date, window.currentStart, window.currentEndExclusive) }
-        val incomeItems = filtered.filter { it.type == TransactionType.INCOME }
-        val expenseItems = filtered.filter { it.type == TransactionType.EXPENSE }
+        val incomeItems = filtered.filter {
+            it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY
+        }
+        val expenseItems = filtered.filter {
+            it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
+        }
         val income = incomeItems.sumOf { it.amount.value }
         val expense = expenseItems.sumOf { it.amount.value }
         val categoryMap = categories.associateBy(Category::id)
@@ -283,21 +287,21 @@ class ReportsViewModel @Inject constructor(
             val items = byDate[date].orEmpty()
             CashFlowPoint(
                 date,
-                items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value },
-                items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value },
+                items.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value },
+                items.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value },
             )
         }
 
         val walletActivity = filtered.filter { it.type == TransactionType.INCOME || it.type == TransactionType.EXPENSE }
             .groupBy(FinanceTransaction::walletId).map { (id, items) ->
-                val walletIncome = items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
-                val walletExpense = items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+                val walletIncome = items.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value }
+                val walletExpense = items.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value }
                 WalletActivity(walletMap[id], walletIncome, walletExpense)
             }.sortedByDescending(WalletActivity::total)
 
         val previous = transactions.filter { inRange(it.date, window.previousStart, window.previousEndExclusive) }
-        val previousIncome = previous.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
-        val previousExpense = previous.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+        val previousIncome = previous.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value }
+        val previousExpense = previous.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value }
 
         // Vay nợ (Debts & Loans)
         val totalDebtRemaining = debts.filter { !it.isSettled }.sumOf { it.remainingBalance.value }
