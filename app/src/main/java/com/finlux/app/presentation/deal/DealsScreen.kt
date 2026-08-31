@@ -168,20 +168,21 @@ fun DealsScreen(
             )
         }
 
-        // Dialog Tạo Deal
+        // Sheet Tạo Deal
         if (showCreateDialog) {
-            CreateDealDialog(
+            CreateDealSheet(
                 onDismiss = { showCreateDialog = false },
                 onConfirm = { newDeal ->
                     showCreateDialog = false
                     viewModel.createOrUpdateDeal(newDeal)
                 },
+                isSubmitting = state.isSubmitting,
             )
         }
 
-        // Dialog Thu hồi vốn / Lãi
+        // Sheet Thu hồi vốn / Lãi
         if (showInflowDialog && targetDealForAction != null) {
-            RecordDealInflowDialog(
+            RecordDealInflowSheet(
                 deal = targetDealForAction!!,
                 wallets = state.wallets,
                 onDismiss = {
@@ -194,12 +195,13 @@ fun DealsScreen(
                     targetDealForAction = null
                     viewModel.recordInflow(dealId, walletId, amount, note = note)
                 },
+                isSubmitting = state.isSubmitting,
             )
         }
 
-        // Dialog Chi xuất thêm vốn
+        // Sheet Chi xuất thêm vốn
         if (showOutlayDialog && targetDealForAction != null) {
-            RecordDealOutlayDialog(
+            RecordDealOutlaySheet(
                 deal = targetDealForAction!!,
                 wallets = state.wallets,
                 onDismiss = {
@@ -212,6 +214,7 @@ fun DealsScreen(
                     targetDealForAction = null
                     viewModel.recordOutlay(dealId, walletId, amount, note = note)
                 },
+                isSubmitting = state.isSubmitting,
             )
         }
     }
