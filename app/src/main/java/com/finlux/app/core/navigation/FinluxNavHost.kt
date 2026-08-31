@@ -386,6 +386,11 @@ fun FinluxNavHost(
                     onManageDestinations = { navController.navigate(Route.SavingSpinSettings.value) },
                 )
             }
+            composable(Route.SavingSpinReport.value) {
+                com.finlux.app.presentation.savingspin.report.SavingSpinReportScreen(
+                    onBack = navController::popBackStack,
+                )
+            }
         }
         if (showAddTransaction) {
             AddTransactionSheet(
