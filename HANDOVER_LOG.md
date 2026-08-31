@@ -2,9 +2,9 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.19.0 (versionCode 161) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (238/238 Unit Tests) — Build & Kiểm thử thành công.
+- **Trạng thái Build:** ✅ 100% PASS (239/239 Unit Tests) — Build & Kiểm thử thành công.
 
-### [Task-DEAL-LENDING-CATEGORY-AND-HISTORY] — Nâng cấp module Thương Vụ & Đầu Tư: Nút Sửa Deal, Nút Lịch Sử Toàn Bộ, và Phân Tách 2 Category (Đầu Tư & Cho Vay)
+### [Task-DEAL-LENDING-CATEGORY-AND-HISTORY] — Nâng cấp module Thương Vụ & Đầu Tư: Nút Sửa Deal, Nút Lịch Sử Toàn Bộ, Phân Tách 2 Category (Đầu Tư & Cho Vay) & Cơ Chế Mở Lại Deal/Khoản Vay Đã Hoàn Tất
 - **Status**: `[DONE]`
 - **Mục tiêu đã hoàn thành**:
   1. ✅ **Phân Tách 2 Category (`DealCategory`: `INVESTMENT` & `LENDING`)**:
@@ -13,7 +13,7 @@
      - `LENDING`: Theo dõi nợ gốc đã cho vay, nợ gốc đã thu hồi, dư nợ gốc còn lại, tiền lãi nhận thêm, tiến độ thu hồi nợ (không ép hiển thị ROI âm -100%). Thao tác: "Cho Vay Thêm", "Thu Nợ / Lãi", "Xóa Nợ & Đóng", "Xóa Khoản Vay".
   2. ✅ **Nút Chỉnh Sửa Deal (`CreateDealSheet.kt` & `DealDetailBottomSheet.kt`)**:
      - Bổ sung icon Edit (cây bút) trên Header của `DealDetailBottomSheet`, mở `CreateDealSheet` ở chế độ Edit.
-     - Cho phép chỉnh sửa linh hoạt: Tiêu đề, Mô tả, Mục tiêu kỳ vọng, và Category (Đầu tư / Cho vay).
+     - Cho phép chỉnh sửa linh hoạt: Tiêu đề, Mô tả, Mục tiêu kỳ vọng, Category (Đầu tư / Cho vay), và Trạng thái (`[ ⚡ Đang Chạy | ✅ Đã Hoàn Tất ]`).
   3. ✅ **Nhật Ký Dòng Tiền Toàn Bộ Deal (`DealAllTransactionsBottomSheet.kt`)**:
      - Bổ sung icon Lịch sử (`Icons.AutoMirrored.Filled.ReceiptLong`) ở góc trên bên phải Top Bar `DealsScreen`.
      - Hero Summary Card 3 cột: Tổng Xuất/Cho vay, Gốc đã thu hồi, Tiền lời/lãi.
@@ -21,9 +21,16 @@
      - Danh sách giao dịch gom nhóm theo ngày (`Hôm nay`, `Hôm qua`, `dd/MM/yyyy`) kèm deal title, tag category, ví trích/nhận tiền và số tiền trực quan.
   4. ✅ **Tương Thích Mọi Sheet Giao Dịch Deal**:
      - `RecordDealInflowSheet.kt` & `RecordDealOutlaySheet.kt`: Cập nhật tiêu đề, nhãn, phân rã dòng tiền (gốc vs lãi) và nút bấm chuẩn ngữ cảnh Cho Vay vs Đầu Tư.
+  5. ✅ **Cơ Chế Mở Lại Deal/Khoản Vay Đã Hoàn Tất & Auto-Reset Khi Xóa Giao Dịch**:
+     - Bổ sung nút **"Mở Lại Khoản Vay" / "Mở Lại Deal"** trên `DealDetailBottomSheet` khi deal ở trạng thái `COMPLETED` (không có stop-loss).
+     - Tự động chuyển deal từ `COMPLETED` về `ACTIVE` (và `endDate = null`) trong `FirebaseTransactionRepository` và `DemoFinluxRepository` khi người dùng xóa giao dịch `PRINCIPAL_RECOVERY` mà dư nợ còn lại phát sinh.
 - **Danh sách file đã chỉnh sửa & tạo mới**:
   - `app/src/main/java/com/finlux/app/domain/model/DealModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/DealRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/DealUseCases.kt`
   - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
   - `app/src/main/java/com/finlux/app/presentation/deal/CreateDealSheet.kt`
   - `app/src/main/java/com/finlux/app/presentation/deal/DealDetailBottomSheet.kt`
   - `app/src/main/java/com/finlux/app/presentation/deal/DealAllTransactionsBottomSheet.kt` [NEW]
@@ -34,7 +41,7 @@
   - `app/src/main/java/com/finlux/app/presentation/deal/DealsViewModel.kt`
   - `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt`
 - **Kết quả Kiểm thử**:
-  - `gradlew testDebugUnitTest`: **100% PASS** (238/238 tests, bao gồm test case mới cho `DealCategory.LENDING`).
+  - `gradlew testDebugUnitTest`: **100% PASS** (239/239 tests, bao gồm test case mới cho `ReopenDealUseCase` và `DealCategory.LENDING`).
   - Build APK và nạp thành công lên thiết bị Android qua ADB.
 
 ### [Task-WALLET-TAP-BOTTOMSHEET-TRANSACTIONS] — Bật Bottom Sheet xem giao dịch của ví khi nhấn vào thẻ ví & Đếm ngược 5s khi xóa ví
