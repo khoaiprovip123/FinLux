@@ -5,16 +5,34 @@
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Giao dịch chuẩn Transaction Explorer & Đồng bộ Trang chủ, 100% tests PASS và sẵn sàng phát hành.
 
 ### [Task-SAVING-SPIN-MINIGAME] — Vòng quay tiết kiệm
-- **Status**: `[IN PROGRESS]`
-- **Ngày bắt đầu**: 2026-08-31
-- **Mục tiêu**: Triển khai đầy đủ feature opt-in `Saving Spin` theo `docs/FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md`: cấu hình mệnh giá/lịch, khóa kết quả chống reroll, xác nhận nơi tiết kiệm, nhắc 09:00/snooze, launcher Home, Settings và Report.
-- **Scope dự kiến**:
-  - Domain models/repository/use cases và unit tests.
-  - Firebase/demo repository, mapper, Firestore rules và DI.
-  - AlarmManager scheduler/receiver, ViewModel/state machine.
-  - Wheel Canvas, game/result sheet, launcher cho Classic/Modern/Prism, Settings, Report, navigation/deep link.
-  - Đồng bộ `BA_SPEC.md`, `UI_SPEC.md`, `DATA_SPEC.md`, `CONTEXT.md`, `PLAN.md`, `BACKLOG.md`, `CHANGELOG.md` sau verification gate.
-- **Ràng buộc**: Không tạo giao dịch Thu/Chi và không cập nhật số dư ví ở v1; chỉ session `COMPLETED` được tính tiết kiệm; kết quả/wheel phải persist và không được reroll.
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-08-31
+- **Mục tiêu đã hoàn thành theo kế hoạch**:
+  1. ✅ **Domain & Logic**: Triển khai models, use cases (`ValidateSavingSpinConfigUseCase`, `GenerateSavingSpinWheelUseCase`, `ResolveSavingSpinScheduleKeyUseCase`, `GetOrCreateSavingSpinSessionUseCase`, `SpinSavingWheelUseCase`, `CompleteSavingSpinUseCase`, `CalculateSavingSpinStreakUseCase`, `GetSavingSpinReportUseCase`, `SyncSavingSpinScheduleUseCase`). Khóa kết quả chống reroll, thuật toán sinh ô $O(1)$ RAM chống OOM.
+  2. ✅ **Data Layer & Security**: `FirebaseSavingSpinRepository`, `DemoSavingSpinRepository`, Firestore mapper và cập nhật Security Rules (`savingSpinConfigs`, `savingSpinDestinations`, `savingSpinSessions`).
+  3. ✅ **Scheduler & Reminders**: `AlarmSavingSpinScheduler`, `SavingSpinReceiver` hỗ trợ nhắc nhở lúc 09:00 mặc định và tính năng Snooze/Skip.
+  4. ✅ **UI & Presentation**:
+     - `SavingSpinWheel`: Canvas vẽ bánh xe chia 6/8/10/12 slot, animation mượt và hỗ trợ tắt animation.
+     - `SavingSpinGameSheet` & `SavingSpinResultContent`: Flow quay và chọn nơi nạp tiền (Heo tiền mặt/Ngân hàng).
+     - `SavingSpinHomeCard`: Tích hợp launcher hiển thị đồng bộ trên cả 3 theme (`Modern Luxury`, `Classic Liquid`, `Prism`).
+     - `SavingSpinSettingsScreen`: Cấu hình bước mệnh giá 5K/10K, min/max, tần suất, giờ nhắc và xem trước.
+     - `SavingSpinReportScreen`: Báo cáo tích lũy theo khoảng thời gian (7 ngày, 30 ngày, tháng này, kỳ lương), thống kê chuỗi streak và cơ cấu nơi nạp.
+  5. ✅ **Verification**: `gradlew testDebugUnitTest` PASS 100% (264/264 tests).
+- **Files đã sửa đổi & tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/SavingSpinModels.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/repository/SavingSpinRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/repository/SavingSpinScheduler.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/*` (9 use cases mới)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/SavingSpinFirestoreMapper.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSavingSpinRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/local/savingspin/*` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/*` [NEW]
+  - `app/src/main/java/com/finlux/app/core/navigation/Routes.kt` & `FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeScreen.kt` & các HomeScreen theme
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt` & `PrismSettingsScreen.kt`
+  - `firestore.rules`
+  - `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/UI_SPEC.md`
 
 ### [Task-HOME-RECENT-TRANSACTIONS-SYNC] — Đồng bộ giao diện Giao dịch gần nhất trên Trang chủ với màn hình Giao dịch
 - **Status**: `[DONE]`
