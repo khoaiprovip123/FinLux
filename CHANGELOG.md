@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.20.0] - 2026-08-31
+### Added
+- **Tích Hợp "Đầu Tư & Cho Vay" (Deal Tracking & ROI) Vào Báo Cáo Chuyên Sâu (`DeepDiveSubTab.DEALS`)**:
+  * **Hero Summary Card Kính Mờ (`PrismDealsHeroCard`)**: Hiển thị tổng vốn đang lưu động ngoài thị trường, tiền lãi ròng đã thu, tổng gốc đã thu hồi, dư nợ cho vay đang chờ thu hồi và tỷ suất ROI tổng thể (%).
+  * **Thanh Phân Bổ Danh Mục (`PrismDealRatioBar`)**: Trực quan hóa tỷ lệ phần trăm phân bổ giữa Vốn Đầu Tư (Investment) vs Vốn Cho Vay (Lending).
+  * **Danh Sách Thương Vụ / Cho Vay Chi Tiết (`PrismDealReportCard`)**: Thẻ kính hiển thị từng thương vụ kèm tag phân loại, thanh tiến độ hoàn vốn, badge ROI thời gian thực và trạng thái hoạt động.
+  * **Card Tổng Quan Thương Vụ (`PrismOverviewMultiCards`)**: Thêm card xem nhanh vốn lưu động & ROI ngay tại tab Tổng quan.
+- **Thống Kê Vòng Quay Tiết Kiệm (`PrismSavingSpinReportCard`)**:
+  * Tích hợp thẻ thống kê mini-game tích lũy tiền vào tab Tiết kiệm (`DeepDiveSubTab.SAVINGS`), hiển thị tổng tiền đã quay, số lượt hoàn thành, chuỗi ngày duy trì streak (🔥) và 1-click dẫn tới báo cáo chi tiết.
+- **Tài Sản Ròng Toàn Diện (`True Net Worth`)**:
+  * Hoàn thiện công thức tính tài sản ròng thực tế: `True Net Worth = Tài sản ví + Vốn lưu động đầu tư & cho vay - Tổng dư nợ phải trả`.
+
+### Changed
+- Nâng cấp `ReportsViewModel` và `ReportsUiState` tự động tính toán dữ liệu đa chiều từ `DealRepository` và `SavingSpinRepository`.
+- Cập nhật `PrismReportsScreen` đồng bộ hóa các tab chuyên sâu chuẩn Liquid Glass.
+
+### Fixed
+- Đạt 100% (277/277) Unit Tests PASS bao gồm toàn bộ kịch bản kiểm thử mới cho `ReportsViewModelTest`.
+
 ## [1.19.0] - 2026-08-31
 ### Added
 - **Nâng Cấp Toàn Diện Phân Hệ Thương Vụ & Cho Vay (Deals & Lending Management)**:

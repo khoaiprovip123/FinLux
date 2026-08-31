@@ -121,6 +121,7 @@ private enum class ReportPrimaryTab(val label: String, val icon: ImageVector) {
 private enum class DeepDiveSubTab(val label: String, val icon: ImageVector) {
     DEBTS("Vay nợ", Icons.Default.CreditCard),
     SAVINGS("Tiết kiệm", Icons.Default.Savings),
+    DEALS("Đầu tư & Cho vay", Icons.Default.TrendingUp),
     BUDGETS("Ngân sách", Icons.Default.AccountBalanceWallet),
     WALLETS("Tài sản", Icons.Default.AccountBalance),
     TREND("Xu hướng", Icons.Default.TrendingUp),
@@ -252,6 +253,14 @@ fun PrismReportsScreen(
 
                         DeepDiveSubTab.SAVINGS -> {
                             item { PrismSavingsHeroCard(state) }
+                            if (state.savingSpinSummary.completedCount > 0 || state.savingSpinSummary.totalSaved > 0L) {
+                                item {
+                                    PrismSavingSpinReportCard(
+                                        summary = state.savingSpinSummary,
+                                        onViewDetails = { onNavigate(Route.SavingSpinReport.value) },
+                                    )
+                                }
+                            }
                             if (state.goalReportItems.isEmpty()) {
                                 item {
                                     FinluxSoftCard(Modifier.fillMaxWidth()) {
@@ -266,6 +275,26 @@ fun PrismReportsScreen(
                             } else {
                                 items(state.goalReportItems, key = { it.goal.id }) { goalItem ->
                                     PrismGoalItemCard(goalItem)
+                                }
+                            }
+                        }
+
+                        DeepDiveSubTab.DEALS -> {
+                            item { PrismDealsHeroCard(state.dealsSummary) }
+                            if (state.dealReportItems.isEmpty()) {
+                                item {
+                                    FinluxSoftCard(Modifier.fillMaxWidth()) {
+                                        FinluxEmptyState(
+                                            title = "Chưa có thương vụ hoặc khoản cho vay",
+                                            description = "Tạo thương vụ đầu tư kinh doanh, lướt sóng hoặc quản lý tiền cho vay sinh lời tại đây.",
+                                            actionLabel = "+ Tạo thương vụ / Cho vay",
+                                            onActionClick = { onNavigate(Route.Deals.value) },
+                                        )
+                                    }
+                                }
+                            } else {
+                                items(state.dealReportItems, key = { it.deal.id }) { dealItem ->
+                                    PrismDealReportCard(dealItem)
                                 }
                             }
                         }
@@ -868,6 +897,51 @@ private fun PrismOverviewMultiCards(
                 }
             }
         }
+
+        // Row 3: Đầu tư & Cho vay (Deals)
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .clickable { onNavigateToDeepDive(DeepDiveSubTab.DEALS) },
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF6366F1).copy(alpha = 0.12f)) {
+                        Icon(Icons.Default.TrendingUp, null, tint = Color(0xFF6366F1), modifier = Modifier.padding(6.dp).size(18.dp))
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Vốn đầu tư & Cho vay", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
+                        Text(
+                            formatVndAmount(state.dealsSummary.totalActiveCapitalOutlay),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                            color = tokens.onSurface,
+                        )
+                    }
+                }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (state.dealsSummary.overallRoi >= 0) Color(0xFF10B981).copy(alpha = 0.12f) else Color(0xFFEF4444).copy(alpha = 0.12f),
+                ) {
+                    Text(
+                        text = "ROI: ${if (state.dealsSummary.overallRoi >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", state.dealsSummary.overallRoi)}%",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (state.dealsSummary.overallRoi >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -1337,6 +1411,292 @@ private fun PrismGoalItemCard(item: GoalReportItem) {
                         .fillMaxHeight()
                         .background(Color(0xFF10B981), RoundedCornerShape(4.dp)),
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrismSavingSpinReportCard(
+    summary: com.finlux.app.presentation.reports.SavingSpinSummaryReport,
+    onViewDetails: () -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (tokens.isDark) Color(0xFF261C38) else Color(0xFFFAF5FF),
+        border = BorderStroke(1.dp, Color(0xFFA855F7).copy(alpha = 0.3f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onViewDetails() },
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFA855F7).copy(alpha = 0.2f),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Savings,
+                        contentDescription = null,
+                        tint = Color(0xFFA855F7),
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(24.dp),
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = "Vòng quay tiết kiệm",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = tokens.onSurface,
+                        )
+                        if (summary.currentStreak > 0) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFF97316).copy(alpha = 0.15f),
+                            ) {
+                                Text(
+                                    text = "🔥 ${summary.currentStreak} ngày",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFF97316),
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        text = "Đã tích lũy: ${formatVndAmount(summary.totalSaved)} (${summary.completedCount} lượt)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFA855F7),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = "Xem chi tiết",
+                tint = Color(0xFFA855F7),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+/**
+ * 8b. Section: Deals & Investment Hero Card
+ */
+@Composable
+private fun PrismDealsHeroCard(summary: com.finlux.app.presentation.reports.DealsSummaryReport) {
+    val tokens = LocalFinluxTokens.current
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = Color.Transparent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF6366F1).copy(alpha = 0.3f)),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF4F46E5),
+                            Color(0xFF6366F1),
+                            Color(0xFF4338CA),
+                        ),
+                    ),
+                )
+                .padding(20.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("BÁO CÁO ĐẦU TƯ & CHO VAY", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.White.copy(alpha = 0.2f),
+                    ) {
+                        Text(
+                            text = "ROI: ${if (summary.overallRoi >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", summary.overallRoi)}%",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold),
+                            color = if (summary.overallRoi >= 0) Color(0xFF86EFAC) else Color(0xFFFCA5A5),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        )
+                    }
+                }
+                Text(
+                    text = formatVndAmount(summary.totalActiveCapitalOutlay),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
+                    color = Color.White,
+                )
+                Text("Vốn đang lưu động ngoài thị trường", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
+
+                Spacer(Modifier.height(4.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column {
+                        Text("Lãi ròng đã thu", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                        Text(
+                            formatVndAmount(summary.totalNetProfit),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (summary.totalNetProfit >= 0) Color(0xFF4ADE80) else Color(0xFFF87171),
+                        )
+                    }
+                    Column {
+                        Text("Gốc đã thu hồi", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                        Text(formatVndAmount(summary.totalRecovered), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Dư nợ cho vay", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                        Text(formatVndAmount(summary.totalLendingOutstanding), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                    }
+                }
+
+                // Tỷ lệ phân bổ Đầu tư vs Cho vay
+                if (summary.totalHistoricalCapitalOutlay > 0L) {
+                    Spacer(Modifier.height(2.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Phân bổ: ${(summary.investmentRatio * 100).roundToInt()}% Đầu tư", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                            Text("${((1f - summary.investmentRatio) * 100).roundToInt()}% Cho vay", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(3.dp),
+                            color = Color.White.copy(alpha = 0.2f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp),
+                        ) {
+                            Row(Modifier.fillMaxSize()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight(summary.investmentRatio.coerceAtLeast(0.01f))
+                                        .background(Color(0xFF38BDF8)),
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight((1f - summary.investmentRatio).coerceAtLeast(0.01f))
+                                        .background(Color(0xFFFBBF24)),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrismDealReportCard(item: com.finlux.app.presentation.reports.DealReportItem) {
+    val tokens = LocalFinluxTokens.current
+    val deal = item.deal
+    val isInvestment = deal.category == com.finlux.app.domain.model.DealCategory.INVESTMENT
+    val categoryLabel = if (isInvestment) "ĐẦU TƯ" else "CHO VAY"
+    val categoryColor = if (isInvestment) Color(0xFF38BDF8) else Color(0xFFFBBF24)
+    val statusLabel = when (deal.status) {
+        com.finlux.app.domain.model.DealStatus.ACTIVE -> "Đang chạy"
+        com.finlux.app.domain.model.DealStatus.COMPLETED -> "Đã chốt"
+        com.finlux.app.domain.model.DealStatus.CANCELLED -> "Đã hủy"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(shape = RoundedCornerShape(8.dp), color = categoryColor.copy(alpha = 0.15f)) {
+                        Text(
+                            text = categoryLabel,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = categoryColor,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                        )
+                    }
+                    Text(
+                        text = deal.title,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = tokens.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (item.roiPercentage >= 0) Color(0xFF10B981).copy(alpha = 0.12f) else Color(0xFFEF4444).copy(alpha = 0.12f),
+                ) {
+                    Text(
+                        text = "${if (item.roiPercentage >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", item.roiPercentage)}% ROI",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (item.roiPercentage >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                    )
+                }
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Vốn xuất: ${formatVndAmount(item.capitalOutlay)}", fontSize = 12.sp, color = Color(0xFF6B7280))
+                    Text("Còn lại: ${formatVndAmount(item.remainingCapital)}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = tokens.onSurface)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Đã thu hồi: ${formatVndAmount(item.recovered)}", fontSize = 12.sp, color = Color(0xFF10B981))
+                    Text("Lời ròng: ${formatVndAmount(item.netProfitLoss)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (item.netProfitLoss >= 0) Color(0xFF10B981) else Color(0xFFEF4444))
+                }
+            }
+
+            // Tiến độ thu hồi vốn
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Tiến độ hoàn vốn: ${(item.recoveryProgress * 100).roundToInt()}%", fontSize = 11.sp, color = Color(0xFF6B7280))
+                    Text(statusLabel, fontSize = 11.sp, color = if (item.deal.status == com.finlux.app.domain.model.DealStatus.ACTIVE) Color(0xFF38BDF8) else Color(0xFF10B981))
+                }
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(item.recoveryProgress)
+                            .fillMaxHeight()
+                            .background(if (item.isFullyRecovered) Color(0xFF10B981) else categoryColor, RoundedCornerShape(4.dp)),
+                    )
+                }
             }
         }
     }

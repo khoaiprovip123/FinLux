@@ -1,8 +1,35 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.19.0 (versionCode 161) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (274/274 Unit Tests) — Build & Merge thành công.
+- **Phiên bản hiện tại:** v1.20.0 (versionCode 162) [DONE]
+- **Trạng thái Build:** ✅ 100% PASS (277/277 Unit Tests) — Tích hợp Deep Dive Reports hoàn tất.
+
+---
+
+## [DONE] Task: Tích Hợp Module Thương Vụ / Cho Vay & Vòng Quay Tiết Kiệm vào Báo Cáo Chuyên Sâu (Deep Dive Reports)
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Mở rộng hệ thống Báo cáo Chuyên sâu (`DeepDiveSubTab`) với tab `DEALS` ("Đầu tư & Cho vay") và nâng cấp tab `SAVINGS` với dữ liệu Vòng quay tiết kiệm.
+- Bóc tách dòng vốn lưu động, tiền lời ròng, tiền lãi cho vay, tỷ suất ROI % và hoàn thiện công thức tính True Net Worth.
+- Xây dựng giao diện Liquid Glass (`PrismDealsHeroCard`, `PrismDealReportCard`, `PrismSavingSpinReportCard`).
+- Nâng cấp xuất báo cáo Excel (.xlsx) / PDF và viết đầy đủ Unit Tests.
+
+### Danh sách file đã chỉnh sửa & tạo mới
+1. `app/build.gradle.kts` (bump versionCode 162, versionName 1.20.0)
+2. `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt` (mở rộng `ReportsUiState`, inject `DealRepository`, `SavingSpinRepository`, tính toán DealsSummary, SavingSpinSummary, True Net Worth)
+3. `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (bổ sung `DeepDiveSubTab.DEALS`, `PrismDealsHeroCard`, `PrismDealReportCard`, `PrismSavingSpinReportCard`, cập nhật `PrismOverviewMultiCards`)
+4. `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt` [NEW] (kiểm thử 100% tính toán ROI, phân rã dòng tiền, True Net Worth)
+5. `CHANGELOG.md`
+6. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (277/277 tests, 0 failure)**
+- ✅ Biên dịch Kotlin / Compose thành công 100%.
+
+### Trạng thái
+`[DONE]`
 
 ---
 
