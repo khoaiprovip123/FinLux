@@ -2,6 +2,7 @@ package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.time.FinanceTime
+import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
@@ -294,6 +295,11 @@ class FirebaseTransactionRepository(
                     atomic.get(budgetRef)
                 } else null
 
+                val dealRef = if (!stored.dealId.isNullOrBlank()) {
+                    firestore.collection("users").document(uid).collection("deals").document(stored.dealId)
+                } else null
+                val dealDoc = if (dealRef != null) atomic.get(dealRef) else null
+
                 val finalBalance = Math.subtractExact(balance, stored.balanceDelta())
                 if (!isCard && finalBalance < 0) {
                     error("Không thể xóa giao dịch vì số dư ví hiện tại không đủ để hoàn tác")
@@ -310,6 +316,24 @@ class FirebaseTransactionRepository(
                 // BR-06: reverse spentAmount when deleting an EXPENSE transaction based on stored
                 if (budgetDoc != null && budgetDoc.exists() && budgetRef != null) {
                     atomic.update(budgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
+                }
+                // Đồng bộ deal metrics khi giao dịch deal bị xóa độc lập
+                if (dealDoc != null && dealDoc.exists() && dealRef != null && stored.dealFlowType != null) {
+                    when (stored.dealFlowType) {
+                        DealFlowType.OUTLAY_CAPITAL -> {
+                            atomic.update(dealRef, "totalCapitalOutlay", FieldValue.increment(-stored.amount.value))
+                        }
+                        DealFlowType.PRINCIPAL_RECOVERY -> {
+                            atomic.update(dealRef, "totalRecovered", FieldValue.increment(-stored.amount.value))
+                        }
+                        DealFlowType.CAPITAL_GAIN -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(-stored.amount.value))
+                        }
+                        DealFlowType.CAPITAL_LOSS -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(stored.amount.value))
+                            atomic.update(dealRef, "status", "active")
+                        }
+                    }
                 }
             }
         }.await()

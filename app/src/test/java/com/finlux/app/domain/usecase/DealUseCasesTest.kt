@@ -22,6 +22,7 @@ class DealUseCasesTest {
 
     private lateinit var fakeRepository: FakeDealRepository
     private lateinit var saveDealUseCase: SaveDealUseCase
+    private lateinit var deleteDealUseCase: DeleteDealUseCase
     private lateinit var recordDealOutlayUseCase: RecordDealOutlayUseCase
     private lateinit var recordDealInflowUseCase: RecordDealInflowUseCase
     private lateinit var closeDealWithLossUseCase: CloseDealWithLossUseCase
@@ -30,6 +31,7 @@ class DealUseCasesTest {
     fun setUp() {
         fakeRepository = FakeDealRepository()
         saveDealUseCase = SaveDealUseCase(fakeRepository)
+        deleteDealUseCase = DeleteDealUseCase(fakeRepository)
         recordDealOutlayUseCase = RecordDealOutlayUseCase(fakeRepository)
         recordDealInflowUseCase = RecordDealInflowUseCase(fakeRepository)
         closeDealWithLossUseCase = CloseDealWithLossUseCase(fakeRepository)
@@ -177,6 +179,50 @@ class DealUseCasesTest {
         )
         assertEquals(0.0, zeroOutlayDeal.roiPercentage, 0.001)
     }
+
+    @Test
+    fun `delete deal cascades and removes all associated transactions`() = runTest {
+        val deal = FinancialDeal(
+            id = "deal-to-delete",
+            title = "Deal To Delete",
+            totalCapitalOutlay = Money(100_000_000L),
+            totalRecovered = Money(50_000_000L),
+        )
+        fakeRepository.deals.value = listOf(deal)
+        fakeRepository.recordedTransactions.add(
+            FinanceTransaction(
+                id = "tx-deal-1",
+                type = TransactionType.EXPENSE,
+                amount = Money(100_000_000L),
+                categoryId = null,
+                walletId = "wallet-1",
+                dealId = "deal-to-delete",
+                dealFlowType = DealFlowType.OUTLAY_CAPITAL,
+                date = Instant.now(),
+            )
+        )
+        fakeRepository.recordedTransactions.add(
+            FinanceTransaction(
+                id = "tx-deal-2",
+                type = TransactionType.INCOME,
+                amount = Money(50_000_000L),
+                categoryId = null,
+                walletId = "wallet-1",
+                dealId = "deal-to-delete",
+                dealFlowType = DealFlowType.PRINCIPAL_RECOVERY,
+                date = Instant.now(),
+            )
+        )
+
+        assertEquals(1, fakeRepository.deals.value.size)
+        assertEquals(2, fakeRepository.recordedTransactions.size)
+
+        val result = deleteDealUseCase("deal-to-delete")
+        assertTrue(result is AppResult.Success)
+
+        assertTrue(fakeRepository.deals.value.isEmpty())
+        assertTrue(fakeRepository.recordedTransactions.isEmpty())
+    }
 }
 
 private class FakeDealRepository : DealRepository {
@@ -195,6 +241,7 @@ private class FakeDealRepository : DealRepository {
 
     override suspend fun deleteDeal(dealId: String): AppResult<Unit> {
         deals.value = deals.value.filterNot { it.id == dealId }
+        recordedTransactions.removeAll { it.dealId == dealId }
         return AppResult.Success(Unit)
     }
 

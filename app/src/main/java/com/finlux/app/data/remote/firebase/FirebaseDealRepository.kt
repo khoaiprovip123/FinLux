@@ -87,7 +87,63 @@ class FirebaseDealRepository(
 
     override suspend fun deleteDeal(dealId: String): AppResult<Unit> = firebaseResult("Không thể xóa thương vụ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        firestore.collection("users").document(uid).collection("deals").document(dealId).delete().await()
+        val dealDocRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+
+        val txSnapshot = firestore.collection("users").document(uid).collection("transactions")
+            .whereEqualTo("dealId", dealId)
+            .get()
+            .await()
+
+        val txDocs = txSnapshot.documents
+        if (txDocs.isEmpty()) {
+            dealDocRef.delete().await()
+            return@firebaseResult
+        }
+
+        firestore.runTransaction { atomic ->
+            // Phase A: All reads first
+            val walletIds = txDocs.mapNotNull { it.getString("walletId") }
+                .filter { it.isNotBlank() && it != "DEAL_SETTLEMENT" }
+                .toSet()
+            val walletRefs = walletIds.associateWith {
+                firestore.collection("users").document(uid).collection("wallets").document(it)
+            }
+            val walletDocs = walletRefs.mapValues { (_, ref) -> atomic.get(ref) }
+
+            // Calculate balance adjustment per wallet
+            val balanceDeltas = mutableMapOf<String, Long>()
+            for (txDoc in txDocs) {
+                val flowTypeStr = txDoc.getString("dealFlowType")?.uppercase()
+                val walletId = txDoc.getString("walletId").orEmpty()
+                val amount = txDoc.getLong("amount") ?: 0L
+                if (walletId.isBlank() || walletId == "DEAL_SETTLEMENT" || amount <= 0L) continue
+
+                when (flowTypeStr) {
+                    "OUTLAY_CAPITAL" -> {
+                        balanceDeltas[walletId] = (balanceDeltas[walletId] ?: 0L) + amount
+                    }
+                    "PRINCIPAL_RECOVERY", "CAPITAL_GAIN" -> {
+                        balanceDeltas[walletId] = (balanceDeltas[walletId] ?: 0L) - amount
+                    }
+                }
+            }
+
+            // Phase B: All writes after reads
+            for ((walletId, delta) in balanceDeltas) {
+                val doc = walletDocs[walletId] ?: continue
+                if (doc.exists()) {
+                    val currentBal = doc.getLong("balance") ?: 0L
+                    val newBal = currentBal + delta
+                    atomic.update(walletRefs.getValue(walletId), "balance", newBal)
+                }
+            }
+
+            for (txDoc in txDocs) {
+                atomic.delete(txDoc.reference)
+            }
+
+            atomic.delete(dealDocRef)
+        }.await()
     }
 
     override suspend fun recordDealOutlay(

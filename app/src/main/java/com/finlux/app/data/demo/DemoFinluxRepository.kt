@@ -606,6 +606,31 @@ class DemoFinluxRepository @Inject constructor(
                         } else b
                     }
                 }
+                if (!current.dealId.isNullOrBlank()) {
+                    dealState.value = dealState.value.map { d ->
+                        if (d.id == current.dealId) {
+                            when (current.dealFlowType) {
+                                DealFlowType.OUTLAY_CAPITAL -> {
+                                    val newOutlay = (d.totalCapitalOutlay.value - current.amount.value).coerceAtLeast(0L)
+                                    d.copy(totalCapitalOutlay = Money(newOutlay), updatedAt = Instant.now())
+                                }
+                                DealFlowType.PRINCIPAL_RECOVERY -> {
+                                    val newRecovered = (d.totalRecovered.value - current.amount.value).coerceAtLeast(0L)
+                                    d.copy(totalRecovered = Money(newRecovered), updatedAt = Instant.now())
+                                }
+                                DealFlowType.CAPITAL_GAIN -> {
+                                    val newGain = d.netProfitLoss.value - current.amount.value
+                                    d.copy(netProfitLoss = Money(newGain), updatedAt = Instant.now())
+                                }
+                                DealFlowType.CAPITAL_LOSS -> {
+                                    val newProfitLoss = d.netProfitLoss.value + current.amount.value
+                                    d.copy(netProfitLoss = Money(newProfitLoss), status = DealStatus.ACTIVE, updatedAt = Instant.now())
+                                }
+                                null -> d
+                            }
+                        } else d
+                    }
+                }
             }
             AppResult.Success(Unit)
         }
@@ -715,6 +740,15 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun deleteDeal(dealId: String): AppResult<Unit> = mutationMutex.withLock {
+        val relatedTxs = transactionState.value.filter { it.dealId == dealId }
+        for (tx in relatedTxs) {
+            when (tx.dealFlowType) {
+                DealFlowType.OUTLAY_CAPITAL -> changeWalletBalance(tx.walletId, tx.amount.value)
+                DealFlowType.PRINCIPAL_RECOVERY, DealFlowType.CAPITAL_GAIN -> changeWalletBalance(tx.walletId, -tx.amount.value)
+                DealFlowType.CAPITAL_LOSS, null -> { /* No real wallet balance change */ }
+            }
+        }
+        transactionState.value = transactionState.value.filterNot { it.dealId == dealId }
         dealState.value = dealState.value.filterNot { it.id == dealId }
         AppResult.Success(Unit)
     }
