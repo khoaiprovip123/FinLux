@@ -3,6 +3,7 @@ package com.finlux.app.data.di
 import com.finlux.app.BuildConfig
 import com.finlux.app.data.demo.DemoFinluxRepository
 import com.finlux.app.data.demo.DemoSalaryCycleRepository
+import com.finlux.app.data.demo.DemoSavingSpinRepository
 import com.finlux.app.data.demo.DemoTransactionRangeRepository
 import com.finlux.app.data.local.datastore.DataStoreThemePreferenceRepository
 import com.finlux.app.data.local.reminder.AlarmReminderScheduler
@@ -16,6 +17,7 @@ import com.finlux.app.data.remote.firebase.FirebaseNotificationRepository
 import com.finlux.app.data.remote.firebase.FirebaseReceiptStorageRepository
 import com.finlux.app.data.remote.firebase.FirebaseReminderRepository
 import com.finlux.app.data.remote.firebase.FirebaseSalaryCycleRepository
+import com.finlux.app.data.remote.firebase.FirebaseSavingSpinRepository
 import com.finlux.app.data.remote.firebase.FirebaseTransactionRangeRepository
 import com.finlux.app.data.remote.firebase.FirebaseTransactionRepository
 import com.finlux.app.data.remote.firebase.FirebaseWalletRepository
@@ -36,6 +38,7 @@ import com.finlux.app.domain.repository.ReceiptStorageRepository
 import com.finlux.app.domain.repository.ReminderRepository
 import com.finlux.app.domain.repository.ReminderScheduler
 import com.finlux.app.domain.repository.SalaryCycleRepository
+import com.finlux.app.domain.repository.SavingSpinRepository
 import com.finlux.app.domain.repository.ThemePreferenceRepository
 import com.finlux.app.domain.repository.TransactionRangeRepository
 import com.finlux.app.domain.repository.TransactionRepository
@@ -250,5 +253,16 @@ object FinanceRepositoryModule {
     ): SalaryCycleRepository =
         if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
             FirebaseSalaryCycleRepository(auth, firestore)
+        } else demo
+
+    @Provides
+    @Singleton
+    fun provideSavingSpinRepository(
+        demo: DemoSavingSpinRepository,
+        auth: FirebaseAuth?,
+        firestore: FirebaseFirestore?,
+    ): SavingSpinRepository =
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
+            FirebaseSavingSpinRepository(auth, firestore)
         } else demo
 }
