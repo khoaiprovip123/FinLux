@@ -110,7 +110,7 @@ fun DealAllTransactionsBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 760.dp)
+                .heightIn(max = 820.dp)
                 .padding(horizontal = 20.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -273,7 +273,7 @@ fun DealAllTransactionsBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = false)
-                        .heightIn(max = 440.dp),
+                        .heightIn(max = 520.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(bottom = 12.dp),
                 ) {
