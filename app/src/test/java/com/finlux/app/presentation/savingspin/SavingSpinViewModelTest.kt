@@ -109,6 +109,8 @@ class SavingSpinViewModelTest {
         repository.saveConfig(SavingSpinConfig(enabled = enabled, minAmount = Money(10_000), maxAmount = Money(100_000)))
         if (withDestination) repository.upsertDestination(SavingDestination("piggy", "Heo đất", SavingMethod.CASH))
         val scheduler = mockk<SavingSpinScheduler>(relaxed = true)
+        val transactionRepository = mockk<com.finlux.app.domain.repository.TransactionRepository>(relaxed = true)
+        val walletRepository = mockk<com.finlux.app.domain.repository.WalletRepository>(relaxed = true)
         val financialResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator())
         return Fixture(
             viewModel = SavingSpinViewModel(
@@ -117,7 +119,7 @@ class SavingSpinViewModelTest {
                 resolveScheduleKey = ResolveSavingSpinScheduleKeyUseCase(financialResolver),
                 getOrCreateSession = GetOrCreateSavingSpinSessionUseCase(repository, GenerateSavingSpinWheelUseCase()),
                 spinWheel = SpinSavingWheelUseCase(repository),
-                completeSavingSpin = CompleteSavingSpinUseCase(repository),
+                completeSavingSpin = CompleteSavingSpinUseCase(repository, transactionRepository, walletRepository),
                 scheduler = scheduler,
                 clock = clock,
             ),

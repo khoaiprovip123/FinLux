@@ -25,5 +25,6 @@ sealed interface SavingSpinAction {
     data object ConfirmDeposit : SavingSpinAction
     data class Snooze(val until: Instant) : SavingSpinAction
     data object Skip : SavingSpinAction
+    data object ResetGame : SavingSpinAction
     data object DismissError : SavingSpinAction
 }

@@ -87,7 +87,33 @@ class SavingSpinViewModel @Inject constructor(
             SavingSpinAction.ConfirmDeposit -> confirmDeposit()
             is SavingSpinAction.Snooze -> snooze(action.until)
             SavingSpinAction.Skip -> skip()
+            SavingSpinAction.ResetGame -> resetGame()
             SavingSpinAction.DismissError -> mutableUiState.update { it.copy(errorMessage = null) }
+        }
+    }
+
+    private fun resetGame() = viewModelScope.launch {
+        val session = uiState.value.session ?: return@launch
+        mutableUiState.update { it.copy(isLoading = true, errorMessage = null) }
+        when (val result = repository.resetSession(session.scheduleKey)) {
+            is AppResult.Success -> {
+                mutableUiState.update { it.copy(
+                    isLoading = false,
+                    session = session.copy(
+                        selectedIndex = null,
+                        selectedAmount = null,
+                        status = SavingSpinStatus.READY,
+                        destinationId = null,
+                        method = null,
+                        spunAt = null,
+                        completedAt = null,
+                        skippedAt = null,
+                        snoozedUntil = null,
+                    ),
+                    isGameOpen = true,
+                ) }
+            }
+            is AppResult.Error -> mutableUiState.update { it.copy(isLoading = false, errorMessage = result.message) }
         }
     }
 

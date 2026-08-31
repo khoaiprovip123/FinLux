@@ -41,6 +41,8 @@ interface SavingSpinRepository {
 
     suspend fun skipSession(scheduleKey: String): AppResult<Unit>
 
+    suspend fun resetSession(scheduleKey: String): AppResult<Unit>
+
     fun observeSessions(
         fromInclusive: Instant,
         toExclusive: Instant,

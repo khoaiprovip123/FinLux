@@ -175,7 +175,11 @@ fun SavingSpinHomeCard(
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                     ) {
                         Text(
-                            if (session.status == SavingSpinStatus.SPUN_PENDING) "NẠP" else "QUAY",
+                            when (session.status) {
+                                SavingSpinStatus.SPUN_PENDING -> "NẠP"
+                                SavingSpinStatus.COMPLETED -> "XEM"
+                                else -> "QUAY"
+                            },
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,

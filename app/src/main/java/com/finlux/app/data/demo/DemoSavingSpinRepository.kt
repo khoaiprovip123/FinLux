@@ -120,6 +120,24 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
         current.copy(status = SavingSpinStatus.SKIPPED, skippedAt = Instant.now(), updatedAt = Instant.now())
     }
 
+    override suspend fun resetSession(scheduleKey: String): AppResult<Unit> = synchronized(this) {
+        val current = sessions.value[scheduleKey] ?: return@synchronized AppResult.Success(Unit)
+        val reset = current.copy(
+            selectedIndex = null,
+            selectedAmount = null,
+            status = SavingSpinStatus.READY,
+            destinationId = null,
+            method = null,
+            spunAt = null,
+            completedAt = null,
+            skippedAt = null,
+            snoozedUntil = null,
+            updatedAt = Instant.now(),
+        )
+        sessions.value = sessions.value + (scheduleKey to reset)
+        AppResult.Success(Unit)
+    }
+
     override fun observeSessions(fromInclusive: Instant, toExclusive: Instant): Flow<List<SavingSpinSession>> =
         combine(sessions, config) { items, _ ->
             items.values.filter { it.createdAt >= fromInclusive && it.createdAt < toExclusive }

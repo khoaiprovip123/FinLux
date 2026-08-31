@@ -4,6 +4,13 @@
 - **Phiên bản hiện tại:** v1.16.0 (versionCode 158)
 - **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Giao dịch chuẩn Transaction Explorer & Đồng bộ Trang chủ, 100% tests PASS và sẵn sàng phát hành.
 
+### [Task-SAVING-SPIN-DEMO-RESET-AND-WALLET-SYNC] — Bật chế độ thử nghiệm reset vòng quay & Ghi nhận biến động số dư ví vào DB
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Reset lượt quay để test liên tục**: Bổ sung `resetSession` vào `SavingSpinRepository`, `DemoSavingSpinRepository` và `FirebaseSavingSpinRepository`. Khi ở trạng thái hoàn thành hoặc bỏ qua, người dùng có nút bấm `🔄 Quay tiếp lượt mới (Thử nghiệm)` để reset trạng thái và quay thử nghiệm không giới hạn mà không bị khóa sang ngày hôm sau.
+  2. ✅ **Ghi nhận biến động số dư ví và lưu trữ DB**: Khi bấm `XÁC NHẬN ĐÃ NẠP`, `CompleteSavingSpinUseCase` tạo một giao dịch loại `EXPENSE` thuộc danh mục `savings` ("Vòng quay tiết kiệm: Cất vào [Nơi tiết kiệm]") và gọi `transactionRepository.addWithBalanceUpdate(...)` bằng Firestore Transaction (BR-14) để tự động trừ số dư ví nguồn tương ứng, đồng bộ vào báo cáo thu chi của FinLux.
+  3. ✅ **Kiểm thử**: Toàn bộ unit test PASS 100% (264/264 tests), nạp APK thành công lên thiết bị `7f4ca06a`.
+
 ### [Task-SAVING-SPIN-UI-POLISH] — Tinh chỉnh UI Vòng quay tiết kiệm bám sát 100% Mockup
 - **Status**: `[DONE]`
 - **Mục tiêu hoàn thành**:

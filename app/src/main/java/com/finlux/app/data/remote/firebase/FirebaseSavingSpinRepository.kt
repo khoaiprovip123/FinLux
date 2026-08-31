@@ -195,6 +195,33 @@ class FirebaseSavingSpinRepository(
             timestamp = Instant.now(),
         )
 
+    override suspend fun resetSession(scheduleKey: String): AppResult<Unit> =
+        firebaseResult("Không thể đặt lại lượt quay") {
+            val uid = requireUid()
+            val sessionRef = sessionRef(uid, scheduleKey)
+            firestore.runTransaction { tx ->
+                val snapshot = tx.get(sessionRef)
+                if (snapshot.exists()) {
+                    tx.update(
+                        sessionRef,
+                        mapOf(
+                            "selectedIndex" to null,
+                            "selectedAmount" to null,
+                            "status" to SavingSpinStatus.READY.name,
+                            "destinationId" to null,
+                            "method" to null,
+                            "spunAt" to null,
+                            "completedAt" to null,
+                            "skippedAt" to null,
+                            "snoozedUntil" to null,
+                            "updatedAt" to Instant.now().toTimestamp(),
+                        )
+                    )
+                }
+            }.await()
+            Unit
+        }
+
     override fun observeSessions(fromInclusive: Instant, toExclusive: Instant): Flow<List<SavingSpinSession>> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) {

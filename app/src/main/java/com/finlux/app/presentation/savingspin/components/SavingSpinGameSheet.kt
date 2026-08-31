@@ -266,7 +266,7 @@ fun SavingSpinGameSheet(
                         color = Color(0xFF1E293B),
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text("Khoản này đã được ghi nhận vào báo cáo tích lũy.", fontSize = 13.sp, color = Color(0xFF64748B))
+                    Text("Khoản này đã được ghi nhận vào báo cáo & số dư ví.", fontSize = 13.sp, color = Color(0xFF64748B))
                     Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = { onAction(SavingSpinAction.CloseGame) },
@@ -275,6 +275,14 @@ fun SavingSpinGameSheet(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                     ) {
                         Text("Xong", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { onAction(SavingSpinAction.ResetGame) },
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                    ) {
+                        Text("🔄 Quay tiếp lượt mới (Thử nghiệm)", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB))
                     }
                 }
                 SavingSpinStatus.SKIPPED -> {
@@ -287,6 +295,14 @@ fun SavingSpinGameSheet(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                     ) {
                         Text("Đóng")
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { onAction(SavingSpinAction.ResetGame) },
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                    ) {
+                        Text("🔄 Quay lại ngay (Thử nghiệm)", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB))
                     }
                 }
             }
