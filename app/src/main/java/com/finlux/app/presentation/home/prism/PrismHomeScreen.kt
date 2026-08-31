@@ -115,6 +115,9 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.components.MainBottomBar
 import com.finlux.app.presentation.home.HomeViewModel
+import com.finlux.app.presentation.savingspin.SavingSpinAction
+import com.finlux.app.presentation.savingspin.SavingSpinUiState
+import com.finlux.app.presentation.savingspin.components.SavingSpinHomeCard
 import com.finlux.app.presentation.transaction.TransactionActionDialog
 import java.time.Instant
 import java.time.LocalDate
@@ -132,6 +135,8 @@ fun PrismHomeScreen(
     onActionTransaction: ((FinanceTransaction) -> Unit)? = null,
     onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: HomeViewModel = hiltViewModel(),
+    savingSpinState: SavingSpinUiState = SavingSpinUiState(),
+    onSavingSpinAction: (SavingSpinAction) -> Unit = {},
 ) {
     NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
@@ -199,6 +204,15 @@ fun PrismHomeScreen(
                     onExpenseClick = { onNavigate(Route.Expense.value) },
                     onNetClick = { onNavigate(Route.Reports.value) },
                 )
+            }
+
+            if (savingSpinState.config.enabled && savingSpinState.config.showOnHome && savingSpinState.session != null) {
+                item {
+                    SavingSpinHomeCard(
+                        state = savingSpinState,
+                        onOpen = { onSavingSpinAction(SavingSpinAction.OpenGame) },
+                    )
+                }
             }
 
             // 4. Quick 5-Action Buttons Row (Ví của tôi, Ngân sách, Danh mục, Mục tiêu, Xem thêm)
