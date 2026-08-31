@@ -164,6 +164,11 @@ class FirebaseTransactionRepository(
                 else atomic.get(newBudgetRef)
             } else null
 
+            val dealRef = if (!stored.dealId.isNullOrBlank()) {
+                firestore.collection("users").document(uid).collection("deals").document(stored.dealId)
+            } else null
+            val dealDoc = if (dealRef != null) atomic.get(dealRef) else null
+
             if (oldWalletRef.path == newWalletRef.path) {
                 val finalBalance = Math.addExact(
                     Math.subtractExact(oldBalance, stored.balanceDelta()),
@@ -203,13 +208,38 @@ class FirebaseTransactionRepository(
                     )
                 )
             }
-            atomic.set(transactionRef, updated.copy(id = stored.id, createdAt = stored.createdAt).toFirestoreMap())
+            val preservedUpdated = updated.copy(
+                id = stored.id,
+                createdAt = stored.createdAt,
+                dealId = stored.dealId,
+                dealFlowType = stored.dealFlowType
+            )
+            atomic.set(transactionRef, preservedUpdated.toFirestoreMap())
             // BR-06: reverse old budget spent based on stored, apply new budget spent
             if (oldBudgetDoc != null && oldBudgetDoc.exists() && oldBudgetRef != null) {
                 atomic.update(oldBudgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
             }
             if (newBudgetDoc != null && newBudgetDoc.exists() && newBudgetRef != null) {
                 atomic.update(newBudgetRef, "spentAmount", FieldValue.increment(updated.amount.value))
+            }
+            if (dealDoc != null && dealDoc.exists() && dealRef != null && stored.dealFlowType != null) {
+                val deltaAmount = updated.amount.value - stored.amount.value
+                if (deltaAmount != 0L) {
+                    when (stored.dealFlowType) {
+                        DealFlowType.OUTLAY_CAPITAL -> {
+                            atomic.update(dealRef, "totalCapitalOutlay", FieldValue.increment(deltaAmount))
+                        }
+                        DealFlowType.PRINCIPAL_RECOVERY -> {
+                            atomic.update(dealRef, "totalRecovered", FieldValue.increment(deltaAmount))
+                        }
+                        DealFlowType.CAPITAL_GAIN -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(deltaAmount))
+                        }
+                        DealFlowType.CAPITAL_LOSS -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(-deltaAmount))
+                        }
+                    }
+                }
             }
         }.await()
         Unit

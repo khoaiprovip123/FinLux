@@ -538,7 +538,13 @@ class DemoFinluxRepository @Inject constructor(
             return@withLock AppResult.Error("Không tìm thấy ví")
         }
         transactionState.value = transactionState.value.map {
-            if (it.id == current.id) updated.copy(updatedAt = Instant.now()) else it
+            if (it.id == current.id) updated.copy(
+                id = current.id,
+                createdAt = current.createdAt,
+                dealId = current.dealId,
+                dealFlowType = current.dealFlowType,
+                updatedAt = Instant.now()
+            ) else it
         }
         if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
             val oldMonth = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
@@ -556,6 +562,34 @@ class DemoFinluxRepository @Inject constructor(
                 if (b.categoryId == updated.categoryId && (b.periodKey == newPeriodKey || b.periodKey == "MONTHLY_$newMonth")) {
                     b.copy(spentAmount = Money(b.spentAmount.value + updated.amount.value))
                 } else b
+            }
+        }
+        if (!current.dealId.isNullOrBlank()) {
+            val deltaAmount = updated.amount.value - current.amount.value
+            if (deltaAmount != 0L) {
+                dealState.value = dealState.value.map { d ->
+                    if (d.id == current.dealId) {
+                        when (current.dealFlowType) {
+                            DealFlowType.OUTLAY_CAPITAL -> {
+                                val newOutlay = (d.totalCapitalOutlay.value + deltaAmount).coerceAtLeast(0L)
+                                d.copy(totalCapitalOutlay = Money(newOutlay), updatedAt = Instant.now())
+                            }
+                            DealFlowType.PRINCIPAL_RECOVERY -> {
+                                val newRecovered = (d.totalRecovered.value + deltaAmount).coerceAtLeast(0L)
+                                d.copy(totalRecovered = Money(newRecovered), updatedAt = Instant.now())
+                            }
+                            DealFlowType.CAPITAL_GAIN -> {
+                                val newGain = d.netProfitLoss.value + deltaAmount
+                                d.copy(netProfitLoss = Money(newGain), updatedAt = Instant.now())
+                            }
+                            DealFlowType.CAPITAL_LOSS -> {
+                                val newLoss = d.netProfitLoss.value - deltaAmount
+                                d.copy(netProfitLoss = Money(newLoss), updatedAt = Instant.now())
+                            }
+                            null -> d
+                        }
+                    } else d
+                }
             }
         }
         AppResult.Success(Unit)
