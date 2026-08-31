@@ -227,11 +227,17 @@ class ReportsViewModel @Inject constructor(
             flowOf(emptyList())
         }
 
-        val financialPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, salaryConfig)
-        val budgetsFlow = if (financialPeriod != null) {
-            budgetRepository.observeBudgets(financialPeriod.key)
+        val startPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, salaryConfig)
+        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(Instant.now(), salaryConfig)
+        val budgetsFlow = if (startPeriod.key == nowPeriod.key) {
+            budgetRepository.observeBudgets(startPeriod.key)
         } else {
-            flowOf(emptyList())
+            combine(
+                budgetRepository.observeBudgets(startPeriod.key),
+                budgetRepository.observeBudgets(nowPeriod.key),
+            ) { startBudgets, nowBudgets ->
+                if (startBudgets.isNotEmpty()) startBudgets else nowBudgets
+            }
         }
 
         combine(
@@ -478,26 +484,47 @@ class ReportsViewModel @Inject constructor(
         )
 
         // Ngân sách (Budgets)
-        val totalBudgetLimit = budgets.sumOf { it.limitAmount.value }
-        val totalBudgetSpent = budgets.sumOf { it.spentAmount.value }
-        val totalBudgetRemaining = (totalBudgetLimit - totalBudgetSpent).coerceAtLeast(0L)
-        val budgetUsagePercent = if (totalBudgetLimit > 0) ((totalBudgetSpent.toFloat() / totalBudgetLimit.toFloat()) * 100).roundToInt() else 0
-        val overBudgetCount = budgets.count { it.spentAmount.value > it.limitAmount.value }
+        val byCategoryName = categories.associateBy { it.name.lowercase().trim() }
+        val spentByCategoryId = expenseItems
+            .groupBy { tx -> tx.categoryId?.takeIf { it.isNotBlank() } }
+            .filterKeys { it != null }
+            .mapKeys { it.key!! }
+            .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+
+        val spentByCategoryName = expenseItems
+            .filter { !it.categoryId.isNullOrBlank() }
+            .groupBy { tx -> tx.categoryId!!.lowercase().trim() }
+            .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+
         val budgetReportItems = budgets.map { b ->
-            val cat = categoryMap[b.categoryId]
+            val cat = categoryMap[b.categoryId] ?: byCategoryName[b.categoryId.lowercase().trim()]
+            val targetIds = listOfNotNull(b.categoryId, cat?.id).distinct()
+            val targetNames = listOfNotNull(b.categoryId.lowercase().trim(), cat?.name?.lowercase()?.trim()).distinct()
+
+            val spentFromIds = targetIds.sumOf { id -> spentByCategoryId[id] ?: 0L }
+            val spentFromNames = targetNames
+                .filterNot { name -> targetIds.any { id -> id.lowercase().trim() == name } }
+                .sumOf { name -> spentByCategoryName[name] ?: 0L }
+
+            val dynamicSpent = spentFromIds + spentFromNames
             val lim = b.limitAmount.value
-            val spent = b.spentAmount.value
-            val pct = if (lim > 0) (spent.toFloat() / lim.toFloat()) else 0f
+            val pct = if (lim > 0) (dynamicSpent.toFloat() / lim.toFloat()) else 0f
             BudgetReportItem(
-                budget = b,
+                budget = b.copy(spentAmount = Money(dynamicSpent)),
                 category = cat,
                 limit = lim,
-                spent = spent,
+                spent = dynamicSpent,
                 percent = pct,
-                remaining = (lim - spent).coerceAtLeast(0L),
-                isOverBudget = spent > lim,
+                remaining = (lim - dynamicSpent).coerceAtLeast(0L),
+                isOverBudget = dynamicSpent > lim,
             )
-        }
+        }.sortedByDescending { it.percent }
+
+        val totalBudgetLimit = budgetReportItems.sumOf { it.limit }
+        val totalBudgetSpent = budgetReportItems.sumOf { it.spent }
+        val totalBudgetRemaining = (totalBudgetLimit - totalBudgetSpent).coerceAtLeast(0L)
+        val budgetUsagePercent = if (totalBudgetLimit > 0) ((totalBudgetSpent.toFloat() / totalBudgetLimit.toFloat()) * 100).roundToInt() else 0
+        val overBudgetCount = budgetReportItems.count { it.isOverBudget }
 
         // Tài sản & Ví (Wallets & Net Worth)
         val assetWallets = wallets.assetWallets()

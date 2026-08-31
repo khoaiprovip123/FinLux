@@ -159,7 +159,16 @@ class DemoFinluxRepository @Inject constructor(
     override fun observeCategories(): Flow<List<Category>> = categoryState
 
     override fun observeBudgets(periodKey: String): Flow<List<Budget>> =
-        budgetState.map { budgets -> budgets.filter { it.periodKey == periodKey } }
+        budgetState.map { budgets ->
+            val normalizedKey = periodKey.removePrefix("month:").removePrefix("salary:")
+            budgets.filter {
+                val itemKey = it.periodKey.removePrefix("month:").removePrefix("salary:")
+                it.periodKey == periodKey ||
+                    itemKey == normalizedKey ||
+                    it.month?.toString() == normalizedKey ||
+                    "month:${it.periodKey}" == periodKey
+            }
+        }
 
     override fun observeReminders(): Flow<List<Reminder>> = reminderState
 

@@ -1769,6 +1769,14 @@ private fun PrismBudgetItemCard(item: BudgetReportItem) {
         item.percent >= 0.8f -> Color(0xFFF59E0B)
         else -> Color(0xFF10B981)
     }
+    val cat = item.category
+    val catColor = cat?.colorHex?.let { colorFromHex(it) } ?: tokens.primary
+    val catIcon = cat?.let { categoryIcon(it.icon) } ?: Icons.Default.AccountBalanceWallet
+    val statusLabel = when {
+        item.isOverBudget -> "Vượt hạn mức"
+        item.percent >= 0.8f -> "Cảnh báo (${(item.percent * 100).roundToInt()}%)"
+        else -> "An toàn (${(item.percent * 100).roundToInt()}%)"
+    }
 
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -1776,30 +1784,82 @@ private fun PrismBudgetItemCard(item: BudgetReportItem) {
         border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    item.category?.name ?: "Danh mục khác",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = tokens.onSurface,
-                )
-                Text(
-                    text = "${(item.percent * 100).roundToInt()}%",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = progressColor,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(catColor.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = catIcon,
+                            contentDescription = null,
+                            tint = catColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = cat?.name ?: item.budget.categoryId.ifBlank { "Danh mục khác" },
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = tokens.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "Hạn mức: ${formatVndAmount(item.limit)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6B7280),
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = progressColor.copy(alpha = 0.12f),
+                ) {
+                    Text(
+                        text = statusLabel,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = progressColor,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Đã chi: ${formatVndAmount(item.spent)}", fontSize = 12.sp, color = Color(0xFF6B7280))
+                    Text("Đã chi", fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                    Text(
+                        formatVndAmount(item.spent),
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (item.isOverBudget) progressColor else tokens.onSurface,
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Hạn mức: ${formatVndAmount(item.limit)}", fontSize = 12.sp, color = tokens.onSurface)
+                    Text(
+                        if (item.isOverBudget) "Vượt quá" else "Còn lại",
+                        fontSize = 11.5.sp,
+                        color = Color(0xFF6B7280),
+                    )
+                    Text(
+                        formatVndAmount(if (item.isOverBudget) item.spent - item.limit else item.remaining),
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (item.isOverBudget) progressColor else Color(0xFF10B981),
+                    )
                 }
             }
 

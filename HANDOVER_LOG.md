@@ -1,8 +1,38 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.20.0 (versionCode 162) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (277/277 Unit Tests) — Tích hợp Deep Dive Reports hoàn tất.
+- **Phiên bản hiện tại:** v1.20.1 (versionCode 163) [DONE]
+- **Trạng thái Build:** ✅ 100% PASS (278/278 Unit Tests) — Chuẩn hóa & mapping toàn diện Ngân sách vào Báo cáo Chuyên sâu hoàn tất.
+
+---
+
+## [DONE] Task: Chuẩn Hóa & Mapping Toàn Diện Ngân Sách Vào Báo Cáo Chuyên Sâu (Deep Dive Budgets)
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Xử lý triệt để 4 nguyên nhân gốc rễ khiến mục Ngân sách trong Báo cáo Chuyên sâu không mapping đúng / hiển thị trống:
+  1. Hỗ trợ truy vấn linh hoạt đa định dạng `periodKey` trong `FirebaseBudgetRepository` (`whereIn`) và `DemoFinluxRepository` (`month:YYYY-MM`, `salary:YYYY-MM-DD`, `YYYY-MM`).
+  2. Tính toán `dynamicSpent` động từ giao dịch thực tế trong kỳ (khớp chính xác cả `categoryId` lẫn `categoryName` lowercase/trim, loại trừ `OUTLAY_CAPITAL`).
+  3. Khớp danh mục 2 tầng (ID và tên) chống lệch dữ liệu.
+  4. Tính toán chuẩn xác các chỉ số tổng hợp: `totalBudgetLimit`, `totalBudgetSpent`, `totalBudgetRemaining`, `budgetUsagePercent`, `overBudgetCount`.
+- Nâng cấp giao diện `PrismBudgetItemCard` theo chuẩn Liquid Glass với dynamic theme token, category icon & color circle, badge tiến độ & màu sắc cảnh báo 3 cấp độ (An toàn, Cảnh báo, Vượt hạn mức).
+- Viết bộ Unit Test toàn diện kiểm thử mapping ngân sách và dynamic spent, đảm bảo 100% test PASS.
+
+### Danh sách file đã chỉnh sửa
+1. `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt` (truy vấn đa định dạng `whereIn("periodKey", ...)` và fallback parse `toBudget()`)
+2. `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (filter linh hoạt multi-format periodKey)
+3. `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt` (tính toán `dynamicSpent`, fallback 2 tầng ID/tên, fallback kỳ ngân sách linh hoạt)
+4. `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (nâng cấp `PrismBudgetItemCard` với icon, màu danh mục, badge trạng thái và layout Liquid Glass)
+5. `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt` (bổ sung test case kiểm thử dynamic spent, loại trừ vốn đầu tư và 2-tier category matching)
+6. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (278/278 tests, 0 failure)**
+- ✅ Biên dịch thành công không có lỗi runtime/DI.
+
+### Trạng thái
+`[DONE]`
 
 ---
 

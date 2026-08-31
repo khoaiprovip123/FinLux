@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.20.1] - 2026-08-31
+### Added
+- **Chuẩn Hóa & Mapping Toàn Diện Ngân Sách Vào Báo Cáo Chuyên Sâu (`DeepDiveSubTab.BUDGETS`)**:
+  * **Dynamic Spent Calculation**: Tính toán số tiền đã chi thực tế trong kỳ từ các giao dịch chi tiêu, bóc tách chính xác và loại trừ các khoản xuất vốn đầu tư (`OUTLAY_CAPITAL`).
+  * **Khớp Danh Mục Thông Minh 2 Tầng**: Hỗ trợ khớp chính xác theo cả `Category.id` và `Category.name` (lowercase/trim) chống lệch định dạng.
+  * **Nâng Cấp Giao Diện Thẻ Ngân Sách Kính Mờ (`PrismBudgetItemCard`)**: Hiển thị icon danh mục, màu sắc động, badge tiến độ 3 cấp độ cảnh báo (An toàn, Cảnh báo, Vượt hạn mức) và số dư còn lại chuẩn xác.
+
+### Changed
+- Cập nhật `FirebaseBudgetRepository` và `DemoFinluxRepository` hỗ trợ truy vấn đa định dạng `periodKey` (`month:YYYY-MM`, `salary:YYYY-MM-DD`, `YYYY-MM`).
+- Nâng cấp `ReportsViewModel` tự động tính toán động `budgetReportItems` và linh hoạt fallback kỳ ngân sách.
+
+### Fixed
+- Khắc phục lỗi lệch `periodKey` và số tiền đã chi bị stale/0 khi hiển thị ngân sách trong Báo cáo Chuyên sâu.
+- Đạt 100% (278/278) Unit Tests PASS bao gồm toàn bộ kịch bản kiểm thử mới cho `ReportsViewModelTest`.
+
 ## [1.20.0] - 2026-08-31
 ### Added
 - **Tích Hợp "Đầu Tư & Cho Vay" (Deal Tracking & ROI) Vào Báo Cáo Chuyên Sâu (`DeepDiveSubTab.DEALS`)**:
