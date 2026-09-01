@@ -19,7 +19,8 @@ internal fun validateTransaction(transaction: FinanceTransaction): AppResult<Uni
     }
     val isTransfer = transaction.type == TransactionType.TRANSFER_IN ||
         transaction.type == TransactionType.TRANSFER_OUT
-    if (!isTransfer && transaction.categoryId.isNullOrBlank()) {
+    val isDeal = !transaction.dealId.isNullOrBlank() || transaction.dealFlowType != null
+    if (!isTransfer && !isDeal && transaction.categoryId.isNullOrBlank()) {
         return AppResult.Error("Vui lòng chọn danh mục")
     }
     if (isTransfer && transaction.relatedWalletId.isNullOrBlank()) {

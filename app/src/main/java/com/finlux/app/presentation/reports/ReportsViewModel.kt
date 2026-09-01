@@ -85,6 +85,40 @@ data class WalletReportItem(
     val expenseInPeriod: Long,
 )
 
+data class DealReportItem(
+    val deal: com.finlux.app.domain.model.FinancialDeal,
+    val capitalOutlay: Long,
+    val recovered: Long,
+    val netProfitLoss: Long,
+    val remainingCapital: Long,
+    val roiPercentage: Double,
+    val recoveryProgress: Float,
+    val isFullyRecovered: Boolean,
+)
+
+data class DealsSummaryReport(
+    val totalActiveCapitalOutlay: Long = 0L,
+    val totalHistoricalCapitalOutlay: Long = 0L,
+    val totalRecovered: Long = 0L,
+    val totalNetProfit: Long = 0L,
+    val totalInvestmentOutlay: Long = 0L,
+    val totalLendingOutlay: Long = 0L,
+    val totalLendingOutstanding: Long = 0L,
+    val overallRoi: Double = 0.0,
+    val investmentRatio: Float = 0.5f,
+    val activeDealsCount: Int = 0,
+    val completedDealsCount: Int = 0,
+)
+
+data class SavingSpinSummaryReport(
+    val totalSaved: Long = 0L,
+    val completedCount: Int = 0,
+    val skippedCount: Int = 0,
+    val currentStreak: Int = 0,
+    val completionRate: Int = 0,
+    val destinationBreakdown: List<com.finlux.app.domain.model.SavingSpinDestinationTotal> = emptyList(),
+)
+
 data class ReportsUiState(
     val period: ReportPeriod = ReportPeriod.MONTH,
     val range: ReportRange = ReportRange(LocalDate.now().withDayOfMonth(1), LocalDate.now()),
@@ -126,6 +160,12 @@ data class ReportsUiState(
     val totalGoalTarget: Long = 0L,
     val totalGoalSaved: Long = 0L,
     val overallGoalProgress: Float = 0f,
+    // Vòng quay tiết kiệm (Saving Spin)
+    val savingSpinSummary: SavingSpinSummaryReport = SavingSpinSummaryReport(),
+    // Thương vụ & Cho vay (Deals & Investments)
+    val deals: List<com.finlux.app.domain.model.FinancialDeal> = emptyList(),
+    val dealReportItems: List<DealReportItem> = emptyList(),
+    val dealsSummary: DealsSummaryReport = DealsSummaryReport(),
     // Ngân sách (Budgets)
     val budgets: List<Budget> = emptyList(),
     val budgetReportItems: List<BudgetReportItem> = emptyList(),
@@ -138,6 +178,11 @@ data class ReportsUiState(
     val walletReportItems: List<WalletReportItem> = emptyList(),
     val totalAssets: Long = 0L,
     val totalNetWorth: Long = 0L,
+    /**
+     * Tài sản ròng toàn diện (True Net Worth):
+     * = (Tổng tài sản ví) + (Vốn lưu động từ Deal & Cho vay đang chờ thu hồi) - (Tổng dư nợ phải trả)
+     */
+    val trueNetWorth: Long = 0L,
     val assetsByType: Map<WalletType, Long> = emptyMap(),
     val isSalaryCycleEnabled: Boolean = false,
     val availablePeriods: List<ReportPeriod> = listOf(ReportPeriod.MONTH, ReportPeriod.QUARTER, ReportPeriod.YEAR, ReportPeriod.CUSTOM),
@@ -153,6 +198,8 @@ class ReportsViewModel @Inject constructor(
     private val debtRepository: DebtRepository,
     private val goalRepository: GoalRepository,
     private val budgetRepository: BudgetRepository,
+    private val dealRepository: com.finlux.app.domain.repository.DealRepository,
+    private val savingSpinRepository: com.finlux.app.domain.repository.SavingSpinRepository,
     private val financialPeriodResolver: FinancialPeriodResolver,
     private val windowResolver: ReportQueryWindowResolver,
 ) : ViewModel() {
@@ -180,11 +227,17 @@ class ReportsViewModel @Inject constructor(
             flowOf(emptyList())
         }
 
-        val financialPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, salaryConfig)
-        val budgetsFlow = if (financialPeriod != null) {
-            budgetRepository.observeBudgets(financialPeriod.key)
+        val startPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, salaryConfig)
+        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(Instant.now(), salaryConfig)
+        val budgetsFlow = if (startPeriod.key == nowPeriod.key) {
+            budgetRepository.observeBudgets(startPeriod.key)
         } else {
-            flowOf(emptyList())
+            combine(
+                budgetRepository.observeBudgets(startPeriod.key),
+                budgetRepository.observeBudgets(nowPeriod.key),
+            ) { startBudgets, nowBudgets ->
+                if (startBudgets.isNotEmpty()) startBudgets else nowBudgets
+            }
         }
 
         combine(
@@ -195,6 +248,9 @@ class ReportsViewModel @Inject constructor(
             debtRepository.observeAllPaymentHistory(),
             goalRepository.observeGoals(),
             budgetsFlow,
+            dealRepository.observeDeals(),
+            savingSpinRepository.observeSessions(window.currentStart, window.currentEndExclusive),
+            savingSpinRepository.observeDestinations(),
         ) { args: Array<Any> ->
             @Suppress("UNCHECKED_CAST")
             val transactions = args[0] as List<FinanceTransaction>
@@ -210,6 +266,12 @@ class ReportsViewModel @Inject constructor(
             val goals = args[5] as List<FinancialGoal>
             @Suppress("UNCHECKED_CAST")
             val budgets = args[6] as List<Budget>
+            @Suppress("UNCHECKED_CAST")
+            val deals = args[7] as List<com.finlux.app.domain.model.FinancialDeal>
+            @Suppress("UNCHECKED_CAST")
+            val spinSessions = args[8] as List<com.finlux.app.domain.model.SavingSpinSession>
+            @Suppress("UNCHECKED_CAST")
+            val spinDestinations = args[9] as List<com.finlux.app.domain.model.SavingDestination>
 
             buildState(
                 transactions = transactions,
@@ -219,6 +281,9 @@ class ReportsViewModel @Inject constructor(
                 debtPayments = debtPayments,
                 goals = goals,
                 budgets = budgets,
+                deals = deals,
+                spinSessions = spinSessions,
+                spinDestinations = spinDestinations,
                 window = window,
                 salaryConfig = salaryConfig,
                 requestedPeriod = period,
@@ -243,6 +308,9 @@ class ReportsViewModel @Inject constructor(
         debtPayments: List<DebtPaymentHistory>,
         goals: List<FinancialGoal>,
         budgets: List<Budget>,
+        deals: List<com.finlux.app.domain.model.FinancialDeal>,
+        spinSessions: List<com.finlux.app.domain.model.SavingSpinSession>,
+        spinDestinations: List<com.finlux.app.domain.model.SavingDestination>,
         window: ReportQueryWindow,
         salaryConfig: SalaryCycleConfig,
         requestedPeriod: ReportPeriod,
@@ -255,8 +323,12 @@ class ReportsViewModel @Inject constructor(
         }
 
         val filtered = transactions.filter { inRange(it.date, window.currentStart, window.currentEndExclusive) }
-        val incomeItems = filtered.filter { it.type == TransactionType.INCOME }
-        val expenseItems = filtered.filter { it.type == TransactionType.EXPENSE }
+        val incomeItems = filtered.filter {
+            it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY
+        }
+        val expenseItems = filtered.filter {
+            it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
+        }
         val income = incomeItems.sumOf { it.amount.value }
         val expense = expenseItems.sumOf { it.amount.value }
         val categoryMap = categories.associateBy(Category::id)
@@ -283,21 +355,21 @@ class ReportsViewModel @Inject constructor(
             val items = byDate[date].orEmpty()
             CashFlowPoint(
                 date,
-                items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value },
-                items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value },
+                items.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value },
+                items.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value },
             )
         }
 
         val walletActivity = filtered.filter { it.type == TransactionType.INCOME || it.type == TransactionType.EXPENSE }
             .groupBy(FinanceTransaction::walletId).map { (id, items) ->
-                val walletIncome = items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
-                val walletExpense = items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+                val walletIncome = items.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value }
+                val walletExpense = items.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value }
                 WalletActivity(walletMap[id], walletIncome, walletExpense)
             }.sortedByDescending(WalletActivity::total)
 
         val previous = transactions.filter { inRange(it.date, window.previousStart, window.previousEndExclusive) }
-        val previousIncome = previous.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
-        val previousExpense = previous.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
+        val previousIncome = previous.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value }
+        val previousExpense = previous.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value }
 
         // Vay nợ (Debts & Loans)
         val totalDebtRemaining = debts.filter { !it.isSettled }.sumOf { it.remainingBalance.value }
@@ -335,33 +407,132 @@ class ReportsViewModel @Inject constructor(
             catId != null && (catId in savingsCategoryIds || catId.equals("savings", ignoreCase = true))
         }
 
-        // Ngân sách (Budgets)
-        val totalBudgetLimit = budgets.sumOf { it.limitAmount.value }
-        val totalBudgetSpent = budgets.sumOf { it.spentAmount.value }
-        val totalBudgetRemaining = (totalBudgetLimit - totalBudgetSpent).coerceAtLeast(0L)
-        val budgetUsagePercent = if (totalBudgetLimit > 0) ((totalBudgetSpent.toFloat() / totalBudgetLimit.toFloat()) * 100).roundToInt() else 0
-        val overBudgetCount = budgets.count { it.spentAmount.value > it.limitAmount.value }
-        val budgetReportItems = budgets.map { b ->
-            val cat = categoryMap[b.categoryId]
-            val lim = b.limitAmount.value
-            val spent = b.spentAmount.value
-            val pct = if (lim > 0) (spent.toFloat() / lim.toFloat()) else 0f
-            BudgetReportItem(
-                budget = b,
-                category = cat,
-                limit = lim,
-                spent = spent,
-                percent = pct,
-                remaining = (lim - spent).coerceAtLeast(0L),
-                isOverBudget = spent > lim,
+        // Thương vụ & Cho vay (Deals & Investments)
+        val dealReportItems = deals.map { d ->
+            DealReportItem(
+                deal = d,
+                capitalOutlay = d.totalCapitalOutlay.value,
+                recovered = d.totalRecovered.value,
+                netProfitLoss = d.netProfitLoss.value,
+                remainingCapital = d.remainingCapital.value,
+                roiPercentage = d.roiPercentage,
+                recoveryProgress = d.recoveryProgress,
+                isFullyRecovered = d.isFullyRecovered,
             )
         }
+        val activeDeals = deals.filter { it.status == com.finlux.app.domain.model.DealStatus.ACTIVE }
+        val completedDeals = deals.filter { it.status == com.finlux.app.domain.model.DealStatus.COMPLETED }
+        val totalActiveCapitalOutlay = activeDeals.sumOf { it.remainingCapital.value }
+        val totalHistoricalCapitalOutlay = deals.sumOf { it.totalCapitalOutlay.value }
+        val totalRecoveredDeals = deals.sumOf { it.totalRecovered.value }
+        val totalNetProfitDeals = deals.sumOf { it.netProfitLoss.value }
+
+        val investmentDeals = deals.filter { it.category == com.finlux.app.domain.model.DealCategory.INVESTMENT }
+        val lendingDeals = deals.filter { it.category == com.finlux.app.domain.model.DealCategory.LENDING }
+        val totalInvestmentOutlay = investmentDeals.sumOf { it.totalCapitalOutlay.value }
+        val totalLendingOutlay = lendingDeals.sumOf { it.totalCapitalOutlay.value }
+        val totalLendingOutstanding = lendingDeals.filter { it.status == com.finlux.app.domain.model.DealStatus.ACTIVE }.sumOf { it.remainingCapital.value }
+        val totalOutlayAll = totalInvestmentOutlay + totalLendingOutlay
+        val investmentRatio = if (totalOutlayAll > 0) (totalInvestmentOutlay.toFloat() / totalOutlayAll.toFloat()) else 0.5f
+
+        val overallDealRoi = if (totalHistoricalCapitalOutlay > 0) {
+            (totalNetProfitDeals.toDouble() / totalHistoricalCapitalOutlay.toDouble()) * 100.0
+        } else 0.0
+
+        val dealsSummary = DealsSummaryReport(
+            totalActiveCapitalOutlay = totalActiveCapitalOutlay,
+            totalHistoricalCapitalOutlay = totalHistoricalCapitalOutlay,
+            totalRecovered = totalRecoveredDeals,
+            totalNetProfit = totalNetProfitDeals,
+            totalInvestmentOutlay = totalInvestmentOutlay,
+            totalLendingOutlay = totalLendingOutlay,
+            totalLendingOutstanding = totalLendingOutstanding,
+            overallRoi = overallDealRoi,
+            investmentRatio = investmentRatio,
+            activeDealsCount = activeDeals.size,
+            completedDealsCount = completedDeals.size,
+        )
+
+        // Vòng quay tiết kiệm (Saving Spin)
+        val completedSpins = spinSessions.filter { it.status == com.finlux.app.domain.model.SavingSpinStatus.COMPLETED }
+        val totalSavedSpin = completedSpins.sumOf { it.selectedAmount?.value ?: 0L }
+        val skippedSpins = spinSessions.count { it.status == com.finlux.app.domain.model.SavingSpinStatus.SKIPPED }
+        val destMap = spinDestinations.associate { it.id to it.name }
+        val destBreakdown = completedSpins
+            .filter { it.destinationId != null }
+            .groupBy { requireNotNull(it.destinationId) }
+            .map { (id, items) ->
+                com.finlux.app.domain.model.SavingSpinDestinationTotal(
+                    destinationId = id,
+                    destinationName = destMap[id] ?: "Nơi tiết kiệm",
+                    amount = Money(items.sumOf { it.selectedAmount?.value ?: 0L }),
+                )
+            }
+            .sortedByDescending { it.amount.value }
+
+        val calculateStreak = com.finlux.app.domain.usecase.CalculateSavingSpinStreakUseCase()
+        val spinStreak = calculateStreak(spinSessions)
+        val spinCompletionRate = if (spinSessions.isEmpty()) 0 else (completedSpins.size * 100 / spinSessions.size)
+
+        val savingSpinSummary = SavingSpinSummaryReport(
+            totalSaved = totalSavedSpin,
+            completedCount = completedSpins.size,
+            skippedCount = skippedSpins,
+            currentStreak = spinStreak,
+            completionRate = spinCompletionRate,
+            destinationBreakdown = destBreakdown,
+        )
+
+        // Ngân sách (Budgets)
+        val byCategoryName = categories.associateBy { it.name.lowercase().trim() }
+        val spentByCategoryId = expenseItems
+            .groupBy { tx -> tx.categoryId?.takeIf { it.isNotBlank() } }
+            .filterKeys { it != null }
+            .mapKeys { it.key!! }
+            .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+
+        val spentByCategoryName = expenseItems
+            .filter { !it.categoryId.isNullOrBlank() }
+            .groupBy { tx -> tx.categoryId!!.lowercase().trim() }
+            .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+
+        val budgetReportItems = budgets.map { b ->
+            val cat = categoryMap[b.categoryId] ?: byCategoryName[b.categoryId.lowercase().trim()]
+            val targetIds = listOfNotNull(b.categoryId, cat?.id).distinct()
+            val targetNames = listOfNotNull(b.categoryId.lowercase().trim(), cat?.name?.lowercase()?.trim()).distinct()
+
+            val spentFromIds = targetIds.sumOf { id -> spentByCategoryId[id] ?: 0L }
+            val spentFromNames = targetNames
+                .filterNot { name -> targetIds.any { id -> id.lowercase().trim() == name } }
+                .sumOf { name -> spentByCategoryName[name] ?: 0L }
+
+            val dynamicSpent = spentFromIds + spentFromNames
+            val lim = b.limitAmount.value
+            val pct = if (lim > 0) (dynamicSpent.toFloat() / lim.toFloat()) else 0f
+            BudgetReportItem(
+                budget = b.copy(spentAmount = Money(dynamicSpent)),
+                category = cat,
+                limit = lim,
+                spent = dynamicSpent,
+                percent = pct,
+                remaining = (lim - dynamicSpent).coerceAtLeast(0L),
+                isOverBudget = dynamicSpent > lim,
+            )
+        }.sortedByDescending { it.percent }
+
+        val totalBudgetLimit = budgetReportItems.sumOf { it.limit }
+        val totalBudgetSpent = budgetReportItems.sumOf { it.spent }
+        val totalBudgetRemaining = (totalBudgetLimit - totalBudgetSpent).coerceAtLeast(0L)
+        val budgetUsagePercent = if (totalBudgetLimit > 0) ((totalBudgetSpent.toFloat() / totalBudgetLimit.toFloat()) * 100).roundToInt() else 0
+        val overBudgetCount = budgetReportItems.count { it.isOverBudget }
 
         // Tài sản & Ví (Wallets & Net Worth)
-        // CARD represents a liability/payment instrument; counting it as an asset inflates net worth.
         val assetWallets = wallets.assetWallets()
         val totalAssets = assetWallets.sumOf { it.balance.value }
         val totalNetWorth = totalAssets - totalDebtRemaining
+        // True Net Worth = (Tài sản ví) + (Vốn lưu động đầu tư & nợ cho vay đang chờ thu hồi) - (Tổng dư nợ phải trả)
+        val trueNetWorth = totalAssets + totalActiveCapitalOutlay - totalDebtRemaining
+
         val assetsByType = assetWallets.groupBy { it.type }.mapValues { (_, list) -> list.sumOf { it.balance.value } }
         val walletReportItems = assetWallets.map { w ->
             val act = walletActivity.find { it.wallet?.id == w.id }
@@ -412,6 +583,12 @@ class ReportsViewModel @Inject constructor(
             if (goalContributionInPeriod > 0L) {
                 add("Đã phân bổ ròng ${goalContributionInPeriod} đ vào mục tiêu tài chính trong kỳ.")
             }
+            if (totalNetProfitDeals > 0L) {
+                add("Đã thu về ${totalNetProfitDeals} đ lợi nhuận ròng & lãi từ các thương vụ / cho vay.")
+            }
+            if (totalSavedSpin > 0L) {
+                add("Đã tích lũy ${totalSavedSpin} đ qua Vòng quay tiết kiệm (chuỗi ${spinStreak} ngày).")
+            }
         }
 
         return ReportsUiState(
@@ -452,6 +629,11 @@ class ReportsViewModel @Inject constructor(
             totalGoalTarget = totalGoalTarget,
             totalGoalSaved = totalGoalSaved,
             overallGoalProgress = overallGoalProgress,
+            savingSpinSummary = savingSpinSummary,
+            // Deals & Lending
+            deals = deals,
+            dealReportItems = dealReportItems,
+            dealsSummary = dealsSummary,
             // Budgets
             budgets = budgets,
             budgetReportItems = budgetReportItems,
@@ -464,6 +646,7 @@ class ReportsViewModel @Inject constructor(
             walletReportItems = walletReportItems,
             totalAssets = totalAssets,
             totalNetWorth = totalNetWorth,
+            trueNetWorth = trueNetWorth,
             assetsByType = assetsByType,
             isSalaryCycleEnabled = salaryConfig.enabled,
             availablePeriods = availablePeriods,

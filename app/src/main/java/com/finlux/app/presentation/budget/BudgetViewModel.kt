@@ -81,14 +81,22 @@ class BudgetViewModel @Inject constructor(
         val byName = categories.associateBy { it.name.lowercase().trim() }
 
         val spentByCategoryId = monthTransactions
-            .filter { it.type == TransactionType.EXPENSE && it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX) }
+            .filter {
+                it.type == TransactionType.EXPENSE &&
+                it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL &&
+                it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX)
+            }
             .groupBy { tx -> tx.categoryId?.takeIf { it.isNotBlank() } }
             .filterKeys { it != null }
             .mapKeys { it.key!! }
             .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
 
         val spentByCategoryName = monthTransactions
-            .filter { it.type == TransactionType.EXPENSE && it.categoryId != null && it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX) }
+            .filter {
+                it.type == TransactionType.EXPENSE &&
+                it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL &&
+                it.categoryId != null && it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX)
+            }
             .groupBy { tx -> tx.categoryId!!.lowercase().trim() }
             .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
 
@@ -108,7 +116,10 @@ class BudgetViewModel @Inject constructor(
             period = period,
             items = items,
             categories = categories.filter { it.type == CategoryType.EXPENSE },
-            transactions = monthTransactions.filter { it.type == TransactionType.EXPENSE },
+            transactions = monthTransactions.filter {
+                it.type == TransactionType.EXPENSE &&
+                it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
+            },
             busy = actionState.first,
             message = actionState.second,
         )

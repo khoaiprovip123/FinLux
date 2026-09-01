@@ -57,6 +57,8 @@ data class FinanceTransaction(
     val categoryId: String?,
     val walletId: String,
     val relatedWalletId: String? = null,
+    val dealId: String? = null,
+    val dealFlowType: DealFlowType? = null,
     val note: String = "",
     val receiptImageUrl: String? = null,
     val date: Instant,

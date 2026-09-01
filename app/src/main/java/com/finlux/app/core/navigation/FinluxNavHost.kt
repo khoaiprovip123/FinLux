@@ -341,6 +341,11 @@ fun FinluxNavHost(
             composable(Route.Wallets.value) {
                 WalletsScreen(
                     onBack = navController::popBackStack,
+                    onNavigate = { route ->
+                        if (route in MainSwipeRoutes) navigateMain(route)
+                        else navController.navigate(route)
+                    },
+                    onSelectTransaction = { viewingTransaction = it },
                     transferRequestKey = walletTransferRequest,
                 )
             }
@@ -380,6 +385,7 @@ fun FinluxNavHost(
             composable(Route.Reminders.value) { RemindersScreen(onBack = navController::popBackStack) }
             composable(Route.Goals.value) { GoalsScreen(onBack = navController::popBackStack) }
             composable(Route.Debt.value) { DebtDashboardScreen(onBack = navController::popBackStack) }
+            composable(Route.Deals.value) { com.finlux.app.presentation.deal.DealsScreen(onNavigateBack = navController::popBackStack) }
             composable(Route.SavingSpinSettings.value) {
                 SavingSpinSettingsScreen(
                     onBack = navController::popBackStack,

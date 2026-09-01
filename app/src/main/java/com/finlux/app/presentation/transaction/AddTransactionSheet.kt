@@ -40,6 +40,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import com.finlux.app.domain.model.DealFlowType
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Calculate
@@ -282,27 +284,32 @@ fun AddTransactionSheet(
                 }
             }
 
-            // 2. Segmented Transaction Type Tabs (Clean 2-Tab Switch)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TransactionTypePill(
-                    label = "Chi tiêu",
-                    isSelected = isExpense,
-                    activeBg = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
-                    activeText = Color(0xFFE11D48),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.setType(TransactionType.EXPENSE) },
-                )
-                TransactionTypePill(
-                    label = "Thu nhập",
-                    isSelected = !isExpense,
-                    activeBg = if (tokens.isDark) Color(0xFF1E3A2B) else Color(0xFFDCFCE7),
-                    activeText = Color(0xFF16A34A),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.setType(TransactionType.INCOME) },
-                )
+            val isDealTransaction = !state.editingTransaction?.dealId.isNullOrBlank() || state.editingTransaction?.dealFlowType != null
+            val dealFlowType = state.editingTransaction?.dealFlowType
+
+            // 2. Segmented Transaction Type Tabs (Clean 2-Tab Switch) - Chỉ hiển thị cho giao dịch thường
+            if (!isDealTransaction) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TransactionTypePill(
+                        label = "Chi tiêu",
+                        isSelected = isExpense,
+                        activeBg = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
+                        activeText = Color(0xFFE11D48),
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.setType(TransactionType.EXPENSE) },
+                    )
+                    TransactionTypePill(
+                        label = "Thu nhập",
+                        isSelected = !isExpense,
+                        activeBg = if (tokens.isDark) Color(0xFF1E3A2B) else Color(0xFFDCFCE7),
+                        activeText = Color(0xFF16A34A),
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.setType(TransactionType.INCOME) },
+                    )
+                }
             }
 
             // 3. Amount Display & Quick Chips (Standard ErgonomicCompactAmountCard)
@@ -366,17 +373,38 @@ fun AddTransactionSheet(
                     onClear = { viewModel.setNote("") },
                 )
 
-                // Hàng 2: Danh mục
-                val categoryAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: Color(0xFFF43F5E)
-                ErgonomicFormRow(
-                    label = "DANH MỤC",
-                    primaryValue = activeCategory?.name ?: "Chưa chọn danh mục",
-                    secondaryValue = if (isExpense) "Khoản chi tiêu" else "Khoản thu nhập",
-                    icon = activeCategory?.let { categoryIcon(it.icon) } ?: Icons.Default.Info,
-                    iconBgColor = categoryAccent.copy(alpha = 0.14f),
-                    iconTintColor = categoryAccent,
-                    onClick = { showCategoryPicker = true },
-                )
+                // Hàng 2: Danh mục / Phân loại Thương vụ
+                if (isDealTransaction) {
+                    val dealFlowTitle = when (dealFlowType) {
+                        DealFlowType.OUTLAY_CAPITAL -> "Xuất vốn thương vụ"
+                        DealFlowType.PRINCIPAL_RECOVERY -> "Thu hồi vốn gốc"
+                        DealFlowType.CAPITAL_GAIN -> "Lợi nhuận ròng thương vụ"
+                        DealFlowType.CAPITAL_LOSS -> "Chốt lỗ thương vụ"
+                        null -> "Giao dịch thương vụ"
+                    }
+                    ErgonomicFormRow(
+                        label = "PHÂN LOẠI THƯƠNG VỤ",
+                        primaryValue = dealFlowTitle,
+                        secondaryValue = "Dòng tiền độc lập (Quản lý tự động theo Deal)",
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        iconBgColor = Color(0xFF8B5CF6).copy(alpha = 0.14f),
+                        iconTintColor = Color(0xFF8B5CF6),
+                        onClick = {
+                            android.widget.Toast.makeText(context, "Giao dịch thuộc về Thương vụ đầu tư, không áp dụng danh mục sinh hoạt.", android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                    )
+                } else {
+                    val categoryAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: Color(0xFFF43F5E)
+                    ErgonomicFormRow(
+                        label = "DANH MỤC",
+                        primaryValue = activeCategory?.name ?: "Chưa chọn danh mục",
+                        secondaryValue = if (isExpense) "Khoản chi tiêu" else "Khoản thu nhập",
+                        icon = activeCategory?.let { categoryIcon(it.icon) } ?: Icons.Default.Info,
+                        iconBgColor = categoryAccent.copy(alpha = 0.14f),
+                        iconTintColor = categoryAccent,
+                        onClick = { showCategoryPicker = true },
+                    )
+                }
 
                 // Hàng 3: Ví thanh toán / Tài khoản
                 val walletIcon = activeWallet?.type?.let { walletIcon(it) } ?: Icons.Default.AccountBalanceWallet

@@ -1,8 +1,345 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.16.0 (versionCode 158)
-- **Trạng thái Build:** ✅ RELEASE READY — Hoàn tất thiết kế lại toàn diện giao diện Giao dịch chuẩn Transaction Explorer & Đồng bộ Trang chủ, 100% tests PASS và sẵn sàng phát hành.
+- **Phiên bản hiện tại:** v1.20.1 (versionCode 163) [DONE]
+- **Trạng thái Build:** ✅ 100% PASS (278/278 Unit Tests) — Chuẩn hóa & mapping toàn diện Ngân sách vào Báo cáo Chuyên sâu hoàn tất.
+
+---
+
+## [DONE] Task: Chuẩn Hóa & Mapping Toàn Diện Ngân Sách Vào Báo Cáo Chuyên Sâu (Deep Dive Budgets)
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Xử lý triệt để 4 nguyên nhân gốc rễ khiến mục Ngân sách trong Báo cáo Chuyên sâu không mapping đúng / hiển thị trống:
+  1. Hỗ trợ truy vấn linh hoạt đa định dạng `periodKey` trong `FirebaseBudgetRepository` (`whereIn`) và `DemoFinluxRepository` (`month:YYYY-MM`, `salary:YYYY-MM-DD`, `YYYY-MM`).
+  2. Tính toán `dynamicSpent` động từ giao dịch thực tế trong kỳ (khớp chính xác cả `categoryId` lẫn `categoryName` lowercase/trim, loại trừ `OUTLAY_CAPITAL`).
+  3. Khớp danh mục 2 tầng (ID và tên) chống lệch dữ liệu.
+  4. Tính toán chuẩn xác các chỉ số tổng hợp: `totalBudgetLimit`, `totalBudgetSpent`, `totalBudgetRemaining`, `budgetUsagePercent`, `overBudgetCount`.
+- Nâng cấp giao diện `PrismBudgetItemCard` theo chuẩn Liquid Glass với dynamic theme token, category icon & color circle, badge tiến độ & màu sắc cảnh báo 3 cấp độ (An toàn, Cảnh báo, Vượt hạn mức).
+- Viết bộ Unit Test toàn diện kiểm thử mapping ngân sách và dynamic spent, đảm bảo 100% test PASS.
+
+### Danh sách file đã chỉnh sửa
+1. `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt` (truy vấn đa định dạng `whereIn("periodKey", ...)` và fallback parse `toBudget()`)
+2. `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (filter linh hoạt multi-format periodKey)
+3. `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt` (tính toán `dynamicSpent`, fallback 2 tầng ID/tên, fallback kỳ ngân sách linh hoạt)
+4. `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (nâng cấp `PrismBudgetItemCard` với icon, màu danh mục, badge trạng thái và layout Liquid Glass)
+5. `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt` (bổ sung test case kiểm thử dynamic spent, loại trừ vốn đầu tư và 2-tier category matching)
+6. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (278/278 tests, 0 failure)**
+- ✅ Biên dịch thành công không có lỗi runtime/DI.
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task: Tích Hợp Module Thương Vụ / Cho Vay & Vòng Quay Tiết Kiệm vào Báo Cáo Chuyên Sâu (Deep Dive Reports)
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Mở rộng hệ thống Báo cáo Chuyên sâu (`DeepDiveSubTab`) với tab `DEALS` ("Đầu tư & Cho vay") và nâng cấp tab `SAVINGS` với dữ liệu Vòng quay tiết kiệm.
+- Bóc tách dòng vốn lưu động, tiền lời ròng, tiền lãi cho vay, tỷ suất ROI % và hoàn thiện công thức tính True Net Worth.
+- Xây dựng giao diện Liquid Glass (`PrismDealsHeroCard`, `PrismDealReportCard`, `PrismSavingSpinReportCard`).
+- Nâng cấp xuất báo cáo Excel (.xlsx) / PDF và viết đầy đủ Unit Tests.
+
+### Danh sách file đã chỉnh sửa & tạo mới
+1. `app/build.gradle.kts` (bump versionCode 162, versionName 1.20.0)
+2. `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt` (mở rộng `ReportsUiState`, inject `DealRepository`, `SavingSpinRepository`, tính toán DealsSummary, SavingSpinSummary, True Net Worth)
+3. `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (bổ sung `DeepDiveSubTab.DEALS`, `PrismDealsHeroCard`, `PrismDealReportCard`, `PrismSavingSpinReportCard`, cập nhật `PrismOverviewMultiCards`)
+4. `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt` [NEW] (kiểm thử 100% tính toán ROI, phân rã dòng tiền, True Net Worth)
+5. `CHANGELOG.md`
+6. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (277/277 tests, 0 failure)**
+- ✅ Biên dịch Kotlin / Compose thành công 100%.
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task: Giải Quyết Merge Conflict Nhánh Tính Năng (Saving Spin & Deal Tracking)
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Hợp nhất an toàn và chính xác các thay đổi giữa nhánh hiện tại (HEAD: Deals & Deal Tracking) và nhánh nhập vào (Colleague: Saving Spin).
+- Giữ đầy đủ tất cả routes, DI injection, navigation endpoints, test assertions và tài liệu BA_SPEC của cả hai tính năng.
+- Chạy toàn bộ Unit Test để đảm bảo 100% test PASS và không có lỗi biên dịch.
+
+### Danh sách file đã chỉnh sửa
+1. `app/src/main/java/com/finlux/app/core/navigation/Routes.kt` (giữ cả Deals và SavingSpin routes)
+2. `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt` (giữ cả màn hình DealsScreen và SavingSpin composables)
+3. `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt` (cung cấp cả DealRepository và SavingSpinRepository)
+4. `app/src/test/java/com/finlux/app/presentation/settings/prism/PrismSettingsMenuTest.kt` (bổ sung cả "deals" và "saving-spin/settings" vào route assertion)
+5. `docs/BA_SPEC.md` (giữ cả UC-29 Deal Tracking, UC-30 Saving Spin và toàn bộ quy tắc nghiệp vụ BR-DEAL + BR-SS)
+6. `scripts/build_and_install.bat` & `scripts/build_and_install.ps1` (sửa lỗi cú pháp batch và tương thích cross-machine)
+7. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (274/274 tests, 0 failure)**
+- ✅ Biên dịch thành công không có lỗi syntax/DI.
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task: Chuẩn Hóa Ghi Chú Giao Dịch Deal theo DealCategory & Tên Thương Vụ
+
+**Ngày:** 2026-08-31
+
+### Mục tiêu
+- Thay thế toàn bộ ghi chú mặc định hardcode cũ (`"Xuất vốn thương vụ"`, `"Thu hồi vốn gốc"`, ...) bằng định dạng `"[<Category>] <Hành động>: <Tên thương vụ>"`.
+- Phân biệt 2 category: `INVESTMENT` (Đầu tư) và `LENDING` (Cho vay) — 5 loại hành động.
+- Khi user nhập note thủ công → giữ nguyên nguyên xi, không thêm suffix nào.
+- Refactor kiến trúc: thêm `deal: FinancialDeal` vào signature Repository & UseCase để tự build note.
+
+### File đã thực sự chỉnh sửa
+1. `domain/repository/DealRepository.kt` — thêm `deal: FinancialDeal` vào 3 hàm signature
+2. `domain/usecase/DealUseCases.kt` — thêm `deal: FinancialDeal` vào 3 UseCase invoke
+3. `data/remote/firebase/FirebaseDealRepository.kt` — thêm `buildDefaultNote()`, sửa 5 điểm ghi note + thay `dealId` → `deal.id`
+4. `data/demo/DemoFinluxRepository.kt` — đồng bộ signature + logic note + thêm `buildDefaultNote()` + import `DealCategory`
+5. `presentation/deal/DealsViewModel.kt` — truyền `deal` object trong 3 hàm
+6. `presentation/deal/DealsScreen.kt` — cập nhật 3 call site
+7. `test/domain/usecase/DealUseCasesTest.kt` — cập nhật call sites + `FakeDealRepository` implement đúng interface mới
+
+### Kết quả test
+- ✅ `BUILD SUCCESSFUL` — 0 lỗi compile
+- ✅ Unit Tests: **100% PASS** (toàn bộ bộ test deal pass)
+
+### Trạng thái
+`[DONE]`
+
+---
+
+### [Task-DEAL-LENDING-CATEGORY-AND-HISTORY] — Nâng cấp module Thương Vụ & Đầu Tư: Nút Sửa Deal, Nút Lịch Sử Toàn Bộ, Phân Tách 2 Category (Đầu Tư & Cho Vay) & Cơ Chế Mở Lại Deal/Khoản Vay Đã Hoàn Tất
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Phân Tách 2 Category (`DealCategory`: `INVESTMENT` & `LENDING`)**:
+     - Thêm `enum class DealCategory { INVESTMENT, LENDING }` vào `DealModels.kt` và serialize/deserialize Firebase an toàn.
+     - `INVESTMENT`: Theo dõi vốn xuất, thu hồi, lợi nhuận ròng, tỷ suất ROI %, chốt lời/lỗ.
+     - `LENDING`: Theo dõi nợ gốc đã cho vay, nợ gốc đã thu hồi, dư nợ gốc còn lại, tiền lãi nhận thêm, tiến độ thu hồi nợ (không ép hiển thị ROI âm -100%). Thao tác: "Cho Vay Thêm", "Thu Nợ / Lãi", "Xóa Nợ & Đóng", "Xóa Khoản Vay".
+  2. ✅ **Nút Chỉnh Sửa Deal (`CreateDealSheet.kt` & `DealDetailBottomSheet.kt`)**:
+     - Bổ sung icon Edit (cây bút) trên Header của `DealDetailBottomSheet`, mở `CreateDealSheet` ở chế độ Edit.
+     - Cho phép chỉnh sửa linh hoạt: Tiêu đề, Mô tả, Mục tiêu kỳ vọng, Category (Đầu tư / Cho vay), và Trạng thái (`[ ⚡ Đang Chạy | ✅ Đã Hoàn Tất ]`).
+  3. ✅ **Nhật Ký Dòng Tiền Toàn Bộ Deal (`DealAllTransactionsBottomSheet.kt`)**:
+     - Bổ sung icon Lịch sử (`Icons.AutoMirrored.Filled.ReceiptLong`) ở góc trên bên phải Top Bar `DealsScreen`.
+     - Hero Summary Card 3 cột: Tổng Xuất/Cho vay, Gốc đã thu hồi, Tiền lời/lãi.
+     - 5 Filter Chips phân loại dòng tiền (Tất cả, Xuất vốn/Cho vay, Thu hồi gốc, Tiền lời/lãi, Chốt lỗ/Xóa nợ).
+     - Danh sách giao dịch gom nhóm theo ngày (`Hôm nay`, `Hôm qua`, `dd/MM/yyyy`) kèm deal title, tag category, ví trích/nhận tiền và số tiền trực quan.
+  4. ✅ **Tương Thích Mọi Sheet Giao Dịch Deal**:
+     - `RecordDealInflowSheet.kt` & `RecordDealOutlaySheet.kt`: Cập nhật tiêu đề, nhãn, phân rã dòng tiền (gốc vs lãi) và nút bấm chuẩn ngữ cảnh Cho Vay vs Đầu Tư.
+  5. ✅ **Cơ Chế Mở Lại Deal/Khoản Vay Đã Hoàn Tất & Auto-Reset Khi Xóa Giao Dịch**:
+     - Bổ sung nút **"Mở Lại Khoản Vay" / "Mở Lại Deal"** trên `DealDetailBottomSheet` khi deal ở trạng thái `COMPLETED` (không có stop-loss).
+     - Tự động chuyển deal từ `COMPLETED` về `ACTIVE` (và `endDate = null`) trong `FirebaseTransactionRepository` và `DemoFinluxRepository` khi người dùng xóa giao dịch `PRINCIPAL_RECOVERY` mà dư nợ còn lại phát sinh.
+- **Danh sách file đã chỉnh sửa & tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/DealModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/DealRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/DealUseCases.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/CreateDealSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealDetailBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealAllTransactionsBottomSheet.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlaySheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsViewModel.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt`
+- **Kết quả Kiểm thử**:
+  - `gradlew testDebugUnitTest`: **100% PASS** (239/239 tests, bao gồm test case mới cho `ReopenDealUseCase` và `DealCategory.LENDING`).
+  - Build APK và nạp thành công lên thiết bị Android qua ADB.
+
+### [Task-WALLET-TAP-BOTTOMSHEET-TRANSACTIONS] — Bật Bottom Sheet xem giao dịch của ví khi nhấn vào thẻ ví & Đếm ngược 5s khi xóa ví
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Bottom Sheet Xem Giao Dịch Của Ví (`WalletTransactionsBottomSheet.kt`)**:
+     - Xây dựng component Liquid Glass `WalletTransactionsBottomSheet` chuẩn chỉ:
+       - Header: Logo ngân hàng/ví (`FinancialInstitutionLogo`), Tên ví, Loại ví, Badge "Mặc định" nếu có, Nút đóng (X).
+       - Thẻ Số Dư & Thống Kê Nhanh: Hiển thị số dư hiện tại của ví to rõ cùng 2 hộp thống kê Tổng Thu và Tổng Chi từ các giao dịch của riêng ví này.
+       - Danh sách giao dịch ví: Tự động lọc tất cả giao dịch có `walletId == wallet.id || relatedWalletId == wallet.id`, gom nhóm theo ngày (`Hôm nay`, `Hôm qua`, `dd/MM/yyyy`) với icon danh mục, tên giao dịch/ghi chú, thời gian (`HH:mm`), và số tiền hiển thị nổi bật.
+       - Empty State: Khi chưa có giao dịch, hiển thị `FinluxEmptyState` tương thích theme.
+       - Thanh thao tác nhanh chân sheet: Hỗ trợ nút "Chuyển tiền" (với ví nguồn tự động chọn) và nút "Chỉnh sửa ví".
+  2. ✅ **Cử chỉ Thao tác trên Thẻ Ví (Tap & Long Press Gesture)**:
+     - Áp dụng đồng bộ cho cả 3 Themes (`PrismWalletsScreen.kt`, `ModernWalletsScreen.kt`, `ClassicWalletsScreen.kt`):
+       - **Nhấn (Tap/Click)** vào thẻ ví: **Bật ngay Bottom Sheet `WalletTransactionsBottomSheet`** hiển thị giao dịch của ví đó ngay tại màn hình Ví (không bị chuyển trang).
+       - **Nhấn giữ (Long Press)** vào thẻ ví: Mở Bottom Sheet Chỉnh sửa ví (`WalletEditorSheet` / `editingWallet = wallet`).
+  3. ✅ **Cơ chế đếm ngược 5 giây bảo vệ dữ liệu khi xóa ví**:
+     - `FinluxModalComponents.kt`: Bổ sung tham số `confirmEnabled: Boolean = true` cho `FinluxDialog`.
+     - Cả khi xóa từ Menu 3 chấm, từ nút Xóa trong Sheet chỉnh sửa ví, hoặc khi vuốt xóa nhanh (Swipe-to-dismiss):
+       - Tích hợp bộ đếm ngược 5 giây (`5s -> 4s -> ... -> 0s`).
+       - Nút xóa bị vô hiệu hóa (`enabled = false`) và hiển thị `Xác nhận xóa (5s)` trong 5s đầu.
+       - Khi hết 5 giây, nút chuyển sang nhãn `Xóa Vĩnh Viễn` (màu đỏ nổi bật) và cho phép người dùng xác nhận xóa.
+  4. ✅ **Kiểm thử & Nạp APK**:
+     - Chạy `./gradlew testDebugUnitTest`: **100% PASS (237/237 tests)**.
+     - Nạp APK thành công lên thiết bị Android qua ADB script.
+- **Danh sách file đã chỉnh sửa & tạo mới**:
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletTransactionsBottomSheet.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxModalComponents.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+
+### [Task-WALLET-TRANSFER-DATETIME-PICKER] — Thêm mục chọn Ngày & Giờ cho chức năng Chuyển Tiền Giữa Các Ví
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Domain & ViewModel Layer**:
+     - `TransferMoneyUseCase.kt`: Bổ sung tham số `date: Instant = Instant.now()` vào hàm `invoke(...)` và chuyển tiếp trực tiếp vào `repository.transferBetweenWallets(sourceId, destinationId, amount, note, date)`.
+     - `WalletsViewModel.kt`: Cập nhật hàm `transfer(sourceId, destinationId, amount, note, date, onSaved)` nhận `date` và truyền vào UseCase.
+  2. ✅ **UI Layer (Tất cả Theme Ví: Prism, Modern, Classic)**:
+     - `PrismWalletsScreen.kt`: Thêm state `selectedDate`, `showDatePicker`, hàng `ErgonomicFormRow` với nhãn `"THỜI GIAN CHUYỂN TIỀN"` kèm định dạng thông minh (`"Hôm nay, dd/MM/yyyy • HH:mm"` / `"Hôm qua, ..."`), tích hợp bộ đôi `DatePickerDialog` (Material 3) + `TimePickerDialog` (24h), truyền `date` vào `viewModel.transfer(...)`.
+     - `ModernWalletsScreen.kt`: Thêm state `selectedDate`, `showDatePicker`, hàng `ErgonomicFormRow` chọn thời gian giao dịch và tích hợp Dialog chọn Ngày & Giờ cho Bottom Sheet `TransferEditor`.
+     - `ClassicWalletsScreen.kt`: Thêm hàng `ErgonomicFormRow` và Dialog chọn Ngày & Giờ đồng bộ cho `TransferEditor`.
+  3. ✅ **Kiểm thử & Nạp APK**:
+     - Chạy `./gradlew testDebugUnitTest`: **100% PASS (237/237 tests)**.
+     - Nạp APK thành công lên thiết bị Android qua ADB script.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/usecase/TransferMoneyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+
+
+### [Task-DEAL-REVERT-STOP-LOSS-AND-DELETE-FIX] — Nút Thu Hồi Chốt Lỗ & Cho Phép Xóa Giao Dịch Chốt Lỗ (Settlement)
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Sửa lỗi xóa giao dịch Lỗ chốt deal**: Trong `FirebaseTransactionRepository.kt` và `DemoFinluxRepository.kt`, thêm kiểm tra `isSettlement` cho các giao dịch `walletId == "DEAL_SETTLEMENT"` / `dealFlowType == CAPITAL_LOSS` để không yêu cầu ví tiền mặt thực tế khi xóa. Tự động hoàn tác `netProfitLoss` của Deal, mở lại Deal về `ACTIVE` và xóa `endDate`.
+  2. ✅ **Nút & Dialog Thu Hồi Chốt Lỗ**: Thêm nút `"Thu Hồi Chốt Lỗ"` (màu xanh dương với icon `Icons.Rounded.RestartAlt`) trong `DealDetailBottomSheet.kt` khi Deal có giao dịch chốt lỗ, kèm Dialog xác nhận hoàn tác chốt lỗ và mở lại Deal.
+  3. ✅ **Domain Layer**: Thêm `revertDealLoss` trong `DealRepository`, triển khai trong `FirebaseDealRepository` & `DemoFinluxRepository`, tạo `RevertDealLossUseCase` và kết nối với `DealsViewModel.revertDealLoss`.
+  4. ✅ **Unit Test & Build**: Thêm test case `revert deal loss restores netProfitLoss, removes capital loss tx and reopens deal` trong `DealUseCasesTest.kt` (237/237 tests PASS), build APK và nạp lên thiết bị.
+
+### [Task-DEAL-DELETE-COUNTDOWN-SAFETY] — Tích hợp cơ chế đếm ngược 5s bảo vệ dữ liệu khi xóa Thương Vụ
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **DealDetailBottomSheet.kt**: Tích hợp `LaunchedEffect` đếm ngược 5 giây (`5s -> 4s -> ... -> 0s`) khi mở Dialog xác nhận xóa Deal.
+  2. ✅ **UI An toàn dữ liệu**: Nút xóa hiển thị nhãn `Xóa (5s)`, bị disable trong 5s đầu và chỉ mở khóa `Xóa Vĩnh Viễn` khi đếm ngược về 0. Hiển thị thông điệp cảnh báo màu đỏ trực quan.
+  3. ✅ **DealsScreen.kt**: Tự động đóng Bottom Sheet chi tiết sau khi người dùng thực hiện xóa thương vụ thành công.
+  4. ✅ **Kiểm thử & Nạp APK**: Chạy `testDebugUnitTest` 100% PASS, build và nạp APK trực tiếp lên thiết bị.
+
+### [Task-DEAL-SHEETS-DATETIME-PICKER] — Thêm mục chọn Ngày & Giờ cho 2 Sheet Thương vụ (Xuất vốn & Thu hồi vốn/lãi)
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **RecordDealOutlaySheet.kt (Chi Xuất Thêm Vốn)**: Thêm hàng `ErgonomicFormRow` chọn thời gian giao dịch (`THỜI GIAN XUẤT VỐN`) với nhãn thông minh (`Hôm nay, dd/MM/yyyy • HH:mm`), tích hợp `DatePickerDialog` + `TimePickerDialog` (24h), truyền `date` vào `onConfirm`.
+  2. ✅ **RecordDealInflowSheet.kt (Thu Hồi Vốn & Lợi Nhuận)**: Thêm hàng `ErgonomicFormRow` chọn thời gian giao dịch (`THỜI GIAN THU TIỀN`), tích hợp `DatePickerDialog` + `TimePickerDialog` (24h), truyền `date` vào `onConfirm`.
+  3. ✅ **DealsScreen.kt**: Kết nối tham số `date` từ sheet vào `viewModel.recordInflow` và `viewModel.recordOutlay`.
+  4. ✅ **Kiểm thử & Nạp APK**: Chạy `testDebugUnitTest` 100% PASS, build và nạp APK trực tiếp lên thiết bị.
+
+### [Task-DEAL-TRANSACTION-VALIDATION-FIX] — Cho phép Sửa/Thêm giao dịch Deal không cần Danh mục (Category)
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Domain Validation**: Cập nhật `TransactionValidation.kt` kiểm tra `val isDeal = !transaction.dealId.isNullOrBlank() || transaction.dealFlowType != null`, bỏ qua bắt buộc `categoryId` đối với các giao dịch thuộc Thương vụ đầu tư.
+  2. ✅ **Unit Test**: Thêm test case `edit allows deal transaction without category` vào `TransactionUseCasesTest.kt` (100% PASS).
+  3. ✅ **Build & Install**: Build APK thành công và nạp trực tiếp lên thiết bị.
+
+### [Task-TOAST-SNACKBAR-STANDARDIZATION] — Chuẩn hóa hệ sinh thái Toast & Snackbar Liquid Glass Capsule
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Core Design System**:
+     - Xây dựng `FinluxGlassSnackbar` dạng Viên nang Nổi (Floating Glass Capsule) bo góc `24dp`, nền kính mờ thích ứng theme `tokens.surface (alpha 94-96%)`, viền mảnh `BorderStroke(1.dp, tokens.border)`, shadow mềm `8dp`.
+     - Tích hợp Badge Logo Finlux (`ic_finlux`), văn bản sắc nét, và nút Action / *"Hoàn tác"* (`actionLabel`) màu `tokens.primary`.
+     - Xây dựng `FinluxSnackbarHost` tự động căn giữa ngang và cộng khoảng cách `tokens.spacing.bottomBarClearance + 12dp` khi `hasBottomBar = true` (né BottomBar ~108dp, loại bỏ 100% hiện tượng bị đè lấp).
+  2. ✅ **Đồng bộ toàn bộ màn hình chính (có BottomBar)**:
+     - `PrismTransactionsScreen`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`.
+     - `PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`.
+     - `PrismBudgetScreen`, `ModernBudgetScreen`, `ClassicBudgetScreen`.
+  3. ✅ **Đồng bộ toàn bộ màn hình con & Form Sheets**:
+     - `DebtDashboardScreen` (Quản lý nợ & Tín dụng — chuyển đổi từ Native Toast sang `FinluxSnackbarHost`).
+     - `DealsScreen` (Thương vụ đầu tư).
+     - `NotificationsScreen`, `RemindersScreen`, `CategoriesScreen`.
+     - `PrismSettingsScreen`, `SettingsScreen` (Chuyển đổi cảnh báo sinh trắc học sang `FinluxSnackbarHost`).
+  4. ✅ **Đồng bộ Tài liệu Quy chuẩn**:
+     - Cập nhật mục `7️⃣ FinluxSnackbarHost & FinluxGlassSnackbar` vào `docs/FORM_COMPONENTS_SPEC.md`.
+  5. ✅ **Kiểm thử Unit Test**:
+     - Chạy `./gradlew testDebugUnitTest`: **100% PASS (235/235 tests)**.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/category/CategoriesScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `docs/FORM_COMPONENTS_SPEC.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-DEAL-TRACKING-ROI-MATCHING] — Triển khai tính năng Thương Vụ & Đầu Tư Sinh Lời (UC-29)
+- **Status**: `[DONE]`
+- **Mục tiêu đã hoàn thành**:
+  1. ✅ **Data & Domain Layer**:
+     - Tạo `DealModels.kt` chứa `FinancialDeal`, `DealStatus`, `DealFlowType`.
+     - Mở rộng `FinanceTransaction` bổ sung `dealId` và `dealFlowType`.
+     - Tạo `DealRepository` interface & `FirebaseDealRepository` (kèm Firestore collection `users/{uid}/deals`).
+     - Tạo `DealUseCases.kt` với 6 UseCase: `GetDealsUseCase`, `GetDealDetailUseCase`, `SaveDealUseCase`, `DeleteDealUseCase`, `RecordDealOutlayUseCase`, `RecordDealInflowUseCase`, `CloseDealWithLossUseCase`.
+     - Tích hợp `DemoFinluxRepository` & DI `RepositoryModule`.
+  2. ✅ **Cơ Chế Phân Rã Dòng Tiền Nguyên Tử (Atomic Flow Decomposition)**:
+     - Tự động tách phần hoàn gốc và tiền lời ròng trong 1 Firestore Transaction duy nhất.
+     - Hỗ trợ chốt lỗ đóng deal (`closeDealWithLoss`) sinh giao dịch `CAPITAL_LOSS`.
+  3. ✅ **Cô Lập Ngân Sách & Báo Cáo (Isolation Engine)**:
+     - `ReportsViewModel`: Loại trừ `OUTLAY_CAPITAL` khỏi Chi phí và `PRINCIPAL_RECOVERY` khỏi Thu nhập; đưa `CAPITAL_GAIN` vào Thu nhập và `CAPITAL_LOSS` vào Chi phí.
+     - `BudgetViewModel`: Vốn xuất không làm cạn kiệt ngân sách chi tiêu hàng tháng.
+     - `HomeViewModel`: Tổng quan tài chính hiển thị chính xác dòng tiền sinh hoạt.
+  4. ✅ **Giao Diện Liquid Glass Hiện Đại (`presentation/deal/`)**:
+     - `DealsScreen`: Hero Summary Card (Vốn lưu động, Lợi nhuận tích lũy, ROI %), Tab switcher (Active vs Completed), Card thương vụ kèm thanh tiến độ hoàn vốn (Progress bar).
+     - `DealDetailBottomSheet`: Dòng thời gian giao dịch và 4 nút thao tác nghiệp vụ.
+     - `CreateDealDialog`, `RecordDealInflowDialog` (Live Preview phân rã dòng tiền), `RecordDealOutlayDialog`.
+     - Đăng ký `Route.Deals` trong `Routes.kt` & `FinluxNavHost.kt`, gắn entry point trong `SettingsScreen` & `PrismSettingsScreen`.
+  5. ✅ **Kiểm Thử & Đóng Gói Release**:
+     - Viết bộ test `DealUseCasesTest.kt` kiểm tra toàn bộ kịch bản nghiệp vụ.
+     - Chạy `./gradlew testDebugUnitTest`: **235/235 tests PASS 100%**.
+     - Chạy `./gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+     - Tự động bump version lên `v1.17.0` (versionCode `159`), cập nhật `CHANGELOG.md` & `HANDOVER_LOG.md`.
+- **Danh sách file đã tạo mới/chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DealModels.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/DealRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/DealUseCases.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsUiState.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsViewModel.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/CreateDealDialog.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowDialog.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlayDialog.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealDetailBottomSheet.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsScreen.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/core/navigation/Routes.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/presentation/settings/prism/PrismSettingsMenuTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+  - `docs/BA_SPEC.md`
+  - `docs/DATA_SPEC.md`
 
 ### [Task-SAVING-SPIN-TRANSFER-STREAK-SETTINGS-FIX] — Cơ chế Chuyển tiền vào Ví tiết kiệm, Chuỗi nạp động, Dialog nhập Min/Max & Lưu Cài đặt vào DB
 - **Status**: `[DONE]`

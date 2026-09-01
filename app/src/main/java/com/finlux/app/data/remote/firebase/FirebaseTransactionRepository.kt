@@ -2,6 +2,7 @@ package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.time.FinanceTime
+import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
@@ -163,6 +164,11 @@ class FirebaseTransactionRepository(
                 else atomic.get(newBudgetRef)
             } else null
 
+            val dealRef = if (!stored.dealId.isNullOrBlank()) {
+                firestore.collection("users").document(uid).collection("deals").document(stored.dealId)
+            } else null
+            val dealDoc = if (dealRef != null) atomic.get(dealRef) else null
+
             if (oldWalletRef.path == newWalletRef.path) {
                 val finalBalance = Math.addExact(
                     Math.subtractExact(oldBalance, stored.balanceDelta()),
@@ -202,13 +208,38 @@ class FirebaseTransactionRepository(
                     )
                 )
             }
-            atomic.set(transactionRef, updated.copy(id = stored.id, createdAt = stored.createdAt).toFirestoreMap())
+            val preservedUpdated = updated.copy(
+                id = stored.id,
+                createdAt = stored.createdAt,
+                dealId = stored.dealId,
+                dealFlowType = stored.dealFlowType
+            )
+            atomic.set(transactionRef, preservedUpdated.toFirestoreMap())
             // BR-06: reverse old budget spent based on stored, apply new budget spent
             if (oldBudgetDoc != null && oldBudgetDoc.exists() && oldBudgetRef != null) {
                 atomic.update(oldBudgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
             }
             if (newBudgetDoc != null && newBudgetDoc.exists() && newBudgetRef != null) {
                 atomic.update(newBudgetRef, "spentAmount", FieldValue.increment(updated.amount.value))
+            }
+            if (dealDoc != null && dealDoc.exists() && dealRef != null && stored.dealFlowType != null) {
+                val deltaAmount = updated.amount.value - stored.amount.value
+                if (deltaAmount != 0L) {
+                    when (stored.dealFlowType) {
+                        DealFlowType.OUTLAY_CAPITAL -> {
+                            atomic.update(dealRef, "totalCapitalOutlay", FieldValue.increment(deltaAmount))
+                        }
+                        DealFlowType.PRINCIPAL_RECOVERY -> {
+                            atomic.update(dealRef, "totalRecovered", FieldValue.increment(deltaAmount))
+                        }
+                        DealFlowType.CAPITAL_GAIN -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(deltaAmount))
+                        }
+                        DealFlowType.CAPITAL_LOSS -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(-deltaAmount))
+                        }
+                    }
+                }
             }
         }.await()
         Unit
@@ -285,31 +316,70 @@ class FirebaseTransactionRepository(
                 )
             } else {
                 // Normal deletion for INCOME / EXPENSE
-                val walletRef = firestore.userWallets(uid).document(stored.walletId)
-                val walletDoc = atomic.get(walletRef)
-                val balance = walletDoc.getLong("balance") ?: error("Không tìm thấy ví")
-                val isCard = walletDoc.getString("type").equals("CARD", ignoreCase = true)
+                val isSettlement = stored.walletId == "DEAL_SETTLEMENT" || stored.dealFlowType == DealFlowType.CAPITAL_LOSS
+                val walletRef = if (!isSettlement) firestore.userWallets(uid).document(stored.walletId) else null
+                val walletDoc = if (walletRef != null) atomic.get(walletRef) else null
+                val balance = walletDoc?.getLong("balance")
+                if (!isSettlement && (walletDoc == null || balance == null)) {
+                    error("Không tìm thấy ví")
+                }
+                val isCard = walletDoc?.getString("type")?.equals("CARD", ignoreCase = true) == true
                 val budgetRef = stored.budgetRef(firestore, uid)
                 val budgetDoc = if (budgetRef != null && stored.type == TransactionType.EXPENSE) {
                     atomic.get(budgetRef)
                 } else null
 
-                val finalBalance = Math.subtractExact(balance, stored.balanceDelta())
-                if (!isCard && finalBalance < 0) {
-                    error("Không thể xóa giao dịch vì số dư ví hiện tại không đủ để hoàn tác")
+                val dealRef = if (!stored.dealId.isNullOrBlank()) {
+                    firestore.collection("users").document(uid).collection("deals").document(stored.dealId)
+                } else null
+                val dealDoc = if (dealRef != null) atomic.get(dealRef) else null
+
+                if (!isSettlement && walletRef != null && balance != null) {
+                    val finalBalance = Math.subtractExact(balance, stored.balanceDelta())
+                    if (!isCard && finalBalance < 0) {
+                        error("Không thể xóa giao dịch vì số dư ví hiện tại không đủ để hoàn tác")
+                    }
+                    atomic.update(
+                        walletRef,
+                        mapOf(
+                            "balance" to finalBalance,
+                            "lastTransactionId" to transactionRef.id
+                        )
+                    )
                 }
 
                 atomic.delete(transactionRef)
-                atomic.update(
-                    walletRef,
-                    mapOf(
-                        "balance" to finalBalance,
-                        "lastTransactionId" to transactionRef.id
-                    )
-                )
+
                 // BR-06: reverse spentAmount when deleting an EXPENSE transaction based on stored
                 if (budgetDoc != null && budgetDoc.exists() && budgetRef != null) {
                     atomic.update(budgetRef, "spentAmount", FieldValue.increment(-stored.amount.value))
+                }
+                // Đồng bộ deal metrics khi giao dịch deal bị xóa độc lập
+                if (dealDoc != null && dealDoc.exists() && dealRef != null && stored.dealFlowType != null) {
+                    when (stored.dealFlowType) {
+                        DealFlowType.OUTLAY_CAPITAL -> {
+                            atomic.update(dealRef, "totalCapitalOutlay", FieldValue.increment(-stored.amount.value))
+                        }
+                        DealFlowType.PRINCIPAL_RECOVERY -> {
+                            atomic.update(dealRef, "totalRecovered", FieldValue.increment(-stored.amount.value))
+                            val currentOutlay = dealDoc.getLong("totalCapitalOutlay") ?: 0L
+                            val currentRecovered = dealDoc.getLong("totalRecovered") ?: 0L
+                            val newRecovered = currentRecovered - stored.amount.value
+                            val currentStatus = dealDoc.getString("status") ?: "active"
+                            if (currentStatus.equals("completed", ignoreCase = true) && newRecovered < currentOutlay) {
+                                atomic.update(dealRef, "status", "active")
+                                atomic.update(dealRef, "endDate", null)
+                            }
+                        }
+                        DealFlowType.CAPITAL_GAIN -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(-stored.amount.value))
+                        }
+                        DealFlowType.CAPITAL_LOSS -> {
+                            atomic.update(dealRef, "netProfitLoss", FieldValue.increment(stored.amount.value))
+                            atomic.update(dealRef, "status", "active")
+                            atomic.update(dealRef, "endDate", null)
+                        }
+                    }
                 }
             }
         }.await()
@@ -503,6 +573,8 @@ private fun FinanceTransaction.toFirestoreMap(): Map<String, Any?> = mapOf(
     "categoryId" to categoryId,
     "walletId" to walletId,
     "relatedWalletId" to relatedWalletId,
+    "dealId" to dealId,
+    "dealFlowType" to dealFlowType?.name?.lowercase(),
     "note" to note,
     "receiptImageUrl" to receiptImageUrl,
     "date" to Timestamp(Date.from(date)),
@@ -519,6 +591,10 @@ internal fun com.google.firebase.firestore.DocumentSnapshot.toFinanceTransaction
             categoryId = getString("categoryId"),
             walletId = requireNotNull(getString("walletId")),
             relatedWalletId = getString("relatedWalletId"),
+            dealId = getString("dealId"),
+            dealFlowType = getString("dealFlowType")?.let { raw ->
+                runCatching { com.finlux.app.domain.model.DealFlowType.valueOf(raw.uppercase()) }.getOrNull()
+            },
             note = getString("note").orEmpty(),
             receiptImageUrl = getString("receiptImageUrl"),
             date = requireNotNull(getTimestamp("date")).toDate().toInstant(),

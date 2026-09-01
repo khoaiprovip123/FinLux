@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,12 +63,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -153,6 +158,8 @@ fun SettingsScreen(
     val avatarState = viewModel.avatarState.collectAsStateWithLifecycle().value
     val nameState = viewModel.nameState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var showAvatarSource by remember { mutableStateOf(false) }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var showNameEditor by remember { mutableStateOf(false) }
@@ -280,6 +287,7 @@ fun SettingsScreen(
                 )
             },
             containerColor = Color.Transparent,
+            snackbarHost = { FinluxSnackbarHost(snackbarHostState, hasBottomBar = true) },
         ) { padding ->
             LazyColumn(
                 Modifier
@@ -325,6 +333,7 @@ fun SettingsScreen(
                         Column {
                             ProfileMenuRow(Icons.Default.Edit, "Thông tin cá nhân") { openNameEditor() }
                             ProfileMenuRow(Icons.Default.AccountBalanceWallet, "Ví và tài khoản") { onNavigate(Route.Wallets.value) }
+                            ProfileMenuRow(Icons.Default.TrendingUp, "Thương vụ & Đầu tư sinh lời") { onNavigate(Route.Deals.value) }
                             ProfileMenuRow(Icons.Default.Savings, "Ngân sách cá nhân") { onNavigate(Route.Budget.value) }
                             ProfileMenuRow(Icons.Default.CalendarMonth, "Tháng tài chính & Chu kỳ lương") { showSalaryCycleSheet = true }
                             ProfileMenuRow(Icons.Default.Category, "Quản lý danh mục") { onNavigate(Route.Categories.value) }
@@ -457,7 +466,9 @@ fun SettingsScreen(
                                             if (com.finlux.app.core.security.BiometricHelper.canAuthenticate(context)) {
                                                 onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = true))
                                             } else {
-                                                android.widget.Toast.makeText(context, "Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học", android.widget.Toast.LENGTH_SHORT).show()
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar("Thiết bị chưa thiết lập hoặc không hỗ trợ sinh trắc học")
+                                                }
                                             }
                                         } else {
                                             onUiPreferencesChanged(uiPreferences.copy(biometricEnabled = false))
@@ -752,6 +763,7 @@ private fun ProfileFeatureTiles(walletCount: Int, onNavigate: (String) -> Unit) 
     val savingSpinAccent = MaterialTheme.colorScheme.primary
     val items = listOf(
         ProfileTile("Ví của tôi", "$walletCount ví", Icons.Default.AccountBalanceWallet, FinluxBlue, Route.Wallets.value),
+        ProfileTile("Thương vụ", "Đầu tư / ROI", Icons.Default.TrendingUp, Color(0xFF10B981), Route.Deals.value),
         ProfileTile("Ngân sách", "Theo dõi", Icons.Default.Savings, FinluxPurple, Route.Budget.value),
         ProfileTile("Nợ & Tín dụng", "Thoát nợ", Icons.Default.CreditCard, Color(0xFFE11D48), Route.Debt.value),
         ProfileTile("Danh mục", "Tùy chỉnh", Icons.Default.Category, FinluxCyan, Route.Categories.value),

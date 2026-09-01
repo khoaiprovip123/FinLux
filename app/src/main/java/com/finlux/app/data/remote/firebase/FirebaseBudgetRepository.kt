@@ -24,10 +24,15 @@ class FirebaseBudgetRepository(
             close()
             return@callbackFlow
         }
+        val keysToMatch = listOfNotNull(
+            periodKey,
+            if (periodKey.startsWith("month:")) periodKey.removePrefix("month:") else null,
+            if (periodKey.startsWith("salary:")) periodKey.removePrefix("salary:") else null,
+            if (!periodKey.startsWith("month:") && !periodKey.startsWith("salary:") && periodKey.isNotBlank()) "month:$periodKey" else null,
+        ).distinct()
+
         val registration = firestore.collection("users").document(uid).collection("budgets")
-            // Backward compatibility: try querying by periodKey first. If the backend is old, it might still use 'month'.
-            // In the new schema, we query by periodKey.
-            .whereEqualTo("periodKey", periodKey)
+            .whereIn("periodKey", keysToMatch)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
                 else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toBudget() })
@@ -68,7 +73,12 @@ internal fun Budget.toBudgetMap(): Map<String, Any?> = mapOf(
 internal fun DocumentSnapshot.toBudget(): Budget? = runCatching {
     val legacyMonthString = getString("month")
     val parsedMonth = if (!legacyMonthString.isNullOrEmpty()) YearMonth.parse(legacyMonthString) else null
-    val pKey = getString("periodKey") ?: legacyMonthString ?: ""
+    val rawPeriodKey = getString("periodKey")
+    val pKey = when {
+        !rawPeriodKey.isNullOrBlank() -> rawPeriodKey
+        !legacyMonthString.isNullOrBlank() -> "month:$legacyMonthString"
+        else -> ""
+    }
     Budget(
         id = id,
         categoryId = requireNotNull(getString("categoryId")),

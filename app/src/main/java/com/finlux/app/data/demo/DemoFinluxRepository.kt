@@ -42,6 +42,11 @@ import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.DealCategory
+import com.finlux.app.domain.model.DealStatus
+import com.finlux.app.domain.model.DealFlowType
+import com.finlux.app.domain.repository.DealRepository
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -64,7 +69,8 @@ class DemoFinluxRepository @Inject constructor(
     ReceiptStorageRepository,
     DashboardRepository,
     NotificationRepository,
-    DebtRepository {
+    DebtRepository,
+    DealRepository {
 
     private val mutationMutex = Mutex()
     private val profilePreferences = context.getSharedPreferences("finlux_demo_profile", Context.MODE_PRIVATE)
@@ -73,6 +79,7 @@ class DemoFinluxRepository @Inject constructor(
     private val categoryState = MutableStateFlow(seedCategories())
     private val transactionState = MutableStateFlow(seedTransactions())
     private val budgetState = MutableStateFlow(seedBudgets())
+    private val dealState = MutableStateFlow(seedDeals())
     private val reminderState = MutableStateFlow(seedReminders())
     private val goalState = MutableStateFlow(seedGoals())
     private val notificationState = MutableStateFlow(seedNotifications())
@@ -152,7 +159,16 @@ class DemoFinluxRepository @Inject constructor(
     override fun observeCategories(): Flow<List<Category>> = categoryState
 
     override fun observeBudgets(periodKey: String): Flow<List<Budget>> =
-        budgetState.map { budgets -> budgets.filter { it.periodKey == periodKey } }
+        budgetState.map { budgets ->
+            val normalizedKey = periodKey.removePrefix("month:").removePrefix("salary:")
+            budgets.filter {
+                val itemKey = it.periodKey.removePrefix("month:").removePrefix("salary:")
+                it.periodKey == periodKey ||
+                    itemKey == normalizedKey ||
+                    it.month?.toString() == normalizedKey ||
+                    "month:${it.periodKey}" == periodKey
+            }
+        }
 
     override fun observeReminders(): Flow<List<Reminder>> = reminderState
 
@@ -532,7 +548,13 @@ class DemoFinluxRepository @Inject constructor(
             return@withLock AppResult.Error("Không tìm thấy ví")
         }
         transactionState.value = transactionState.value.map {
-            if (it.id == current.id) updated.copy(updatedAt = Instant.now()) else it
+            if (it.id == current.id) updated.copy(
+                id = current.id,
+                createdAt = current.createdAt,
+                dealId = current.dealId,
+                dealFlowType = current.dealFlowType,
+                updatedAt = Instant.now()
+            ) else it
         }
         if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
             val oldMonth = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
@@ -550,6 +572,34 @@ class DemoFinluxRepository @Inject constructor(
                 if (b.categoryId == updated.categoryId && (b.periodKey == newPeriodKey || b.periodKey == "MONTHLY_$newMonth")) {
                     b.copy(spentAmount = Money(b.spentAmount.value + updated.amount.value))
                 } else b
+            }
+        }
+        if (!current.dealId.isNullOrBlank()) {
+            val deltaAmount = updated.amount.value - current.amount.value
+            if (deltaAmount != 0L) {
+                dealState.value = dealState.value.map { d ->
+                    if (d.id == current.dealId) {
+                        when (current.dealFlowType) {
+                            DealFlowType.OUTLAY_CAPITAL -> {
+                                val newOutlay = (d.totalCapitalOutlay.value + deltaAmount).coerceAtLeast(0L)
+                                d.copy(totalCapitalOutlay = Money(newOutlay), updatedAt = Instant.now())
+                            }
+                            DealFlowType.PRINCIPAL_RECOVERY -> {
+                                val newRecovered = (d.totalRecovered.value + deltaAmount).coerceAtLeast(0L)
+                                d.copy(totalRecovered = Money(newRecovered), updatedAt = Instant.now())
+                            }
+                            DealFlowType.CAPITAL_GAIN -> {
+                                val newGain = d.netProfitLoss.value + deltaAmount
+                                d.copy(netProfitLoss = Money(newGain), updatedAt = Instant.now())
+                            }
+                            DealFlowType.CAPITAL_LOSS -> {
+                                val newLoss = d.netProfitLoss.value - deltaAmount
+                                d.copy(netProfitLoss = Money(newLoss), updatedAt = Instant.now())
+                            }
+                            null -> d
+                        }
+                    } else d
+                }
             }
         }
         AppResult.Success(Unit)
@@ -587,8 +637,11 @@ class DemoFinluxRepository @Inject constructor(
                     it.id == current.id || (counterpartId != null && it.id == counterpartId)
                 }
             } else {
-                if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
-                    return@withLock AppResult.Error("Không tìm thấy ví")
+                val isSettlement = current.walletId == "DEAL_SETTLEMENT" || current.dealFlowType == DealFlowType.CAPITAL_LOSS
+                if (!isSettlement) {
+                    if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
+                        return@withLock AppResult.Error("Không tìm thấy ví")
+                    }
                 }
                 transactionState.value = transactionState.value.filterNot { it.id == current.id }
                 if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
@@ -598,6 +651,37 @@ class DemoFinluxRepository @Inject constructor(
                         if (b.categoryId == current.categoryId && (b.periodKey == periodKey || b.periodKey == "MONTHLY_$month")) {
                             b.copy(spentAmount = Money(b.spentAmount.value - current.amount.value))
                         } else b
+                    }
+                }
+                if (!current.dealId.isNullOrBlank()) {
+                    dealState.value = dealState.value.map { d ->
+                        if (d.id == current.dealId) {
+                            when (current.dealFlowType) {
+                                DealFlowType.OUTLAY_CAPITAL -> {
+                                    val newOutlay = (d.totalCapitalOutlay.value - current.amount.value).coerceAtLeast(0L)
+                                    d.copy(totalCapitalOutlay = Money(newOutlay), updatedAt = Instant.now())
+                                }
+                                DealFlowType.PRINCIPAL_RECOVERY -> {
+                                    val newRecovered = (d.totalRecovered.value - current.amount.value).coerceAtLeast(0L)
+                                    val newStatus = if (d.status == DealStatus.COMPLETED && newRecovered < d.totalCapitalOutlay.value) DealStatus.ACTIVE else d.status
+                                    d.copy(
+                                        totalRecovered = Money(newRecovered),
+                                        status = newStatus,
+                                        endDate = if (newStatus == DealStatus.ACTIVE) null else d.endDate,
+                                        updatedAt = Instant.now(),
+                                    )
+                                }
+                                DealFlowType.CAPITAL_GAIN -> {
+                                    val newGain = d.netProfitLoss.value - current.amount.value
+                                    d.copy(netProfitLoss = Money(newGain), updatedAt = Instant.now())
+                                }
+                                DealFlowType.CAPITAL_LOSS -> {
+                                    val newProfitLoss = d.netProfitLoss.value + current.amount.value
+                                    d.copy(netProfitLoss = Money(newProfitLoss), status = DealStatus.ACTIVE, updatedAt = Instant.now())
+                                }
+                                null -> d
+                            }
+                        } else d
                     }
                 }
             }
@@ -696,7 +780,241 @@ class DemoFinluxRepository @Inject constructor(
             .apply()
     }
 
+    override fun observeDeals(): Flow<List<FinancialDeal>> = dealState
+
+    override fun observeDeal(dealId: String): Flow<FinancialDeal?> =
+        dealState.map { list -> list.find { it.id == dealId } }
+
+    override suspend fun upsertDeal(deal: FinancialDeal): AppResult<String> = mutationMutex.withLock {
+        val id = if (deal.id.isNotBlank()) deal.id else UUID.randomUUID().toString()
+        val updated = deal.copy(id = id, updatedAt = Instant.now())
+        dealState.value = listOf(updated) + dealState.value.filterNot { it.id == id }
+        AppResult.Success(id)
+    }
+
+    override suspend fun deleteDeal(dealId: String): AppResult<Unit> = mutationMutex.withLock {
+        val relatedTxs = transactionState.value.filter { it.dealId == dealId }
+        for (tx in relatedTxs) {
+            when (tx.dealFlowType) {
+                DealFlowType.OUTLAY_CAPITAL -> changeWalletBalance(tx.walletId, tx.amount.value)
+                DealFlowType.PRINCIPAL_RECOVERY, DealFlowType.CAPITAL_GAIN -> changeWalletBalance(tx.walletId, -tx.amount.value)
+                DealFlowType.CAPITAL_LOSS, null -> { /* No real wallet balance change */ }
+            }
+        }
+        transactionState.value = transactionState.value.filterNot { it.dealId == dealId }
+        dealState.value = dealState.value.filterNot { it.id == dealId }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun recordDealOutlay(
+        deal: FinancialDeal,
+        walletId: String,
+        amount: Long,
+        date: Instant,
+        note: String,
+    ): AppResult<Unit> = mutationMutex.withLock {
+        if (!changeWalletBalance(walletId, -amount)) return@withLock AppResult.Error("Ví không tồn tại hoặc lỗi số dư")
+
+        val updatedDeal = deal.copy(
+            totalCapitalOutlay = Money(deal.totalCapitalOutlay.value + amount),
+            status = DealStatus.ACTIVE,
+            updatedAt = Instant.now()
+        )
+        dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
+
+        val tx = FinanceTransaction(
+            id = UUID.randomUUID().toString(),
+            type = TransactionType.EXPENSE,
+            amount = Money(amount),
+            categoryId = null,
+            walletId = walletId,
+            dealId = deal.id,
+            dealFlowType = DealFlowType.OUTLAY_CAPITAL,
+            note = note.ifBlank { buildDefaultNote(deal, DealFlowType.OUTLAY_CAPITAL) },
+            date = date,
+        )
+        transactionState.value = listOf(tx) + transactionState.value
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun recordDealInflow(
+        deal: FinancialDeal,
+        walletId: String,
+        amount: Long,
+        date: Instant,
+        note: String,
+    ): AppResult<Unit> = mutationMutex.withLock {
+        if (!changeWalletBalance(walletId, amount)) return@withLock AppResult.Error("Ví không tồn tại")
+
+        val totalOutlay = deal.totalCapitalOutlay.value
+        val totalRecovered = deal.totalRecovered.value
+        val currentProfit = deal.netProfitLoss.value
+        val remainingCapital = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+
+        val newTransactions = mutableListOf<FinanceTransaction>()
+
+        if (amount <= remainingCapital) {
+            val newRecovered = totalRecovered + amount
+            val newStatus = if (newRecovered >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED else DealStatus.ACTIVE
+            val updatedDeal = deal.copy(
+                totalRecovered = Money(newRecovered),
+                status = newStatus,
+                updatedAt = Instant.now()
+            )
+            dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
+
+            newTransactions.add(
+                FinanceTransaction(
+                    id = UUID.randomUUID().toString(),
+                    type = TransactionType.INCOME,
+                    amount = Money(amount),
+                    categoryId = null,
+                    walletId = walletId,
+                    dealId = deal.id,
+                    dealFlowType = DealFlowType.PRINCIPAL_RECOVERY,
+                    note = note.ifBlank { buildDefaultNote(deal, DealFlowType.PRINCIPAL_RECOVERY, isSplitPrincipal = false) },
+                    date = date,
+                )
+            )
+        } else {
+            val principalPortion = remainingCapital
+            val gainPortion = amount - remainingCapital
+
+            val updatedDeal = deal.copy(
+                totalRecovered = Money(totalOutlay),
+                netProfitLoss = Money(currentProfit + gainPortion),
+                status = DealStatus.COMPLETED,
+                updatedAt = Instant.now()
+            )
+            dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
+
+            if (principalPortion > 0) {
+                newTransactions.add(
+                    FinanceTransaction(
+                        id = UUID.randomUUID().toString(),
+                        type = TransactionType.INCOME,
+                        amount = Money(principalPortion),
+                        categoryId = null,
+                        walletId = walletId,
+                        dealId = deal.id,
+                        dealFlowType = DealFlowType.PRINCIPAL_RECOVERY,
+                        note = note.ifBlank { buildDefaultNote(deal, DealFlowType.PRINCIPAL_RECOVERY, isSplitPrincipal = true) },
+                        date = date,
+                    )
+                )
+            }
+            newTransactions.add(
+                FinanceTransaction(
+                    id = UUID.randomUUID().toString(),
+                    type = TransactionType.INCOME,
+                    amount = Money(gainPortion),
+                    categoryId = null,
+                    walletId = walletId,
+                    dealId = deal.id,
+                    dealFlowType = DealFlowType.CAPITAL_GAIN,
+                    note = note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_GAIN) },
+                    date = date,
+                )
+            )
+        }
+        transactionState.value = newTransactions + transactionState.value
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun closeDealWithLoss(
+        deal: FinancialDeal,
+        date: Instant,
+        note: String,
+    ): AppResult<Unit> = mutationMutex.withLock {
+        val totalOutlay = deal.totalCapitalOutlay.value
+        val totalRecovered = deal.totalRecovered.value
+        val currentProfit = deal.netProfitLoss.value
+        val lossAmount = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+
+        val updatedDeal = deal.copy(
+            netProfitLoss = Money(currentProfit - lossAmount),
+            status = DealStatus.COMPLETED,
+            endDate = date,
+            updatedAt = Instant.now()
+        )
+        dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
+
+        if (lossAmount > 0) {
+            val tx = FinanceTransaction(
+                id = UUID.randomUUID().toString(),
+                type = TransactionType.EXPENSE,
+                amount = Money(lossAmount),
+                categoryId = null,
+                walletId = "DEAL_SETTLEMENT",
+                dealId = deal.id,
+                dealFlowType = DealFlowType.CAPITAL_LOSS,
+                note = note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_LOSS) },
+                date = date,
+            )
+            transactionState.value = listOf(tx) + transactionState.value
+        }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun revertDealLoss(dealId: String): AppResult<Unit> = mutationMutex.withLock {
+        val lossTxs = transactionState.value.filter { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        val totalLoss = lossTxs.sumOf { it.amount.value }
+
+        transactionState.value = transactionState.value.filterNot { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        dealState.value = dealState.value.map { d ->
+            if (d.id == dealId) {
+                d.copy(
+                    netProfitLoss = Money(d.netProfitLoss.value + totalLoss),
+                    status = DealStatus.ACTIVE,
+                    endDate = null,
+                    updatedAt = Instant.now(),
+                )
+            } else d
+        }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun reopenDeal(dealId: String): AppResult<Unit> = mutationMutex.withLock {
+        dealState.value = dealState.value.map { d ->
+            if (d.id == dealId) {
+                d.copy(
+                    status = DealStatus.ACTIVE,
+                    endDate = null,
+                    updatedAt = Instant.now(),
+                )
+            } else d
+        }
+        AppResult.Success(Unit)
+    }
+
     private companion object {
+        fun seedDeals() = listOf(
+            FinancialDeal(
+                id = "deal-1",
+                userId = "demo-user",
+                title = "Lướt sóng iPhone 16 Pro Max",
+                description = "Mua lô 3 máy xách tay bán lại",
+                targetAmount = Money(105_000_000L),
+                totalCapitalOutlay = Money(90_000_000L),
+                totalRecovered = Money(90_000_000L),
+                netProfitLoss = Money(12_500_000L),
+                status = DealStatus.COMPLETED,
+                startDate = Instant.now().minus(30, ChronoUnit.DAYS),
+                endDate = Instant.now().minus(5, ChronoUnit.DAYS),
+            ),
+            FinancialDeal(
+                id = "deal-2",
+                userId = "demo-user",
+                title = "Góp vốn lô hàng phụ kiện Anker",
+                description = "Chung vốn nhập container với anh Tuấn",
+                targetAmount = Money(60_000_000L),
+                totalCapitalOutlay = Money(50_000_000L),
+                totalRecovered = Money(35_000_000L),
+                netProfitLoss = Money(0L),
+                status = DealStatus.ACTIVE,
+                startDate = Instant.now().minus(15, ChronoUnit.DAYS),
+            ),
+        )
         fun seedWallets() = listOf(
             Wallet("cash", "Tiền mặt", WalletType.CASH, Money(5_750_000), "#1F6FBF", true, Instant.now()),
             Wallet("bank", "MB Bank", WalletType.BANK, Money(18_420_000), "#3478F6", false, Instant.now()),
@@ -922,5 +1240,35 @@ class DemoFinluxRepository @Inject constructor(
                 monthlyContribution = Money(4_500_000L),
             ),
         )
+    }
+
+    /**
+     * Build ghi chú mặc định cho giao dịch Deal (Demo mode).
+     * Đồng bộ logic với FirebaseDealRepository.buildDefaultNote().
+     */
+    private fun buildDefaultNote(
+        deal: FinancialDeal,
+        flowType: DealFlowType,
+        isSplitPrincipal: Boolean = false,
+    ): String {
+        val prefix = when (deal.category) {
+            DealCategory.INVESTMENT -> "[Đầu tư]"
+            DealCategory.LENDING    -> "[Cho vay]"
+        }
+        val action = when (deal.category) {
+            DealCategory.INVESTMENT -> when (flowType) {
+                DealFlowType.OUTLAY_CAPITAL     -> "Xuất vốn"
+                DealFlowType.PRINCIPAL_RECOVERY -> if (isSplitPrincipal) "Thu hồi vốn" else "Thu hồi vốn gốc"
+                DealFlowType.CAPITAL_GAIN       -> "Lợi nhuận"
+                DealFlowType.CAPITAL_LOSS       -> "Lỗ vốn"
+            }
+            DealCategory.LENDING -> when (flowType) {
+                DealFlowType.OUTLAY_CAPITAL     -> "Xuất vốn vay"
+                DealFlowType.PRINCIPAL_RECOVERY -> "Thu hồi vốn vay"
+                DealFlowType.CAPITAL_GAIN       -> "Lợi nhuận vay"
+                DealFlowType.CAPITAL_LOSS       -> "Mất vốn"
+            }
+        }
+        return "$prefix $action: ${deal.title}"
     }
 }
