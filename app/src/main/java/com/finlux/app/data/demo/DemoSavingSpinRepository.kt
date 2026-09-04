@@ -95,7 +95,11 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
         scheduleKey: String,
         destinationId: String,
         method: SavingMethod,
+        transactionId: String?,
     ): AppResult<Unit> = updateSession(scheduleKey) { current ->
+        if (current.status == SavingSpinStatus.COMPLETED) {
+            return@updateSession current
+        }
         require(current.status in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) && current.selectedAmount != null) {
             "Lượt quay chưa có kết quả để hoàn tất"
         }
@@ -103,6 +107,7 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
             status = SavingSpinStatus.COMPLETED,
             destinationId = destinationId,
             method = method,
+            transactionId = transactionId ?: current.transactionId,
             completedAt = Instant.now(),
             updatedAt = Instant.now(),
         )
@@ -117,24 +122,6 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
     override suspend fun skipSession(scheduleKey: String): AppResult<Unit> = updateSession(scheduleKey) { current ->
         require(current.status in setOf(SavingSpinStatus.READY, SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED))
         current.copy(status = SavingSpinStatus.SKIPPED, skippedAt = Instant.now(), updatedAt = Instant.now())
-    }
-
-    override suspend fun resetSession(scheduleKey: String): AppResult<Unit> = synchronized(this) {
-        val current = sessions.value[scheduleKey] ?: return@synchronized AppResult.Success(Unit)
-        val reset = current.copy(
-            selectedIndex = null,
-            selectedAmount = null,
-            status = SavingSpinStatus.READY,
-            destinationId = null,
-            method = null,
-            spunAt = null,
-            completedAt = null,
-            skippedAt = null,
-            snoozedUntil = null,
-            updatedAt = Instant.now(),
-        )
-        sessions.value = sessions.value + (scheduleKey to reset)
-        AppResult.Success(Unit)
     }
 
     override fun observeSessions(fromInclusive: Instant, toExclusive: Instant): Flow<List<SavingSpinSession>> =

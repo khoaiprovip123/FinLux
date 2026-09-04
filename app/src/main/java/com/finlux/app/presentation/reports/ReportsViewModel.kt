@@ -2,7 +2,9 @@ package com.finlux.app.presentation.reports
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.finlux.app.core.time.FinanceClock
 import com.finlux.app.core.time.FinanceTime
+import com.finlux.app.core.time.SystemFinanceClock
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
@@ -12,6 +14,7 @@ import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.model.SavingSpinConfig
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
@@ -24,6 +27,7 @@ import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.TransactionRangeRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.usecase.CalculateSavingSpinStreakUseCase
 import com.finlux.app.domain.usecase.FinancialPeriodResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -202,6 +206,8 @@ class ReportsViewModel @Inject constructor(
     private val savingSpinRepository: com.finlux.app.domain.repository.SavingSpinRepository,
     private val financialPeriodResolver: FinancialPeriodResolver,
     private val windowResolver: ReportQueryWindowResolver,
+    private val clock: FinanceClock = SystemFinanceClock(),
+    private val calculateSavingSpinStreakUseCase: CalculateSavingSpinStreakUseCase = CalculateSavingSpinStreakUseCase(financialPeriodResolver, clock),
 ) : ViewModel() {
     val selectedPeriod = MutableStateFlow(ReportPeriod.MONTH)
     private val today = LocalDate.now(FinanceTime.VIETNAM_ZONE)
@@ -470,8 +476,13 @@ class ReportsViewModel @Inject constructor(
             }
             .sortedByDescending { it.amount.value }
 
-        val calculateStreak = com.finlux.app.domain.usecase.CalculateSavingSpinStreakUseCase()
-        val spinStreak = calculateStreak(spinSessions)
+        val spinStreakResult = calculateSavingSpinStreakUseCase(
+            config = SavingSpinConfig(),
+            sessions = spinSessions,
+            now = clock.now(),
+            salaryCycleConfig = salaryConfig,
+        )
+        val spinStreak = spinStreakResult.currentStreak
         val spinCompletionRate = if (spinSessions.isEmpty()) 0 else (completedSpins.size * 100 / spinSessions.size)
 
         val savingSpinSummary = SavingSpinSummaryReport(

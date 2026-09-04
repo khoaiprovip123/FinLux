@@ -100,6 +100,9 @@ class SavingSpinSettingsViewModel @Inject constructor(
         )
     }
 
+    fun dismissSaved() = mutableUiState.update { it.copy(saved = false) }
+    fun clearValidationMessage() = mutableUiState.update { it.copy(validationMessage = null) }
+
     fun save() = viewModelScope.launch {
         val state = uiState.value
         val min = state.minAmountInput.toLongOrNull() ?: state.config.minAmount.value

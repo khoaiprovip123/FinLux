@@ -1,6 +1,7 @@
 package com.finlux.app.presentation.savingspin
 
 import app.cash.turbine.test
+import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.time.FinanceClock
 import com.finlux.app.data.demo.DemoSalaryCycleRepository
 import com.finlux.app.data.demo.DemoSavingSpinRepository
@@ -9,7 +10,12 @@ import com.finlux.app.domain.model.SavingDestination
 import com.finlux.app.domain.model.SavingMethod
 import com.finlux.app.domain.model.SavingSpinConfig
 import com.finlux.app.domain.model.SavingSpinStatus
+import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.SavingSpinScheduler
+import com.finlux.app.domain.repository.TransactionRepository
+import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.usecase.CalculateSavingSpinStreakUseCase
 import com.finlux.app.domain.usecase.CompleteSavingSpinUseCase
 import com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver
 import com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator
@@ -17,12 +23,13 @@ import com.finlux.app.domain.usecase.GenerateSavingSpinWheelUseCase
 import com.finlux.app.domain.usecase.GetOrCreateSavingSpinSessionUseCase
 import com.finlux.app.domain.usecase.ResolveSavingSpinScheduleKeyUseCase
 import com.finlux.app.domain.usecase.SpinSavingWheelUseCase
+import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import java.time.Instant
-import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -35,14 +42,16 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.time.ZoneId
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SavingSpinViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val now = Instant.parse("2026-08-31T02:00:00Z")
     private val clock = object : FinanceClock {
-        override val zoneId = ZoneId.of("Asia/Ho_Chi_Minh")
-        override fun now() = now
+        override val zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+        override fun now(): Instant = now
     }
 
     @BeforeEach fun setUp() = Dispatchers.setMain(dispatcher)
@@ -104,22 +113,36 @@ class SavingSpinViewModelTest {
         verify(exactly = 1) { fixture.scheduler.snooze(until) }
     }
 
+    @Test
+    fun `skip marks session skipped and closes sheet`() = runTest(dispatcher) {
+        val fixture = fixture(enabled = true)
+        advanceUntilIdle()
+        fixture.viewModel.onAction(SavingSpinAction.OpenGame)
+        fixture.viewModel.onAction(SavingSpinAction.Spin)
+        advanceUntilIdle()
+        fixture.viewModel.onAction(SavingSpinAction.Skip)
+        advanceUntilIdle()
+
+        assertEquals(SavingSpinStatus.SKIPPED, fixture.viewModel.uiState.value.session?.status)
+        assertFalse(fixture.viewModel.uiState.value.isGameOpen)
+    }
+
     private suspend fun fixture(enabled: Boolean, withDestination: Boolean = false): Fixture {
         val repository = DemoSavingSpinRepository()
         repository.saveConfig(SavingSpinConfig(enabled = enabled, minAmount = Money(10_000), maxAmount = Money(100_000)))
         if (withDestination) repository.upsertDestination(SavingDestination("piggy", "Heo đất", SavingMethod.CASH))
         val scheduler = mockk<SavingSpinScheduler>(relaxed = true)
-        val transactionRepository = mockk<com.finlux.app.domain.repository.TransactionRepository>(relaxed = true)
-        io.mockk.coEvery { transactionRepository.addWithBalanceUpdate(any()) } returns com.finlux.app.core.common.AppResult.Success("tx-id")
-        io.mockk.coEvery { transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any()) } returns com.finlux.app.core.common.AppResult.Success(Unit)
-        val walletRepository = mockk<com.finlux.app.domain.repository.WalletRepository>(relaxed = true)
-        io.mockk.every { walletRepository.observeWallets() } returns kotlinx.coroutines.flow.flowOf(
+        val transactionRepository = mockk<TransactionRepository>(relaxed = true)
+        coEvery { transactionRepository.addWithBalanceUpdate(any()) } returns AppResult.Success("tx-id")
+        coEvery { transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any()) } returns AppResult.Success(Unit)
+        val walletRepository = mockk<WalletRepository>(relaxed = true)
+        every { walletRepository.observeWallets() } returns flowOf(
             listOf(
-                com.finlux.app.domain.model.Wallet(
+                Wallet(
                     id = "test-wallet-1",
                     name = "Ví Tiền Mặt",
                     balance = Money(1_000_000),
-                    type = com.finlux.app.domain.model.WalletType.CASH,
+                    type = WalletType.CASH,
                     colorHex = "#2563EB",
                     isDefault = true,
                     createdAt = now,
@@ -135,7 +158,8 @@ class SavingSpinViewModelTest {
                 resolveScheduleKey = ResolveSavingSpinScheduleKeyUseCase(financialResolver),
                 getOrCreateSession = GetOrCreateSavingSpinSessionUseCase(repository, GenerateSavingSpinWheelUseCase()),
                 spinWheel = SpinSavingWheelUseCase(repository),
-                completeSavingSpin = CompleteSavingSpinUseCase(repository, transactionRepository, walletRepository),
+                completeSavingSpin = CompleteSavingSpinUseCase(repository, transactionRepository, walletRepository, clock),
+                calculateStreak = CalculateSavingSpinStreakUseCase(financialResolver, clock),
                 scheduler = scheduler,
                 clock = clock,
             ),

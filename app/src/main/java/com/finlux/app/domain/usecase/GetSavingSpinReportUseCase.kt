@@ -45,6 +45,12 @@ class GetSavingSpinReportUseCase @Inject constructor(
             }
             .sortedByDescending { it.amount.value }
 
+        val amounts = completed.mapNotNull { it.selectedAmount?.value }
+        val avgAmount = if (amounts.isNotEmpty()) amounts.average().toLong() else 0L
+        val maxAmount = amounts.maxOrNull() ?: 0L
+        val minAmount = amounts.minOrNull() ?: 0L
+        val streak = calculateStreak(sessions, activeScheduleKey)
+
         SavingSpinReport(
             summary = SavingSpinReportSummary(
                 savedAmount = Money(savedAmount),
@@ -52,7 +58,11 @@ class GetSavingSpinReportUseCase @Inject constructor(
                 skippedCount = skippedCount,
                 scheduledCount = sessions.size,
                 completionRate = if (sessions.isEmpty()) 0 else (completed.size * 100 / sessions.size),
-                currentStreak = calculateStreak(sessions, activeScheduleKey),
+                currentStreak = streak,
+                longestStreak = streak,
+                averageAmount = Money(avgAmount),
+                highestAmount = Money(maxAmount),
+                lowestAmount = Money(minAmount),
             ),
             dailyTotals = dailyTotals,
             destinationTotals = destinationTotals,

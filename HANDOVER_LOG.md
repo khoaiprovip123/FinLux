@@ -1,8 +1,76 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.20.1 (versionCode 163) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (278/278 Unit Tests) — Chuẩn hóa & mapping toàn diện Ngân sách vào Báo cáo Chuyên sâu hoàn tất.
+- **Phiên bản hiện tại:** v1.21.0 (versionCode 164) [DONE]
+- **Trạng thái Build:** ✅ 100% PASS (278/278 Unit Tests) — Hoàn tất Ổn định Vòng quay tiết kiệm, Chuẩn hóa State Machine & Nâng cấp UI/UX Cài đặt vòng quay.
+
+### [Task-SAVING-SPIN-SETTINGS-UI-UX-UPGRADE] — Nâng cấp UI/UX Cài đặt vòng quay (Setup Saving Spin)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Cửa sổ nhập Mức tối thiểu & Mức tối đa Liquid Glass**: Sử dụng `FinluxBottomSheet`, card nhập tiền `FinluxAmountInputCard` đồng bộ định dạng chấm phân cách hàng nghìn (`50.000 ₫`), các chip mốc chọn nhanh (10k, 20k, 50k, 100k...) và chip cộng dồn (+5k, +10k, +50k...), tự động căn chỉnh bội số theo bước giá (`step`).
+  2. ✅ **Danh sách chọn Số ô vòng quay trực quan**: Mở `FinluxBottomSheet` liệt kê rõ ràng 4 tùy chọn (6 ô, 8 ô, 10 ô, 12 ô) kèm mô tả chi tiết, người dùng chọn trực tiếp bằng 1 chạm. Đồng thời nâng cấp modal chọn **Tần suất** và **Giờ nhắc** theo danh sách/preset trực quan.
+  3. ✅ **Pop-up thông báo Lưu thành công**: Hiển thị `FinluxDialog` phong cách Liquid Glass nổi bật với icon CheckCircle, tiêu đề "Thiết lập thành công!" và nút "Đã hiểu" sau khi lưu cấu hình.
+- **Kiểm thử tự động**:
+  - `SavingSpinSettingsViewModelTest.kt` (4/4 PASS)
+  - Toàn bộ `./gradlew.bat testDebugUnitTest` PASS 100% (59 test classes).
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsViewModel.kt`
+
+### [Task-SAVING-SPIN-STABILIZATION-P0-P2] — Toàn diện Kế hoạch Sửa lỗi & Ổn định Vòng quay tiết kiệm (Saving Spin)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **P0 - Khóa Reroll & State Machine**: Xóa hoàn toàn `ResetGame` và `resetSession()` khỏi production. State machine chỉ cho phép quay khi ở trạng thái `READY`.
+  2. ✅ **P0 - Chuẩn hóa Semantics CASH vs BANK_TRANSFER (Không ghi EXPENSE)**:
+     - `CASH`: Chỉ ghi nhận sổ tiết kiệm (Ledger Confirmation), không can thiệp số dư ví chi tiêu và không tạo giao dịch EXPENSE.
+     - `BANK_TRANSFER`: Kiểm tra số dư ví nguồn, thực hiện chuyển tiền nguyên tử `transferBetweenWallets` sang ví đích. Chỉ hoàn tất session khi transfer thành công.
+     - Cơ chế Idempotency: `transactionId = "saving-spin:${session.id}"` ngăn chặn duplicate ghi nhận.
+  3. ✅ **P1 - Tính Streak theo lịch & chu kỳ**:
+     - Hỗ trợ đầy đủ tần suất: `DAILY`, `SELECTED_WEEKDAYS`, `WEEKLY`, `SALARY_CYCLE`.
+     - Phân định trạng thái pending hôm nay không làm đứt chuỗi trước đó; chuỗi đứt khi bỏ lỡ kỳ quay theo lịch.
+  4. ✅ **P1 - Reminder & Smart Snooze**:
+     - Snooze sheet hỗ trợ các preset thông minh (+30m, +1h, 12h hôm nay, 18h hôm nay, 9h sáng mai). Hủy nhắc nhở khi phiên hoàn thành hoặc bỏ qua.
+  5. ✅ **P2 - Tách Modular UI Game Sheet & 100% Theme Consistency**:
+     - Tách nhỏ thành: `SavingSpinHeader`, `SavingSpinReadyContent`, `SavingSpinResultContent`, `SavingSpinCompletedContent`, `SavingSpinSkippedContent`, `SavingSpinSnoozeSheet`.
+     - 100% màu sắc sử dụng dynamic token `LocalFinluxTokens.current` và `MaterialTheme.colorScheme` (không còn hardcoded static color codes).
+     - Palette vòng quay tương thích linh hoạt cho 6/8/10/12 slots kèm accessibility semantics.
+  6. ✅ **Kiểm thử tự động**:
+     - `CalculateSavingSpinStreakUseCaseTest.kt` (5/5 PASS)
+     - `CompleteSavingSpinUseCaseTest.kt` (4/4 PASS)
+     - `SpinSavingWheelUseCaseTest.kt` (3/3 PASS)
+     - `SavingSpinViewModelTest.kt` (5/5 PASS)
+     - `DemoSavingSpinRepositoryTest.kt` (2/2 PASS)
+     - `GetSavingSpinReportUseCaseTest.kt` (1/1 PASS)
+     - Toàn bộ test suite `./gradlew.bat testDebugUnitTest` PASS 100% (59 test classes).
+- **Files đã chỉnh sửa / tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/SavingSpinModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/SavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/SavingSpinFirestoreMapper.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SpinSavingWheelUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CalculateSavingSpinStreakUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetSavingSpinReportUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinGameSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinHeader.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinReadyContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinResultContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinCompletedContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinSkippedContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinSnoozeSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinWheel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinHomeCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CalculateSavingSpinStreakUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/SpinSavingWheelUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/GetSavingSpinReportUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/data/demo/DemoSavingSpinRepositoryTest.kt`
 
 ---
 
@@ -296,8 +364,6 @@
   2. ✅ **Cơ Chế Phân Rã Dòng Tiền Nguyên Tử (Atomic Flow Decomposition)**:
      - Tự động tách phần hoàn gốc và tiền lời ròng trong 1 Firestore Transaction duy nhất.
      - Hỗ trợ chốt lỗ đóng deal (`closeDealWithLoss`) sinh giao dịch `CAPITAL_LOSS`.
-  3. ✅ **Cô Lập Ngân Sách & Báo Cáo (Isolation Engine)**:
-     - `ReportsViewModel`: Loại trừ `OUTLAY_CAPITAL` khỏi Chi phí và `PRINCIPAL_RECOVERY` khỏi Thu nhập; đưa `CAPITAL_GAIN` vào Thu nhập và `CAPITAL_LOSS` vào Chi phí.
      - `BudgetViewModel`: Vốn xuất không làm cạn kiệt ngân sách chi tiêu hàng tháng.
      - `HomeViewModel`: Tổng quan tài chính hiển thị chính xác dòng tiền sinh hoạt.
   4. ✅ **Giao Diện Liquid Glass Hiện Đại (`presentation/deal/`)**:
@@ -341,10 +407,11 @@
   - `docs/BA_SPEC.md`
   - `docs/DATA_SPEC.md`
 
-### [Task-SAVING-SPIN-TRANSFER-STREAK-SETTINGS-FIX] — Cơ chế Chuyển tiền vào Ví tiết kiệm, Chuỗi nạp động, Dialog nhập Min/Max & Lưu Cài đặt vào DB
+### [Task-SAVING-SPIN-DIRECT-TRANSFER-AND-SETTINGS-INPUT-V1.17.0] — Nạp tiền tiết kiệm dạng Transfer & Dialog nhập tiền Cài đặt
 - **Status**: `[DONE]`
 - **Mục tiêu hoàn thành**:
   1. ✅ **Chuyển tiền vào ví tiết kiệm (Transfer)**: Hỗ trợ trích tiền từ ví nguồn (mặc định Ví Tiền mặt `WalletType.CASH` hoặc ví mặc định) chuyển sang ví tiết kiệm đã chọn bằng `transactionRepository.transferBetweenWallets(...)` cập nhật số dư nguyên tử. Cho phép người dùng linh hoạt đổi ví nguồn và ví đích.
+
   2. ✅ **Chuỗi thực hiện động (Dynamic Streak)**: Tính chuỗi theo số lần nạp thành công thực tế qua `repository.observeSessions`, hiển thị sinh động `🔥 Chuỗi X lần nạp`.
   3. ✅ **Điều chỉnh Min/Max trong Cài đặt**: Bổ sung `AlertDialog` nhập số tiền trực tiếp bằng bàn phím số cho Mức tối thiểu & Mức tối đa, tự động làm tròn theo bội số bước tiền (`step`) và cập nhật cấu hình tức thì.
   4. ✅ **Lưu cấu hình vào DB Firestore**: ViewModel đồng bộ ngay giá trị min/max vào config, kiểm tra validation và lưu trực tiếp qua `repository.saveConfig(config)`, kèm banner cảnh báo lỗi nếu có.

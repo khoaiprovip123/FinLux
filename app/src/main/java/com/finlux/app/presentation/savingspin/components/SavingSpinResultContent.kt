@@ -13,15 +13,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -31,310 +33,238 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.domain.model.SavingDestination
+import com.finlux.app.domain.model.SavingMethod
 import com.finlux.app.domain.model.SavingSpinSession
 import com.finlux.app.domain.model.Wallet
-import com.finlux.app.domain.model.WalletType
 
 @Composable
 fun SavingSpinResultContent(
     session: SavingSpinSession,
+    destinations: List<SavingDestination>,
+    selectedDestinationId: String?,
     wallets: List<Wallet>,
     sourceWalletId: String?,
-    selectedWalletId: String?,
     streakCount: Int,
     allowSkip: Boolean,
+    isConfirming: Boolean,
+    onSelectDestination: (String) -> Unit,
     onSelectSourceWallet: (String) -> Unit,
-    onSelectWallet: (String) -> Unit,
     onConfirm: () -> Unit,
-    onSnooze: () -> Unit,
+    onOpenSnooze: () -> Unit,
     onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val activeWallets = wallets.filter { it.status == "active" }
-    val sourceWallet = activeWallets.firstOrNull { it.id == sourceWalletId }
-    val destWallet = activeWallets.firstOrNull { it.id == selectedWalletId }
-    var showSourcePicker by remember { mutableStateOf(false) }
+    val tokens = LocalFinluxTokens.current
+    val amount = session.selectedAmount?.value ?: 0L
+
+    val effectiveDestination = destinations.firstOrNull { it.id == selectedDestinationId }
+        ?: destinations.firstOrNull { it.enabled }
+
+    val effectiveMethod = effectiveDestination?.method ?: SavingMethod.CASH
 
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 1. Top row: 🎉 Hôm nay bạn tiết kiệm  và  🔥 Chuỗi X lần nạp
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("🎉", fontSize = 16.sp)
-                Text(
-                    "Hôm nay bạn tiết kiệm",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B),
-                )
-            }
-
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFFEF3C7),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text("🔥", fontSize = 12.sp)
-                    Text(
-                        "Chuỗi $streakCount lần nạp",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFB45309),
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 2. Số tiền lớn ở giữa với ánh sao lấp lánh xung quanh
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text("✨", fontSize = 20.sp)
-            Text(
-                text = formatVndAmount(session.selectedAmount?.value ?: 0L),
-                fontSize = 42.sp,
-                color = Color(0xFF2563EB),
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.testTag("saving_spin_selected_amount"),
-            )
-            Text("✨", fontSize = 20.sp)
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 3. Khối Nguồn tiền chuyển (Transfer Source)
+        // 1. Badge chúc mừng kết quả
         Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = Color(0xFFF1F5F9),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showSourcePicker = !showSourcePicker },
+            shape = RoundedCornerShape(12.dp),
+            color = tokens.primary.copy(alpha = 0.12f),
+            contentColor = tokens.primary,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Trích từ nguồn:", fontSize = 13.sp, color = Color(0xFF64748B))
-                    Text(
-                        sourceWallet?.name ?: "Ví tiền mặt",
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B),
-                    )
-                    sourceWallet?.let {
-                        Text(
-                            "(${formatVndAmount(it.balance.value, isCompact = true)})",
-                            fontSize = 12.sp,
-                            color = Color(0xFF2563EB),
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-                }
-                Text("Đổi ví ▾", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB))
-            }
-        }
-
-        if (showSourcePicker) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Chọn ví nguồn trích tiền:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
-                    activeWallets.forEach { w ->
-                        val isSrc = w.id == sourceWalletId
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSrc) Color(0xFFEFF6FF) else Color.Transparent)
-                                .clickable {
-                                    onSelectSourceWallet(w.id)
-                                    showSourcePicker = false
-                                }
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(w.name, fontSize = 13.sp, fontWeight = if (isSrc) FontWeight.Bold else FontWeight.Normal, color = Color(0xFF1E293B))
-                            Text(formatVndAmount(w.balance.value), fontSize = 12.sp, color = Color(0xFF64748B))
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 4. Subtitle "Cất vào ví tiết kiệm / Heo đất"
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text("➔ Cất vào ví tiết kiệm:", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+            Text(
+                text = "🎉 Kết quả hôm nay!",
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = tokens.primary,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 4. Thẻ chọn ví từ hệ thống danh mục ví đã thiết lập
-        val activeWallets = wallets.filter { it.status == "active" }
-        if (activeWallets.size <= 3) {
+        // 2. Mệnh giá trúng lớn
+        Text(
+            text = formatVndAmount(amount),
+            fontSize = 34.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = tokens.primary,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Badge Streak
+        if (streakCount > 0) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = tokens.surfaceSoft,
+                border = BorderStroke(1.dp, tokens.border),
+            ) {
+                Text(
+                    text = "🔥 Chuỗi $streakCount ngày liên tiếp",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = tokens.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // 3. Chọn nơi tiết kiệm (Saving Destination)
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                activeWallets.forEach { wallet ->
-                    val isSelected = wallet.id == selectedWalletId
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
-                        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) Color(0xFF2563EB) else Color(0xFFE2E8F0)),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(112.dp)
-                            .clickable { onSelectWallet(wallet.id) },
-                    ) {
-                        Box(modifier = Modifier.padding(8.dp)) {
-                            if (isSelected) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = Color(0xFF2563EB),
-                                    modifier = Modifier.size(16.dp).align(Alignment.TopEnd),
-                                ) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.padding(2.dp))
-                                }
-                            }
-                            Column(
-                                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                            ) {
-                                Icon(
-                                    imageVector = when (wallet.type) {
-                                        WalletType.CASH -> Icons.Filled.Savings
-                                        WalletType.BANK -> Icons.Filled.AccountBalance
-                                        else -> Icons.Filled.CreditCard
-                                    },
-                                    contentDescription = null,
-                                    tint = when (wallet.type) {
-                                        WalletType.CASH -> Color(0xFFF43F5E)
-                                        WalletType.BANK -> Color(0xFF2563EB)
-                                        else -> Color(0xFF8B5CF6)
-                                    },
-                                    modifier = Modifier.size(26.dp),
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    wallet.name,
-                                    fontSize = 12.sp,
-                                    lineHeight = 15.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = Color(0xFF1E293B),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 2,
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    formatVndAmount(wallet.balance.value, isCompact = true),
-                                    fontSize = 10.5.sp,
-                                    color = Color(0xFF64748B),
-                                )
-                            }
-                        }
+                Text(
+                    text = "NƠI TIẾT KIỆM",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.onSurfaceVariant,
+                )
+                Text(
+                    text = if (effectiveMethod == SavingMethod.CASH) "Nuôi heo (Tiền mặt)" else "Chuyển khoản liên ví",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = tokens.primary,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (destinations.isEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = tokens.surfaceSoft,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Mặc định: Heo đất (Tiền mặt)",
+                        fontSize = 13.sp,
+                        color = tokens.onSurfaceVariant,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    items(destinations.filter { it.enabled }) { dest ->
+                        DestinationItemCard(
+                            destination = dest,
+                            isSelected = (dest.id == effectiveDestination?.id),
+                            onClick = { onSelectDestination(dest.id) },
+                            modifier = Modifier.width(130.dp),
+                        )
                     }
                 }
             }
-        } else {
-            androidx.compose.foundation.lazy.LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(activeWallets.size) { index ->
-                    val wallet = activeWallets[index]
-                    val isSelected = wallet.id == selectedWalletId
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
-                        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) Color(0xFF2563EB) else Color(0xFFE2E8F0)),
-                        modifier = Modifier
-                            .width(106.dp)
-                            .height(112.dp)
-                            .clickable { onSelectWallet(wallet.id) },
+        }
+
+        // 4. Nếu là BANK_TRANSFER: Chọn ví nguồn (Source Wallet Picker)
+        if (effectiveMethod == SavingMethod.BANK_TRANSFER) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "TRÍCH TỪ VÍ NGUỒN",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.onSurfaceVariant,
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val availableWallets = wallets.filter { it.id != effectiveDestination?.linkedWalletId }
+                var isExpanded by remember { mutableStateOf(false) }
+                val currentSrcWallet = availableWallets.firstOrNull { it.id == sourceWalletId } ?: availableWallets.firstOrNull()
+
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = tokens.surfaceSoft,
+                    border = BorderStroke(1.dp, tokens.border),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isExpanded = !isExpanded },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Box(modifier = Modifier.padding(8.dp)) {
-                            if (isSelected) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = Color(0xFF2563EB),
-                                    modifier = Modifier.size(16.dp).align(Alignment.TopEnd),
-                                ) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.padding(2.dp))
-                                }
+                        Column {
+                            Text(
+                                text = currentSrcWallet?.name ?: "Chọn ví thanh toán",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = tokens.onSurface,
+                            )
+                            currentSrcWallet?.let { w ->
+                                Text(
+                                    text = "Số dư: ${formatVndAmount(w.balance.value)}",
+                                    fontSize = 11.5.sp,
+                                    color = if (w.balance.value < amount) FinluxColors.ExpenseRed else tokens.onSurfaceVariant,
+                                )
                             }
-                            Column(
-                                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
+                        }
+                        Text(
+                            text = if (isExpanded) "▲" else "▼",
+                            fontSize = 12.sp,
+                            color = tokens.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                if (isExpanded) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(tokens.surfaceSoft)
+                            .padding(4.dp),
+                    ) {
+                        availableWallets.forEach { w ->
+                            val isSrc = (w.id == currentSrcWallet?.id)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSrc) tokens.primary.copy(alpha = 0.1f) else tokens.surfaceSoft)
+                                    .clickable {
+                                        onSelectSourceWallet(w.id)
+                                        isExpanded = false
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
-                                Icon(
-                                    imageVector = when (wallet.type) {
-                                        WalletType.CASH -> Icons.Filled.Savings
-                                        WalletType.BANK -> Icons.Filled.AccountBalance
-                                        else -> Icons.Filled.CreditCard
-                                    },
-                                    contentDescription = null,
-                                    tint = when (wallet.type) {
-                                        WalletType.CASH -> Color(0xFFF43F5E)
-                                        WalletType.BANK -> Color(0xFF2563EB)
-                                        else -> Color(0xFF8B5CF6)
-                                    },
-                                    modifier = Modifier.size(26.dp),
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    wallet.name,
+                                    text = w.name,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSrc) FontWeight.Bold else FontWeight.Normal,
+                                    color = tokens.onSurface,
+                                )
+                                Text(
+                                    text = formatVndAmount(w.balance.value),
                                     fontSize = 12.sp,
-                                    lineHeight = 15.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = Color(0xFF1E293B),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 2,
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    formatVndAmount(wallet.balance.value, isCompact = true),
-                                    fontSize = 10.5.sp,
-                                    color = Color(0xFF64748B),
+                                    color = tokens.onSurfaceVariant,
                                 )
                             }
                         }
@@ -348,44 +278,120 @@ fun SavingSpinResultContent(
         // 5. Nút chính XÁC NHẬN ĐÃ NẠP
         Button(
             onClick = onConfirm,
+            enabled = !isConfirming,
             shape = RoundedCornerShape(24.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
                 .testTag("saving_spin_confirm"),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2563EB),
-                contentColor = Color.White,
+                containerColor = tokens.primary,
+                contentColor = tokens.onHero,
+                disabledContainerColor = tokens.primary.copy(alpha = 0.5f),
+                disabledContentColor = tokens.onHero.copy(alpha = 0.7f),
             ),
         ) {
-            Text("XÁC NHẬN ĐÃ NẠP", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            if (isConfirming) {
+                CircularProgressIndicator(modifier = Modifier.size(22.dp), color = tokens.onHero)
+            } else {
+                Text("XÁC NHẬN ĐÃ NẠP", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
 
         // 6. Nút phụ Nhắc tôi sau
         OutlinedButton(
-            onClick = onSnooze,
+            onClick = onOpenSnooze,
             shape = RoundedCornerShape(20.dp),
-            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-            modifier = Modifier.fillMaxWidth().height(46.dp),
+            border = BorderStroke(1.dp, tokens.border),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = tokens.onSurfaceVariant),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(46.dp),
         ) {
-            Text("Nhắc tôi sau", fontSize = 14.sp, color = Color(0xFF475569))
+            Text("Nhắc tôi sau", fontSize = 14.sp)
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         // 7. Bỏ qua hôm nay (text link)
         if (allowSkip) {
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Bỏ qua hôm nay",
+                text = "Bỏ qua hôm nay",
                 fontSize = 13.sp,
-                color = Color(0xFF64748B),
+                color = tokens.onSurfaceVariant,
                 modifier = Modifier
                     .clickable(onClick = onSkip)
                     .padding(8.dp)
                     .testTag("saving_spin_skip"),
             )
+        }
+    }
+}
+
+@Composable
+private fun DestinationItemCard(
+    destination: SavingDestination,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = LocalFinluxTokens.current
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) tokens.primary.copy(alpha = 0.12f) else tokens.surfaceSoft,
+        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) tokens.primary else tokens.border),
+        modifier = modifier
+            .height(108.dp)
+            .clickable(onClick = onClick),
+    ) {
+        Box(modifier = Modifier.padding(8.dp)) {
+            if (isSelected) {
+                Surface(
+                    shape = CircleShape,
+                    color = tokens.primary,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .align(Alignment.TopEnd),
+                ) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = tokens.onHero,
+                        modifier = Modifier.padding(2.dp),
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector = if (destination.method == SavingMethod.CASH) Icons.Filled.Savings else Icons.Filled.AccountBalance,
+                    contentDescription = null,
+                    tint = tokens.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = destination.name,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+                Text(
+                    text = if (destination.method == SavingMethod.CASH) "Tiền mặt" else "Chuyển khoản",
+                    fontSize = 10.sp,
+                    color = tokens.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

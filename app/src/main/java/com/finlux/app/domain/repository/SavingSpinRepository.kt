@@ -32,6 +32,7 @@ interface SavingSpinRepository {
         scheduleKey: String,
         destinationId: String,
         method: SavingMethod,
+        transactionId: String? = null,
     ): AppResult<Unit>
 
     suspend fun snoozeSession(
@@ -40,8 +41,6 @@ interface SavingSpinRepository {
     ): AppResult<Unit>
 
     suspend fun skipSession(scheduleKey: String): AppResult<Unit>
-
-    suspend fun resetSession(scheduleKey: String): AppResult<Unit>
 
     fun observeSessions(
         fromInclusive: Instant,

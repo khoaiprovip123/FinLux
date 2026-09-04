@@ -66,6 +66,7 @@ internal object SavingSpinFirestoreMapper {
         "institutionId" to destination.institutionId,
         "accountHint" to destination.accountHint,
         "enabled" to destination.enabled,
+        "icon" to destination.icon,
         "createdAt" to destination.createdAt.toTimestamp(),
         "updatedAt" to destination.updatedAt.toTimestamp(),
     )
@@ -79,6 +80,7 @@ internal object SavingSpinFirestoreMapper {
             institutionId = document.getString("institutionId"),
             accountHint = document.getString("accountHint"),
             enabled = document.getBoolean("enabled") ?: true,
+            icon = document.getString("icon"),
             createdAt = document.instant("createdAt"),
             updatedAt = document.instant("updatedAt"),
         )
@@ -96,6 +98,7 @@ internal object SavingSpinFirestoreMapper {
         "completedAt" to session.completedAt?.toTimestamp(),
         "skippedAt" to session.skippedAt?.toTimestamp(),
         "snoozedUntil" to session.snoozedUntil?.toTimestamp(),
+        "transactionId" to session.transactionId,
         "createdAt" to session.createdAt.toTimestamp(),
         "updatedAt" to session.updatedAt.toTimestamp(),
     )
@@ -116,6 +119,7 @@ internal object SavingSpinFirestoreMapper {
             completedAt = document.optionalInstant("completedAt"),
             skippedAt = document.optionalInstant("skippedAt"),
             snoozedUntil = document.optionalInstant("snoozedUntil"),
+            transactionId = document.getString("transactionId"),
             createdAt = document.instant("createdAt"),
             updatedAt = document.instant("updatedAt"),
         )

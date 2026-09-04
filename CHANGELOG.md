@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.21.0] - 2026-09-04
+### Added
+- **Khóa Chống Reroll & Bảo Toàn State Machine Vòng Quay**:
+  * Khóa cố định kết quả quay sau khi kim dừng (`LOCKED` / `SPUN`), ngăn chặn hoàn toàn việc quay lại để đổi kết quả.
+  * Bảo toàn trạng thái phiên quay khi app bị kill hoặc khi người dùng đóng mở lại BottomSheet.
+- **Phân Tách Chuẩn Bản Chất Cash vs Bank Transfer**:
+  * `CASH` (Tiền mặt / Heo đất): Ghi nhận tăng số dư tích lũy Saving Spin (Ledger Confirmation), không can thiệp số dư ví thanh toán.
+  * `BANK_TRANSFER` (Chuyển khoản): Kiểm tra số dư ví nguồn và thực hiện chuyển tiền nguyên tử `transferBetweenWallets` sang ví tiết kiệm đích.
+- **Tính Toán Chuỗi Kỷ Lục (Streak) Đa Tần Suất**:
+  * Hỗ trợ đầy đủ các chu kỳ `DAILY`, `SELECTED_WEEKDAYS`, `WEEKLY`, `SALARY_CYCLE` theo mốc thời gian thực tế (`periodKey`).
+- **Nhắc Nhở & Hoãn Lượt (Smart Snooze)**:
+  * Hẹn giờ thông báo chính xác qua `AlarmManager` với các mốc hoãn nhanh (+30p, +1h, 12h, 18h, 9h sáng mai).
+- **Nâng Cấp Giao Diện Cài Đặt Vòng Quay Chuẩn Liquid Glass**:
+  * Cửa sổ nhập Mức tối thiểu / Mức tối đa bằng `FinluxBottomSheet` kèm `FinluxAmountInputCard`, chip chọn nhanh và cộng dồn.
+  * Danh sách chọn trực quan Số ô vòng quay (6, 8, 10, 12 ô), Tần suất và Giờ nhắc.
+  * Pop-up Dialog thông báo "Thiết lập thành công!" nổi bật sau khi lưu cấu hình.
+
+### Changed
+- Tách nhỏ modular UI `SavingSpinGameSheet` thành các component độc lập (`SavingSpinHeader`, `SavingSpinReadyContent`, `SavingSpinResultContent`, `SavingSpinCompletedContent`, `SavingSpinSkippedContent`, `SavingSpinSnoozeSheet`).
+- Đồng bộ 100% theme động từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`, loại bỏ hoàn toàn mã màu hardcode.
+
+### Fixed
+- Xóa bỏ triệt để việc ghi nhận giao dịch `EXPENSE` (Chi tiêu) khi tiết kiệm, bảo đảm chính xác tuyệt đối báo cáo thu chi và số dư ví.
+- Khắc phục lỗi tính sai chuỗi ngày và lỗi cập nhật cấu hình vòng quay.
+
 ## [1.20.1] - 2026-08-31
 ### Added
 - **Chuẩn Hóa & Mapping Toàn Diện Ngân Sách Vào Báo Cáo Chuyên Sâu (`DeepDiveSubTab.BUDGETS`)**:
@@ -101,6 +126,32 @@
 ### Fixed
 - Đảm bảo 100% (235/235) Unit Test vượt qua thành công bao gồm toàn bộ kịch bản kiểm thử nghiệp vụ Deal Tracking (`DealUseCasesTest`).
 
+=======
+## [1.18.0] - 2026-09-04
+### Added
+- **Khóa Chống Reroll & Bảo Toàn State Machine Vòng Quay**:
+  * Khóa cố định kết quả quay sau khi kim dừng (`LOCKED` / `SPUN`), ngăn chặn hoàn toàn việc quay lại để đổi kết quả.
+  * Bảo toàn trạng thái phiên quay khi app bị kill hoặc khi người dùng đóng mở lại BottomSheet.
+- **Phân Tách Chuẩn Bản Chất Cash vs Bank Transfer**:
+  * `CASH` (Tiền mặt / Heo đất): Ghi nhận tăng số dư tích lũy Saving Spin (Ledger Confirmation), không can thiệp số dư ví thanh toán.
+  * `BANK_TRANSFER` (Chuyển khoản): Kiểm tra số dư ví nguồn và thực hiện chuyển tiền nguyên tử `transferBetweenWallets` sang ví tiết kiệm đích.
+- **Tính Toán Chuỗi Kỷ Lục (Streak) Đa Tần Suất**:
+  * Hỗ trợ đầy đủ các chu kỳ `DAILY`, `SELECTED_WEEKDAYS`, `WEEKLY`, `SALARY_CYCLE` theo mốc thời gian thực tế (`periodKey`).
+- **Nhắc Nhở & Hoãn Lượt (Smart Snooze)**:
+  * Hẹn giờ thông báo chính xác qua `AlarmManager` với các mốc hoãn nhanh (+30p, +1h, 12h, 18h, 9h sáng mai).
+- **Nâng Cấp Giao Diện Cài Đặt Vòng Quay Chuẩn Liquid Glass**:
+  * Cửa sổ nhập Mức tối thiểu / Mức tối đa bằng `FinluxBottomSheet` kèm `FinluxAmountInputCard`, chip chọn nhanh và cộng dồn.
+  * Danh sách chọn trực quan Số ô vòng quay (6, 8, 10, 12 ô), Tần suất và Giờ nhắc.
+  * Pop-up Dialog thông báo "Thiết lập thành công!" nổi bật sau khi lưu cấu hình.
+
+### Changed
+- Tách nhỏ modular UI `SavingSpinGameSheet` thành các component độc lập (`SavingSpinHeader`, `SavingSpinReadyContent`, `SavingSpinResultContent`, `SavingSpinCompletedContent`, `SavingSpinSkippedContent`, `SavingSpinSnoozeSheet`).
+- Đồng bộ 100% theme động từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`, loại bỏ hoàn toàn mã màu hardcode.
+
+### Fixed
+- Xóa bỏ triệt để việc ghi nhận giao dịch `EXPENSE` (Chi tiêu) khi tiết kiệm, bảo đảm chính xác tuyệt đối báo cáo thu chi và số dư ví.
+- Khắc phục lỗi tính sai chuỗi ngày và lỗi cập nhật cấu hình vòng quay.
+>>>>>>> 7aceab6 (bump(release): v1.18.0 - On dinh vong quay tiet kiem & Nang cap UI cai dat)
 
 ## [1.17.0] - 2026-08-31
 ### Added
