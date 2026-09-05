@@ -251,6 +251,10 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = mutationMutex.withLock {
+        val current = goalState.value.find { it.id == goal.id } ?: return@withLock AppResult.Success(Unit)
+        if (current.savedAmount.value > 0L) {
+            return@withLock AppResult.Error("Mục tiêu vẫn còn tiền. Hãy rút hoặc chuyển toàn bộ tiền trước khi xóa.")
+        }
         goalState.value = goalState.value.filterNot { it.id == goal.id }
         AppResult.Success(Unit)
     }
@@ -352,6 +356,10 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = mutationMutex.withLock {
+        val current = debtState.value.find { it.id == debt.id } ?: return@withLock AppResult.Success(Unit)
+        if (current.remainingBalance.value > 0L || !current.isSettled) {
+            return@withLock AppResult.Error("Khoản nợ vẫn còn dư nợ. Hãy tất toán trước khi xóa.")
+        }
         debtState.value = debtState.value.filterNot { it.id == debt.id }
         paymentHistoryState.value = paymentHistoryState.value.filterNot { it.debtId == debt.id }
         AppResult.Success(Unit)
@@ -370,6 +378,16 @@ class DemoFinluxRepository @Inject constructor(
             ?: return@withLock AppResult.Error("Không tìm thấy khoản nợ")
         val targetWallet = walletState.value.find { it.id == walletId }
             ?: return@withLock AppResult.Error("Không tìm thấy ví thanh toán")
+
+        if (amount <= 0L || principalPaid < 0L || interestPaid < 0L || principalPaid + interestPaid != amount) {
+            return@withLock AppResult.Error("Thông tin tiền gốc/lãi không hợp lệ")
+        }
+        if (targetDebt.isSettled || targetDebt.remainingBalance.value <= 0L) {
+            return@withLock AppResult.Error("Khoản nợ đã được tất toán")
+        }
+        if (principalPaid > targetDebt.remainingBalance.value) {
+            return@withLock AppResult.Error("Tiền gốc thanh toán vượt quá dư nợ còn lại")
+        }
 
         if (targetWallet.type != WalletType.CARD && targetWallet.balance.value < amount) {
             return@withLock AppResult.Error("Số dư ví không đủ để thanh toán nợ")
