@@ -40,63 +40,81 @@ class CompleteSavingSpinUseCase @Inject constructor(
         val amount = session.selectedAmount
         val now = clock.now()
 
-        when (destination.method) {
+        val operationId = "saving_spin_" + session.id
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .take(150)
+        val outgoingTransactionId = "${operationId}_out"
+
+        suspend fun transferToLinkedWallet(targetWalletId: String): AppResult<Unit> {
+            if (sourceWalletId.isNullOrBlank()) {
+                return AppResult.Error("Bạn chưa chọn ví nguồn")
+            }
+            if (sourceWalletId == targetWalletId) {
+                return AppResult.Error("Ví nguồn và ví nhận không được trùng nhau")
+            }
+
+            val wallets = walletRepository.observeWallets().firstOrNull().orEmpty()
+            val sourceWallet = wallets.firstOrNull { it.id == sourceWalletId }
+                ?: return AppResult.Error("Ví nguồn không tồn tại")
+            val targetWallet = wallets.firstOrNull { it.id == targetWalletId }
+                ?: return AppResult.Error("Ví nhận không tồn tại")
+
+            if (sourceWallet.type != com.finlux.app.domain.model.WalletType.CARD &&
+                sourceWallet.balance.value < amount.value
+            ) {
+                return AppResult.Error("Ví nguồn không đủ số dư để cất ${formatVndAmount(amount.value)}")
+            }
+
+            return transactionRepository.transferBetweenWalletsIdempotent(
+                sourceWalletId = sourceWalletId,
+                destinationWalletId = targetWallet.id,
+                amount = amount.value,
+                note = "Vòng quay tiết kiệm: Cất vào ${destination.name}",
+                date = now,
+                operationId = operationId,
+            )
+        }
+
+        return when (destination.method) {
             SavingMethod.CASH -> {
-                // Tiết kiệm tiền mặt (heo đất / két sắt ngoại hệ thống): ghi nhận hoàn thành mà không trừ ví / không tạo transaction
-                return repository.completeSession(
-                    scheduleKey = session.scheduleKey,
-                    destinationId = destination.id,
-                    method = SavingMethod.CASH,
-                    transactionId = null,
-                )
+                // CASH without a linked wallet remains a manual/off-ledger piggy-bank confirmation.
+                // If a cash savings wallet is linked, use the same durable ledger flow as bank transfer.
+                val targetWalletId = destination.linkedWalletId
+                if (targetWalletId.isNullOrBlank()) {
+                    repository.completeSession(
+                        scheduleKey = session.scheduleKey,
+                        destinationId = destination.id,
+                        method = SavingMethod.CASH,
+                        transactionId = null,
+                    )
+                } else {
+                    when (val transferResult = transferToLinkedWallet(targetWalletId)) {
+                        is AppResult.Error -> transferResult
+                        is AppResult.Success -> repository.completeSession(
+                            scheduleKey = session.scheduleKey,
+                            destinationId = destination.id,
+                            method = SavingMethod.CASH,
+                            transactionId = outgoingTransactionId,
+                        )
+                    }
+                }
             }
 
             SavingMethod.BANK_TRANSFER -> {
                 val targetWalletId = destination.linkedWalletId
                 if (targetWalletId.isNullOrBlank()) {
-                    return AppResult.Error("Nơi tiết kiệm chưa liên kết ví nhận")
+                    AppResult.Error("Nơi tiết kiệm chưa liên kết ví nhận")
+                } else {
+                    when (val transferResult = transferToLinkedWallet(targetWalletId)) {
+                        is AppResult.Error -> transferResult
+                        is AppResult.Success -> repository.completeSession(
+                            scheduleKey = session.scheduleKey,
+                            destinationId = destination.id,
+                            method = SavingMethod.BANK_TRANSFER,
+                            transactionId = outgoingTransactionId,
+                        )
+                    }
                 }
-
-                if (sourceWalletId.isNullOrBlank()) {
-                    return AppResult.Error("Bạn chưa chọn ví nguồn")
-                }
-
-                if (sourceWalletId == targetWalletId) {
-                    return AppResult.Error("Ví nguồn và ví nhận không được trùng nhau")
-                }
-
-                val wallets = walletRepository.observeWallets().firstOrNull().orEmpty()
-                val sourceWallet = wallets.firstOrNull { it.id == sourceWalletId }
-                    ?: return AppResult.Error("Ví nguồn không tồn tại")
-                val targetWallet = wallets.firstOrNull { it.id == targetWalletId }
-                    ?: return AppResult.Error("Ví nhận không tồn tại")
-
-                if (sourceWallet.balance.value < amount.value) {
-                    return AppResult.Error("Ví nguồn không đủ số dư để cất ${formatVndAmount(amount.value)}")
-                }
-
-                val idempotencyTxId = "saving-spin:${session.id}"
-
-                // Thực hiện chuyển khoản nội bộ nguyên tử giữa ví nguồn và ví đích
-                val transferResult = transactionRepository.transferBetweenWallets(
-                    sourceWalletId = sourceWalletId,
-                    destinationWalletId = targetWalletId,
-                    amount = amount.value,
-                    note = "Vòng quay tiết kiệm: Cất vào ${destination.name}",
-                    date = now,
-                )
-
-                if (transferResult is AppResult.Error) {
-                    return transferResult
-                }
-
-                // Chỉ hoàn tất session khi giao dịch tài chính đã thành công
-                return repository.completeSession(
-                    scheduleKey = session.scheduleKey,
-                    destinationId = destination.id,
-                    method = SavingMethod.BANK_TRANSFER,
-                    transactionId = idempotencyTxId,
-                )
             }
         }
     }
