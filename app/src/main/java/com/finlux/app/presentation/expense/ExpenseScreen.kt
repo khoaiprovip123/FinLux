@@ -179,12 +179,12 @@ fun ExpenseScreen(
 private fun PeriodPicker(label: String, previous: () -> Unit, next: () -> Unit, canNext: Boolean) {
     FinluxPanel(Modifier.fillMaxWidth().height(48.dp), cornerRadius = 24.dp, padding = PaddingValues(horizontal = 5.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Tháng trước") }
+            IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kỳ trước") }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Text(label, Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
             }
-            IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Tháng sau") }
+            IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Kỳ sau") }
         }
     }
 }
