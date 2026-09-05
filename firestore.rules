@@ -327,7 +327,8 @@ service cloud.firestore {
       // Subcollection: Financial Goals
       match /goals/{docId} {
         allow read: if isOwner(uid);
-        allow delete: if isOwner(uid);
+        allow delete: if isOwner(uid)
+          && (!('savedAmount' in resource.data) || resource.data.savedAmount <= 0);
         allow create, update: if isOwner(uid)
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0;
@@ -415,7 +416,10 @@ service cloud.firestore {
 
       // Subcollection: Debts & Debt Payments
       match /debts/{docId} {
-        allow read, delete: if isOwner(uid);
+        allow read: if isOwner(uid);
+        allow delete: if isOwner(uid)
+          && (!('remainingBalance' in resource.data) || resource.data.remainingBalance <= 0)
+          && (!('isSettled' in resource.data) || resource.data.isSettled == true);
         allow create, update: if isOwner(uid)
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0;
