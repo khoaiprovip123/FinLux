@@ -101,7 +101,13 @@ class FirebaseGoalRepository(
             }
 
             // 1. Trừ tiền ví nguồn
-            tx.update(walletRef, "balance", currentWalletBalance - amount)
+            tx.update(
+                walletRef,
+                mapOf(
+                    "balance" to currentWalletBalance - amount,
+                    "lastTransactionId" to transactionId,
+                )
+            )
 
             // 2. Tăng số tiền tích lũy của Goal
             tx.update(goalRef, "savedAmount", newSaved)
@@ -176,7 +182,13 @@ class FirebaseGoalRepository(
             tx.update(goalRef, "savedAmount", newSaved)
 
             // 2. Tăng số tiền ví nhận
-            tx.update(walletRef, "balance", currentWalletBalance + amount)
+            tx.update(
+                walletRef,
+                mapOf(
+                    "balance" to currentWalletBalance + amount,
+                    "lastTransactionId" to transactionId,
+                )
+            )
 
             // 3. Ghi transaction thu nhập/hoàn tiền từ tích lũy vào Sổ cái
             val txNote = if (note.isNotBlank()) note else "Rút tích lũy: $goalName"
