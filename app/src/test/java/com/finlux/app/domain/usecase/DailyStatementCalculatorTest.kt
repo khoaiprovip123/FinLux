@@ -8,6 +8,7 @@ import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.GoalFlowType
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
@@ -151,6 +152,74 @@ class DailyStatementCalculatorTest {
         assertEquals(20_250_000L, day4.closingBalance)
         // Cuối cùng bằng đúng wallet.balance
         assertEquals(walletA.balance.value, day4.closingBalance)
+    }
+
+    @Test
+    fun `goal allocation and debt principal preserve daily cash identity`() {
+        val day = LocalDate.of(2026, 9, 5)
+        val wallet = walletA.copy(balance = Money(8_300_000L))
+        val txs = listOf(
+            FinanceTransaction(
+                id = "goal-allocation",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_000_000L),
+                categoryId = "savings",
+                walletId = "w1",
+                date = day.atTime(9, 0).atZone(zone).toInstant(),
+                goalId = "g1",
+                goalFlowType = GoalFlowType.ALLOCATION,
+            ),
+            FinanceTransaction(
+                id = "debt-payment",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_200_000L),
+                categoryId = "debt_payment",
+                walletId = "w1",
+                date = day.atTime(10, 0).atZone(zone).toInstant(),
+                debtId = "d1",
+                debtPrincipalAmount = Money(1_000_000L),
+                debtInterestAmount = Money(200_000L),
+            ),
+            FinanceTransaction(
+                id = "goal-release",
+                type = TransactionType.INCOME,
+                amount = Money(500_000L),
+                categoryId = "savings",
+                walletId = "w1",
+                date = day.atTime(11, 0).atZone(zone).toInstant(),
+                goalId = "g1",
+                goalFlowType = GoalFlowType.RELEASE,
+            ),
+        )
+
+        val statements = calculator.calculateDailyStatements(
+            wallets = listOf(wallet),
+            allTransactions = txs,
+            startDate = day,
+            endDate = day,
+            zone = zone,
+        )
+        val statement = statements.single()
+
+        assertEquals(10_000_000L, statement.openingBalance)
+        assertEquals(0L, statement.totalIncome)
+        assertEquals(200_000L, statement.totalExpense)
+        assertEquals(500_000L, statement.nonOperatingInflow)
+        assertEquals(2_000_000L, statement.nonOperatingOutflow)
+        assertEquals(8_300_000L, statement.closingBalance)
+
+        val cash = calculator.calculateCashMovement(
+            openingBalance = 10_000_000L,
+            transactionsInPeriod = txs,
+            deals = emptyList(),
+            targetWalletIds = setOf("w1"),
+        )
+        assertEquals(1_000_000L, cash.goalAllocation)
+        assertEquals(500_000L, cash.goalRelease)
+        assertEquals(1_000_000L, cash.debtPrincipalOutflow)
+        assertEquals(200_000L, cash.debtInterestExpense)
+        assertEquals(200_000L, cash.expense)
+        assertEquals(8_300_000L, cash.closingBalance)
     }
 
     @Test
