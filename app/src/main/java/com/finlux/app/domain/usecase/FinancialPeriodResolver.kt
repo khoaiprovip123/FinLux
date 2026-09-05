@@ -41,6 +41,15 @@ interface FinancialPeriodResolver {
         config: SalaryCycleConfig,
     ): FinancialPeriod
 
+    /**
+     * Reporting period is independent from budgetPeriodBasis:
+     * Salary Cycle when enabled, calendar month otherwise.
+     */
+    fun resolveReportingPeriodContaining(
+        instant: Instant,
+        config: SalaryCycleConfig,
+    ): FinancialPeriod
+
     fun resolvePeriodKey(
         instant: Instant,
         config: SalaryCycleConfig,
@@ -90,9 +99,28 @@ class DefaultFinancialPeriodResolver @Inject constructor(
     override fun resolvePeriodContaining(
         instant: Instant,
         config: SalaryCycleConfig,
+    ): FinancialPeriod = resolveByBasis(
+        instant = instant,
+        config = config,
+        useSalaryCycle = config.enabled && config.budgetPeriodBasis == BudgetPeriodBasis.SALARY_CYCLE,
+    )
+
+    override fun resolveReportingPeriodContaining(
+        instant: Instant,
+        config: SalaryCycleConfig,
+    ): FinancialPeriod = resolveByBasis(
+        instant = instant,
+        config = config,
+        useSalaryCycle = config.enabled,
+    )
+
+    private fun resolveByBasis(
+        instant: Instant,
+        config: SalaryCycleConfig,
+        useSalaryCycle: Boolean,
     ): FinancialPeriod {
         val zone = resolveZone(config)
-        return if (!config.enabled || config.budgetPeriodBasis == BudgetPeriodBasis.CALENDAR_MONTH) {
+        return if (!useSalaryCycle) {
             val month = YearMonth.from(instant.atZone(zone))
             val start = month.atDay(1).atStartOfDay(zone).toInstant()
             val endExclusive = month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
@@ -116,7 +144,6 @@ class DefaultFinancialPeriodResolver @Inject constructor(
             )
         }
     }
-
     override fun resolvePeriodKey(
         instant: Instant,
         config: SalaryCycleConfig,
