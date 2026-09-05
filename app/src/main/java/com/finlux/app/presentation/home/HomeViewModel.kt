@@ -20,6 +20,7 @@ import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
 import com.finlux.app.domain.repository.DebtRepository
+import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.TransactionRepository
@@ -46,6 +47,7 @@ data class HomeUiState(
     val wallets: List<Wallet> = emptyList(),
     val debts: List<DebtAccount> = emptyList(),
     val grossAssets: Long = 0L,
+    val goalAssets: Long = 0L,
     val totalDebt: Long = 0L,
     val netWorth: Long = 0L,
     val transactions: List<FinanceTransaction> = emptyList(),
@@ -86,6 +88,7 @@ class HomeViewModel @Inject constructor(
     budgetRepository: BudgetRepository,
     notificationRepository: NotificationRepository,
     debtRepository: DebtRepository,
+    goalRepository: GoalRepository,
     salaryCycleRepository: SalaryCycleRepository,
     financialPeriodResolver: FinancialPeriodResolver,
     calculator: SalaryCycleCalculator,
@@ -170,14 +173,33 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private data class AssetLiabilitySnapshot(
+        val wallets: List<Wallet>,
+        val debts: List<DebtAccount>,
+        val walletAssets: Long,
+        val goalAssets: Long,
+        val totalDebt: Long,
+        val netWorth: Long,
+    )
+
     private val assetsAndDebtsFlow = combine(
         walletRepository.observeWallets(),
         debtRepository.observeDebts(),
-    ) { wallets, debts ->
-        val gross = wallets.totalAssetBalance()
+        goalRepository.observeGoals(),
+    ) { wallets, debts, goals ->
+        val walletAssets = wallets.totalAssetBalance()
+        // Goal deposits are removed from wallet.balance and held independently in savedAmount,
+        // therefore they remain part of the user's assets and must be included in net worth.
+        val goalAssets = goals.sumOf { it.savedAmount.value }
         val totalDebt = debts.filterNot { it.isSettled }.sumOf { it.remainingBalance.value }
-        val netWorth = gross - totalDebt
-        Triple(wallets, debts, Triple(gross, totalDebt, netWorth))
+        AssetLiabilitySnapshot(
+            wallets = wallets,
+            debts = debts,
+            walletAssets = walletAssets,
+            goalAssets = goalAssets,
+            totalDebt = totalDebt,
+            netWorth = walletAssets + goalAssets - totalDebt,
+        )
     }
 
     val state = combine(
@@ -189,17 +211,18 @@ class HomeViewModel @Inject constructor(
             categories to uiPrefs
         },
     ) { user, overview, assetsAndDebts, transactions, (categories, uiPrefs) ->
-        val (wallets, debts, balances) = assetsAndDebts
-        val (gross, totalDebt, netWorth) = balances
+        val wallets = assetsAndDebts.wallets
+        val debts = assetsAndDebts.debts
 
         HomeUiState(
             user = user,
             summary = overview.summary,
             wallets = wallets,
             debts = debts,
-            grossAssets = gross,
-            totalDebt = totalDebt,
-            netWorth = netWorth,
+            grossAssets = assetsAndDebts.walletAssets,
+            goalAssets = assetsAndDebts.goalAssets,
+            totalDebt = assetsAndDebts.totalDebt,
+            netWorth = assetsAndDebts.netWorth,
             transactions = transactions.collapseInternalTransferPairs(),
             monthTransactions = overview.monthTransactions,
             categories = categories,
