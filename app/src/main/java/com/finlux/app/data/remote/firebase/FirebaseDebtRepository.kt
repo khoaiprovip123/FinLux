@@ -145,7 +145,13 @@ class FirebaseDebtRepository(
             val isSettled = newDebtRemaining <= 0L
 
             // 1. Trừ tiền ví nguồn
-            tx.update(walletRef, "balance", currentWalletBalance - amount)
+            tx.update(
+                walletRef,
+                mapOf(
+                    "balance" to currentWalletBalance - amount,
+                    "lastTransactionId" to transactionId,
+                )
+            )
 
             // 2. Cập nhật dư nợ
             tx.update(
