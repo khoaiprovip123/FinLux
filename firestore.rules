@@ -55,6 +55,8 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'type', 'amount', 'categoryId', 'walletId', 'relatedWalletId',
           'dealId', 'dealFlowType',
+          'goalId', 'goalFlowType',
+          'debtId', 'debtPrincipalAmount', 'debtInterestAmount',
           'note', 'receiptImageUrl', 'date', 'createdAt', 'updatedAt'
         ])
         && data.type in [
@@ -69,7 +71,25 @@ service cloud.firestore {
         && (!('dealFlowType' in data) || data.dealFlowType == null || data.dealFlowType in [
           'outlay_capital', 'principal_recovery', 'capital_gain', 'capital_loss',
           'OUTLAY_CAPITAL', 'PRINCIPAL_RECOVERY', 'CAPITAL_GAIN', 'CAPITAL_LOSS'
-        ]);
+        ])
+        && (!('goalId' in data) || data.goalId == null || data.goalId is string)
+        && (!('goalFlowType' in data) || data.goalFlowType == null || data.goalFlowType in [
+          'allocation', 'release', 'ALLOCATION', 'RELEASE'
+        ])
+        && (!('debtId' in data) || data.debtId == null || data.debtId is string)
+        && (!('debtPrincipalAmount' in data) || data.debtPrincipalAmount == null || isNonNegativeMoney(data.debtPrincipalAmount))
+        && (!('debtInterestAmount' in data) || data.debtInterestAmount == null || isNonNegativeMoney(data.debtInterestAmount))
+        && (
+          !('debtId' in data)
+          || data.debtId == null
+          || (
+            ('debtPrincipalAmount' in data)
+            && ('debtInterestAmount' in data)
+            && data.debtPrincipalAmount is int
+            && data.debtInterestAmount is int
+            && data.debtPrincipalAmount + data.debtInterestAmount == data.amount
+          )
+        );
     }
 
     function validBudget(data) {
