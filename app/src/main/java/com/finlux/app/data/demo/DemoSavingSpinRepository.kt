@@ -46,6 +46,12 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
 
     override suspend fun deleteDestination(id: String): AppResult<Unit> = synchronized(this) {
         destinations.value = destinations.value - id
+        if (config.value.defaultDestinationId == id) {
+            config.value = config.value.copy(
+                defaultDestinationId = null,
+                updatedAt = Instant.now(),
+            )
+        }
         AppResult.Success(Unit)
     }
 
