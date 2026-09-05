@@ -20,6 +20,7 @@ sealed class Route(val value: String) {
     data object Debt : Route("debt")
     data object Deals : Route("deals")
     data object SavingSpinSettings : Route("saving-spin/settings")
+    data object SavingSpinDestinations : Route("saving-spin/destinations")
     data object SavingSpinReport : Route("saving-spin/report")
     data object SavingSpin : Route("saving-spin")
 }
