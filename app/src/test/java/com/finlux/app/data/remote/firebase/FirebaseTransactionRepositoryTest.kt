@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.time.ZoneId
 import java.util.Date
 
 class FirebaseTransactionRepositoryTest {
@@ -340,8 +339,8 @@ class FirebaseTransactionRepositoryTest {
         verify { atomicTx.update(oldWalletDocRef, match<Map<String, Any>> { it["balance"] == 3_000_000L }) }
         // Verify new wallet deducted 300_000 -> 500_000 - 300_000 = 200_000
         verify { atomicTx.update(newWalletDocRef, match<Map<String, Any>> { it["balance"] == 200_000L }) }
-        // Verify budget updated with net delta
-        verify { atomicTx.update(oldBudgetDocRef, "spentAmount", any<FieldValue>()) }
+        // Budget aggregates are server-owned and reconciled by Cloud Functions.
+        verify(exactly = 0) { atomicTx.update(oldBudgetDocRef, "spentAmount", any<FieldValue>()) }
     }
 
     @Test
@@ -443,8 +442,8 @@ class FirebaseTransactionRepositoryTest {
 
         // Verify balance refunded with stored amount: 1_000_000 + 500_000 = 1_500_000
         verify { atomicTx.update(walletDocRef, match<Map<String, Any>> { it["balance"] == 1_500_000L }) }
-        // Verify budget reversed with stored amount: -500_000
-        verify { atomicTx.update(budgetDocRef, "spentAmount", any<FieldValue>()) }
+        // Budget aggregates are server-owned and must not be mutated by the Android client.
+        verify(exactly = 0) { atomicTx.update(budgetDocRef, "spentAmount", any<FieldValue>()) }
         // Verify document deleted
         verify { atomicTx.delete(transactionDocRef) }
     }
@@ -650,22 +649,6 @@ class FirebaseTransactionRepositoryTest {
         val result = repository.transferBetweenWallets("wallet_src", "wallet_dst", 200_000L, "", fixedInstant)
         assertInstanceOf(AppResult.Error::class.java, result)
         assertTrue((result as AppResult.Error).message.contains("Số dư ví nguồn không đủ"))
-    }
-
-    @Test
-    fun `budgetRef generates standard period format matching cloud functions`() {
-        val uid = "test_uid"
-        val sampleTx = sampleTransaction(categoryId = "cat_food")
-        val userDocRef: DocumentReference = mockk()
-        val budgetsColl: CollectionReference = mockk()
-        val budgetDocRef: DocumentReference = mockk()
-
-        every { firestore.collection("users").document(uid) } returns userDocRef
-        every { userDocRef.collection("budgets") } returns budgetsColl
-        every { budgetsColl.document("cat_food_month:2026-08") } returns budgetDocRef
-
-        val ref = sampleTx.budgetRef(firestore, uid, ZoneId.of("Asia/Ho_Chi_Minh"))
-        assertEquals(budgetDocRef, ref)
     }
 
     private fun sampleTransaction(
