@@ -47,7 +47,16 @@ class FirebaseGoalRepository(
 
     override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = firebaseResult("Không thể xóa mục tiêu") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("goals").document(goal.id).delete().await()
+        val goalRef = firestore.collection("users").document(uid).collection("goals").document(goal.id)
+        firestore.runTransaction { tx ->
+            val snapshot = tx.get(goalRef)
+            if (!snapshot.exists()) return@runTransaction
+            val savedAmount = snapshot.getLong("savedAmount") ?: 0L
+            require(savedAmount <= 0L) {
+                "Mục tiêu vẫn còn tiền. Hãy rút hoặc chuyển toàn bộ tiền trước khi xóa."
+            }
+            tx.delete(goalRef)
+        }.await()
         Unit
     }
 
