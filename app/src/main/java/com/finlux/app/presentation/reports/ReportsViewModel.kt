@@ -643,8 +643,9 @@ class ReportsViewModel @Inject constructor(
         val assetWallets = wallets.assetWallets()
         val totalAssets = assetWallets.sumOf { it.balance.value }
         val totalNetWorth = totalAssets - totalDebtRemaining
-        // True Net Worth = (Tài sản ví) + (Vốn lưu động đầu tư & nợ cho vay đang chờ thu hồi) - (Tổng dư nợ phải trả)
-        val trueNetWorth = totalAssets + totalActiveCapitalOutlay - totalDebtRemaining
+        // True Net Worth = tài sản ví + tiền đang giữ trong Mục tiêu + vốn Deal còn thu hồi - dư nợ.
+        // Goal deposits reduce wallet.balance, so savedAmount must stay inside assets to avoid understating net worth.
+        val trueNetWorth = totalAssets + totalGoalSaved + totalActiveCapitalOutlay - totalDebtRemaining
 
         val assetsByType = assetWallets.groupBy { it.type }.mapValues { (_, list) -> list.sumOf { it.balance.value } }
 
