@@ -308,7 +308,14 @@ class ReportsViewModel @Inject constructor(
         val selectedWalletId = params.selectedWalletId
 
         val queryStart = minOf(window.currentStart, window.previousStart)
-        val queryEnd = maxOf(window.currentEndExclusive, window.previousEndExclusive)
+        // Historical balance reconciliation starts from the current wallet balance and reverses
+        // every ledger movement since the requested period. Therefore a historical report must
+        // include the transaction tail from its earliest comparison boundary through "now".
+        val ledgerTailEndExclusive = clock.now().plusMillis(1)
+        val queryEnd = maxOf(
+            maxOf(window.currentEndExclusive, window.previousEndExclusive),
+            ledgerTailEndExclusive,
+        )
         val transactionsFlow = if (queryStart < queryEnd) {
             transactionRangeRepository.observeRange(queryStart, queryEnd)
         } else {
@@ -316,7 +323,7 @@ class ReportsViewModel @Inject constructor(
         }
 
         val startPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, salaryConfig)
-        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(Instant.now(), salaryConfig)
+        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(clock.now(), salaryConfig)
         val budgetsFlow = if (startPeriod.key == nowPeriod.key) {
             budgetRepository.observeBudgets(startPeriod.key)
         } else {
@@ -409,9 +416,9 @@ class ReportsViewModel @Inject constructor(
         requestedPeriod: ReportPeriod,
         selectedWalletId: String? = null,
     ): ReportsUiState {
-        val zone = FinanceTime.VIETNAM_ZONE
+        val zone = FinanceTime.zoneOf(salaryConfig.financeTimeZone)
         val range = window.range
-        val today = LocalDate.now(zone)
+        val today = clock.now().atZone(zone).toLocalDate()
         val effectiveEndDate = if (range.end.isAfter(today)) today.coerceAtLeast(range.start) else range.end
 
         fun inRange(date: Instant, startInclusive: Instant, endExclusive: Instant): Boolean {
