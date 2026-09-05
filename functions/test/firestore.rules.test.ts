@@ -351,3 +351,42 @@ describe("Firestore Rules: Deals", () => {
         }));
     });
 });
+
+
+describe("Firestore Rules: Goal and Debt deletion guards", () => {
+    it("rejects deleting a funded goal and allows an empty goal", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc("users/alice/goals/funded").set({
+                name: "Quỹ dự phòng",
+                savedAmount: 1000000,
+            });
+            await context.firestore().doc("users/alice/goals/empty").set({
+                name: "Mục tiêu cũ",
+                savedAmount: 0,
+            });
+        });
+
+        await assertFails(alice.firestore().doc("users/alice/goals/funded").delete());
+        await assertSucceeds(alice.firestore().doc("users/alice/goals/empty").delete());
+    });
+
+    it("rejects deleting outstanding debt and allows settled debt", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc("users/alice/debts/open").set({
+                name: "Khoản vay",
+                remainingBalance: 2000000,
+                isSettled: false,
+            });
+            await context.firestore().doc("users/alice/debts/settled").set({
+                name: "Khoản vay đã tất toán",
+                remainingBalance: 0,
+                isSettled: true,
+            });
+        });
+
+        await assertFails(alice.firestore().doc("users/alice/debts/open").delete());
+        await assertSucceeds(alice.firestore().doc("users/alice/debts/settled").delete());
+    });
+});
