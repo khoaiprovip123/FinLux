@@ -151,7 +151,17 @@ class FirebaseDebtRepository(
 
             val debtName = debtSnap.getString("name") ?: "Khoản nợ"
             val currentDebtRemaining = debtSnap.getLong("remainingBalance") ?: 0L
-            val newDebtRemaining = (currentDebtRemaining - principalPaid).coerceAtLeast(0L)
+            val currentlySettled = debtSnap.getBoolean("isSettled") ?: (currentDebtRemaining <= 0L)
+            require(amount > 0L && principalPaid >= 0L && interestPaid >= 0L && principalPaid + interestPaid == amount) {
+                "Thông tin tiền gốc/lãi không hợp lệ"
+            }
+            require(!currentlySettled && currentDebtRemaining > 0L) {
+                "Khoản nợ đã được tất toán"
+            }
+            require(principalPaid <= currentDebtRemaining) {
+                "Tiền gốc thanh toán vượt quá dư nợ còn lại"
+            }
+            val newDebtRemaining = currentDebtRemaining - principalPaid
             val isSettled = newDebtRemaining <= 0L
 
             // 1. Trừ tiền ví nguồn
