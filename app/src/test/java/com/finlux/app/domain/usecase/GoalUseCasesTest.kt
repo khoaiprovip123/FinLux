@@ -37,6 +37,22 @@ class GoalUseCasesTest {
     }
 
     @Test
+    fun `delete rejects funded goal without calling repository`() = runTest {
+        val useCase = DeleteGoalUseCase(repository)
+        val result = useCase(validGoal().copy(id = "goal-1", savedAmount = Money(1_000_000L)))
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals(0, repository.deleteCalls)
+    }
+
+    @Test
+    fun `delete delegates when goal balance is zero`() = runTest {
+        val useCase = DeleteGoalUseCase(repository)
+        val result = useCase(validGoal().copy(id = "goal-1", savedAmount = Money(0L)))
+        assertEquals(AppResult.Success(Unit), result)
+        assertEquals(1, repository.deleteCalls)
+    }
+
+    @Test
     fun `deposit rejects invalid goalId or walletId or non-positive amount`() = runTest {
         val useCase = DepositToGoalUseCase(repository)
 
@@ -116,6 +132,7 @@ private class RecordingGoalRepository : GoalRepository {
     var lastDepositNote: String? = null
 
     var withdrawCalls = 0
+    var deleteCalls = 0
     var lastWithdrawGoalId: String? = null
     var lastWithdrawWalletId: String? = null
     var lastWithdrawAmount: Long? = null
@@ -129,7 +146,10 @@ private class RecordingGoalRepository : GoalRepository {
         return AppResult.Success("goal-1")
     }
 
-    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> {
+        deleteCalls++
+        return AppResult.Success(Unit)
+    }
 
     override suspend fun depositToGoal(
         goalId: String,
