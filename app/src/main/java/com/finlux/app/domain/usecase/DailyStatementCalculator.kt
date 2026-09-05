@@ -8,6 +8,7 @@ import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.GoalFlowType
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletDailyMovement
@@ -85,20 +86,34 @@ class DailyStatementCalculator @Inject constructor() {
             for (tx in dayTxs) {
                 when (tx.type) {
                     TransactionType.INCOME -> {
-                        if (tx.dealFlowType == DealFlowType.PRINCIPAL_RECOVERY) {
-                            nonOperatingInflow += tx.amount.value
-                        } else {
-                            totalIncome += tx.amount.value
+                        when {
+                            tx.goalFlowType == GoalFlowType.RELEASE -> nonOperatingInflow += tx.amount.value
+                            tx.dealFlowType == DealFlowType.PRINCIPAL_RECOVERY -> nonOperatingInflow += tx.amount.value
+                            tx.dealFlowType == DealFlowType.CAPITAL_GAIN -> nonOperatingInflow += tx.amount.value
+                            else -> totalIncome += tx.amount.value
                         }
                         if (tx.walletId in targetWalletIds) {
                             dayInflowByWallet[tx.walletId] = (dayInflowByWallet[tx.walletId] ?: 0L) + tx.amount.value
                         }
                     }
                     TransactionType.EXPENSE -> {
-                        if (tx.dealFlowType == DealFlowType.OUTLAY_CAPITAL) {
-                            nonOperatingOutflow += tx.amount.value
-                        } else {
-                            totalExpense += tx.amount.value
+                        when {
+                            tx.goalFlowType == GoalFlowType.ALLOCATION -> {
+                                nonOperatingOutflow += tx.amount.value
+                            }
+                            tx.debtId != null &&
+                                tx.debtPrincipalAmount != null &&
+                                tx.debtInterestAmount != null -> {
+                                nonOperatingOutflow += tx.debtPrincipalAmount.value
+                                totalExpense += tx.debtInterestAmount.value
+                            }
+                            tx.dealFlowType == DealFlowType.OUTLAY_CAPITAL -> {
+                                nonOperatingOutflow += tx.amount.value
+                            }
+                            tx.dealFlowType == DealFlowType.CAPITAL_LOSS -> {
+                                // Accounting loss settlement has no wallet cash movement.
+                            }
+                            else -> totalExpense += tx.amount.value
                         }
                         if (tx.walletId in targetWalletIds) {
                             dayOutflowByWallet[tx.walletId] = (dayOutflowByWallet[tx.walletId] ?: 0L) + tx.amount.value
@@ -247,74 +262,31 @@ class DailyStatementCalculator @Inject constructor() {
         deals: List<FinancialDeal>,
         targetWalletIds: Set<String>,
     ): CashMovementStatement {
-        var income = 0L
-        var expense = 0L
-        var transferIn = 0L
-        var transferOut = 0L
-        var investmentOutlay = 0L
-        var principalRecovery = 0L
-        var lendingOutlay = 0L
-        var loanPrincipalRecovery = 0L
-        var goalMovements = 0L
-        var balanceAdjustments = 0L
+        val scoped = transactionsInPeriod.filter { it.walletId in targetWalletIds }
+        val breakdown = CalculateFinancialFlowBreakdownUseCase()(scoped, deals)
 
-        val dealMap = deals.associateBy { it.id }
-
-        for (tx in transactionsInPeriod) {
-            if (tx.walletId !in targetWalletIds) continue
-
-            when (tx.type) {
-                TransactionType.INCOME -> {
-                    if (tx.dealFlowType == DealFlowType.PRINCIPAL_RECOVERY) {
-                        val deal = tx.dealId?.let { dealMap[it] }
-                        if (deal?.category == DealCategory.LENDING) {
-                            loanPrincipalRecovery += tx.amount.value
-                        } else {
-                            principalRecovery += tx.amount.value
-                        }
-                    } else {
-                        income += tx.amount.value
-                    }
-                }
-                TransactionType.EXPENSE -> {
-                    if (tx.dealFlowType == DealFlowType.OUTLAY_CAPITAL) {
-                        val deal = tx.dealId?.let { dealMap[it] }
-                        if (deal?.category == DealCategory.LENDING) {
-                            lendingOutlay += tx.amount.value
-                        } else {
-                            investmentOutlay += tx.amount.value
-                        }
-                    } else {
-                        expense += tx.amount.value
-                    }
-                }
-                TransactionType.TRANSFER_IN -> {
-                    transferIn += tx.amount.value
-                }
-                TransactionType.TRANSFER_OUT -> {
-                    transferOut += tx.amount.value
-                }
-            }
-        }
-
-        val netMovement = (income + principalRecovery + loanPrincipalRecovery + transferIn) -
-            (expense + investmentOutlay + lendingOutlay + transferOut)
-        val closingBalance = openingBalance + netMovement
+        val closingBalance = openingBalance + breakdown.netCashMovement
 
         return CashMovementStatement(
             openingBalance = openingBalance,
-            income = income,
-            expense = expense,
-            transferIn = transferIn,
-            transferOut = transferOut,
-            investmentOutlay = investmentOutlay,
-            principalRecovery = principalRecovery,
-            lendingOutlay = lendingOutlay,
-            loanPrincipalRecovery = loanPrincipalRecovery,
-            goalMovements = goalMovements,
-            balanceAdjustments = balanceAdjustments,
+            income = breakdown.operatingIncome,
+            expense = breakdown.operatingExpense,
+            transferIn = breakdown.transferIn,
+            transferOut = breakdown.transferOut,
+            investmentOutlay = breakdown.investmentOutlay,
+            principalRecovery = breakdown.investmentPrincipalRecovery,
+            lendingOutlay = breakdown.lendingOutlay,
+            loanPrincipalRecovery = breakdown.lendingPrincipalRecovery,
+            goalMovements = breakdown.goalRelease - breakdown.goalAllocation,
+            balanceAdjustments = 0L,
             closingBalance = closingBalance,
-            isTransferBalanced = transferIn == transferOut,
+            isTransferBalanced = breakdown.transferIn == breakdown.transferOut,
+            goalAllocation = breakdown.goalAllocation,
+            goalRelease = breakdown.goalRelease,
+            debtPrincipalOutflow = breakdown.debtPrincipalOutflow,
+            debtInterestExpense = breakdown.debtInterestExpense,
+            investmentGain = breakdown.dealGain,
+            dealLoss = breakdown.dealLoss,
         )
     }
 
