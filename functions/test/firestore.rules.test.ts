@@ -256,6 +256,81 @@ describe("Firestore Rules: Deals", () => {
         await assertSucceeds(batch.commit());
     });
 
+
+
+    it("allows atomic cascade deletion of a deal with multiple ledger entries", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const walletPath = "users/alice/wallets/w1";
+        const dealPath = "users/alice/deals/deal-cascade";
+        const outPath = "users/alice/transactions/deal-out";
+        const inPath = "users/alice/transactions/deal-in";
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            const db = context.firestore();
+            await db.doc(walletPath).set({
+                name: "Ví chính",
+                type: "bank",
+                balance: 800000,
+                color: "#000000",
+                isDefault: true,
+                createdAt: new Date(),
+                lastTransactionId: "deal-in",
+            });
+            await db.doc(dealPath).set({
+                title: "Deal cascade",
+                description: "",
+                category: "investment",
+                targetAmount: 1000000,
+                totalCapitalOutlay: 400000,
+                totalRecovered: 200000,
+                netProfitLoss: 0,
+                status: "active",
+                startDate: new Date(),
+                endDate: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            await db.doc(outPath).set({
+                type: "expense",
+                amount: 400000,
+                categoryId: null,
+                walletId: "w1",
+                relatedWalletId: null,
+                dealId: "deal-cascade",
+                dealFlowType: "outlay_capital",
+                note: "Xuất vốn",
+                receiptImageUrl: null,
+                date: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            await db.doc(inPath).set({
+                type: "income",
+                amount: 200000,
+                categoryId: null,
+                walletId: "w1",
+                relatedWalletId: null,
+                dealId: "deal-cascade",
+                dealFlowType: "principal_recovery",
+                note: "Thu hồi vốn",
+                receiptImageUrl: null,
+                date: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        });
+
+        const batch = alice.firestore().batch();
+        batch.update(alice.firestore().doc(walletPath), {
+            balance: 1000000,
+            lastTransactionId: "deal-delete",
+        });
+        batch.delete(alice.firestore().doc(outPath));
+        batch.delete(alice.firestore().doc(inPath));
+        batch.delete(alice.firestore().doc(dealPath));
+
+        await assertSucceeds(batch.commit());
+    });
     it("allows capital-loss settlement entries without a fake wallet mutation", async () => {
         const alice = testEnv.authenticatedContext("alice");
         const ref = alice.firestore().doc("users/alice/transactions/deal-loss-1");
