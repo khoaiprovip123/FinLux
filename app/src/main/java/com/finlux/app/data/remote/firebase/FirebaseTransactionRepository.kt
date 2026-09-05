@@ -357,25 +357,100 @@ class FirebaseTransactionRepository(
         amount: Long,
         note: String,
         date: Instant,
+    ): AppResult<Unit> = transferBetweenWalletsInternal(
+        sourceWalletId = sourceWalletId,
+        destinationWalletId = destinationWalletId,
+        amount = amount,
+        note = note,
+        date = date,
+        pairId = UUID.randomUUID().toString(),
+        idempotent = false,
+    )
+
+    override suspend fun transferBetweenWalletsIdempotent(
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+        operationId: String,
+    ): AppResult<Unit> {
+        val safeOperationId = operationId
+            .trim()
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .take(180)
+        if (safeOperationId.isBlank()) {
+            return AppResult.Error("Mã thao tác chuyển tiền không hợp lệ")
+        }
+        return transferBetweenWalletsInternal(
+            sourceWalletId = sourceWalletId,
+            destinationWalletId = destinationWalletId,
+            amount = amount,
+            note = note,
+            date = date,
+            pairId = safeOperationId,
+            idempotent = true,
+        )
+    }
+
+    private suspend fun transferBetweenWalletsInternal(
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+        pairId: String,
+        idempotent: Boolean,
     ): AppResult<Unit> = firebaseResult("Không thể chuyển tiền") {
         require(sourceWalletId != destinationWalletId) { "Hai ví phải khác nhau" }
         require(amount in 1..MAX_MONEY_AMOUNT) { "Số tiền phải lớn hơn 0" }
+
         val uid = requireUid()
         val sourceRef = firestore.userWallets(uid).document(sourceWalletId)
         val destinationRef = firestore.userWallets(uid).document(destinationWalletId)
-        val pairId = UUID.randomUUID().toString()
         val outRef = firestore.userTransactions(uid).document("${pairId}_out")
         val inRef = firestore.userTransactions(uid).document("${pairId}_in")
         val now = Instant.now()
+
         firestore.runTransaction { atomic ->
-            val sourceBalance = atomic.get(sourceRef).getLong("balance") ?: error("Không tìm thấy ví nguồn")
+            if (idempotent) {
+                val existingOut = atomic.get(outRef)
+                val existingIn = atomic.get(inRef)
+                if (existingOut.exists() || existingIn.exists()) {
+                    require(existingOut.exists() && existingIn.exists()) {
+                        "Phát hiện cặp giao dịch chuyển tiền không toàn vẹn"
+                    }
+                    val out = requireNotNull(existingOut.toFinanceTransaction())
+                    val incoming = requireNotNull(existingIn.toFinanceTransaction())
+                    require(
+                        out.type == TransactionType.TRANSFER_OUT &&
+                            incoming.type == TransactionType.TRANSFER_IN &&
+                            out.walletId == sourceWalletId &&
+                            incoming.walletId == destinationWalletId &&
+                            out.relatedWalletId == destinationWalletId &&
+                            incoming.relatedWalletId == sourceWalletId &&
+                            out.amount.value == amount &&
+                            incoming.amount.value == amount
+                    ) {
+                        "Mã thao tác đã được dùng cho một giao dịch khác"
+                    }
+                    return@runTransaction
+                }
+            }
+
             val sourceDoc = atomic.get(sourceRef)
+            val destinationDoc = atomic.get(destinationRef)
+            require(sourceDoc.exists()) { "Không tìm thấy ví nguồn" }
+            require(destinationDoc.exists()) { "Không tìm thấy ví đích" }
+
+            val sourceBalance = sourceDoc.getLong("balance") ?: 0L
+            val destinationBalance = destinationDoc.getLong("balance") ?: 0L
             val sourceType = sourceDoc.getString("type")
             val isCard = sourceType.equals("CARD", ignoreCase = true)
             if (!isCard && sourceBalance < amount) {
                 error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
             }
-            val destinationBalance = atomic.get(destinationRef).getLong("balance") ?: error("Không tìm thấy ví đích")
+
             val outgoing = FinanceTransaction(
                 id = outRef.id,
                 type = TransactionType.TRANSFER_OUT,
@@ -394,19 +469,20 @@ class FirebaseTransactionRepository(
                 walletId = destinationWalletId,
                 relatedWalletId = sourceWalletId,
             )
+
             atomic.update(
                 sourceRef,
                 mapOf(
                     "balance" to Math.subtractExact(sourceBalance, amount),
-                    "lastTransactionId" to outRef.id
-                )
+                    "lastTransactionId" to outRef.id,
+                ),
             )
             atomic.update(
                 destinationRef,
                 mapOf(
                     "balance" to Math.addExact(destinationBalance, amount),
-                    "lastTransactionId" to inRef.id
-                )
+                    "lastTransactionId" to inRef.id,
+                ),
             )
             atomic.set(outRef, outgoing.toFirestoreMap())
             atomic.set(inRef, incoming.toFirestoreMap())
