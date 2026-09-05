@@ -8,10 +8,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.LaunchedEffect
+import com.finlux.app.core.time.FinanceTime
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,6 +54,9 @@ import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +65,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -181,11 +190,19 @@ fun PrismReportsScreen(
                         onSubTabSelected = { selectedDeepDiveTab = it },
                     )
                 }
+                item {
+                    PrismPeriodIndicatorBanner(
+                        state = state,
+                        onPickPeriod = { showPeriodPickerSheet = true },
+                    )
+                }
             }
 
             when (selectedPrimaryTab) {
                 ReportPrimaryTab.OVERVIEW -> {
                     item { PrismReportsHeroBanner(state, onPickMonth = { showPeriodPickerSheet = true }) }
+                    item { PrismDailyStatementCard(state) }
+                    item { PrismCumulativeMetricsCard(state) }
                     item {
                         PrismOverviewMultiCards(
                             state = state,
@@ -204,6 +221,9 @@ fun PrismReportsScreen(
                         }
                     }
                     item { PrismDailyAveragesRow(state) }
+                    if (state.dailyStatements.isNotEmpty()) {
+                        item { PrismDailyStatementsTable(state.dailyStatements) }
+                    }
                 }
 
                 ReportPrimaryTab.CASHFLOW -> {
@@ -223,6 +243,12 @@ fun PrismReportsScreen(
                 }
 
                 ReportPrimaryTab.CATEGORIES -> {
+                    item {
+                        PrismPeriodIndicatorBanner(
+                            state = state,
+                            onPickPeriod = { showPeriodPickerSheet = true },
+                        )
+                    }
                     item { PrismCategoryOverviewCard(state = state, onViewDetail = {}) }
                     if (state.incomeByCategory.isNotEmpty()) {
                         item { PrismIncomeCategoryCard(state = state) }
@@ -357,6 +383,8 @@ fun PrismReportsScreen(
         }
     }
 
+    var showCustomRangePicker by remember { mutableStateOf(false) }
+
     // Period Picker Bottom Sheet
     if (showPeriodPickerSheet) {
         PrismPeriodPickerBottomSheet(
@@ -365,6 +393,9 @@ fun PrismReportsScreen(
             onSelectPeriod = { period ->
                 viewModel.selectPeriod(period)
                 showPeriodPickerSheet = false
+                if (period == ReportPeriod.CUSTOM) {
+                    showCustomRangePicker = true
+                }
             },
             onDismiss = { showPeriodPickerSheet = false },
             onExportClick = {
@@ -372,6 +403,63 @@ fun PrismReportsScreen(
                 showExportDialog = true
             },
         )
+    }
+
+    // Custom Date Range Picker Dialog
+    if (showCustomRangePicker) {
+        val rangeState = rememberDateRangePickerState(
+            initialSelectedStartDateMillis = state.range.start.atStartOfDay(com.finlux.app.core.time.FinanceTime.VIETNAM_ZONE).toInstant().toEpochMilli(),
+            initialSelectedEndDateMillis = state.range.end.atStartOfDay(com.finlux.app.core.time.FinanceTime.VIETNAM_ZONE).toInstant().toEpochMilli(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showCustomRangePicker = false },
+            colors = DatePickerDefaults.colors(
+                containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+            ),
+            shape = RoundedCornerShape(28.dp),
+            confirmButton = {
+                TextButton(onClick = {
+                    val start = rangeState.selectedStartDateMillis
+                    val end = rangeState.selectedEndDateMillis
+                    if (start != null && end != null) {
+                        viewModel.setCustomRange(
+                            java.time.Instant.ofEpochMilli(start).atZone(com.finlux.app.core.time.FinanceTime.VIETNAM_ZONE).toLocalDate(),
+                            java.time.Instant.ofEpochMilli(end).atZone(com.finlux.app.core.time.FinanceTime.VIETNAM_ZONE).toLocalDate(),
+                        )
+                    }
+                    showCustomRangePicker = false
+                }) {
+                    Text("Áp dụng", color = tokens.primary, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomRangePicker = false }) {
+                    Text("Hủy", color = tokens.onSurfaceVariant)
+                }
+            },
+        ) {
+            DateRangePicker(
+                state = rangeState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    titleContentColor = tokens.onSurface,
+                    headlineContentColor = tokens.onSurface,
+                    weekdayContentColor = tokens.onSurfaceVariant,
+                    subheadContentColor = tokens.onSurfaceVariant,
+                    yearContentColor = tokens.onSurface,
+                    currentYearContentColor = tokens.primary,
+                    selectedYearContentColor = tokens.onHero,
+                    selectedYearContainerColor = tokens.primary,
+                    dayContentColor = tokens.onSurface,
+                    selectedDayContentColor = tokens.onHero,
+                    selectedDayContainerColor = tokens.primary,
+                    todayContentColor = tokens.primary,
+                    todayDateBorderColor = tokens.primary,
+                    dayInSelectionRangeContentColor = tokens.primary,
+                    dayInSelectionRangeContainerColor = tokens.primary.copy(alpha = 0.15f),
+                ),
+            )
+        }
     }
 
     // Export Dialog
@@ -2085,13 +2173,17 @@ private fun PrismCashflowChartCard(
     val tokens = LocalFinluxTokens.current
     val cashFlowPoints = state.cashFlow
 
-    val maxVal = remember(cashFlowPoints) {
-        val peak = cashFlowPoints.maxOfOrNull { maxOf(it.income, it.expense) } ?: 1L
+    val maxIncome = remember(cashFlowPoints) {
+        val peak = cashFlowPoints.maxOfOrNull { it.income } ?: 1L
+        if (peak <= 0L) 1L else peak
+    }
+    val maxExpense = remember(cashFlowPoints) {
+        val peak = cashFlowPoints.maxOfOrNull { it.expense } ?: 1L
         if (peak <= 0L) 1L else peak
     }
 
-    val monthLabel = remember(state.range) {
-        "Kỳ ${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))} - ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM"))}"
+    val monthLabel = remember(state.range, state.period) {
+        "${state.period.label}: ${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))} - ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
     }
 
     Surface(
@@ -2109,15 +2201,29 @@ private fun PrismCashflowChartCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = "Biểu đồ thu chi",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = tokens.onSurface,
-                    )
+                Column(
+                    modifier = Modifier.clickable(onClick = onPickMonth),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = "Biểu đồ thu chi",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = tokens.onSurface,
+                        )
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = null,
+                            tint = tokens.primary,
+                            modifier = Modifier.size(15.dp),
+                        )
+                    }
                     Text(
                         text = monthLabel,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
@@ -2137,6 +2243,46 @@ private fun PrismCashflowChartCard(
                 }
             }
 
+            // Interactive Day Details Pill
+            AnimatedVisibility(visible = selectedIndex in cashFlowPoints.indices) {
+                val selectedPoint = cashFlowPoints.getOrNull(selectedIndex)
+                if (selectedPoint != null) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (tokens.isDark) Color(0xFF28293D) else Color(0xFFF3F4F6),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Ngày ${selectedPoint.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.onSurface,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text(
+                                    text = "+${formatVndAmount(selectedPoint.income)}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF10B981),
+                                )
+                                Text(
+                                    text = "-${formatVndAmount(selectedPoint.expense)}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF5B4DFF),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Chart area
             Box(
                 modifier = Modifier
@@ -2148,60 +2294,200 @@ private fun PrismCashflowChartCard(
                         Text("Không có dữ liệu biểu đồ", style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B7280))
                     }
                 } else {
+                    val scrollState = rememberScrollState()
+                    val today = remember { LocalDate.now(FinanceTime.VIETNAM_ZONE) }
+                    val todayIndex = remember(cashFlowPoints) {
+                        val idx = cashFlowPoints.indexOfFirst { it.date == today }
+                        if (idx >= 0) idx else cashFlowPoints.indexOfLast { it.income > 0 || it.expense > 0 }.coerceAtLeast(0)
+                    }
+
+                    val isScrollable = cashFlowPoints.size > 14
+                    val density = androidx.compose.ui.platform.LocalDensity.current
+                    LaunchedEffect(cashFlowPoints.size, todayIndex) {
+                        if (isScrollable && todayIndex > 0) {
+                            val targetIndex = (todayIndex - 3).coerceAtLeast(0)
+                            val itemPx = with(density) { 40.dp.toPx() }
+                            scrollState.scrollTo((targetIndex * itemPx).toInt().coerceAtLeast(0))
+                        }
+                    }
+
+                    val rowModifier = if (isScrollable) {
+                        Modifier
+                            .fillMaxSize()
+                            .horizontalScroll(scrollState)
+                    } else {
+                        Modifier.fillMaxSize()
+                    }
+
                     Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = rowModifier,
+                        horizontalArrangement = if (isScrollable) Arrangement.spacedBy(8.dp) else Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Bottom,
                     ) {
-                        cashFlowPoints.takeLast(14).forEachIndexed { idx, point ->
+                        cashFlowPoints.forEachIndexed { idx, point ->
                             val isSelected = selectedIndex == idx
-                            val incomeFrac = (point.income.toFloat() / maxVal.toFloat()).coerceIn(0f, 1f)
-                            val expenseFrac = (point.expense.toFloat() / maxVal.toFloat()).coerceIn(0f, 1f)
+                            val isToday = point.date == today
+                            val incomeFrac = if (point.income <= 0L) 0f else (0.12f + (point.income.toFloat() / maxIncome.toFloat()) * 0.88f).coerceIn(0.12f, 1f)
+                            val expenseFrac = if (point.expense <= 0L) 0f else (0.12f + (point.expense.toFloat() / maxExpense.toFloat()) * 0.88f).coerceIn(0.12f, 1f)
+
+                            val colModifier = if (isScrollable) {
+                                Modifier
+                                    .width(32.dp)
+                                    .fillMaxHeight()
+                                    .clickable { onSelectIndex(if (isSelected) -1 else idx) }
+                            } else {
+                                Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable { onSelectIndex(if (isSelected) -1 else idx) }
+                            }
 
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Bottom,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .clickable { onSelectIndex(if (isSelected) -1 else idx) },
+                                modifier = colModifier,
                             ) {
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                                     verticalAlignment = Alignment.Bottom,
-                                    modifier = Modifier.weight(1f, fill = false),
+                                    modifier = Modifier.weight(1f),
                                 ) {
                                     // Income Bar
-                                    Box(
-                                        modifier = Modifier
-                                            .width(6.dp)
-                                            .fillMaxHeight(incomeFrac.coerceAtLeast(0.04f))
-                                            .background(
-                                                if (isSelected) Color(0xFF10B981) else Color(0xFF10B981).copy(alpha = 0.7f),
-                                                RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
-                                            ),
-                                    )
+                                    if (incomeFrac > 0f) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(if (isScrollable) 7.dp else 6.dp)
+                                                .fillMaxHeight(incomeFrac)
+                                                .background(
+                                                    if (isSelected) Color(0xFF10B981) else Color(0xFF10B981).copy(alpha = 0.85f),
+                                                    RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
+                                                ),
+                                        )
+                                    }
                                     // Expense Bar
-                                    Box(
-                                        modifier = Modifier
-                                            .width(6.dp)
-                                            .fillMaxHeight(expenseFrac.coerceAtLeast(0.04f))
-                                            .background(
-                                                if (isSelected) Color(0xFF5B4DFF) else Color(0xFF5B4DFF).copy(alpha = 0.7f),
-                                                RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
-                                            ),
-                                    )
+                                    if (expenseFrac > 0f) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(if (isScrollable) 7.dp else 6.dp)
+                                                .fillMaxHeight(expenseFrac)
+                                                .background(
+                                                    if (isSelected) Color(0xFF5B4DFF) else Color(0xFF5B4DFF).copy(alpha = 0.85f),
+                                                    RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
+                                                ),
+                                        )
+                                    }
                                 }
                                 Spacer(Modifier.height(6.dp))
+                                val labelText = if (idx == 0 || point.date.dayOfMonth == 1) {
+                                    "${point.date.dayOfMonth}/${point.date.monthValue}"
+                                } else {
+                                    point.date.format(DateTimeFormatter.ofPattern("dd"))
+                                }
                                 Text(
-                                    text = point.date.format(DateTimeFormatter.ofPattern("dd")),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = if (isSelected) Color(0xFF5B4DFF) else Color(0xFF6B7280),
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    text = labelText,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                                    color = when {
+                                        isSelected -> Color(0xFF5B4DFF)
+                                        isToday -> tokens.primary
+                                        else -> Color(0xFF6B7280)
+                                    },
+                                    fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                    maxLines = 1,
                                 )
+                                if (isToday) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(top = 2.dp)
+                                            .size(4.dp)
+                                            .background(tokens.primary, CircleShape),
+                                    )
+                                } else {
+                                    Spacer(Modifier.height(6.dp))
+                                }
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Compact Period Indicator Banner for Deep Dive & Categories
+ */
+@Composable
+private fun PrismPeriodIndicatorBanner(
+    state: ReportsUiState,
+    onPickPeriod: () -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPickPeriod),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(tokens.primary.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        tint = tokens.primary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Kỳ báo cáo: ${state.period.label}",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp),
+                        color = tokens.onSurface,
+                    )
+                    Text(
+                        text = "${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))} - ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                        color = Color(0xFF6B7280),
+                    )
+                }
+            }
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = tokens.primary.copy(alpha = 0.1f),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(
+                        text = "Đổi kỳ",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.primary,
+                    )
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = null,
+                        tint = tokens.primary,
+                        modifier = Modifier.size(13.dp),
+                    )
                 }
             }
         }

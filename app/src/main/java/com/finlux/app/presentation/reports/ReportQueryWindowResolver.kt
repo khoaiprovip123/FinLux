@@ -2,6 +2,7 @@ package com.finlux.app.presentation.reports
 
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.usecase.SalaryCycleCalculator
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -33,7 +34,34 @@ class ReportQueryWindowResolver @Inject constructor(
             period
         }
 
+        val today = now.atZone(zone).toLocalDate()
+
         return when (effectivePeriod) {
+            ReportPeriod.TODAY -> {
+                val range = ReportRange(today, today)
+                createWindowFromRange(range, zone)
+            }
+            ReportPeriod.YESTERDAY -> {
+                val yesterday = today.minusDays(1)
+                val range = ReportRange(yesterday, yesterday)
+                createWindowFromRange(range, zone)
+            }
+            ReportPeriod.DAY -> {
+                // Mặc định ngày được chọn từ custom hoặc hôm nay
+                val targetDay = if (custom.start == custom.end) custom.start else today
+                val range = ReportRange(targetDay, targetDay)
+                createWindowFromRange(range, zone)
+            }
+            ReportPeriod.WEEK -> {
+                val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                val sunday = monday.plusDays(6)
+                val range = ReportRange(monday, sunday)
+                createWindowFromRange(range, zone)
+            }
+            ReportPeriod.LAST_7_DAYS -> {
+                val range = ReportRange(today.minusDays(6), today)
+                createWindowFromRange(range, zone)
+            }
             ReportPeriod.SALARY_CYCLE -> {
                 val currentCycle = salaryCycleCalculator.cycleContaining(now, salaryConfig, zone)
                 val previousCycle = salaryCycleCalculator.previousCycle(currentCycle, salaryConfig, zone)
@@ -48,18 +76,15 @@ class ReportQueryWindowResolver @Inject constructor(
                 )
             }
             ReportPeriod.MONTH -> {
-                val today = now.atZone(zone).toLocalDate()
                 val range = ReportRange(today.with(TemporalAdjusters.firstDayOfMonth()), today)
                 createWindowFromRange(range, zone)
             }
             ReportPeriod.QUARTER -> {
-                val today = now.atZone(zone).toLocalDate()
                 val firstMonth = ((today.monthValue - 1) / 3) * 3 + 1
                 val range = ReportRange(today.withMonth(firstMonth).withDayOfMonth(1), today)
                 createWindowFromRange(range, zone)
             }
             ReportPeriod.YEAR -> {
-                val today = now.atZone(zone).toLocalDate()
                 val range = ReportRange(today.with(TemporalAdjusters.firstDayOfYear()), today)
                 createWindowFromRange(range, zone)
             }
