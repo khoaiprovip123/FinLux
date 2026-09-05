@@ -10,6 +10,7 @@ import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
@@ -20,6 +21,7 @@ import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DashboardRepository
 import com.finlux.app.domain.repository.DebtRepository
+import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
@@ -99,6 +101,7 @@ class HomeViewModelTest {
             budgetRepository = FakeHomeBudgetRepository(),
             notificationRepository = FakeHomeNotificationRepository(),
             debtRepository = FakeHomeDebtRepository(debts),
+            goalRepository = FakeHomeGoalRepository(emptyList()),
             salaryCycleRepository = FakeHomeSalaryCycleRepository(),
             financialPeriodResolver = periodResolver,
             calculator = calculator,
@@ -112,6 +115,67 @@ class HomeViewModelTest {
             assertEquals(40_000_000L, state.grossAssets)
             assertEquals(12_000_000L, state.totalDebt)
             assertEquals(28_000_000L, state.netWorth) // 40tr - 12tr = 28tr
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `state keeps goal-held savings inside net worth after wallet deposit`() = runTest(testDispatcher) {
+        val wallets = listOf(
+            Wallet("w1", "Tiền mặt", WalletType.CASH, Money(10_000_000L), "#1F6FBF", true, Instant.now()),
+        )
+        val goals = listOf(
+            FinancialGoal(
+                id = "g1",
+                name = "Quỹ dự phòng",
+                targetAmount = Money(20_000_000L),
+                savedAmount = Money(5_000_000L),
+                deadline = Instant.now().plusSeconds(86_400),
+                category = "savings",
+                monthlyContribution = Money(1_000_000L),
+            ),
+        )
+        val debts = listOf(
+            DebtAccount(
+                id = "d1",
+                userId = "u1",
+                name = "Khoản vay",
+                type = DebtType.PERSONAL_LOAN,
+                totalAmount = Money(5_000_000L),
+                remainingBalance = Money(2_000_000L),
+                interestRateApr = 10.0,
+                minimumPayment = Money(500_000L),
+                dueDate = 5,
+                isSettled = false,
+            ),
+        )
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(wallets),
+            transactionRepository = FakeHomeTransactionRepository(),
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = FakeHomeBudgetRepository(),
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(debts),
+            goalRepository = FakeHomeGoalRepository(goals),
+            salaryCycleRepository = FakeHomeSalaryCycleRepository(),
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            val state = if (initial.grossAssets == 0L && initial.goalAssets == 0L) awaitItem() else initial
+            assertEquals(10_000_000L, state.grossAssets)
+            assertEquals(5_000_000L, state.goalAssets)
+            assertEquals(2_000_000L, state.totalDebt)
+            assertEquals(13_000_000L, state.netWorth)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -131,6 +195,7 @@ class HomeViewModelTest {
             budgetRepository = FakeHomeBudgetRepository(),
             notificationRepository = FakeHomeNotificationRepository(),
             debtRepository = FakeHomeDebtRepository(emptyList()),
+            goalRepository = FakeHomeGoalRepository(emptyList()),
             salaryCycleRepository = FakeHomeSalaryCycleRepository(),
             financialPeriodResolver = periodResolver,
             calculator = calculator,
@@ -197,6 +262,7 @@ class HomeViewModelTest {
             budgetRepository = FakeHomeBudgetRepository(),
             notificationRepository = FakeHomeNotificationRepository(),
             debtRepository = FakeHomeDebtRepository(emptyList()),
+            goalRepository = FakeHomeGoalRepository(emptyList()),
             salaryCycleRepository = salaryRepo,
             financialPeriodResolver = periodResolver,
             calculator = calculator,
@@ -278,6 +344,7 @@ class HomeViewModelTest {
             budgetRepository = budgetRepo,
             notificationRepository = FakeHomeNotificationRepository(),
             debtRepository = FakeHomeDebtRepository(emptyList()),
+            goalRepository = FakeHomeGoalRepository(emptyList()),
             salaryCycleRepository = FakeHomeSalaryCycleRepository(),
             financialPeriodResolver = periodResolver,
             calculator = calculator,
@@ -360,6 +427,14 @@ private class FakeHomeDebtRepository(private val list: List<DebtAccount>) : Debt
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = AppResult.Success(debt.id)
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun processPayment(debtId: String, walletId: String, amount: Long, principalPaid: Long, interestPaid: Long, note: String, paymentDate: Instant): AppResult<Unit> = AppResult.Success(Unit)
+}
+
+private class FakeHomeGoalRepository(private val list: List<FinancialGoal>) : GoalRepository {
+    override fun observeGoals(): Flow<List<FinancialGoal>> = flowOf(list)
+    override suspend fun upsertGoal(goal: FinancialGoal): AppResult<String> = AppResult.Success(goal.id)
+    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun depositToGoal(goalId: String, walletId: String, amount: Long, note: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun withdrawFromGoal(goalId: String, walletId: String, amount: Long, note: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
 }
 
 private class FakeHomeSalaryCycleRepository : com.finlux.app.domain.repository.SalaryCycleRepository {

@@ -251,6 +251,10 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = mutationMutex.withLock {
+        val current = goalState.value.find { it.id == goal.id } ?: return@withLock AppResult.Success(Unit)
+        if (current.savedAmount.value > 0L) {
+            return@withLock AppResult.Error("Mục tiêu vẫn còn tiền. Hãy rút hoặc chuyển toàn bộ tiền trước khi xóa.")
+        }
         goalState.value = goalState.value.filterNot { it.id == goal.id }
         AppResult.Success(Unit)
     }
@@ -286,6 +290,8 @@ class DemoFinluxRepository @Inject constructor(
             amount = Money(amount),
             categoryId = "savings",
             walletId = walletId,
+            goalId = goalId,
+            goalFlowType = com.finlux.app.domain.model.GoalFlowType.ALLOCATION,
             note = if (note.isNotBlank()) note else "Nạp tích lũy: ${targetGoal.name}",
             date = date,
             createdAt = date,
@@ -326,6 +332,8 @@ class DemoFinluxRepository @Inject constructor(
             amount = Money(amount),
             categoryId = "savings",
             walletId = walletId,
+            goalId = goalId,
+            goalFlowType = com.finlux.app.domain.model.GoalFlowType.RELEASE,
             note = if (note.isNotBlank()) note else "Rút tích lũy: ${targetGoal.name}",
             date = date,
             createdAt = date,
@@ -352,6 +360,10 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = mutationMutex.withLock {
+        val current = debtState.value.find { it.id == debt.id } ?: return@withLock AppResult.Success(Unit)
+        if (current.remainingBalance.value > 0L || !current.isSettled) {
+            return@withLock AppResult.Error("Khoản nợ vẫn còn dư nợ. Hãy tất toán trước khi xóa.")
+        }
         debtState.value = debtState.value.filterNot { it.id == debt.id }
         paymentHistoryState.value = paymentHistoryState.value.filterNot { it.debtId == debt.id }
         AppResult.Success(Unit)
@@ -370,6 +382,16 @@ class DemoFinluxRepository @Inject constructor(
             ?: return@withLock AppResult.Error("Không tìm thấy khoản nợ")
         val targetWallet = walletState.value.find { it.id == walletId }
             ?: return@withLock AppResult.Error("Không tìm thấy ví thanh toán")
+
+        if (amount <= 0L || principalPaid < 0L || interestPaid < 0L || principalPaid + interestPaid != amount) {
+            return@withLock AppResult.Error("Thông tin tiền gốc/lãi không hợp lệ")
+        }
+        if (targetDebt.isSettled || targetDebt.remainingBalance.value <= 0L) {
+            return@withLock AppResult.Error("Khoản nợ đã được tất toán")
+        }
+        if (principalPaid > targetDebt.remainingBalance.value) {
+            return@withLock AppResult.Error("Tiền gốc thanh toán vượt quá dư nợ còn lại")
+        }
 
         if (targetWallet.type != WalletType.CARD && targetWallet.balance.value < amount) {
             return@withLock AppResult.Error("Số dư ví không đủ để thanh toán nợ")
@@ -407,6 +429,9 @@ class DemoFinluxRepository @Inject constructor(
             amount = Money(amount),
             categoryId = "debt_payment",
             walletId = walletId,
+            debtId = debtId,
+            debtPrincipalAmount = Money(principalPaid),
+            debtInterestAmount = Money(interestPaid),
             note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
             date = paymentDate,
             createdAt = paymentDate,
@@ -737,6 +762,88 @@ class DemoFinluxRepository @Inject constructor(
         )
         AppResult.Success(Unit)
     }
+    override suspend fun transferBetweenWalletsIdempotent(
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+        operationId: String,
+    ): AppResult<Unit> = mutationMutex.withLock {
+        val pairId = operationId
+            .trim()
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .take(180)
+        if (pairId.isBlank()) return@withLock AppResult.Error("Mã thao tác chuyển tiền không hợp lệ")
+
+        val outId = "${pairId}_out"
+        val inId = "${pairId}_in"
+        val existingOut = transactionState.value.find { it.id == outId }
+        val existingIn = transactionState.value.find { it.id == inId }
+        if (existingOut != null || existingIn != null) {
+            if (existingOut == null || existingIn == null) {
+                return@withLock AppResult.Error("Phát hiện cặp giao dịch chuyển tiền không toàn vẹn")
+            }
+            val matches = existingOut.type == TransactionType.TRANSFER_OUT &&
+                existingIn.type == TransactionType.TRANSFER_IN &&
+                existingOut.walletId == sourceWalletId &&
+                existingIn.walletId == destinationWalletId &&
+                existingOut.relatedWalletId == destinationWalletId &&
+                existingIn.relatedWalletId == sourceWalletId &&
+                existingOut.amount.value == amount &&
+                existingIn.amount.value == amount
+            return@withLock if (matches) AppResult.Success(Unit)
+            else AppResult.Error("Mã thao tác đã được dùng cho một giao dịch khác")
+        }
+
+        if (sourceWalletId == destinationWalletId) return@withLock AppResult.Error("Hai ví phải khác nhau")
+        if (amount <= 0L) return@withLock AppResult.Error("Số tiền phải lớn hơn 0")
+
+        val snapshot = walletState.value
+        val source = snapshot.find { it.id == sourceWalletId }
+            ?: return@withLock AppResult.Error("Không tìm thấy ví nguồn")
+        if (snapshot.none { it.id == destinationWalletId }) {
+            return@withLock AppResult.Error("Không tìm thấy ví đích")
+        }
+        if (source.type != WalletType.CARD && source.balance.value < amount) {
+            return@withLock AppResult.Error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
+        }
+
+        if (!changeWalletBalance(sourceWalletId, -amount) || !changeWalletBalance(destinationWalletId, amount)) {
+            walletState.value = snapshot
+            return@withLock AppResult.Error("Không tìm thấy ví")
+        }
+
+        val now = Instant.now()
+        transactionState.value = transactionState.value + listOf(
+            FinanceTransaction(
+                id = outId,
+                type = TransactionType.TRANSFER_OUT,
+                amount = Money(amount),
+                categoryId = null,
+                walletId = sourceWalletId,
+                relatedWalletId = destinationWalletId,
+                note = note,
+                date = date,
+                createdAt = now,
+                updatedAt = now,
+            ),
+            FinanceTransaction(
+                id = inId,
+                type = TransactionType.TRANSFER_IN,
+                amount = Money(amount),
+                categoryId = null,
+                walletId = destinationWalletId,
+                relatedWalletId = sourceWalletId,
+                note = note,
+                date = date,
+                createdAt = now,
+                updatedAt = now,
+            ),
+        )
+        AppResult.Success(Unit)
+    }
+
     override suspend fun executeSalaryRolloverAtomic(
         cycleKey: String,
         sourceWalletId: String,

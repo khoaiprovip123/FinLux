@@ -86,7 +86,17 @@ class FirebaseDebtRepository(
 
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = firebaseResult("Không thể xóa khoản nợ") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("debts").document(debt.id).delete().await()
+        val debtRef = firestore.collection("users").document(uid).collection("debts").document(debt.id)
+        firestore.runTransaction { tx ->
+            val snapshot = tx.get(debtRef)
+            if (!snapshot.exists()) return@runTransaction
+            val remainingBalance = snapshot.getLong("remainingBalance") ?: 0L
+            val isSettled = snapshot.getBoolean("isSettled") ?: (remainingBalance <= 0L)
+            require(remainingBalance <= 0L && isSettled) {
+                "Khoản nợ vẫn còn dư nợ. Hãy tất toán trước khi xóa."
+            }
+            tx.delete(debtRef)
+        }.await()
         Unit
     }
 
@@ -141,11 +151,27 @@ class FirebaseDebtRepository(
 
             val debtName = debtSnap.getString("name") ?: "Khoản nợ"
             val currentDebtRemaining = debtSnap.getLong("remainingBalance") ?: 0L
-            val newDebtRemaining = (currentDebtRemaining - principalPaid).coerceAtLeast(0L)
+            val currentlySettled = debtSnap.getBoolean("isSettled") ?: (currentDebtRemaining <= 0L)
+            require(amount > 0L && principalPaid >= 0L && interestPaid >= 0L && principalPaid + interestPaid == amount) {
+                "Thông tin tiền gốc/lãi không hợp lệ"
+            }
+            require(!currentlySettled && currentDebtRemaining > 0L) {
+                "Khoản nợ đã được tất toán"
+            }
+            require(principalPaid <= currentDebtRemaining) {
+                "Tiền gốc thanh toán vượt quá dư nợ còn lại"
+            }
+            val newDebtRemaining = currentDebtRemaining - principalPaid
             val isSettled = newDebtRemaining <= 0L
 
             // 1. Trừ tiền ví nguồn
-            tx.update(walletRef, "balance", currentWalletBalance - amount)
+            tx.update(
+                walletRef,
+                mapOf(
+                    "balance" to currentWalletBalance - amount,
+                    "lastTransactionId" to transactionId,
+                )
+            )
 
             // 2. Cập nhật dư nợ
             tx.update(
@@ -166,6 +192,9 @@ class FirebaseDebtRepository(
                     "amount" to amount,
                     "walletId" to walletId,
                     "categoryId" to "debt_payment",
+                    "debtId" to debtId,
+                    "debtPrincipalAmount" to principalPaid,
+                    "debtInterestAmount" to interestPaid,
                     "note" to txNote,
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(paymentDate)),

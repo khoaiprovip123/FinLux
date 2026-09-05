@@ -144,11 +144,11 @@ class SavingSpinSettingsViewModel @Inject constructor(
     private fun nextTrigger(config: SavingSpinConfig, salaryConfig: SalaryCycleConfig, now: Instant): Instant {
         val zone = FinanceTime.zoneOf(salaryConfig.financeTimeZone)
         if (config.frequency == SavingSpinFrequency.SALARY_CYCLE) {
-            val current = financialPeriodResolver.resolvePeriodContaining(now, salaryConfig)
+            val current = financialPeriodResolver.resolveReportingPeriodContaining(now, salaryConfig)
             val currentTrigger = current.start.atZone(zone).toLocalDate()
                 .atTime(config.reminderHour, config.reminderMinute).atZone(zone).toInstant()
             if (currentTrigger.isAfter(now)) return currentTrigger
-            val next = financialPeriodResolver.resolveNextPeriodOf(current, salaryConfig)
+            val next = financialPeriodResolver.resolveNextReportingPeriodOf(current, salaryConfig)
             return next.start.atZone(zone).toLocalDate()
                 .atTime(config.reminderHour, config.reminderMinute).atZone(zone).toInstant()
         }

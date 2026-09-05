@@ -13,6 +13,9 @@ class DeleteDebtAccountUseCase @Inject constructor(
         if (debt.id.isBlank()) {
             return AppResult.Error("ID khoản nợ không hợp lệ")
         }
+        if (debt.remainingBalance.value > 0L || !debt.isSettled) {
+            return AppResult.Error("Khoản nợ vẫn còn dư nợ. Hãy tất toán trước khi xóa.")
+        }
         val result = repository.deleteDebt(debt)
         if (result is AppResult.Success) {
             syncDebtReminderUseCase.removeDebtReminder(debt.id)

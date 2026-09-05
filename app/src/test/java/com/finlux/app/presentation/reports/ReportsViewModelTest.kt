@@ -1,6 +1,8 @@
 package com.finlux.app.presentation.reports
 
 import app.cash.turbine.test
+import com.finlux.app.core.time.FinanceClock
+import com.finlux.app.core.time.SystemFinanceClock
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
@@ -10,6 +12,7 @@ import com.finlux.app.domain.model.DealStatus
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.SavingDestination
@@ -45,6 +48,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.ZoneId
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReportsViewModelTest {
@@ -85,7 +89,7 @@ class ReportsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): ReportsViewModel {
+    private fun createViewModel(clock: FinanceClock = SystemFinanceClock()): ReportsViewModel {
         return ReportsViewModel(
             transactionRangeRepository = transactionRangeRepository,
             categoryRepository = categoryRepository,
@@ -99,7 +103,74 @@ class ReportsViewModelTest {
             financialPeriodResolver = financialPeriodResolver,
             windowResolver = windowResolver,
             dailyStatementCalculator = com.finlux.app.domain.usecase.DailyStatementCalculator(),
+            clock = clock,
         )
+    }
+
+    @Test
+    fun `historical report reverses post-period ledger tail for exact opening and closing balances`() = runTest(testDispatcher) {
+        val fixedNow = Instant.parse("2026-09-05T12:00:00Z")
+        val fixedClock = object : FinanceClock {
+            override val zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+            override fun now(): Instant = fixedNow
+        }
+        val wallet = Wallet(
+            id = "w1",
+            name = "Ví chính",
+            type = WalletType.BANK,
+            balance = Money(15_000_000L),
+            colorHex = "#0EA5E9",
+            isDefault = true,
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        val zone = fixedClock.zoneId
+        val reportIncome = FinanceTransaction(
+            id = "aug-1-income",
+            type = TransactionType.INCOME,
+            amount = Money(2_000_000L),
+            categoryId = "salary",
+            walletId = "w1",
+            date = java.time.LocalDate.of(2026, 8, 1).atTime(10, 0).atZone(zone).toInstant(),
+        )
+        val afterReportExpense = FinanceTransaction(
+            id = "aug-2-expense",
+            type = TransactionType.EXPENSE,
+            amount = Money(1_000_000L),
+            categoryId = "food",
+            walletId = "w1",
+            date = java.time.LocalDate.of(2026, 8, 2).atTime(10, 0).atZone(zone).toInstant(),
+        )
+        val laterIncome = FinanceTransaction(
+            id = "sep-1-income",
+            type = TransactionType.INCOME,
+            amount = Money(4_000_000L),
+            categoryId = "bonus",
+            walletId = "w1",
+            date = java.time.LocalDate.of(2026, 9, 1).atTime(10, 0).atZone(zone).toInstant(),
+        )
+
+        every { walletRepository.observeWallets() } returns flowOf(listOf(wallet))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns
+            flowOf(listOf(reportIncome, afterReportExpense, laterIncome))
+
+        val viewModel = createViewModel(fixedClock)
+        viewModel.setCustomRange(
+            java.time.LocalDate.of(2026, 8, 1),
+            java.time.LocalDate.of(2026, 8, 1),
+        )
+
+        viewModel.state.test {
+            awaitItem()
+            advanceUntilIdle()
+            val state = awaitItem()
+            assertEquals(10_000_000L, state.openingBalance)
+            assertEquals(12_000_000L, state.closingBalance)
+            assertEquals(2_000_000L, state.summary.income.value)
+            assertEquals(0L, state.summary.expense.value)
+            assertEquals(1, state.dailyStatements.size)
+            assertEquals(state.dailyStatements.first().closingBalance, state.closingBalance)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -178,10 +249,20 @@ class ReportsViewModelTest {
             totalRecovered = Money(0L),
             status = DealStatus.ACTIVE,
         )
+        val goal = FinancialGoal(
+            id = "goal-1",
+            name = "Quỹ dự phòng",
+            targetAmount = Money(30_000_000L),
+            savedAmount = Money(15_000_000L),
+            deadline = Instant.now().plusSeconds(86_400),
+            category = "savings",
+            monthlyContribution = Money(2_000_000L),
+        )
 
         every { walletRepository.observeWallets() } returns flowOf(listOf(wallet1))
         every { debtRepository.observeDebts() } returns flowOf(listOf(debt1))
         every { dealRepository.observeDeals() } returns flowOf(listOf(activeDeal))
+        every { goalRepository.observeGoals() } returns flowOf(listOf(goal))
 
         val viewModel = createViewModel()
 
@@ -193,8 +274,8 @@ class ReportsViewModelTest {
             assertEquals(40_000_000L, state.totalDebtRemaining)
             // totalNetWorth = 200M - 40M = 160M
             assertEquals(160_000_000L, state.totalNetWorth)
-            // trueNetWorth = 200M (wallets) + 50M (active deal capital) - 40M (debt) = 210M
-            assertEquals(210_000_000L, state.trueNetWorth)
+            // trueNetWorth = 200M wallets + 15M goals + 50M active deal capital - 40M debt = 225M
+            assertEquals(225_000_000L, state.trueNetWorth)
             cancelAndIgnoreRemainingEvents()
         }
     }

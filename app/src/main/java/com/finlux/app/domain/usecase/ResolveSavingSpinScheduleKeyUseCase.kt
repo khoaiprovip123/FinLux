@@ -39,7 +39,7 @@ class ResolveSavingSpinScheduleKeyUseCase @Inject constructor(
                 "week:$weekYear-W${week.toString().padStart(2, '0')}"
             }
             SavingSpinFrequency.SALARY_CYCLE -> {
-                val period = financialPeriodResolver.resolvePeriodContaining(now, salaryCycleConfig)
+                val period = financialPeriodResolver.resolveReportingPeriodContaining(now, salaryCycleConfig)
                 val start = period.start.atZone(zone).toLocalDate()
                 val inclusiveEnd = period.endExclusive.atZone(zone).toLocalDate().minusDays(1)
                 "salary:${DATE_FORMATTER.format(start)}_${DATE_FORMATTER.format(inclusiveEnd)}"

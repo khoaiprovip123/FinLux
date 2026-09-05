@@ -4,6 +4,7 @@ import java.time.Instant
 import java.time.YearMonth
 
 enum class TransactionType { INCOME, EXPENSE, TRANSFER_OUT, TRANSFER_IN }
+enum class GoalFlowType { ALLOCATION, RELEASE }
 enum class CategoryType { INCOME, EXPENSE }
 enum class WalletType { CASH, BANK, EWALLET, CARD, INVESTMENT, OTHER }
 enum class ThemePreference { LIGHT, DARK, SYSTEM }
@@ -64,6 +65,12 @@ data class FinanceTransaction(
     val date: Instant,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
+    // Semantic ledger metadata. Appended for source compatibility with older positional constructors.
+    val goalId: String? = null,
+    val goalFlowType: GoalFlowType? = null,
+    val debtId: String? = null,
+    val debtPrincipalAmount: Money? = null,
+    val debtInterestAmount: Money? = null,
 )
 
 data class Budget(

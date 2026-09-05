@@ -80,4 +80,10 @@ data class CashMovementStatement(
     val balanceAdjustments: Long,
     val closingBalance: Long,
     val isTransferBalanced: Boolean = transferIn == transferOut,
+    val goalAllocation: Long = 0L,
+    val goalRelease: Long = 0L,
+    val debtPrincipalOutflow: Long = 0L,
+    val debtInterestExpense: Long = 0L,
+    val investmentGain: Long = 0L,
+    val dealLoss: Long = 0L,
 )

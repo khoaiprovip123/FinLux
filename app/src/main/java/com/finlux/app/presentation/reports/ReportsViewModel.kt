@@ -12,6 +12,7 @@ import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialGoal
+import com.finlux.app.domain.model.FinancialFlowBreakdown
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.SavingSpinConfig
@@ -27,6 +28,7 @@ import com.finlux.app.domain.repository.GoalRepository
 import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.TransactionRangeRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.usecase.CalculateFinancialFlowBreakdownUseCase
 import com.finlux.app.domain.usecase.CalculateSavingSpinStreakUseCase
 import com.finlux.app.domain.usecase.FinancialPeriodResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -155,6 +157,8 @@ data class ReportsUiState(
     val period: ReportPeriod = ReportPeriod.MONTH,
     val range: ReportRange = ReportRange(LocalDate.now().withDayOfMonth(1), LocalDate.now()),
     val summary: DashboardSummary = DashboardSummary(),
+    /** Semantic split used by Reports 3.0 without changing legacy cash summary semantics. */
+    val financialFlowBreakdown: FinancialFlowBreakdown = FinancialFlowBreakdown(),
     val expensesByCategory: List<CategoryExpense> = emptyList(),
     val incomeByCategory: List<CategoryExpense> = emptyList(),
     val dailyExpenses: List<DailyExpense> = emptyList(),
@@ -261,11 +265,12 @@ class ReportsViewModel @Inject constructor(
     private val financialPeriodResolver: FinancialPeriodResolver,
     private val windowResolver: ReportQueryWindowResolver,
     private val dailyStatementCalculator: DailyStatementCalculator,
+    private val calculateFinancialFlowBreakdownUseCase: CalculateFinancialFlowBreakdownUseCase = CalculateFinancialFlowBreakdownUseCase(),
     private val clock: FinanceClock = SystemFinanceClock(),
     private val calculateSavingSpinStreakUseCase: CalculateSavingSpinStreakUseCase = CalculateSavingSpinStreakUseCase(financialPeriodResolver, clock),
 ) : ViewModel() {
     private val userSelectedPeriod = MutableStateFlow<ReportPeriod?>(null)
-    private val today = LocalDate.now(FinanceTime.VIETNAM_ZONE)
+    private val today = clock.now().atZone(FinanceTime.VIETNAM_ZONE).toLocalDate()
     private val customRange = MutableStateFlow(ReportRange(today.minusDays(29), today))
     val selectedWalletId = MutableStateFlow<String?>(null)
 
@@ -308,7 +313,14 @@ class ReportsViewModel @Inject constructor(
         val selectedWalletId = params.selectedWalletId
 
         val queryStart = minOf(window.currentStart, window.previousStart)
-        val queryEnd = maxOf(window.currentEndExclusive, window.previousEndExclusive)
+        // Historical balance reconciliation starts from the current wallet balance and reverses
+        // every ledger movement since the requested period. Therefore a historical report must
+        // include the transaction tail from its earliest comparison boundary through "now".
+        val ledgerTailEndExclusive = clock.now().plusMillis(1)
+        val queryEnd = maxOf(
+            maxOf(window.currentEndExclusive, window.previousEndExclusive),
+            ledgerTailEndExclusive,
+        )
         val transactionsFlow = if (queryStart < queryEnd) {
             transactionRangeRepository.observeRange(queryStart, queryEnd)
         } else {
@@ -316,7 +328,7 @@ class ReportsViewModel @Inject constructor(
         }
 
         val startPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, salaryConfig)
-        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(Instant.now(), salaryConfig)
+        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(clock.now(), salaryConfig)
         val budgetsFlow = if (startPeriod.key == nowPeriod.key) {
             budgetRepository.observeBudgets(startPeriod.key)
         } else {
@@ -381,6 +393,7 @@ class ReportsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReportsUiState())
 
     fun selectPeriod(period: ReportPeriod) {
+        userSelectedPeriod.value = period
         selectedPeriod.value = period
     }
 
@@ -390,6 +403,7 @@ class ReportsViewModel @Inject constructor(
 
     fun setCustomRange(start: LocalDate, end: LocalDate) {
         customRange.value = if (start <= end) ReportRange(start, end) else ReportRange(end, start)
+        userSelectedPeriod.value = ReportPeriod.CUSTOM
         selectedPeriod.value = ReportPeriod.CUSTOM
     }
 
@@ -409,9 +423,9 @@ class ReportsViewModel @Inject constructor(
         requestedPeriod: ReportPeriod,
         selectedWalletId: String? = null,
     ): ReportsUiState {
-        val zone = FinanceTime.VIETNAM_ZONE
+        val zone = FinanceTime.zoneOf(salaryConfig.financeTimeZone)
         val range = window.range
-        val today = LocalDate.now(zone)
+        val today = clock.now().atZone(zone).toLocalDate()
         val effectiveEndDate = if (range.end.isAfter(today)) today.coerceAtLeast(range.start) else range.end
 
         fun inRange(date: Instant, startInclusive: Instant, endExclusive: Instant): Boolean {
@@ -429,6 +443,10 @@ class ReportsViewModel @Inject constructor(
         } else {
             allPeriodTransactions
         }
+        val financialFlowBreakdown = calculateFinancialFlowBreakdownUseCase(
+            transactions = filtered,
+            deals = deals,
+        )
         val incomeItems = filtered.filter {
             it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY
         }
@@ -511,8 +529,14 @@ class ReportsViewModel @Inject constructor(
                 it.name.contains("saving", ignoreCase = true) ||
                 it.name.contains("tích lũy", ignoreCase = true)
         }.map { it.id }.toSet()
-        val goalContributionInPeriod = filtered.netGoalContribution { catId ->
+        val legacyGoalContribution = filtered.netGoalContribution { catId ->
             catId != null && (catId in savingsCategoryIds || catId.equals("savings", ignoreCase = true))
+        }
+        val hasTaggedGoalFlows = filtered.any { it.goalFlowType != null }
+        val goalContributionInPeriod = if (hasTaggedGoalFlows) {
+            financialFlowBreakdown.netGoalAllocation
+        } else {
+            legacyGoalContribution
         }
 
         // Thương vụ & Cho vay (Deals & Investments)
@@ -643,8 +667,9 @@ class ReportsViewModel @Inject constructor(
         val assetWallets = wallets.assetWallets()
         val totalAssets = assetWallets.sumOf { it.balance.value }
         val totalNetWorth = totalAssets - totalDebtRemaining
-        // True Net Worth = (Tài sản ví) + (Vốn lưu động đầu tư & nợ cho vay đang chờ thu hồi) - (Tổng dư nợ phải trả)
-        val trueNetWorth = totalAssets + totalActiveCapitalOutlay - totalDebtRemaining
+        // True Net Worth = tài sản ví + tiền đang giữ trong Mục tiêu + vốn Deal còn thu hồi - dư nợ.
+        // Goal deposits reduce wallet.balance, so savedAmount must stay inside assets to avoid understating net worth.
+        val trueNetWorth = totalAssets + totalGoalSaved + totalActiveCapitalOutlay - totalDebtRemaining
 
         val assetsByType = assetWallets.groupBy { it.type }.mapValues { (_, list) -> list.sumOf { it.balance.value } }
 
@@ -819,6 +844,7 @@ class ReportsViewModel @Inject constructor(
             period = effectivePeriod,
             range = range,
             summary = DashboardSummary(Money(income), Money(expense), income - expense),
+            financialFlowBreakdown = financialFlowBreakdown,
             expensesByCategory = byCategoryExpense,
             incomeByCategory = byCategoryIncome,
             dailyExpenses = cashFlow.filter { it.expense > 0 }.map { DailyExpense(it.date, it.expense) },

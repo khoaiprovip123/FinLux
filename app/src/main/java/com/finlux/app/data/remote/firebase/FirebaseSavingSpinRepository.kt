@@ -81,7 +81,23 @@ class FirebaseSavingSpinRepository(
     override suspend fun deleteDestination(id: String): AppResult<Unit> =
         firebaseResult("Không thể xóa nơi tiết kiệm") {
             require(id.isNotBlank()) { "Nơi tiết kiệm không hợp lệ" }
-            userRef(requireUid()).collection(DESTINATIONS).document(id).delete().await()
+            val uid = requireUid()
+            val destinationRef = userRef(uid).collection(DESTINATIONS).document(id)
+            val configRef = configRef(uid)
+            val now = Instant.now()
+            firestore.runTransaction { transaction ->
+                val configSnapshot = transaction.get(configRef)
+                if (configSnapshot.exists() && configSnapshot.getString("defaultDestinationId") == id) {
+                    transaction.update(
+                        configRef,
+                        mapOf(
+                            "defaultDestinationId" to null,
+                            "updatedAt" to now.toTimestamp(),
+                        ),
+                    )
+                }
+                transaction.delete(destinationRef)
+            }.await()
             Unit
         }
 

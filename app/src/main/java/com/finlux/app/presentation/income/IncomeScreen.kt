@@ -56,6 +56,7 @@ import com.finlux.app.core.designsystem.component.FinluxListType
 import com.finlux.app.core.designsystem.component.FinluxScreenScaffold
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.domain.model.BudgetPeriodBasis
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.home.toShortVnd
 import com.finlux.app.presentation.home.toVnd
@@ -74,6 +75,7 @@ fun IncomeScreen(
     viewModel: IncomeViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
+    val periodNoun = if (state.period?.basis == BudgetPeriodBasis.SALARY_CYCLE) "kỳ này" else "tháng này"
     val tokens = LocalFinluxTokens.current
 
     FinluxScreenScaffold(
@@ -106,6 +108,7 @@ fun IncomeScreen(
                 IncomeHero(
                     total = state.total,
                     changePercent = state.changePercent,
+                    periodNoun = periodNoun,
                 )
             }
             item {
@@ -121,7 +124,7 @@ fun IncomeScreen(
                 }
             }
             item {
-                IncomeCategoryCard(state = state)
+                IncomeCategoryCard(state = state, periodNoun = periodNoun)
             }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -137,7 +140,7 @@ fun IncomeScreen(
             if (state.transactions.isEmpty()) {
                 item {
                     FinluxEmptyState(
-                        title = "Chưa có thu nhập trong tháng này",
+                        title = "Chưa có thu nhập trong $periodNoun",
                         description = "Chạm vào nút bên dưới để ghi nhận khoản thu nhập mới.",
                         icon = Icons.Default.ArrowDownward,
                         actionLabel = "+ Thêm thu nhập",
@@ -191,18 +194,18 @@ private fun PeriodPicker(label: String, previous: () -> Unit, next: () -> Unit, 
         padding = PaddingValues(horizontal = 5.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Tháng trước") }
+            IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kỳ trước") }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Text(label, Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
             }
-            IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Tháng sau") }
+            IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Kỳ sau") }
         }
     }
 }
 
 @Composable
-private fun IncomeHero(total: Long, changePercent: Int) {
+private fun IncomeHero(total: Long, changePercent: Int, periodNoun: String) {
     FinluxPanel(
         modifier = Modifier.fillMaxWidth().height(128.dp),
         containerColor = Color.Transparent,
@@ -217,10 +220,10 @@ private fun IncomeHero(total: Long, changePercent: Int) {
             ).padding(16.dp),
         ) {
             Column(Modifier.align(Alignment.CenterStart), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Tổng thu nhập tháng này", color = Color.White.copy(alpha = .90f))
+                Text("Tổng thu nhập $periodNoun", color = Color.White.copy(alpha = .90f))
                 Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    if (changePercent == 0) "▲ Dòng tiền vào trong tháng"
+                    if (changePercent == 0) "▲ Dòng tiền vào trong kỳ"
                     else "${if (changePercent >= 0) "▲" else "▼"} ${kotlin.math.abs(changePercent)}% so với kỳ trước",
                     color = Color(0xFF77FFB3),
                     style = MaterialTheme.typography.bodyMedium,
@@ -269,7 +272,7 @@ private fun IncomeStatistic(
 }
 
 @Composable
-private fun IncomeCategoryCard(state: IncomeUiState) {
+private fun IncomeCategoryCard(state: IncomeUiState, periodNoun: String) {
     FinluxPanel(Modifier.fillMaxWidth(), padding = PaddingValues(14.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -277,7 +280,7 @@ private fun IncomeCategoryCard(state: IncomeUiState) {
                 Text("${state.categoryStats.size} nguồn thu", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
             }
             if (state.categoryStats.isEmpty()) {
-                Text("Chưa có nguồn thu trong tháng này", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Chưa có nguồn thu trong $periodNoun", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 state.categoryStats.forEach { item ->
                     val accent = item.category?.let { colorFromHex(it.colorHex) } ?: IncomeGreen

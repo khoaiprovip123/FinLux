@@ -4,6 +4,12 @@ import {getMessaging} from "firebase-admin/messaging";
 import {logger} from "firebase-functions";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {
+  isPeriodBoundaryDate,
+  resolveFinancialPeriod,
+  resolvePreviousFinancialPeriod,
+  type SalaryCycleConfig,
+} from "./financialPeriod.js";
 
 initializeApp();
 
@@ -32,62 +38,19 @@ type ReminderDocument = {
   walletId?: string;
 };
 
-type SalaryCycleConfig = {
-  enabled?: boolean;
-  baseDay?: number;
-  budgetPeriodBasis?: "CALENDAR_MONTH" | "SALARY_CYCLE";
-  financeTimeZone?: string;
-};
-
 async function getSalaryConfig(uid: string): Promise<SalaryCycleConfig> {
-  const snapshot = await db.doc(`users/${uid}/preferences/salaryCycle`).get();
+  const snapshot = await db.doc(`users/${uid}/financialPreferences/salaryCycle`).get();
   return snapshot.exists ? (snapshot.data() as SalaryCycleConfig) : {};
 }
 
 function resolvePeriod(date: Date, config: SalaryCycleConfig): { key: string; start: Timestamp; end: Timestamp; basis: string } {
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
-  
-  if (!config.enabled || config.budgetPeriodBasis === "CALENDAR_MONTH" || config.budgetPeriodBasis === undefined) {
-    const start = new Date(Date.UTC(year, month, 1));
-    const end = new Date(Date.UTC(year, month + 1, 1));
-    const mStr = String(month + 1).padStart(2, "0");
-    return {
-      key: `month:${year}-${mStr}`,
-      start: Timestamp.fromDate(start),
-      end: Timestamp.fromDate(end),
-      basis: "CALENDAR_MONTH"
-    };
-  } else {
-    const baseDay = config.baseDay || 5;
-    
-    // Helper to get safe day (handles 31st etc)
-    const getSafeDay = (y: number, m: number, d: number) => {
-      const maxDays = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-      return Math.min(d, maxDays);
-    };
-
-    let start = new Date(Date.UTC(year, month, getSafeDay(year, month, baseDay)));
-    if (date < start) {
-      start = new Date(Date.UTC(year, month - 1, getSafeDay(year, month - 1, baseDay)));
-    }
-    const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, getSafeDay(start.getUTCFullYear(), start.getUTCMonth() + 1, baseDay)));
-    
-    const yStr = start.getUTCFullYear();
-    const mStr = String(start.getUTCMonth() + 1).padStart(2, "0");
-    const dStr = String(start.getUTCDate()).padStart(2, "0");
-    return {
-      key: `salary:${yStr}-${mStr}-${dStr}`,
-      start: Timestamp.fromDate(start),
-      end: Timestamp.fromDate(end),
-      basis: "SALARY_CYCLE"
-    };
-  }
-}
-
-function resolveNextPeriod(date: Date, config: SalaryCycleConfig): { key: string; start: Timestamp; end: Timestamp; basis: string } {
-    const current = resolvePeriod(date, config);
-    return resolvePeriod(current.end.toDate(), config);
+  const resolved = resolveFinancialPeriod(date, config);
+  return {
+    key: resolved.key,
+    start: Timestamp.fromDate(resolved.start),
+    end: Timestamp.fromDate(resolved.end),
+    basis: resolved.basis,
+  };
 }
 
 function isExpense(data: TransactionDocument | undefined): data is ExpenseTransactionDocument {
@@ -159,7 +122,7 @@ async function reconcileBudget(uid: string, categoryId: string, periodKey: strin
       updates.notified80 = true;
       pendingPush = {
         title: "Sắp chạm hạn mức ngân sách",
-        body: `Danh mục đã sử dụng ${Math.floor((spentAmount * 100) / limitAmount)}% ngân sách tháng này.`,
+        body: `Danh mục đã sử dụng ${Math.floor((spentAmount * 100) / limitAmount)}% ngân sách kỳ này.`,
         threshold: "80",
       };
     }
@@ -234,18 +197,29 @@ export const monthlyBudgetReset = onSchedule(
       // Determine what period we are currently in
       const currentPeriod = resolvePeriod(now, config);
       
-      // Determine what the PREVIOUS period was by subtracting 15 days from the start of the current period
-      // This is a robust way to land in the previous period regardless of whether it's month or salary based.
-      const previousDate = new Date(currentPeriod.start.toDate().getTime() - 15 * 24 * 60 * 60 * 1000);
-      const previousPeriod = resolvePeriod(previousDate, config);
-      
-      // We only want to duplicate budgets if today is EXACTLY the start of the current period.
-      // E.g. if today is baseDay (or 1st), then we roll over.
-      const todayString = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
-      const startString = `${currentPeriod.start.toDate().getUTCFullYear()}-${currentPeriod.start.toDate().getUTCMonth()}-${currentPeriod.start.toDate().getUTCDate()}`;
-      
-      if (todayString !== startString) {
-          continue; // Not the boundary day for this user
+      const previousResolved = resolvePreviousFinancialPeriod(
+        {
+          key: currentPeriod.key,
+          start: currentPeriod.start.toDate(),
+          end: currentPeriod.end.toDate(),
+          basis: currentPeriod.basis as "CALENDAR_MONTH" | "SALARY_CYCLE",
+        },
+        config,
+      );
+      const previousPeriod = {
+        key: previousResolved.key,
+        start: Timestamp.fromDate(previousResolved.start),
+        end: Timestamp.fromDate(previousResolved.end),
+        basis: previousResolved.basis,
+      };
+
+      if (!isPeriodBoundaryDate(now, {
+        key: currentPeriod.key,
+        start: currentPeriod.start.toDate(),
+        end: currentPeriod.end.toDate(),
+        basis: currentPeriod.basis as "CALENDAR_MONTH" | "SALARY_CYCLE",
+      }, config)) {
+        continue;
       }
 
       const previousBudgets = await user.ref.collection("budgets")

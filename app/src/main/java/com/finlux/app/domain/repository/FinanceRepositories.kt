@@ -43,6 +43,25 @@ interface TransactionRepository {
         date: Instant,
     ): AppResult<Unit>
 
+    /**
+     * Idempotent variant for workflows that may be retried after a partial network failure.
+     * Implementations that support durable operation IDs should override this method.
+     */
+    suspend fun transferBetweenWalletsIdempotent(
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+        operationId: String,
+    ): AppResult<Unit> = transferBetweenWallets(
+        sourceWalletId = sourceWalletId,
+        destinationWalletId = destinationWalletId,
+        amount = amount,
+        note = note,
+        date = date,
+    )
+
     /** Atomically executes salary rollover by transferring funds and writing the rollover marker. */
     suspend fun executeSalaryRolloverAtomic(
         cycleKey: String,

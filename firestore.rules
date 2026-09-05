@@ -19,6 +19,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(uid)/wallets/$(walletId);
     }
 
+    function dealPath(uid, dealId) {
+      return /databases/$(database)/documents/users/$(uid)/deals/$(dealId);
+    }
+
     function transactionDelta(data) {
       return data.type in ['income', 'transfer_in', 'INCOME', 'TRANSFER_IN']
         ? data.amount
@@ -31,9 +35,28 @@ service cloud.firestore {
           == get(walletPath(uid, walletId)).data.balance + delta;
     }
 
+    function isDealLedgerTransaction(data) {
+      return ('dealId' in data)
+        && data.dealId is string
+        && data.dealId.size() > 0
+        && ('dealFlowType' in data)
+        && data.dealFlowType != null;
+    }
+
+    function isDealSettlement(data) {
+      return data.walletId == 'DEAL_SETTLEMENT'
+        && data.type in ['expense', 'EXPENSE']
+        && data.dealId is string
+        && data.dealId.size() > 0
+        && data.dealFlowType in ['capital_loss', 'CAPITAL_LOSS'];
+    }
+
     function validTransaction(data) {
       return data.keys().hasOnly([
           'type', 'amount', 'categoryId', 'walletId', 'relatedWalletId',
+          'dealId', 'dealFlowType',
+          'goalId', 'goalFlowType',
+          'debtId', 'debtPrincipalAmount', 'debtInterestAmount',
           'note', 'receiptImageUrl', 'date', 'createdAt', 'updatedAt'
         ])
         && data.type in [
@@ -43,7 +66,90 @@ service cloud.firestore {
         && isPositiveMoney(data.amount)
         && data.walletId is string
         && data.walletId.size() > 0
-        && data.date is timestamp;
+        && data.date is timestamp
+        && (!('dealId' in data) || data.dealId == null || data.dealId is string)
+        && (!('dealFlowType' in data) || data.dealFlowType == null || data.dealFlowType in [
+          'outlay_capital', 'principal_recovery', 'capital_gain', 'capital_loss',
+          'OUTLAY_CAPITAL', 'PRINCIPAL_RECOVERY', 'CAPITAL_GAIN', 'CAPITAL_LOSS'
+        ])
+        && (!('goalId' in data) || data.goalId == null || data.goalId is string)
+        && (!('goalFlowType' in data) || data.goalFlowType == null || data.goalFlowType in [
+          'allocation', 'release', 'ALLOCATION', 'RELEASE'
+        ])
+        && (
+          (!('goalId' in data) || data.goalId == null)
+            ? (!('goalFlowType' in data) || data.goalFlowType == null)
+            : (
+              ('goalFlowType' in data)
+              && data.goalFlowType != null
+              && (
+                (data.goalFlowType in ['allocation', 'ALLOCATION'] && data.type in ['expense', 'EXPENSE'])
+                || (data.goalFlowType in ['release', 'RELEASE'] && data.type in ['income', 'INCOME'])
+              )
+            )
+        )
+        && (!('debtId' in data) || data.debtId == null || data.debtId is string)
+        && (!('debtPrincipalAmount' in data) || data.debtPrincipalAmount == null || isNonNegativeMoney(data.debtPrincipalAmount))
+        && (!('debtInterestAmount' in data) || data.debtInterestAmount == null || isNonNegativeMoney(data.debtInterestAmount))
+        && (
+          (
+            !('debtId' in data)
+            || data.debtId == null
+          )
+          ? (
+            (!('debtPrincipalAmount' in data) || data.debtPrincipalAmount == null)
+            && (!('debtInterestAmount' in data) || data.debtInterestAmount == null)
+          )
+          : (
+            data.type in ['expense', 'EXPENSE']
+            && ('debtPrincipalAmount' in data)
+            && ('debtInterestAmount' in data)
+            && data.debtPrincipalAmount is int
+            && data.debtInterestAmount is int
+            && data.debtPrincipalAmount + data.debtInterestAmount == data.amount
+          )
+        );
+    }
+
+    function validBudget(data) {
+      return data.keys().hasOnly([
+          'categoryId', 'periodKey', 'periodStart', 'periodEndExclusive',
+          'periodBasis', 'month', 'limitAmount', 'spentAmount',
+          'notified80', 'notified100'
+        ])
+        && (!('categoryId' in data) || (data.categoryId is string && data.categoryId.size() > 0))
+        && (!('periodKey' in data) || (data.periodKey is string && data.periodKey.size() > 0))
+        && (!('periodStart' in data) || data.periodStart == null || data.periodStart is int || data.periodStart is timestamp)
+        && (!('periodEndExclusive' in data) || data.periodEndExclusive == null || data.periodEndExclusive is int || data.periodEndExclusive is timestamp)
+        && (!('periodBasis' in data) || data.periodBasis == null || data.periodBasis in ['CALENDAR_MONTH', 'SALARY_CYCLE'])
+        && (!('month' in data) || data.month == null || data.month is string)
+        && (!('limitAmount' in data) || isNonNegativeMoney(data.limitAmount))
+        && (!('spentAmount' in data) || isNonNegativeMoney(data.spentAmount))
+        && (!('notified80' in data) || data.notified80 is bool)
+        && (!('notified100' in data) || data.notified100 is bool);
+    }
+
+    function validDeal(data) {
+      return data.keys().hasOnly([
+          'title', 'description', 'category', 'targetAmount',
+          'totalCapitalOutlay', 'totalRecovered', 'netProfitLoss',
+          'status', 'startDate', 'endDate', 'createdAt', 'updatedAt'
+        ])
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 160
+        && data.description is string
+        && data.description.size() <= 2000
+        && data.category in ['investment', 'lending', 'INVESTMENT', 'LENDING']
+        && isNonNegativeMoney(data.targetAmount)
+        && isNonNegativeMoney(data.totalCapitalOutlay)
+        && isNonNegativeMoney(data.totalRecovered)
+        && data.netProfitLoss is int
+        && data.status in ['active', 'completed', 'cancelled', 'ACTIVE', 'COMPLETED', 'CANCELLED']
+        && data.startDate is timestamp
+        && (data.endDate == null || data.endDate is timestamp)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
     }
 
     function validSalaryCyclePreference(data) {
@@ -101,13 +207,14 @@ service cloud.firestore {
     function validSavingDestination(data) {
       return data.keys().hasOnly([
           'name', 'method', 'linkedWalletId', 'institutionId', 'accountHint',
-          'enabled', 'createdAt', 'updatedAt'
+          'enabled', 'icon', 'createdAt', 'updatedAt'
         ])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 80
         && data.method in ['CASH', 'BANK_TRANSFER']
         && (data.linkedWalletId == null || data.linkedWalletId is string)
         && (data.institutionId == null || data.institutionId is string)
         && (data.accountHint == null || (data.accountHint is string && data.accountHint.size() <= 40))
+        && (!('icon' in data) || data.icon == null || (data.icon is string && data.icon.size() <= 80))
         && data.enabled is bool
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
@@ -117,7 +224,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'scheduleKey', 'wheelValues', 'selectedIndex', 'selectedAmount', 'status',
           'destinationId', 'method', 'spunAt', 'completedAt', 'skippedAt',
-          'snoozedUntil', 'createdAt', 'updatedAt'
+          'snoozedUntil', 'transactionId', 'createdAt', 'updatedAt'
         ])
         && data.scheduleKey is string && data.scheduleKey.size() > 0
         && data.wheelValues is list && data.wheelValues.size() in [6, 8, 10, 12]
@@ -130,6 +237,7 @@ service cloud.firestore {
         && (data.completedAt == null || data.completedAt is timestamp)
         && (data.skippedAt == null || data.skippedAt is timestamp)
         && (data.snoozedUntil == null || data.snoozedUntil is timestamp)
+        && (!('transactionId' in data) || data.transactionId == null || (data.transactionId is string && data.transactionId.size() > 0))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -151,31 +259,55 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid)
           && validTransaction(request.resource.data)
-          && walletMovesBy(
-            uid,
-            request.resource.data.walletId,
-            transactionDelta(request.resource.data)
+          && (
+            isDealSettlement(request.resource.data)
+            || walletMovesBy(
+              uid,
+              request.resource.data.walletId,
+              transactionDelta(request.resource.data)
+            )
           );
         allow update: if isOwner(uid)
           && validTransaction(request.resource.data)
           && (
-            (resource.data.walletId == request.resource.data.walletId
-              && walletMovesBy(
-                uid,
-                request.resource.data.walletId,
-                transactionDelta(request.resource.data) - transactionDelta(resource.data)
-              ))
+            (
+              isDealSettlement(resource.data)
+              && isDealSettlement(request.resource.data)
+              && request.resource.data.amount == resource.data.amount
+              && request.resource.data.dealId == resource.data.dealId
+              && request.resource.data.dealFlowType == resource.data.dealFlowType
+            )
             ||
-            (resource.data.walletId != request.resource.data.walletId
-              && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
-              && walletMovesBy(
-                uid,
-                request.resource.data.walletId,
-                transactionDelta(request.resource.data)
-              ))
+            (
+              !isDealSettlement(resource.data)
+              && !isDealSettlement(request.resource.data)
+              && (
+                (resource.data.walletId == request.resource.data.walletId
+                  && walletMovesBy(
+                    uid,
+                    request.resource.data.walletId,
+                    transactionDelta(request.resource.data) - transactionDelta(resource.data)
+                  ))
+                ||
+                (resource.data.walletId != request.resource.data.walletId
+                  && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
+                  && walletMovesBy(
+                    uid,
+                    request.resource.data.walletId,
+                    transactionDelta(request.resource.data)
+                  ))
+              )
+            )
           );
         allow delete: if isOwner(uid)
-          && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data));
+          && (
+            isDealSettlement(resource.data)
+            || (
+              isDealLedgerTransaction(resource.data)
+              && !existsAfter(dealPath(uid, resource.data.dealId))
+            )
+            || walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
+          );
       }
 
       // Subcollection: Wallets
@@ -213,30 +345,15 @@ service cloud.firestore {
       }
 
       // Subcollection: Budgets
+      // spentAmount is server-owned. Clients can create a budget with an initial non-negative
+      // spentAmount, but cannot mutate it afterwards; Cloud Functions reconcile it from ledger data.
       match /budgets/{docId} {
-        allow read: if isOwner(uid);
-        allow delete: if isOwner(uid);
+        allow read, delete: if isOwner(uid);
         allow create: if isOwner(uid)
-          && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
-          ])
-          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount is int)
-          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
-          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
-          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
-
+          && validBudget(request.resource.data);
         allow update: if isOwner(uid)
-          && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
-          ])
-          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount)
-          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
-          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
-          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
+          && validBudget(request.resource.data)
+          && request.resource.data.spentAmount == resource.data.spentAmount;
       }
 
       // Subcollection: Categories
@@ -251,7 +368,8 @@ service cloud.firestore {
       // Subcollection: Financial Goals
       match /goals/{docId} {
         allow read: if isOwner(uid);
-        allow delete: if isOwner(uid);
+        allow delete: if isOwner(uid)
+          && (!('savedAmount' in resource.data) || resource.data.savedAmount <= 0);
         allow create, update: if isOwner(uid)
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0;
@@ -317,8 +435,10 @@ service cloud.firestore {
           && validSavingSpinSession(request.resource.data)
           && request.resource.data.status == 'READY'
           && request.resource.data.selectedIndex == null
-          && request.resource.data.selectedAmount == null;
+          && request.resource.data.selectedAmount == null
+          && (!('transactionId' in request.resource.data) || request.resource.data.transactionId == null);
         allow update: if isOwner(uid)
+          && resource.data.status != 'COMPLETED'
           && validSavingSpinSession(request.resource.data)
           && request.resource.data.scheduleKey == resource.data.scheduleKey
           && request.resource.data.wheelValues == resource.data.wheelValues
@@ -326,13 +446,39 @@ service cloud.firestore {
           && validSavingSpinTransition(resource.data, request.resource.data)
           && (resource.data.selectedAmount == null
             || (request.resource.data.selectedAmount == resource.data.selectedAmount
-              && request.resource.data.selectedIndex == resource.data.selectedIndex));
+              && request.resource.data.selectedIndex == resource.data.selectedIndex))
+          && (
+            request.resource.data.status != 'COMPLETED'
+            || (
+              request.resource.data.destinationId is string
+              && request.resource.data.destinationId.size() > 0
+              && request.resource.data.method in ['CASH', 'BANK_TRANSFER']
+              && request.resource.data.completedAt is timestamp
+              && (
+                request.resource.data.method != 'BANK_TRANSFER'
+                || (
+                  request.resource.data.transactionId is string
+                  && request.resource.data.transactionId.size() > 0
+                )
+              )
+            )
+          );
         allow delete: if false;
+      }
+
+      // Subcollection: Deals / Investments / Lending
+      match /deals/{dealId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && validDeal(request.resource.data);
       }
 
       // Subcollection: Debts & Debt Payments
       match /debts/{docId} {
-        allow read, delete: if isOwner(uid);
+        allow read: if isOwner(uid);
+        allow delete: if isOwner(uid)
+          && (!('remainingBalance' in resource.data) || resource.data.remainingBalance <= 0)
+          && (!('isSettled' in resource.data) || resource.data.isSettled == true);
         allow create, update: if isOwner(uid)
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0;
