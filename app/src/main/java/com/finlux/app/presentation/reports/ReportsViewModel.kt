@@ -265,7 +265,7 @@ class ReportsViewModel @Inject constructor(
     private val calculateSavingSpinStreakUseCase: CalculateSavingSpinStreakUseCase = CalculateSavingSpinStreakUseCase(financialPeriodResolver, clock),
 ) : ViewModel() {
     private val userSelectedPeriod = MutableStateFlow<ReportPeriod?>(null)
-    private val today = LocalDate.now(FinanceTime.VIETNAM_ZONE)
+    private val today = clock.now().atZone(FinanceTime.VIETNAM_ZONE).toLocalDate()
     private val customRange = MutableStateFlow(ReportRange(today.minusDays(29), today))
     val selectedWalletId = MutableStateFlow<String?>(null)
 
