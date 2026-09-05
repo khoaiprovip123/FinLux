@@ -133,6 +133,91 @@ describe("Firestore Rules: Saving Spin", () => {
         await assertFails(bob.firestore().doc(path).set(validConfig));
     });
 
+    it("allows destination icon and bank completion transaction reference", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+
+        await assertSucceeds(
+            alice.firestore().doc("users/alice/savingDestinations/bank_saving").set({
+                name: "Quỹ ngân hàng",
+                method: "BANK_TRANSFER",
+                linkedWalletId: "wallet_saving",
+                institutionId: "MB",
+                accountHint: "****1234",
+                enabled: true,
+                icon: "account_balance",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            }),
+        );
+
+        const path = "users/alice/savingSpinSessions/day_2026-09-05";
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc(path).set({
+                scheduleKey: "day:2026-09-05",
+                wheelValues: [10000, 15000, 20000, 25000, 30000, 35000],
+                selectedIndex: 2,
+                selectedAmount: 20000,
+                status: "SPUN_PENDING",
+                destinationId: null,
+                method: null,
+                spunAt: new Date(),
+                completedAt: null,
+                skippedAt: null,
+                snoozedUntil: null,
+                transactionId: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        });
+
+        await assertSucceeds(alice.firestore().doc(path).update({
+            status: "COMPLETED",
+            destinationId: "bank_saving",
+            method: "BANK_TRANSFER",
+            completedAt: new Date(),
+            transactionId: "saving_spin_day_2026-09-05_out",
+            updatedAt: new Date(),
+        }));
+
+        await assertFails(alice.firestore().doc(path).update({
+            destinationId: "another_destination",
+            transactionId: "another_tx",
+            updatedAt: new Date(),
+        }));
+    });
+
+    it("rejects bank completion without transaction reference", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const path = "users/alice/savingSpinSessions/day_2026-09-06";
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc(path).set({
+                scheduleKey: "day:2026-09-06",
+                wheelValues: [10000, 15000, 20000, 25000, 30000, 35000],
+                selectedIndex: 1,
+                selectedAmount: 15000,
+                status: "SPUN_PENDING",
+                destinationId: null,
+                method: null,
+                spunAt: new Date(),
+                completedAt: null,
+                skippedAt: null,
+                snoozedUntil: null,
+                transactionId: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        });
+
+        await assertFails(alice.firestore().doc(path).update({
+            status: "COMPLETED",
+            destinationId: "bank_saving",
+            method: "BANK_TRANSFER",
+            completedAt: new Date(),
+            transactionId: null,
+            updatedAt: new Date(),
+        }));
+    });
+
     it("prevents changing a result after it has been locked", async () => {
         const alice = testEnv.authenticatedContext("alice");
         const path = "users/alice/savingSpinSessions/day_2026-08-31";
