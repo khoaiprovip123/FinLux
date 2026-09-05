@@ -99,6 +99,35 @@ class SavingSpinDestinationsViewModel @Inject constructor(
         }
     }
 
+    fun setDestinationEnabled(
+        destination: SavingDestination,
+        enabled: Boolean,
+    ) = viewModelScope.launch {
+        mutableState.update { it.copy(isBusy = true, message = null) }
+        val updated = destination.copy(enabled = enabled, updatedAt = clock.now())
+        when (val result = savingSpinRepository.upsertDestination(updated)) {
+            is AppResult.Success -> {
+                if (!enabled && state.value.config.defaultDestinationId == destination.id) {
+                    savingSpinRepository.saveConfig(
+                        state.value.config.copy(
+                            defaultDestinationId = null,
+                            updatedAt = clock.now(),
+                        ),
+                    )
+                }
+                mutableState.update {
+                    it.copy(
+                        isBusy = false,
+                        message = if (enabled) "Đã bật nơi tiết kiệm" else "Đã tắt nơi tiết kiệm",
+                    )
+                }
+            }
+            is AppResult.Error -> mutableState.update {
+                it.copy(isBusy = false, message = result.message)
+            }
+        }
+    }
+
     fun deleteDestination(destination: SavingDestination) = viewModelScope.launch {
         mutableState.update { it.copy(isBusy = true, message = null) }
         when (val result = savingSpinRepository.deleteDestination(destination.id)) {
@@ -112,6 +141,10 @@ class SavingSpinDestinationsViewModel @Inject constructor(
     }
 
     fun setDefaultDestination(destination: SavingDestination?) = viewModelScope.launch {
+        if (destination != null && !destination.enabled) {
+            mutableState.update { it.copy(message = "Hãy bật nơi tiết kiệm trước khi đặt làm mặc định") }
+            return@launch
+        }
         val config = state.value.config.copy(
             defaultDestinationId = destination?.id,
             updatedAt = clock.now(),
