@@ -31,9 +31,18 @@ service cloud.firestore {
           == get(walletPath(uid, walletId)).data.balance + delta;
     }
 
+    function isDealSettlement(data) {
+      return data.walletId == 'DEAL_SETTLEMENT'
+        && data.type in ['expense', 'EXPENSE']
+        && data.dealId is string
+        && data.dealId.size() > 0
+        && data.dealFlowType in ['capital_loss', 'CAPITAL_LOSS'];
+    }
+
     function validTransaction(data) {
       return data.keys().hasOnly([
           'type', 'amount', 'categoryId', 'walletId', 'relatedWalletId',
+          'dealId', 'dealFlowType',
           'note', 'receiptImageUrl', 'date', 'createdAt', 'updatedAt'
         ])
         && data.type in [
@@ -43,7 +52,53 @@ service cloud.firestore {
         && isPositiveMoney(data.amount)
         && data.walletId is string
         && data.walletId.size() > 0
-        && data.date is timestamp;
+        && data.date is timestamp
+        && (!('dealId' in data) || data.dealId == null || data.dealId is string)
+        && (!('dealFlowType' in data) || data.dealFlowType == null || data.dealFlowType in [
+          'outlay_capital', 'principal_recovery', 'capital_gain', 'capital_loss',
+          'OUTLAY_CAPITAL', 'PRINCIPAL_RECOVERY', 'CAPITAL_GAIN', 'CAPITAL_LOSS'
+        ]);
+    }
+
+    function validBudget(data) {
+      return data.keys().hasOnly([
+          'categoryId', 'periodKey', 'periodStart', 'periodEndExclusive',
+          'periodBasis', 'month', 'limitAmount', 'spentAmount',
+          'notified80', 'notified100'
+        ])
+        && (!('categoryId' in data) || (data.categoryId is string && data.categoryId.size() > 0))
+        && (!('periodKey' in data) || (data.periodKey is string && data.periodKey.size() > 0))
+        && (!('periodStart' in data) || data.periodStart == null || data.periodStart is int || data.periodStart is timestamp)
+        && (!('periodEndExclusive' in data) || data.periodEndExclusive == null || data.periodEndExclusive is int || data.periodEndExclusive is timestamp)
+        && (!('periodBasis' in data) || data.periodBasis == null || data.periodBasis in ['CALENDAR_MONTH', 'SALARY_CYCLE'])
+        && (!('month' in data) || data.month == null || data.month is string)
+        && (!('limitAmount' in data) || isNonNegativeMoney(data.limitAmount))
+        && (!('spentAmount' in data) || isNonNegativeMoney(data.spentAmount))
+        && (!('notified80' in data) || data.notified80 is bool)
+        && (!('notified100' in data) || data.notified100 is bool);
+    }
+
+    function validDeal(data) {
+      return data.keys().hasOnly([
+          'title', 'description', 'category', 'targetAmount',
+          'totalCapitalOutlay', 'totalRecovered', 'netProfitLoss',
+          'status', 'startDate', 'endDate', 'createdAt', 'updatedAt'
+        ])
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 160
+        && data.description is string
+        && data.description.size() <= 2000
+        && data.category in ['investment', 'lending', 'INVESTMENT', 'LENDING']
+        && isNonNegativeMoney(data.targetAmount)
+        && isNonNegativeMoney(data.totalCapitalOutlay)
+        && isNonNegativeMoney(data.totalRecovered)
+        && data.netProfitLoss is int
+        && data.status in ['active', 'completed', 'cancelled', 'ACTIVE', 'COMPLETED', 'CANCELLED']
+        && data.startDate is timestamp
+        && (data.endDate == null || data.endDate is timestamp)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
     }
 
     function validSalaryCyclePreference(data) {
@@ -151,31 +206,51 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid)
           && validTransaction(request.resource.data)
-          && walletMovesBy(
-            uid,
-            request.resource.data.walletId,
-            transactionDelta(request.resource.data)
+          && (
+            isDealSettlement(request.resource.data)
+            || walletMovesBy(
+              uid,
+              request.resource.data.walletId,
+              transactionDelta(request.resource.data)
+            )
           );
         allow update: if isOwner(uid)
           && validTransaction(request.resource.data)
           && (
-            (resource.data.walletId == request.resource.data.walletId
-              && walletMovesBy(
-                uid,
-                request.resource.data.walletId,
-                transactionDelta(request.resource.data) - transactionDelta(resource.data)
-              ))
+            (
+              isDealSettlement(resource.data)
+              && isDealSettlement(request.resource.data)
+              && request.resource.data.amount == resource.data.amount
+              && request.resource.data.dealId == resource.data.dealId
+              && request.resource.data.dealFlowType == resource.data.dealFlowType
+            )
             ||
-            (resource.data.walletId != request.resource.data.walletId
-              && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
-              && walletMovesBy(
-                uid,
-                request.resource.data.walletId,
-                transactionDelta(request.resource.data)
-              ))
+            (
+              !isDealSettlement(resource.data)
+              && !isDealSettlement(request.resource.data)
+              && (
+                (resource.data.walletId == request.resource.data.walletId
+                  && walletMovesBy(
+                    uid,
+                    request.resource.data.walletId,
+                    transactionDelta(request.resource.data) - transactionDelta(resource.data)
+                  ))
+                ||
+                (resource.data.walletId != request.resource.data.walletId
+                  && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
+                  && walletMovesBy(
+                    uid,
+                    request.resource.data.walletId,
+                    transactionDelta(request.resource.data)
+                  ))
+              )
+            )
           );
         allow delete: if isOwner(uid)
-          && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data));
+          && (
+            isDealSettlement(resource.data)
+            || walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
+          );
       }
 
       // Subcollection: Wallets
@@ -213,30 +288,15 @@ service cloud.firestore {
       }
 
       // Subcollection: Budgets
+      // spentAmount is server-owned. Clients can create a budget with an initial non-negative
+      // spentAmount, but cannot mutate it afterwards; Cloud Functions reconcile it from ledger data.
       match /budgets/{docId} {
-        allow read: if isOwner(uid);
-        allow delete: if isOwner(uid);
+        allow read, delete: if isOwner(uid);
         allow create: if isOwner(uid)
-          && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
-          ])
-          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount is int)
-          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
-          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
-          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
-
+          && validBudget(request.resource.data);
         allow update: if isOwner(uid)
-          && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
-          ])
-          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount)
-          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
-          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
-          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
+          && validBudget(request.resource.data)
+          && request.resource.data.spentAmount == resource.data.spentAmount;
       }
 
       // Subcollection: Categories
@@ -328,6 +388,13 @@ service cloud.firestore {
             || (request.resource.data.selectedAmount == resource.data.selectedAmount
               && request.resource.data.selectedIndex == resource.data.selectedIndex));
         allow delete: if false;
+      }
+
+      // Subcollection: Deals / Investments / Lending
+      match /deals/{dealId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && validDeal(request.resource.data);
       }
 
       // Subcollection: Debts & Debt Payments
