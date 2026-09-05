@@ -734,6 +734,23 @@ fun SavingSpinSettingsScreen(
                     }
                 }
 
+                // Card 5: Nơi tiết kiệm / ví đích
+                item {
+                    SettingsCard {
+                        SettingActionRow(
+                            icon = Icons.Filled.Savings,
+                            iconTint = tokens.primary,
+                            title = "Nơi tiết kiệm",
+                            value = if (state.destinations.isEmpty()) {
+                                "Chưa thiết lập"
+                            } else {
+                                "${state.destinations.size} nơi"
+                            },
+                            onClick = onManageDestinations,
+                        )
+                    }
+                }
+
                 // Section 5: Xem trước trên Trang chủ
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
