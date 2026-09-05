@@ -76,14 +76,33 @@ service cloud.firestore {
         && (!('goalFlowType' in data) || data.goalFlowType == null || data.goalFlowType in [
           'allocation', 'release', 'ALLOCATION', 'RELEASE'
         ])
+        && (
+          (!('goalId' in data) || data.goalId == null)
+            ? (!('goalFlowType' in data) || data.goalFlowType == null)
+            : (
+              ('goalFlowType' in data)
+              && data.goalFlowType != null
+              && (
+                (data.goalFlowType in ['allocation', 'ALLOCATION'] && data.type in ['expense', 'EXPENSE'])
+                || (data.goalFlowType in ['release', 'RELEASE'] && data.type in ['income', 'INCOME'])
+              )
+            )
+        )
         && (!('debtId' in data) || data.debtId == null || data.debtId is string)
         && (!('debtPrincipalAmount' in data) || data.debtPrincipalAmount == null || isNonNegativeMoney(data.debtPrincipalAmount))
         && (!('debtInterestAmount' in data) || data.debtInterestAmount == null || isNonNegativeMoney(data.debtInterestAmount))
         && (
-          !('debtId' in data)
-          || data.debtId == null
-          || (
-            ('debtPrincipalAmount' in data)
+          (
+            !('debtId' in data)
+            || data.debtId == null
+          )
+          ? (
+            (!('debtPrincipalAmount' in data) || data.debtPrincipalAmount == null)
+            && (!('debtInterestAmount' in data) || data.debtInterestAmount == null)
+          )
+          : (
+            data.type in ['expense', 'EXPENSE']
+            && ('debtPrincipalAmount' in data)
             && ('debtInterestAmount' in data)
             && data.debtPrincipalAmount is int
             && data.debtInterestAmount is int
