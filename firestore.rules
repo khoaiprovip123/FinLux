@@ -19,6 +19,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(uid)/wallets/$(walletId);
     }
 
+    function dealPath(uid, dealId) {
+      return /databases/$(database)/documents/users/$(uid)/deals/$(dealId);
+    }
+
     function transactionDelta(data) {
       return data.type in ['income', 'transfer_in', 'INCOME', 'TRANSFER_IN']
         ? data.amount
@@ -29,6 +33,14 @@ service cloud.firestore {
       return exists(walletPath(uid, walletId))
         && getAfter(walletPath(uid, walletId)).data.balance
           == get(walletPath(uid, walletId)).data.balance + delta;
+    }
+
+    function isDealLedgerTransaction(data) {
+      return ('dealId' in data)
+        && data.dealId is string
+        && data.dealId.size() > 0
+        && ('dealFlowType' in data)
+        && data.dealFlowType != null;
     }
 
     function isDealSettlement(data) {
@@ -249,6 +261,10 @@ service cloud.firestore {
         allow delete: if isOwner(uid)
           && (
             isDealSettlement(resource.data)
+            || (
+              isDealLedgerTransaction(resource.data)
+              && !existsAfter(dealPath(uid, resource.data.dealId))
+            )
             || walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
           );
       }
