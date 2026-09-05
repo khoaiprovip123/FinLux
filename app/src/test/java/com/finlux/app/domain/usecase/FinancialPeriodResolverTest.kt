@@ -61,6 +61,24 @@ class FinancialPeriodResolverTest {
     }
 
     @Test
+    fun `next reporting period stays salary based when budget basis is calendar`() {
+        val config = SalaryCycleConfig(
+            enabled = true,
+            paydayRuleType = PaydayRuleType.DAY_OF_MONTH,
+            paydayDay = 25,
+            budgetPeriodBasis = BudgetPeriodBasis.CALENDAR_MONTH,
+            financeTimeZone = "Asia/Ho_Chi_Minh",
+        )
+        val now = ZonedDateTime.of(2026, 9, 5, 12, 0, 0, 0, zone).toInstant()
+        val current = resolver.resolveReportingPeriodContaining(now, config)
+        val next = resolver.resolveNextReportingPeriodOf(current, config)
+
+        assertEquals("salary:2026-08-25", current.key)
+        assertEquals("salary:2026-09-25", next.key)
+        assertEquals("25/09 - 24/10", next.displayLabel)
+    }
+
+    @Test
     fun `salary cycle with payday 10 returns period starting on 10th`() {
         val config = SalaryCycleConfig(
             enabled = true,
