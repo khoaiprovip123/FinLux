@@ -390,3 +390,99 @@ describe("Firestore Rules: Goal and Debt deletion guards", () => {
         await assertSucceeds(alice.firestore().doc("users/alice/debts/settled").delete());
     });
 });
+
+
+describe("Firestore Rules: Goal and Debt ledger metadata", () => {
+    async function seedWallet() {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc("users/alice/wallets/w1").set({
+                name: "Ví chính",
+                type: "bank",
+                balance: 10000000,
+                color: "#000000",
+                isDefault: true,
+                createdAt: new Date(),
+                lastTransactionId: "seed",
+            });
+        });
+    }
+
+    it("accepts a goal allocation only with matching expense semantics", async () => {
+        await seedWallet();
+        const alice = testEnv.authenticatedContext("alice");
+        const batch = alice.firestore().batch();
+        batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
+            balance: 9000000,
+            lastTransactionId: "goal-allocation",
+        });
+        batch.set(alice.firestore().doc("users/alice/transactions/goal-allocation"), {
+            type: "expense",
+            amount: 1000000,
+            categoryId: "savings",
+            walletId: "w1",
+            relatedWalletId: null,
+            dealId: null,
+            dealFlowType: null,
+            goalId: "g1",
+            goalFlowType: "allocation",
+            debtId: null,
+            debtPrincipalAmount: null,
+            debtInterestAmount: null,
+            note: "Nạp mục tiêu",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        await assertSucceeds(batch.commit());
+    });
+
+    it("rejects goal allocation metadata attached to income", async () => {
+        await seedWallet();
+        const alice = testEnv.authenticatedContext("alice");
+        const batch = alice.firestore().batch();
+        batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
+            balance: 11000000,
+            lastTransactionId: "bad-goal",
+        });
+        batch.set(alice.firestore().doc("users/alice/transactions/bad-goal"), {
+            type: "income",
+            amount: 1000000,
+            categoryId: "savings",
+            walletId: "w1",
+            goalId: "g1",
+            goalFlowType: "allocation",
+            note: "invalid",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        await assertFails(batch.commit());
+    });
+
+    it("accepts debt payment only when principal plus interest equals cash amount", async () => {
+        await seedWallet();
+        const alice = testEnv.authenticatedContext("alice");
+        const batch = alice.firestore().batch();
+        batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
+            balance: 8800000,
+            lastTransactionId: "debt-pay",
+        });
+        batch.set(alice.firestore().doc("users/alice/transactions/debt-pay"), {
+            type: "expense",
+            amount: 1200000,
+            categoryId: "debt_payment",
+            walletId: "w1",
+            debtId: "d1",
+            debtPrincipalAmount: 1000000,
+            debtInterestAmount: 200000,
+            note: "Thanh toán nợ",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        await assertSucceeds(batch.commit());
+    });
+});
