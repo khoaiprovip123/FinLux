@@ -110,6 +110,8 @@ fun ModernHomeScreen(
     val categories = state.categories.associateBy(Category::id)
     val showBalance = state.showBalance
     val visualStyle = LocalUiPreferences.current.visualStyle
+    val periodMetricSuffix = if (state.salaryCycleLabel != null) "kỳ này" else "tháng này"
+    val periodMetricContext = state.salaryCycleLabel?.let { "Kỳ $it" }
 
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
@@ -142,17 +144,17 @@ fun ModernHomeScreen(
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ReferenceMetric(
-                            title = "Thu tháng này",
+                            title = "Thu $periodMetricSuffix",
                             value = if (showBalance) state.summary.income.value.toShortVnd() else "••••",
-                            change = "▲ Dòng tiền vào",
+                            change = periodMetricContext ?: "▲ Dòng tiền vào",
                             accent = IncomeGreen,
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigate(Route.Income.value) },
                         )
                         ReferenceMetric(
-                            title = "Chi tháng này",
+                            title = "Chi $periodMetricSuffix",
                             value = if (showBalance) state.summary.expense.value.toShortVnd() else "••••",
-                            change = "▼ Đang theo dõi",
+                            change = periodMetricContext ?: "▼ Đang theo dõi",
                             accent = ExpenseRed,
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigate(Route.Expense.value) },
