@@ -173,7 +173,13 @@ class FirebaseDealRepository(
             val currentOutlay = dealDoc.getLong("totalCapitalOutlay") ?: 0L
 
             // 1. Trừ tiền ví
-            tx.update(walletRef, "balance", currentBalance - amount, "updatedAt", Timestamp.now())
+            tx.update(
+                walletRef,
+                mapOf(
+                    "balance" to currentBalance - amount,
+                    "lastTransactionId" to txId,
+                )
+            )
 
             // 2. Tăng vốn đã xuất của Deal
             tx.update(
@@ -214,6 +220,7 @@ class FirebaseDealRepository(
 
         val walletRef = firestore.collection("users").document(uid).collection("wallets").document(walletId)
         val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
+        val walletLedgerTransactionId = UUID.randomUUID().toString()
 
         firestore.runTransaction { tx ->
             val walletDoc = tx.get(walletRef)
@@ -228,8 +235,14 @@ class FirebaseDealRepository(
 
             val remainingCapital = (totalOutlay - totalRecovered).coerceAtLeast(0L)
 
-            // 1. Cộng toàn bộ tiền vào ví
-            tx.update(walletRef, "balance", currentBalance + amount, "updatedAt", Timestamp.now())
+            // 1. Cộng toàn bộ tiền vào ví và liên kết mutation với transaction ledger.
+            tx.update(
+                walletRef,
+                mapOf(
+                    "balance" to currentBalance + amount,
+                    "lastTransactionId" to walletLedgerTransactionId,
+                )
+            )
 
             // 2. Phân rã dòng tiền
             if (amount <= remainingCapital) {
@@ -244,8 +257,7 @@ class FirebaseDealRepository(
                     "updatedAt", Timestamp.now()
                 )
 
-                val txId = UUID.randomUUID().toString()
-                val txRef = firestore.collection("users").document(uid).collection("transactions").document(txId)
+                val txRef = firestore.collection("users").document(uid).collection("transactions").document(walletLedgerTransactionId)
                 val txData = mapOf(
                     "type" to TransactionType.INCOME.name.lowercase(),
                     "amount" to amount,
@@ -294,8 +306,7 @@ class FirebaseDealRepository(
                     tx.set(txRef1, txData1)
                 }
 
-                val txId2 = UUID.randomUUID().toString()
-                val txRef2 = firestore.collection("users").document(uid).collection("transactions").document(txId2)
+                val txRef2 = firestore.collection("users").document(uid).collection("transactions").document(walletLedgerTransactionId)
                 val txData2 = mapOf(
                     "type" to TransactionType.INCOME.name.lowercase(),
                     "amount" to gainPortion,
