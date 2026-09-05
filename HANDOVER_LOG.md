@@ -1,8 +1,104 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.21.0 (versionCode 164) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (278/278 Unit Tests) — Hoàn tất Ổn định Vòng quay tiết kiệm, Chuẩn hóa State Machine & Nâng cấp UI/UX Cài đặt vòng quay.
+- **Phiên bản hiện tại:** v1.22.0 (versionCode 165) [DONE]
+- **Trạng thái Build:** ✅ 100% PASS (287/287 Unit Tests) — Hoàn tất FINLUX REPORTING 2.0 Release A (Reporting Foundation: Phases 0-4).
+
+### [Task-FULLSCREEN-TRANSACTIONS-TRANSFER-AND-DATEPICKER-UNIFICATION] — Chuyển màn hình tạo Thu/Chi & Chuyển khoản sang Toàn màn hình (Full Screen), chống thoát mất dữ liệu & đồng bộ DateRangePicker
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Toàn màn hình Tạo/Sửa giao dịch (`AddTransactionSheet.kt`)**: Chuyển đổi từ `ModalBottomSheet` sang toàn màn hình (`Surface` + `FinluxStyleBackdrop`), thiết lập `statusBarsPadding()`, `navigationBarsPadding()`, `imePadding()`.
+  2. ✅ **Bảo vệ chống mất dữ liệu khi vô tình Back / Thoát**: Tích hợp `BackHandler` và nút Back ở Header Bar, tự động kiểm tra nếu có số tiền hoặc ghi chú chưa lưu sẽ hiển thị `FinluxDialog` xác nhận hủy thay đổi, ngăn chặn 100% tình trạng vô tình chạm hoặc vuốt làm mất công soạn thảo.
+  3. ✅ **Nâng cấp công thái học Form**: Bổ sung nút lưu giao dịch to bản `Button` (`52dp`, bo góc `16dp`, màu động `tokens.primary`) ở cuối trang dễ bấm bằng 1 tay.
+  4. ✅ **Màn hình Chuyển khoản Toàn màn hình (`TransferMoneyScreen.kt`)**:
+     - Xây dựng màn hình chuyển tiền chuyên dụng toàn màn hình Liquid Glass.
+     - Thiết kế chọn ví nguồn, ví đích, nút hoán đổi chiều chuyển tiền (`SwapVert`).
+     - Nhập số tiền định dạng dấu chấm phân cách hàng nghìn, thanh phím tắt ("Tất cả", 50k, 100k, 200k, 500k, 1M, 2M).
+     - Kiểm tra số dư ví nguồn theo thời gian thực (hiển thị cảnh báo số dư không đủ).
+     - Chọn ngày giờ chuyển khoản thông minh (`DatePickerDialog` + `TimePickerDialog`).
+     - Tích hợp `BackHandler` chống thoát mất nội dung đang soạn.
+  5. ✅ **Kết nối toàn hệ thống (`FinluxNavHost.kt`, `PrismWalletsScreen.kt`)**:
+     - Nút "Chuyển tiền" trong QuickAddSheet mở trực tiếp `TransferMoneyScreen` toàn màn hình.
+     - Nút chuyển tiền trong màn hình Ví (`PrismWalletsScreen`) mở trực tiếp `TransferMoneyScreen`.
+  6. ✅ **Đồng bộ DateRangePicker Liquid Glass Theme**:
+     - Cập nhật `DatePickerDefaults.colors(...)` theo `LocalFinluxTokens.current` và bo góc `28dp` trên cả 3 giao diện Báo cáo: `PrismReportsScreen`, `ModernReportsScreen`, `ClassicReportsScreen`.
+- **Kiểm thử & Đóng gói**:
+  - `./gradlew.bat testDebugUnitTest`: **BUILD SUCCESSFUL**, **287/287 Unit Tests PASS 100%**.
+  - `./gradlew.bat assembleDebug`: **BUILD SUCCESSFUL** (Tạo file APK `app-debug.apk` thành công).
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-FIX-CASHFLOW-FUTURE-DATES-AND-BAR-SCALING] — Sửa lỗi hiển thị ngày tương lai, tỷ lệ cột biểu đồ thu chi & đồng bộ tab Chuyên sâu
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Loại bỏ ngày tương lai (06/09..24/09)**: Giới hạn `cashFlow` và `dailyStatements` đối với kỳ đang diễn ra bằng `effectiveEndDate = minOf(range.end, today)`. Kỳ lương hiện tại (25/08 - 24/09) hiển thị chính xác 12 ngày đã trôi qua (25/08 đến 05/09 - hôm nay).
+  2. ✅ **Sửa tỷ lệ chiều cao cột biểu đồ**:
+     - Loại bỏ việc vẽ cột giả (stub 0.04f) khi amount = 0. Khi = 0, hoàn toàn không vẽ cột.
+     - Tách thang đo cực đại độc lập `maxIncome` và `maxExpense` để các khoản chi tiêu hàng ngày không bị nén phẳng bởi khoản lương lớn.
+     - Chuyển `Row` chứa cột sang `Modifier.weight(1f)` (fill = true) cho phép các cột bung chiều cao theo toàn bộ không gian thẻ biểu đồ.
+  3. ✅ **Hiển thị trọn vẹn không cuộn lệch**: 12 ngày vừa vặn hoàn hảo trên 1 màn hình (`isScrollable = false`), người dùng nhìn thấy toàn bộ từ ngày 25/08 tới hôm nay 05/09 ngay lập tức.
+  4. ✅ **Đồng bộ tab Chuyên sâu (sub-tab Xu hướng)**: Tự động kế thừa biểu đồ thu chi chuẩn xác và bảng phân tích.
+- **Kiểm thử & Cài đặt**:
+  - `./gradlew.bat testDebugUnitTest`: **BUILD SUCCESSFUL**, **287/287 Unit Tests PASS 100%**.
+  - `./gradlew.bat assembleDebug`: **BUILD SUCCESSFUL**.
+  - `adb -s 7f4ca06a install -r -d app-debug.apk`: **Success**.
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-FIX-REPORT-SALARY-CYCLE-CHART-AND-DEEPDIVE] — Sửa lỗi hiển thị biểu đồ thu chi Kỳ lương & Đồng bộ Tab Chuyên sâu
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Loại bỏ triệt để hardcode `takeLast(14)` và `takeLast(20)`**: Biểu đồ hiển thị đầy đủ 100% tất cả các ngày trong chu kỳ lương (từ ngày bắt đầu `range.start` đến ngày kết thúc `range.end`), không còn bị cắt xén hay nhảy sang ngày 11..14 nữa.
+  2. ✅ **Nâng cấp Biểu đồ Thu Chi Prism Cuộn Ngang Thông Minh**: Tự động nhận diện chu kỳ dài (>14 ngày) để chuyển sang `horizontalScroll`, giữ độ rộng cột 32dp sắc nét, auto-scroll căn giữa ngày "Hôm nay", hiển thị indicator "Hôm nay", và pill thông tin chi tiết (Thu/Chi/Ròng) khi nhấn chọn từng cột ngày.
+  3. ✅ **Thêm thanh hiển thị kỳ báo cáo (`PrismPeriodIndicatorBanner`)**: Tích hợp cho cả Tab "Danh mục" và Tab "Chuyên sâu" (tất cả các sub-tab: Vay nợ, Tiết kiệm, Thương vụ, Ngân sách, Tài sản, Xu hướng), cho phép người dùng luôn biết rõ phạm vi ngày đang xem và bấm "Đổi kỳ" nhanh chóng.
+  4. ✅ **Đồng bộ Sub-tab Xu hướng (Trend)**: Sử dụng biểu đồ thu chi mới với dữ liệu chu kỳ trọn vẹn và phân tích xu hướng trực quan.
+- **Kiểm thử & Cài đặt**:
+  - `./gradlew.bat testDebugUnitTest`: **BUILD SUCCESSFUL**, **287/287 Unit Tests PASS 100%**.
+  - `./gradlew.bat assembleDebug`: **BUILD SUCCESSFUL**.
+  - Đã cài đặt trực tiếp bản build vào máy thiết bị qua ADB (`adb install -r -d app-debug.apk`) thành công.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-FINLUX-REPORTING-2.0-RELEASE-A] — Reporting Foundation: Period & Balance Reconciliation Engine
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Audit & Freeze Contract**: Chuẩn hóa Flow Metric, Cumulative Metric, Snapshot Metric; thống nhất Timezone sử dụng `FinanceTime.zoneOf(salaryConfig.financeTimeZone)`.
+  2. ✅ **Report Period Engine [P0]**: Mở rộng `ReportPeriod` (`TODAY`, `YESTERDAY`, `DAY`, `WEEK`, `LAST_7_DAYS`, `SALARY_CYCLE`, `MONTH`, `QUARTER`, `YEAR`, `CUSTOM`).
+  3. ✅ **Dynamic Default Period**: Tự động đặt `SALARY_CYCLE` khi `salaryConfig.enabled == true` và `MONTH` khi `false`. Thay thế toàn bộ `ReportPeriod.entries` trên cả 3 giao diện (Prism, Modern, Classic) bằng `state.availablePeriods`.
+  4. ✅ **Balance & Reconciliation Engine [P0]**: Xây dựng `DailyStatementCalculator` suy diễn số dư đầu ngày, phát sinh trong ngày và số dư cuối ngày, thỏa mãn invariant kế toán: `Closing(Day N) == Opening(Day N+1)`.
+  5. ✅ **Daily Statement & Cumulative Metrics [P0]**: Thẻ Báo cáo Ngày (Opening, Income, Expense, Operating Net, Closing), Thẻ Lũy kế (Trước hôm nay + Hôm nay = Tổng lũy kế), So sánh Hôm qua vs Hôm nay và Bảng đối chiếu từng ngày.
+  6. ✅ **Cash Movement Report**: Phân định rạch ròi Operating Cash Flow vs Wallet Ledger Movement (Transfer, Deal Outlay/Recovery, Debt Payments).
+  7. ✅ **Tích hợp DateRangePicker cho Prism**: Khi người dùng chọn "Tùy chọn", tự động kích hoạt DatePickerDialog chọn ngày bắt đầu & kết thúc.
+- **Kiểm thử tự động**:
+  - `ReportQueryWindowResolverTest` (6/6 PASS)
+  - `DailyStatementCalculatorTest` (4/4 PASS)
+  - `ReportsViewModelTest` (6/6 PASS)
+  - Toàn bộ `./gradlew.bat testDebugUnitTest` PASS 100% (60 test classes, 287/287 tests).
+- **Files đã tạo mới & chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DailyFinancialModels.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/DailyStatementCalculator.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportPeriod.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportQueryWindowResolver.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismDailyStatementComponents.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DailyStatementCalculatorTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportQueryWindowResolverTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
 
 ### [Task-SAVING-SPIN-SETTINGS-UI-UX-UPGRADE] — Nâng cấp UI/UX Cài đặt vòng quay (Setup Saving Spin)
 - **Status**: `[DONE]`

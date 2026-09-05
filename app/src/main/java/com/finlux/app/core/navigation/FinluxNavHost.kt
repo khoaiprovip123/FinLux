@@ -114,6 +114,7 @@ fun FinluxNavHost(
     var actionTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
     var pendingDeleteTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
     var showQuickAdd by remember { mutableStateOf(false) }
+    var showTransferMoney by remember { mutableStateOf(false) }
     var walletTransferRequest by remember { mutableStateOf(0) }
     var initialTransactionType by remember { mutableStateOf<TransactionType?>(null) }
     var pendingReceiptUri by remember { mutableStateOf<String?>(null) }
@@ -409,6 +410,11 @@ fun FinluxNavHost(
                 },
             )
         }
+        if (showTransferMoney) {
+            com.finlux.app.presentation.wallet.TransferMoneyScreen(
+                onDismiss = { showTransferMoney = false },
+            )
+        }
         if (editingTransaction != null) {
             AddTransactionSheet(
                 initialTransaction = editingTransaction,
@@ -485,8 +491,7 @@ fun FinluxNavHost(
                 },
                 onTransfer = {
                     showQuickAdd = false
-                    walletTransferRequest += 1
-                    navigateMain(Route.Wallets.value)
+                    showTransferMoney = true
                 },
                 onReceipt = {
                     showQuickAdd = false

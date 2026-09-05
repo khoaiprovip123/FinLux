@@ -98,6 +98,7 @@ class ReportsViewModelTest {
             savingSpinRepository = savingSpinRepository,
             financialPeriodResolver = financialPeriodResolver,
             windowResolver = windowResolver,
+            dailyStatementCalculator = com.finlux.app.domain.usecase.DailyStatementCalculator(),
         )
     }
 

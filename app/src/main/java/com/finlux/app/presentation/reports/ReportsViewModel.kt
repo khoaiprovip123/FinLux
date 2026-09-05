@@ -42,16 +42,14 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlin.math.roundToInt
+import com.finlux.app.domain.model.CashMovementStatement
+import com.finlux.app.domain.model.CumulativeFinancialMetrics
+import com.finlux.app.domain.model.DailyComparisonMetric
+import com.finlux.app.domain.model.DailyFinancialStatement
+import com.finlux.app.domain.usecase.DailyStatementCalculator
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
-enum class ReportPeriod(val label: String) {
-    SALARY_CYCLE("Kỳ lương"),
-    MONTH("Tháng"),
-    QUARTER("Quý"),
-    YEAR("Năm"),
-    CUSTOM("Tùy chọn"),
-}
-
-data class ReportRange(val start: LocalDate, val end: LocalDate)
 data class CategoryExpense(val category: Category?, val amount: Long, val percentage: Float = 0f, val transactionCount: Int = 0)
 data class DailyExpense(val date: LocalDate, val amount: Long)
 data class CashFlowPoint(val date: LocalDate, val income: Long, val expense: Long)
@@ -123,6 +121,8 @@ data class SavingSpinSummaryReport(
     val destinationBreakdown: List<com.finlux.app.domain.model.SavingSpinDestinationTotal> = emptyList(),
 )
 
+
+
 data class ReportsUiState(
     val period: ReportPeriod = ReportPeriod.MONTH,
     val range: ReportRange = ReportRange(LocalDate.now().withDayOfMonth(1), LocalDate.now()),
@@ -189,7 +189,24 @@ data class ReportsUiState(
     val trueNetWorth: Long = 0L,
     val assetsByType: Map<WalletType, Long> = emptyMap(),
     val isSalaryCycleEnabled: Boolean = false,
-    val availablePeriods: List<ReportPeriod> = listOf(ReportPeriod.MONTH, ReportPeriod.QUARTER, ReportPeriod.YEAR, ReportPeriod.CUSTOM),
+    val availablePeriods: List<ReportPeriod> = listOf(
+        ReportPeriod.TODAY,
+        ReportPeriod.YESTERDAY,
+        ReportPeriod.WEEK,
+        ReportPeriod.LAST_7_DAYS,
+        ReportPeriod.MONTH,
+        ReportPeriod.QUARTER,
+        ReportPeriod.YEAR,
+        ReportPeriod.CUSTOM,
+    ),
+    // Reporting 2.0 Foundation
+    val dailyStatements: List<DailyFinancialStatement> = emptyList(),
+    val todayStatement: DailyFinancialStatement? = null,
+    val cumulativeMetrics: CumulativeFinancialMetrics = CumulativeFinancialMetrics(0L, 0L, 0L, 0L, 0L, 0L),
+    val yesterdayComparison: DailyComparisonMetric = DailyComparisonMetric(0L, 0L, 0L),
+    val cashMovementStatement: CashMovementStatement? = null,
+    val openingBalance: Long = 0L,
+    val closingBalance: Long = 0L,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -206,20 +223,34 @@ class ReportsViewModel @Inject constructor(
     private val savingSpinRepository: com.finlux.app.domain.repository.SavingSpinRepository,
     private val financialPeriodResolver: FinancialPeriodResolver,
     private val windowResolver: ReportQueryWindowResolver,
+    private val dailyStatementCalculator: DailyStatementCalculator,
     private val clock: FinanceClock = SystemFinanceClock(),
     private val calculateSavingSpinStreakUseCase: CalculateSavingSpinStreakUseCase = CalculateSavingSpinStreakUseCase(financialPeriodResolver, clock),
 ) : ViewModel() {
-    val selectedPeriod = MutableStateFlow(ReportPeriod.MONTH)
+    private val userSelectedPeriod = MutableStateFlow<ReportPeriod?>(null)
     private val today = LocalDate.now(FinanceTime.VIETNAM_ZONE)
     private val customRange = MutableStateFlow(ReportRange(today.minusDays(29), today))
+
+    val selectedPeriod = MutableStateFlow(ReportPeriod.MONTH)
+
+    init {
+        viewModelScope.launch {
+            salaryCycleRepository.observeConfig().collect { config ->
+                if (userSelectedPeriod.value == null) {
+                    val defaultPeriod = if (config.enabled) ReportPeriod.SALARY_CYCLE else ReportPeriod.MONTH
+                    selectedPeriod.value = defaultPeriod
+                }
+            }
+        }
+    }
 
     private val windowFlow = combine(
         selectedPeriod,
         customRange,
         salaryCycleRepository.observeConfig(),
     ) { period, custom, salaryConfig ->
-        val now = Instant.now()
-        val zone = FinanceTime.VIETNAM_ZONE
+        val now = clock.now()
+        val zone = FinanceTime.zoneOf(salaryConfig.financeTimeZone)
         val window = windowResolver.resolve(period, custom, now, salaryConfig, zone)
         Triple(window, salaryConfig, period)
     }
@@ -323,6 +354,8 @@ class ReportsViewModel @Inject constructor(
     ): ReportsUiState {
         val zone = FinanceTime.VIETNAM_ZONE
         val range = window.range
+        val today = LocalDate.now(zone)
+        val effectiveEndDate = if (range.end.isAfter(today)) today.coerceAtLeast(range.start) else range.end
 
         fun inRange(date: Instant, startInclusive: Instant, endExclusive: Instant): Boolean {
             return date >= startInclusive && date < endExclusive
@@ -354,7 +387,7 @@ class ReportsViewModel @Inject constructor(
             CategoryExpense(categoryMap[id], sum, pct, items.size)
         }.sortedByDescending(CategoryExpense::amount)
 
-        val dayCount = ChronoUnit.DAYS.between(range.start, range.end).coerceAtMost(365)
+        val dayCount = ChronoUnit.DAYS.between(range.start, effectiveEndDate).coerceAtMost(365)
         val allDates = (0..dayCount).map { range.start.plusDays(it) }
         val byDate = filtered.groupBy { it.date.atZone(zone).toLocalDate() }
         val cashFlow = allDates.map { date ->
@@ -558,15 +591,63 @@ class ReportsViewModel @Inject constructor(
         }.sortedByDescending { it.balance }
 
         // Tính trung bình ngày dựa trên số ngày thực tế đã trôi qua trong kỳ (đến ngày hôm nay)
-        val effectiveEndDate = if (range.end.isAfter(today)) today else range.end
         val daysElapsedInPeriod = maxOf(1, ChronoUnit.DAYS.between(range.start, effectiveEndDate).toInt() + 1)
         val avgExpense = if (daysElapsedInPeriod > 0) expense / daysElapsedInPeriod else 0
         val avgIncome = if (daysElapsedInPeriod > 0) income / daysElapsedInPeriod else 0
 
+        // Daily Statements & Balance Reconciliation
+        val dailyStatements = dailyStatementCalculator.calculateDailyStatements(
+            wallets = wallets,
+            allTransactions = transactions,
+            deals = deals,
+            startDate = range.start,
+            endDate = effectiveEndDate,
+            zone = zone,
+        )
+        val todayStatement = dailyStatements.find { it.date == today } ?: dailyStatements.lastOrNull()
+        val cumulativeMetrics = dailyStatementCalculator.calculateCumulativeMetrics(
+            dailyStatements = dailyStatements,
+            asOfDate = if (range.end.isBefore(today)) range.end else today,
+        )
+        val yesterdayComparison = dailyStatementCalculator.calculateYesterdayComparison(
+            dailyStatements = dailyStatements,
+            today = today,
+        )
+        val openingBalance = dailyStatements.firstOrNull()?.openingBalance ?: totalAssets
+        val closingBalance = dailyStatements.lastOrNull()?.closingBalance ?: totalAssets
+
+        val cashMovementStatement = dailyStatementCalculator.calculateCashMovement(
+            openingBalance = openingBalance,
+            transactionsInPeriod = filtered,
+            deals = deals,
+            targetWalletIds = assetWallets.map { it.id }.toSet(),
+        )
+
         val availablePeriods = if (salaryConfig.enabled) {
-            listOf(ReportPeriod.SALARY_CYCLE, ReportPeriod.MONTH, ReportPeriod.QUARTER, ReportPeriod.YEAR, ReportPeriod.CUSTOM)
+            listOf(
+                ReportPeriod.TODAY,
+                ReportPeriod.YESTERDAY,
+                ReportPeriod.DAY,
+                ReportPeriod.WEEK,
+                ReportPeriod.LAST_7_DAYS,
+                ReportPeriod.SALARY_CYCLE,
+                ReportPeriod.MONTH,
+                ReportPeriod.QUARTER,
+                ReportPeriod.YEAR,
+                ReportPeriod.CUSTOM,
+            )
         } else {
-            listOf(ReportPeriod.MONTH, ReportPeriod.QUARTER, ReportPeriod.YEAR, ReportPeriod.CUSTOM)
+            listOf(
+                ReportPeriod.TODAY,
+                ReportPeriod.YESTERDAY,
+                ReportPeriod.DAY,
+                ReportPeriod.WEEK,
+                ReportPeriod.LAST_7_DAYS,
+                ReportPeriod.MONTH,
+                ReportPeriod.QUARTER,
+                ReportPeriod.YEAR,
+                ReportPeriod.CUSTOM,
+            )
         }
 
         val effectivePeriod = if (requestedPeriod == ReportPeriod.SALARY_CYCLE && !salaryConfig.enabled) {
@@ -661,6 +742,14 @@ class ReportsViewModel @Inject constructor(
             assetsByType = assetsByType,
             isSalaryCycleEnabled = salaryConfig.enabled,
             availablePeriods = availablePeriods,
+            // Reporting 2.0 Foundation
+            dailyStatements = dailyStatements,
+            todayStatement = todayStatement,
+            cumulativeMetrics = cumulativeMetrics,
+            yesterdayComparison = yesterdayComparison,
+            cashMovementStatement = cashMovementStatement,
+            openingBalance = openingBalance,
+            closingBalance = closingBalance,
         )
     }
 }

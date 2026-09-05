@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.22.0] - 2026-09-05
+### Added
+- **FINLUX REPORTING 2.0 — Release A: Reporting Foundation (Phases 0–4)**:
+  * **Balance & Reconciliation Engine**:
+    - Mô hình hóa đối chiếu tài chính hoàn chỉnh (`DailyFinancialStatement`, `WalletDailyMovement`, `CumulativeFinancialMetrics`, `DailyComparisonMetric`, `CashMovementStatement`).
+    - Suy diễn chính xác số dư đầu ngày, phát sinh và số dư cuối ngày: $\text{OpeningBalance}(T) = \text{CurrentBalance} - \sum_{\tau \ge T} \text{NetMovement}(\tau)$.
+    - Khóa chặt invariant kế toán toàn hệ thống: $\text{ClosingBalance}(\text{Day } N) == \text{OpeningBalance}(\text{Day } N+1)$.
+  * **Core Daily Financial Statement (Báo Cáo Hôm Nay / Báo Cáo Ngày)**:
+    - Thẻ `PrismDailyStatementCard`: Hiển thị số dư đầu ngày, thu, chi, dòng tiền ròng hôm nay, số dư cuối ngày kèm badge đối chiếu.
+    - Thẻ `PrismCumulativeMetricsCard`: Phân tách minh bạch thu/chi/ròng trước hôm nay + hôm nay = tổng lũy kế.
+    - Thẻ `PrismDailyStatementsTable`: Bảng kê đối chiếu từng ngày trong kỳ khảo sát.
+    - Thước đo so sánh dòng tiền ròng hôm nay so với hôm qua ($\Delta$).
+  * **Phân Tách Rạch Ròi Cash Movement**:
+    - Phân định dòng tiền hoạt động (Thu nhập - Chi tiêu) vs dòng tiền luân chuyển ví (Chuyển khoản nội bộ, Đầu tư xuất vốn, Thu hồi vốn deal).
+  * **Tích Hợp DateRangePicker Prism**:
+    - Khi chọn kỳ "Tùy chọn", tự động kích hoạt DatePickerDialog chọn ngày bắt đầu & kết thúc.
+- **Full-Screen Transaction & Transfer Experience**:
+  * **Tạo/Sửa Thu & Chi Toàn Màn Hình (`AddTransactionSheet`)**: Nâng cấp toàn diện từ BottomSheet lên Full Screen (`Surface` + `FinluxStyleBackdrop`), chống trôi bàn phím với `imePadding`.
+  * **Khóa Chống Thoát Mất Dữ Liệu (`BackHandler`)**: Ngăn chặn tình trạng vô tình vuốt hoặc ấn Back làm mất nội dung đang soạn, tự động kích hoạt hộp thoại xác nhận hủy khi có dữ liệu chưa lưu.
+  * **Màn Hình Chuyển Tiền Toàn Màn Hình Chuyên Dụng (`TransferMoneyScreen`)**: Xây dựng trải nghiệm chuyển khoản trực quan giữa các ví, hoán đổi chiều chuyển nhanh (`SwapVert`), chip nhập nhanh (50k - 2M), kiểm tra số dư ví nguồn thời gian thực.
+  * **Đồng Bộ DateRangePicker Hệ Thống**: Quy chuẩn hóa màu sắc Liquid Glass (`LocalFinluxTokens.current`) và bo góc `28dp` cho tất cả màn hình Báo cáo (`PrismReportsScreen`, `ModernReportsScreen`, `ClassicReportsScreen`).
+
+### Changed
+- Mở rộng toàn diện `ReportPeriod` enum: `TODAY`, `YESTERDAY`, `DAY`, `WEEK`, `LAST_7_DAYS`, `SALARY_CYCLE`, `MONTH`, `QUARTER`, `YEAR`, `CUSTOM`.
+- Đổi kỳ mặc định theo cấu hình: Khi cấu hình lương bật (`salaryConfig.enabled == true`), mặc định là `SALARY_CYCLE`; khi tắt, mặc định là `MONTH`.
+- Xóa bỏ việc UI tự truy xuất `ReportPeriod.entries`, chuyển sang dùng `state.availablePeriods` đồng bộ trên cả 3 giao diện Prism, Modern, Classic.
+- Thống nhất múi giờ tài chính `FinanceTime.zoneOf(salaryConfig.financeTimeZone)` thay thế hoàn toàn `ZoneId.systemDefault()`.
+- Chuyển hướng nút "Chuyển tiền" trong `QuickAddSheet` và `PrismWalletsScreen` sang `TransferMoneyScreen` toàn màn hình.
+
+### Fixed
+- Khắc phục lỗi thiếu kỳ và không đồng nhất số dư giữa màn hình Home và màn hình Báo cáo.
+- 100% (287/287) Unit Tests PASS.
+
 ## [1.21.0] - 2026-09-04
 ### Added
 - **Khóa Chống Reroll & Bảo Toàn State Machine Vòng Quay**:
