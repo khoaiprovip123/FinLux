@@ -66,6 +66,7 @@ import com.finlux.app.presentation.reminders.RemindersScreen
 import com.finlux.app.presentation.reports.ReportsScreen
 import com.finlux.app.presentation.settings.SettingsScreen
 import com.finlux.app.presentation.savingspin.settings.SavingSpinSettingsScreen
+import com.finlux.app.presentation.savingspin.settings.SavingSpinDestinationsScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.presentation.transaction.TransactionDetailSheet
@@ -390,7 +391,12 @@ fun FinluxNavHost(
             composable(Route.SavingSpinSettings.value) {
                 SavingSpinSettingsScreen(
                     onBack = navController::popBackStack,
-                    onManageDestinations = { navController.navigate(Route.SavingSpinSettings.value) },
+                    onManageDestinations = { navController.navigate(Route.SavingSpinDestinations.value) },
+                )
+            }
+            composable(Route.SavingSpinDestinations.value) {
+                SavingSpinDestinationsScreen(
+                    onBack = navController::popBackStack,
                 )
             }
             composable(Route.SavingSpinReport.value) {
