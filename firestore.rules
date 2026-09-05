@@ -207,13 +207,14 @@ service cloud.firestore {
     function validSavingDestination(data) {
       return data.keys().hasOnly([
           'name', 'method', 'linkedWalletId', 'institutionId', 'accountHint',
-          'enabled', 'createdAt', 'updatedAt'
+          'enabled', 'icon', 'createdAt', 'updatedAt'
         ])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 80
         && data.method in ['CASH', 'BANK_TRANSFER']
         && (data.linkedWalletId == null || data.linkedWalletId is string)
         && (data.institutionId == null || data.institutionId is string)
         && (data.accountHint == null || (data.accountHint is string && data.accountHint.size() <= 40))
+        && (!('icon' in data) || data.icon == null || (data.icon is string && data.icon.size() <= 80))
         && data.enabled is bool
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
@@ -223,7 +224,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'scheduleKey', 'wheelValues', 'selectedIndex', 'selectedAmount', 'status',
           'destinationId', 'method', 'spunAt', 'completedAt', 'skippedAt',
-          'snoozedUntil', 'createdAt', 'updatedAt'
+          'snoozedUntil', 'transactionId', 'createdAt', 'updatedAt'
         ])
         && data.scheduleKey is string && data.scheduleKey.size() > 0
         && data.wheelValues is list && data.wheelValues.size() in [6, 8, 10, 12]
@@ -236,6 +237,7 @@ service cloud.firestore {
         && (data.completedAt == null || data.completedAt is timestamp)
         && (data.skippedAt == null || data.skippedAt is timestamp)
         && (data.snoozedUntil == null || data.snoozedUntil is timestamp)
+        && (!('transactionId' in data) || data.transactionId == null || (data.transactionId is string && data.transactionId.size() > 0))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -433,8 +435,10 @@ service cloud.firestore {
           && validSavingSpinSession(request.resource.data)
           && request.resource.data.status == 'READY'
           && request.resource.data.selectedIndex == null
-          && request.resource.data.selectedAmount == null;
+          && request.resource.data.selectedAmount == null
+          && (!('transactionId' in request.resource.data) || request.resource.data.transactionId == null);
         allow update: if isOwner(uid)
+          && resource.data.status != 'COMPLETED'
           && validSavingSpinSession(request.resource.data)
           && request.resource.data.scheduleKey == resource.data.scheduleKey
           && request.resource.data.wheelValues == resource.data.wheelValues
@@ -442,7 +446,23 @@ service cloud.firestore {
           && validSavingSpinTransition(resource.data, request.resource.data)
           && (resource.data.selectedAmount == null
             || (request.resource.data.selectedAmount == resource.data.selectedAmount
-              && request.resource.data.selectedIndex == resource.data.selectedIndex));
+              && request.resource.data.selectedIndex == resource.data.selectedIndex))
+          && (
+            request.resource.data.status != 'COMPLETED'
+            || (
+              request.resource.data.destinationId is string
+              && request.resource.data.destinationId.size() > 0
+              && request.resource.data.method in ['CASH', 'BANK_TRANSFER']
+              && request.resource.data.completedAt is timestamp
+              && (
+                request.resource.data.method != 'BANK_TRANSFER'
+                || (
+                  request.resource.data.transactionId is string
+                  && request.resource.data.transactionId.size() > 0
+                )
+              )
+            )
+          );
         allow delete: if false;
       }
 
