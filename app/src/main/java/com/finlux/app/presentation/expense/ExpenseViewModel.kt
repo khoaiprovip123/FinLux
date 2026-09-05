@@ -52,10 +52,10 @@ class ExpenseViewModel @Inject constructor(
 
     private val selectedTime = MutableStateFlow(Instant.now())
     private val periodSelection = combine(selectedTime, salaryCycleRepository.observeConfig()) { time, config ->
-        val current = financialPeriodResolver.resolvePeriodContaining(time, config)
+        val current = financialPeriodResolver.resolveReportingPeriodContaining(time, config)
         PeriodSelection(
             current = current,
-            previous = financialPeriodResolver.resolvePeriodContaining(current.start.minusMillis(1), config),
+            previous = financialPeriodResolver.resolveReportingPeriodContaining(current.start.minusMillis(1), config),
             zoneId = FinanceTime.zoneOf(config.financeTimeZone),
         )
     }
