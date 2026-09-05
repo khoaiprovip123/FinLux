@@ -337,16 +337,29 @@ THEME: luôn kế thừa `ThemePreference` + `VisualStyle` từ root; không ép
   LAYOUT:
   ┌─────────────────────────────────────┐
   │ Tabs chính: Tổng quan | Thu & Chi | Danh mục | Chuyên sâu │
-  │ Chuyên sâu: Vay nợ | Tiết kiệm | Ngân sách | Tài sản | Xu hướng │
+  │ Chuyên sâu: Vay nợ | Tiết kiệm | Ngân sách | Tài sản / Ví | Xu hướng │
   │ Period selector: Kỳ lương | Tháng | Quý | Năm | Tùy chọn │
+  │ Wallet Filter Selector: Tất cả ví | [Tên ví 1] | [Tên ví 2] ... (Lọc toàn bộ báo cáo theo ví) │
+  │ Active Wallet Filter Banner: "Đang lọc: [Tên ví]" + nút "Xem tất cả" │
   │ GlassCard tổng quan: Thu nhập / Chi tiêu / Dòng tiền còn lại + % kỳ trước │
-  │ Line chart: hai đường Thu-Chi, điểm dữ liệu, đường focus và tooltip theo ngày │
+  │ Line/Bar chart: hai đường Thu-Chi, điểm dữ liệu, đường focus và tooltip theo ngày │
   │ Treemap bất đối xứng: phân bổ Chi theo danh mục, số tiền và tỷ trọng │
-  │ Báo cáo theo ví: icon, số tiền, tỷ trọng và thanh tiến độ │
+  │ Phân bổ chi tiêu theo ví: Biểu đồ thanh tỷ trọng chi tiêu giữa các ví (% tổng chi) │
+  │ Danh sách báo cáo ví: icon, số dư, số tiền chi trong kỳ, tỷ trọng chi, danh mục chi tiêu hàng đầu │
+  │ Bottom Sheet Chi tiết Chi tiêu Ví (PrismWalletDetailBottomSheet): │
+  │   - Header nhận diện ví: tên ví, số dư hiện tại, dòng tiền ròng trong kỳ │
+  │   - Thẻ tổng quan chi tiêu: số tiền chi trong kỳ, % đóng góp vào tổng chi toàn bộ tài sản │
+  │   - Danh mục chi tiêu riêng của ví: tiến độ, số tiền chi, tỷ trọng % của riêng ví │
+  │   - Nguồn thu nạp vào ví (nếu có) │
+  │   - Lịch sử giao dịch chi tiết phát sinh từ ví trong kỳ │
+  │   - Nút hành động: "Lọc báo cáo theo ví này" │
   │ Button: "Xuất báo cáo" (icon) → mở dialog chọn Excel/PDF (UC-17) │
   └─────────────────────────────────────┘
 STATES: Empty theo từng phân hệ → CTA thật tới Vay nợ / Mục tiêu / Ngân sách / Ví.
 SEMANTIC: tách `Dòng tiền còn lại`, `Tỷ lệ giữ lại thu nhập`, `Đã phân bổ vào mục tiêu`; insight chỉ hiển thị nhận xét có số liệu nguồn.
+ĐỒNG BỘ 3 PHONG CÁCH:
+  - Prism: Liquid Glass với thanh chip lọc ví cuộn ngang, bottom sheet chi tiết ví đầy đủ đồ họa.
+  - Modern & Classic: Menu chọn ví dạng capsule / dropdown trực quan, banner trạng thái lọc ví và thẻ ví hiển thị chi tiết số tiền chi.
 ```
 
 ## 10A. SCREEN: Chi tiêu (Expense)

@@ -13,7 +13,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
 import com.finlux.app.core.time.FinanceTime
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,6 +43,8 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterAlt
@@ -50,9 +54,13 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -60,8 +68,10 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -116,6 +126,7 @@ import com.finlux.app.presentation.reports.ReportPeriod
 import com.finlux.app.presentation.reports.ReportsUiState
 import com.finlux.app.presentation.reports.ReportsViewModel
 import com.finlux.app.presentation.reports.WalletReportItem
+import com.finlux.app.presentation.reports.WalletSpendingDetail
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
@@ -152,6 +163,7 @@ fun PrismReportsScreen(
     var selectedChartIndex by remember { mutableIntStateOf(-1) }
     var showPeriodPickerSheet by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var selectedWalletForDetail by remember { mutableStateOf<WalletSpendingDetail?>(null) }
 
     Scaffold(
         topBar = {
@@ -180,6 +192,17 @@ fun PrismReportsScreen(
                     selectedTab = selectedPrimaryTab,
                     onTabSelected = { selectedPrimaryTab = it },
                 )
+            }
+
+            // Thanh lọc theo ví (Wallet Filter Chips)
+            if (state.wallets.isNotEmpty()) {
+                item {
+                    PrismWalletFilterSelector(
+                        wallets = state.wallets,
+                        selectedWalletId = state.selectedWalletId,
+                        onSelectWallet = { viewModel.selectWallet(it) },
+                    )
+                }
             }
 
             // Secondary Sub-tabs when "Chuyên sâu" is active
@@ -359,8 +382,18 @@ fun PrismReportsScreen(
                                     }
                                 }
                             } else {
+                                item {
+                                    PrismWalletSpendingDistributionCard(
+                                        state = state,
+                                        onSelectWallet = { walletId -> viewModel.selectWallet(walletId) },
+                                    )
+                                }
                                 items(state.walletReportItems, key = { it.wallet.id }) { walletItem ->
-                                    PrismWalletReportCard(walletItem)
+                                    PrismWalletReportCard(
+                                        item = walletItem,
+                                        isSelected = state.selectedWalletId == walletItem.wallet.id,
+                                        onClick = { selectedWalletForDetail = walletItem.spendingDetail },
+                                    )
                                 }
                             }
                         }
@@ -467,6 +500,23 @@ fun PrismReportsScreen(
         ExportReportDialog(
             state = state,
             onDismiss = { showExportDialog = false },
+        )
+    }
+
+    // Wallet Spending Detail Bottom Sheet
+    selectedWalletForDetail?.let { detail ->
+        PrismWalletDetailBottomSheet(
+            detail = detail,
+            isFilterActive = state.selectedWalletId == detail.wallet.id,
+            onFilterWallet = {
+                viewModel.selectWallet(detail.wallet.id)
+                selectedWalletForDetail = null
+            },
+            onClearFilter = {
+                viewModel.selectWallet(null)
+                selectedWalletForDetail = null
+            },
+            onDismiss = { selectedWalletForDetail = null },
         )
     }
 }
@@ -746,7 +796,7 @@ private fun PrismReportsHeroBanner(
                 // Left Column: Total Net & Delta
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -762,8 +812,27 @@ private fun PrismReportsHeroBanner(
                         )
                     }
 
+                    // Tiêu đề nhận diện: Tổng tiền hiện có hoặc Số dư ví
+                    val heroLabel = if (state.selectedWallet != null) {
+                        "SỐ DƯ VÍ (${state.selectedWallet!!.name.uppercase()})"
+                    } else {
+                        "TỔNG TIỀN HIỆN CÓ"
+                    }
+                    val displayBalance = state.currentDisplayBalance
+
                     Text(
-                        text = (if (net >= 0) "+" else "") + formatVndAmount(net),
+                        text = heroLabel,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.5.sp,
+                        ),
+                        color = Color.White.copy(alpha = 0.85f),
+                    )
+
+                    // Con số to nổi bật nhất: Tổng tiền hiện có / Số dư ví thực tế
+                    Text(
+                        text = formatVndAmount(displayBalance),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -772,42 +841,124 @@ private fun PrismReportsHeroBanner(
                         color = Color.White,
                     )
 
-                    // Comparison Pill / Subtitle
+                    // Phía dưới là Dòng tiền ròng (Thu – Chi)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = "Dòng tiền ròng (Thu – Chi):",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = Color.White.copy(alpha = 0.90f),
+                        )
+                        Text(
+                            text = (if (net >= 0) "+" else "") + formatVndAmount(net),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                            ),
+                            color = if (net >= 0) Color(0xFF4ADE80) else Color(0xFFFCA5A5),
+                        )
+                    }
+
+                    // Giải thích ngữ nghĩa rõ ràng: Chi vượt thu hoặc Thặng dư
                     Text(
-                        text = if (deltaPercent >= 0) "Tăng $deltaPercent% so với kỳ trước" else "Giảm ${-deltaPercent}% so với kỳ trước",
+                        text = if (net < 0) {
+                            "Chi tiêu vượt thu nhập trong kỳ"
+                        } else {
+                            if (deltaPercent >= 0) "Thặng dư (+${deltaPercent}% so với kỳ trước)" else "Thặng dư (${deltaPercent}% so với kỳ trước)"
+                        },
                         style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Normal,
                         ),
-                        color = Color.White.copy(alpha = 0.90f),
+                        color = Color.White.copy(alpha = 0.85f),
                     )
 
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(3.dp))
 
-                    // Mini Income & Expense Sub-stats
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Mini Income, Expense, Transfer Sub-stats
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         Column {
-                            Text("Tổng thu", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Tổng thu", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
                             Text(
-                                formatVndAmount(income),
-                                fontSize = 14.sp,
+                                "+${formatVndAmount(income)}",
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF4ADE80), // Mint Green
                             )
                         }
                         Column {
-                            Text("Tổng chi", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Tổng chi", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
                             Text(
-                                formatVndAmount(expense),
-                                fontSize = 14.sp,
+                                "-${formatVndAmount(expense)}",
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFFFDE047), // Golden Yellow
                             )
                         }
+                        if (state.selectedWallet != null) {
+                            if (state.totalTransferOut > 0) {
+                                Column {
+                                    Text("Chuyển đi", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                    Text(
+                                        "-${formatVndAmount(state.totalTransferOut)}",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFFDBA74), // Orange
+                                    )
+                                }
+                            }
+                            if (state.totalTransferIn > 0) {
+                                Column {
+                                    Text("Nhận chuyển", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                    Text(
+                                        "+${formatVndAmount(state.totalTransferIn)}",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF93C5FD), // Light Blue
+                                    )
+                                }
+                            }
+                            Column {
+                                Text("Biến động ví", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                Text(
+                                    "${if (state.currentWalletNetChange >= 0) "+" else ""}${formatVndAmount(state.currentWalletNetChange)}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (state.currentWalletNetChange >= 0) Color(0xFF4ADE80) else Color(0xFFFCA5A5),
+                                )
+                            }
+                        } else if (state.totalTransferOut > 0) {
+                            Column {
+                                Text("Luân chuyển ví", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                Text(
+                                    formatVndAmount(state.totalTransferOut),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF93C5FD),
+                                )
+                            }
+                        }
                     }
                 }
 
-                // Right Column: Circular Savings Rate Ring
+                // Right Column: Circular Indicator (Savings Rate or Wallet Asset Share Ring)
+                val rightCirclePct = if (state.selectedWallet != null) {
+                    if (state.totalAssets > 0) {
+                        ((state.selectedWallet!!.balance.value.toFloat() / state.totalAssets.toFloat()) * 100).roundToInt().coerceIn(0, 100)
+                    } else 0
+                } else {
+                    savingRatePct
+                }
+                val rightCircleLabel = if (state.selectedWallet != null) "Tài sản" else "Tiết kiệm"
+
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.size(76.dp),
@@ -829,7 +980,7 @@ private fun PrismReportsHeroBanner(
                         )
 
                         // Progress
-                        val progressSweep = (savingRatePct / 100f) * 360f
+                        val progressSweep = (rightCirclePct / 100f) * 360f
                         drawArc(
                             color = Color.White,
                             startAngle = -90f,
@@ -846,7 +997,7 @@ private fun PrismReportsHeroBanner(
                         verticalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            text = "$savingRatePct%",
+                            text = "$rightCirclePct%",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold,
@@ -854,7 +1005,7 @@ private fun PrismReportsHeroBanner(
                             color = Color.White,
                         )
                         Text(
-                            text = "Tiết kiệm",
+                            text = rightCircleLabel,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = Color.White.copy(alpha = 0.85f),
                         )
@@ -2024,10 +2175,222 @@ private fun PrismWalletsHeroCard(state: ReportsUiState) {
     }
 }
 
+/**
+ * Thanh chọn lọc theo ví (Wallet Filter Selector)
+ */
 @Composable
-private fun PrismWalletReportCard(item: WalletReportItem) {
+private fun PrismWalletFilterSelector(
+    wallets: List<Wallet>,
+    selectedWalletId: String?,
+    onSelectWallet: (String?) -> Unit,
+) {
+    if (wallets.isEmpty()) return
+    val tokens = LocalFinluxTokens.current
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Lọc theo ví:",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF6B7280),
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (selectedWalletId != null) {
+                Text(
+                    "Xóa lọc ví",
+                    fontSize = 11.5.sp,
+                    color = tokens.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onSelectWallet(null) },
+                )
+            }
+        }
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp),
+        ) {
+            // "Tất cả ví" chip
+            item {
+                val isSelected = selectedWalletId == null
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) tokens.primary.copy(alpha = 0.2f) else if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    border = BorderStroke(
+                        if (isSelected) 1.5.dp else 1.dp,
+                        if (isSelected) tokens.primary else if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                    ),
+                    modifier = Modifier.clickable { onSelectWallet(null) },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (isSelected) tokens.primary else tokens.onSurface.copy(alpha = 0.7f),
+                        )
+                        Text(
+                            "Tất cả ví",
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) tokens.primary else tokens.onSurface,
+                        )
+                    }
+                }
+            }
+
+            // Từng ví
+            items(wallets, key = { it.id }) { wallet ->
+                val isSelected = selectedWalletId == wallet.id
+                val accent = colorFromHex(wallet.colorHex)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) accent.copy(alpha = 0.2f) else if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    border = BorderStroke(
+                        if (isSelected) 1.5.dp else 1.dp,
+                        if (isSelected) accent else if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                    ),
+                    modifier = Modifier.clickable { onSelectWallet(wallet.id) },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(accent, CircleShape),
+                        )
+                        Text(
+                            wallet.name,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) accent else tokens.onSurface,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Biểu đồ phân bổ chi tiêu giữa các ví trong kỳ
+ */
+@Composable
+private fun PrismWalletSpendingDistributionCard(
+    state: ReportsUiState,
+    onSelectWallet: (String?) -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    val totalExpense = state.walletSpendingDetails.sumOf { it.expenseInPeriod }
+    if (totalExpense <= 0) return
+
+    val spendingWallets = state.walletSpendingDetails.filter { it.expenseInPeriod > 0 }
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Cơ cấu chi tiêu các ví trong kỳ",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = tokens.onSurface,
+                )
+                Text(
+                    formatVndAmount(totalExpense),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFFEF4444),
+                )
+            }
+
+            // Thanh đa phân đoạn thể hiện tỷ trọng chi giữa các ví
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+            ) {
+                spendingWallets.forEach { detail ->
+                    val weight = (detail.expenseInPeriod.toFloat() / totalExpense.toFloat()).coerceAtLeast(0.01f)
+                    val color = colorFromHex(detail.wallet.colorHex)
+                    Box(
+                        modifier = Modifier
+                            .weight(weight)
+                            .fillMaxHeight()
+                            .background(color),
+                    )
+                }
+            }
+
+            // Legend pills
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                spendingWallets.forEach { detail ->
+                    val isSelected = state.selectedWalletId == detail.wallet.id
+                    val accent = colorFromHex(detail.wallet.colorHex)
+                    val percent = (detail.expenseShareOfTotal * 100).roundToInt()
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isSelected) accent.copy(alpha = 0.2f) else if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF3F4F6),
+                        border = BorderStroke(1.dp, if (isSelected) accent else Color.Transparent),
+                        modifier = Modifier.clickable {
+                            if (isSelected) onSelectWallet(null) else onSelectWallet(detail.wallet.id)
+                        },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            Box(modifier = Modifier.size(6.dp).background(accent, CircleShape))
+                            Text(
+                                "${detail.wallet.name}: $percent%",
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = tokens.onSurface,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Thẻ báo cáo ví Prism nâng cấp: Hiển thị chi tiết số dư, chi tiêu trong kỳ kèm % tổng chi,
+ * top danh mục và hỗ trợ nhấn mở chi tiết.
+ */
+@Composable
+private fun PrismWalletReportCard(
+    item: WalletReportItem,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
+) {
     val tokens = LocalFinluxTokens.current
     val wallet = item.wallet
+    val accent = colorFromHex(wallet.colorHex)
     val typeName = when (wallet.type) {
         WalletType.CASH -> "Tiền mặt"
         WalletType.BANK -> "Ngân hàng"
@@ -2036,12 +2399,22 @@ private fun PrismWalletReportCard(item: WalletReportItem) {
         WalletType.INVESTMENT -> "Đầu tư / Tiết kiệm"
         WalletType.OTHER -> "Khác"
     }
+    val detail = item.spendingDetail
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
-        modifier = Modifier.fillMaxWidth(),
+        color = if (tokens.isDark) {
+            if (isSelected) Color(0xFF28283E) else Color(0xFF1E1E2D)
+        } else {
+            if (isSelected) Color(0xFFEFF6FF) else Color.White
+        },
+        border = BorderStroke(
+            if (isSelected) 1.5.dp else 1.dp,
+            if (isSelected) tokens.primary else if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
@@ -2052,30 +2425,781 @@ private fun PrismWalletReportCard(item: WalletReportItem) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(
                         modifier = Modifier
-                            .size(10.dp)
-                            .background(colorFromHex(wallet.colorHex), CircleShape),
+                            .size(12.dp)
+                            .background(accent, CircleShape),
                     )
                     Column {
-                        Text(wallet.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = wallet.name,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.onSurface,
+                            )
+                            if (isSelected) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = tokens.primary.copy(alpha = 0.15f),
+                                ) {
+                                    Text(
+                                        "Đang lọc",
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = tokens.primary,
+                                    )
+                                }
+                            }
+                        }
                         Text(typeName, style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B7280))
                     }
                 }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        formatVndAmount(item.balance),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = tokens.onSurface,
+                    )
+                    Text(
+                        "${(item.percentageOfTotal * 100).roundToInt()}% tài sản",
+                        fontSize = 11.sp,
+                        color = Color(0xFF0EA5E9),
+                    )
+                }
+            }
+
+            // Chi tiêu trong kỳ kèm tỷ trọng %
+            if (item.expenseInPeriod > 0) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            "Chi tiêu trong kỳ",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF6B7280),
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                "-${formatVndAmount(item.expenseInPeriod)}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFEF4444),
+                            )
+                            if (item.expenseShareOfTotal > 0f) {
+                                Text(
+                                    "(${(item.expenseShareOfTotal * 100).roundToInt()}% tổng chi)",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFEF4444).copy(alpha = 0.8f),
+                                )
+                            }
+                        }
+                    }
+                    LinearProgressIndicator(
+                        progress = { item.expenseShareOfTotal.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = Color(0xFFEF4444),
+                        trackColor = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                    )
+                }
+            }
+
+            // Thu nhập nạp vào ví nếu có
+            if (item.incomeInPeriod > 0) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        "Thu nhập nạp vào ví",
+                        fontSize = 11.5.sp,
+                        color = Color(0xFF6B7280),
+                    )
+                    Text(
+                        "+${formatVndAmount(item.incomeInPeriod)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF10B981),
+                    )
+                }
+            }
+
+            // Chuyển sang ví khác nếu có
+            if (item.transferOutInPeriod > 0) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        "Chuyển sang ví khác",
+                        fontSize = 11.5.sp,
+                        color = Color(0xFF6B7280),
+                    )
+                    Text(
+                        "-${formatVndAmount(item.transferOutInPeriod)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFF97316),
+                    )
+                }
+            }
+
+            // Nhận chuyển từ ví khác nếu có
+            if (item.transferInInPeriod > 0) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        "Nhận từ ví khác",
+                        fontSize = 11.5.sp,
+                        color = Color(0xFF6B7280),
+                    )
+                    Text(
+                        "+${formatVndAmount(item.transferInInPeriod)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0EA5E9),
+                    )
+                }
+            }
+
+            // Biến động ròng số dư của ví trong kỳ (nếu có phát sinh tiền vào hoặc tiền ra)
+            if (item.incomeInPeriod > 0 || item.transferOutInPeriod > 0 || item.transferInInPeriod > 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Biến động số dư ví",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.onSurface,
+                    )
+                    Text(
+                        "${if (item.netWalletChange >= 0) "+" else ""}${formatVndAmount(item.netWalletChange)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (item.netWalletChange >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                    )
+                }
+            }
+
+            // Danh mục chi nhiều nhất từ ví này
+            detail?.expensesByCategory?.firstOrNull()?.let { topCat ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
+                            RoundedCornerShape(10.dp),
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            categoryIcon(topCat.category?.icon.orEmpty()),
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = colorFromHex(topCat.category?.colorHex ?: "#6B7280"),
+                        )
+                        Text(
+                            "Chi nhiều nhất: ${topCat.category?.name ?: "Khác"}",
+                            fontSize = 11.sp,
+                            color = tokens.onSurface.copy(alpha = 0.8f),
+                        )
+                    }
+                    Text(
+                        formatVndAmount(topCat.amount),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.onSurface,
+                    )
+                }
+            }
+
+            // Nút / gợi ý xem chi tiết
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    formatVndAmount(item.balance),
+                    "${detail?.transactionCount ?: 0} giao dịch trong kỳ",
+                    fontSize = 11.sp,
+                    color = Color(0xFF6B7280),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "Chi tiết chi tiêu",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.primary,
+                    )
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = tokens.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * BottomSheet Báo cáo chi tiêu chi tiết của từng ví (Prism Liquid Glass)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PrismWalletDetailBottomSheet(
+    detail: WalletSpendingDetail,
+    isFilterActive: Boolean,
+    onFilterWallet: () -> Unit,
+    onClearFilter: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    val wallet = detail.wallet
+    val accent = colorFromHex(wallet.colorHex)
+    val typeName = when (wallet.type) {
+        WalletType.CASH -> "Tiền mặt"
+        WalletType.BANK -> "Ngân hàng"
+        WalletType.EWALLET -> "Ví điện tử"
+        WalletType.CARD -> "Thẻ tín dụng"
+        WalletType.INVESTMENT -> "Đầu tư / Tiết kiệm"
+        WalletType.OTHER -> "Khác"
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        dragHandle = {
+            Surface(
+                modifier = Modifier.padding(vertical = 10.dp),
+                color = tokens.onSurface.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(2.dp),
+            ) {
+                Box(Modifier.size(width = 36.dp, height = 4.dp))
+            }
+        },
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Header: Nhận diện ví
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(accent.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = accent,
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = wallet.name,
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = tokens.onSurface,
+                        )
+                        Text(
+                            text = "$typeName • Số dư: ${formatVndAmount(detail.balance)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6B7280),
+                        )
+                    }
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Đóng",
+                        tint = tokens.onSurfaceVariant,
+                    )
+                }
+            }
+
+            // 4 KPI cards (Chi tiêu, Thu nhập, Luân chuyển tiền, Biến động ví)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Thu nhập
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF0FDF4),
+                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFDCFCE7)),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Tổng thu nhập", fontSize = 11.sp, color = Color(0xFF10B981))
+                            Text(
+                                "+${formatVndAmount(detail.incomeInPeriod)}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF10B981),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+
+                    // Chi tiêu
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFFEF2F2),
+                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFFEE2E2)),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Tổng chi tiêu", fontSize = 11.sp, color = Color(0xFFEF4444))
+                            Text(
+                                "-${formatVndAmount(detail.expenseInPeriod)}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFEF4444),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Luân chuyển tiền (Chuyển đi / Nhận chuyển)
+                    val hasTransfer = detail.transferOutInPeriod > 0 || detail.transferInInPeriod > 0
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF0F9FF),
+                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE0F2FE)),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Chuyển tiền", fontSize = 11.sp, color = Color(0xFF0284C7))
+                            if (hasTransfer) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    if (detail.transferOutInPeriod > 0) {
+                                        Text(
+                                            "-${formatVndAmount(detail.transferOutInPeriod)}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFF97316),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                    if (detail.transferInInPeriod > 0) {
+                                        Text(
+                                            "+${formatVndAmount(detail.transferInInPeriod)}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0EA5E9),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    "0 ₫",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = tokens.onSurface.copy(alpha = 0.6f),
+                                )
+                            }
+                        }
+                    }
+
+                    // Biến động số dư ví
+                    val isPositiveChange = detail.netWalletChange >= 0
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else if (isPositiveChange) Color(0xFFF0FDF4) else Color(0xFFFEF2F2),
+                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else if (isPositiveChange) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Biến động ví", fontSize = 11.sp, color = if (isPositiveChange) Color(0xFF10B981) else Color(0xFFEF4444))
+                            Text(
+                                "${if (isPositiveChange) "+" else ""}${formatVndAmount(detail.netWalletChange)}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isPositiveChange) Color(0xFF10B981) else Color(0xFFEF4444),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Thẻ tóm tắt biến động số dư thực tế
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
+                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Tổng kết dòng tiền thực tế của ví",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = tokens.onSurface,
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Tiền vào (Thu nhập + Nhận chuyển)", fontSize = 12.sp, color = Color(0xFF6B7280))
+                        Text(
+                            "+${formatVndAmount(detail.totalMoneyIn)}",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF10B981),
+                        )
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Tiền ra (Chi tiêu + Chuyển đi)", fontSize = 12.sp, color = Color(0xFF6B7280))
+                        Text(
+                            "-${formatVndAmount(detail.totalMoneyOut)}",
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFEF4444),
+                        )
+                    }
+                    HorizontalDivider(color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Biến động số dư ví trong kỳ", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = tokens.onSurface)
+                        Text(
+                            "${if (detail.netWalletChange >= 0) "+" else ""}${formatVndAmount(detail.netWalletChange)}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (detail.netWalletChange >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                        )
+                    }
+                }
+            }
+
+            // Tỷ trọng chi tiêu card
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
+                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Tỷ trọng trên tổng chi toàn app", fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                        Text(
+                            "${(detail.expenseShareOfTotal * 100).roundToInt()}%",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tokens.primary,
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = { detail.expenseShareOfTotal.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = tokens.primary,
+                        trackColor = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                    )
+                }
+            }
+
+            // Phân bổ chi tiêu theo danh mục
+            Text(
+                "Phân bổ chi tiêu theo danh mục (${detail.expensesByCategory.size})",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = tokens.onSurface,
+            )
+
+            if (detail.expensesByCategory.isEmpty()) {
+                Text(
+                    "Ví này chưa có khoản chi tiêu nào trong kỳ đã chọn.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF6B7280),
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    detail.expensesByCategory.forEach { catExp ->
+                        val cat = catExp.category
+                        val catColor = colorFromHex(cat?.colorHex ?: "#6B7280")
+                        val catPercent = (catExp.percentage * 100).roundToInt()
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (tokens.isDark) Color.White.copy(alpha = 0.03f) else Color(0xFFFAFAFA),
+                            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFEEEEEE)),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .background(catColor.copy(alpha = 0.16f), CircleShape),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                categoryIcon(cat?.icon.orEmpty()),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(15.dp),
+                                                tint = catColor,
+                                            )
+                                        }
+                                        Text(
+                                            cat?.name ?: "Khác",
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 13.sp,
+                                            color = tokens.onSurface,
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            formatVndAmount(catExp.amount),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFFEF4444),
+                                        )
+                                        Text(
+                                            "$catPercent% của ví",
+                                            fontSize = 10.5.sp,
+                                            color = Color(0xFF6B7280),
+                                        )
+                                    }
+                                }
+                                LinearProgressIndicator(
+                                    progress = { catExp.percentage.coerceIn(0f, 1f) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(3.dp)
+                                        .clip(RoundedCornerShape(1.5.dp)),
+                                    color = catColor,
+                                    trackColor = if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFE5E7EB),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Nguồn thu nạp vào ví nếu có
+            if (detail.incomeByCategory.isNotEmpty()) {
+                Text(
+                    "Nguồn thu nạp vào ví (${detail.incomeByCategory.size})",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = tokens.onSurface,
                 )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    detail.incomeByCategory.forEach { catInc ->
+                        val cat = catInc.category
+                        val catColor = colorFromHex(cat?.colorHex ?: "#10B981")
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (tokens.isDark) Color.White.copy(alpha = 0.03f) else Color(0xFFFAFAFA),
+                            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFEEEEEE)),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .background(catColor.copy(alpha = 0.16f), CircleShape),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            categoryIcon(cat?.icon.orEmpty()),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(15.dp),
+                                            tint = catColor,
+                                        )
+                                    }
+                                    Text(
+                                        cat?.name ?: "Khác",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        color = tokens.onSurface,
+                                    )
+                                }
+                                Text(
+                                    "+${formatVndAmount(catInc.amount)}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF10B981),
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            // Lịch sử giao dịch ví trong kỳ
+            Text(
+                "Lịch sử giao dịch ví trong kỳ (${detail.transactions.size})",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = tokens.onSurface,
+            )
+
+            if (detail.transactions.isEmpty()) {
                 Text(
-                    "Chiếm ${(item.percentageOfTotal * 100).roundToInt()}% tổng tài sản",
-                    fontSize = 11.5.sp,
-                    color = Color(0xFF0EA5E9),
+                    "Không có giao dịch phát sinh từ ví này trong kỳ.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF6B7280),
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (item.incomeInPeriod > 0) Text("+${formatVndAmount(item.incomeInPeriod)}", fontSize = 11.5.sp, color = Color(0xFF10B981))
-                    if (item.expenseInPeriod > 0) Text("-${formatVndAmount(item.expenseInPeriod)}", fontSize = 11.5.sp, color = Color(0xFFEF4444))
+            } else {
+                val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    detail.transactions.take(20).forEach { tx ->
+                        val isIncome = tx.type == TransactionType.INCOME
+                        val isTransferOut = tx.type == TransactionType.TRANSFER_OUT
+                        val isTransferIn = tx.type == TransactionType.TRANSFER_IN
+                        val isTransfer = isTransferOut || isTransferIn
+                        val txDateStr = tx.date.atZone(FinanceTime.VIETNAM_ZONE).format(dateFormatter)
+
+                        val amountColor = when {
+                            isIncome -> Color(0xFF10B981)
+                            isTransferIn -> Color(0xFF0EA5E9)
+                            isTransferOut -> Color(0xFFF97316)
+                            else -> Color(0xFFEF4444)
+                        }
+                        val prefix = when {
+                            isIncome || isTransferIn -> "+"
+                            else -> "-"
+                        }
+                        val defaultLabel = when {
+                            isTransferOut -> "Chuyển tiền sang ví khác"
+                            isTransferIn -> "Nhận tiền chuyển từ ví khác"
+                            isIncome -> "Thu nhập"
+                            else -> "Chi tiêu"
+                        }
+                        val txIcon = when {
+                            isTransfer -> Icons.Default.SwapHoriz
+                            isIncome -> Icons.Default.ArrowDownward
+                            else -> Icons.Default.ArrowUpward
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (tokens.isDark) Color.White.copy(alpha = 0.02f) else Color(0xFFF9FAFB),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.weight(1f, fill = false),
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .background(amountColor.copy(alpha = 0.14f), CircleShape),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = txIcon,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(15.dp),
+                                            tint = amountColor,
+                                        )
+                                    }
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(
+                                            tx.note.ifBlank { defaultLabel },
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = tokens.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Text(
+                                            txDateStr,
+                                            fontSize = 10.5.sp,
+                                            color = Color(0xFF6B7280),
+                                        )
+                                    }
+                                }
+                                Text(
+                                    "$prefix${formatVndAmount(tx.amount.value)}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = amountColor,
+                                )
+                            }
+                        }
+                    }
+                    if (detail.transactions.size > 15) {
+                        Text(
+                            "... và ${detail.transactions.size - 15} giao dịch khác",
+                            fontSize = 11.sp,
+                            color = Color(0xFF6B7280),
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Action button: Lọc toàn bộ báo cáo theo ví này
+            if (isFilterActive) {
+                OutlinedButton(
+                    onClick = onClearFilter,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Bỏ lọc theo ví này", fontWeight = FontWeight.SemiBold)
+                }
+            } else {
+                Button(
+                    onClick = onFilterWallet,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = tokens.primary),
+                ) {
+                    Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Lọc toàn bộ báo cáo theo ví này", fontWeight = FontWeight.Bold)
                 }
             }
         }

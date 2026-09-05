@@ -1,8 +1,72 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.22.0 (versionCode 165) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (287/287 Unit Tests) — Hoàn tất FINLUX REPORTING 2.0 Release A (Reporting Foundation: Phases 0-4).
+- **Phiên bản hiện tại:** v1.22.0 (versionCode 165)
+- **Trạng thái Build:** ✅ 100% PASS (289/289 Unit Tests) — Hoàn thiện Báo cáo chi tiêu chi tiết theo từng ví & Bộ lọc ví toàn diện.
+
+### [Task-HERO-BALANCE-AND-WALLET-TRANSFER-REPORTING] — Hiển thị Tổng tiền hiện có/Số dư ví trên Thẻ Hero & Báo cáo Luân chuyển tiền giữa các ví (Transfer Tracking)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Thẻ Hero (Màn hình Báo cáo)**:
+     - Con số to nhất nổi bật: `Tổng tiền hiện có` (khi ở chế độ Tất cả ví) hoặc `Số dư ví [Tên ví]` (khi lọc theo ví).
+     - Phía dưới con số to: Dòng tiền ròng `Dòng tiền ròng (Thu – Chi)` kèm trạng thái giải thích rõ nghĩa: `"Thặng dư tài chính trong kỳ"` hoặc `"Chi tiêu vượt thu nhập trong kỳ"` để người dùng không bao giờ bị hoang mang khi dòng tiền âm.
+     - Dải số liệu phụ: Hiển thị đầy đủ Tổng thu nhập, Tổng chi tiêu, Chuyển đi (cam), Nhận chuyển (xanh dương) và Biến động số dư ví.
+  2. ✅ **Báo cáo Chuyển tiền & Biến động số dư ví (`Wallet Transfer Tracking`)**:
+     - Khi ví phát sinh chuyển tiền (ví dụ: MB Bank thu 7 triệu nhưng chuyển 3 triệu thành tiền mặt):
+       - Ghi nhận `transferOutInPeriod = 3M` ở MB Bank (tiền ra khỏi ví) và `transferInInPeriod = 3M` ở ví Tiền mặt (tiền vào ví).
+       - Thể hiện rõ ràng `totalMoneyIn` (Thu + Nhận chuyển), `totalMoneyOut` (Chi + Chuyển đi), và `netWalletChange` (Biến động ví = Tổng vào - Tổng ra).
+     - Cập nhật BottomSheet chi tiết ví (`PrismWalletDetailBottomSheet`): Thẻ KPI thể hiện Tiền vào, Tiền ra, Biến động số dư ví, khối chi tiết chuyển tiền và hiển thị chuẩn xác giao dịch chuyển khoản trong lịch sử ví.
+     - Cập nhật danh sách thẻ ví (`PrismWalletReportCard`, `ModernReportsScreen`, `ClassicReportsScreen`): Thể hiện rõ số tiền chuyển đi và biến động ròng của từng ví.
+  3. ✅ **Kiểm thử & Đóng gói**:
+     - Bổ sung Unit Test `reports correctly tracks inter-wallet transfers and updates net wallet change` trong `ReportsViewModelTest.kt`.
+     - `./gradlew testDebugUnitTest`: **100% PASS** (290/290 tests).
+     - `./gradlew assembleDebug`: **BUILD SUCCESSFUL**. File APK mới nhất đã sẵn sàng tại `app/build/outputs/apk/debug/app-debug.apk`.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+  - `docs/BA_SPEC.md`
+  - `docs/UI_SPEC.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-DETAILED-WALLET-SPENDING-REPORTS-AND-FILTERING] — Báo cáo Chi tiêu Chi tiết Theo Từng Ví & Bộ Lọc Ví Toàn Diện
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Mở rộng `ReportsViewModel` & `ReportsUiState`**:
+     - Định nghĩa `WalletSpendingDetail`: ví, số dư, tỷ trọng tài sản, chi tiêu trong kỳ (`expenseInPeriod`), thu nhập trong kỳ (`incomeInPeriod`), dòng tiền ròng (`netCashflowInPeriod`), tỷ trọng chi của ví trên tổng chi (`expenseShareOfTotal`), cơ cấu chi theo danh mục (`expensesByCategory`), nguồn thu (`incomeByCategory`) và danh sách giao dịch (`transactions`).
+     - Thêm trạng thái lọc ví toàn diện `selectedWalletId: String?` và hàm `selectWallet(walletId: String?)`.
+     - Bộ lọc áp dụng động lên `summary` (Thu/Chi/Dòng tiền), `cashFlow` biểu đồ xu hướng, `expensesByCategory`, `incomeItems` và sao kê hàng ngày, trong khi giữ nguyên bảng so sánh toàn bộ ví để người dùng luôn có góc nhìn đối chiếu.
+  2. ✅ **Xây dựng Giao diện Xem Chi tiết Chi tiêu Ví (`PrismWalletDetailBottomSheet`)**:
+     - Thẻ Hero nhận diện ví (tên, logo, màu ví, số dư hiện tại, dòng tiền ròng).
+     - Thẻ KPI chi tiêu: số tiền chi tiêu trong kỳ kèm thanh tiến độ tỷ trọng (% tổng chi tiêu của tất cả các ví).
+     - Danh sách cơ cấu danh mục chi tiêu của riêng ví (mỗi danh mục hiển thị tiến độ và % của riêng ví đó).
+     - Danh sách nguồn thu nạp vào ví (nếu có).
+     - Lịch sử giao dịch chi tiết phát sinh từ ví trong kỳ kèm icon danh mục, loại giao dịch và ngày giờ.
+     - Nút hành động nhanh: "Lọc báo cáo theo ví này" chuyển trực tiếp sang chế độ lọc toàn bộ báo cáo.
+  3. ✅ **Bộ Lọc Ví Trên Màn Hình Báo Cáo (`Wallet Filter Selector`)**:
+     - **Prism**: Thanh chip cuộn ngang `PrismWalletFilterSelector` ("Tất cả ví", từng ví kèm màu sắc và icon) đặt ngay dưới bộ chọn kỳ báo cáo.
+     - **Modern & Classic**: Banner thông báo "Đang lọc: [Tên ví]" kèm nút "Xem tất cả", cùng với Menu dropdown capsule trực quan tại khu vực "Báo cáo theo ví".
+  4. ✅ **Thẻ Thống Kê Phân Bổ Chi Tiêu Theo Ví (`PrismWalletSpendingDistributionCard`)**:
+     - Thẻ đồ họa biểu diễn thanh tỷ trọng chi tiêu đa sắc màu giữa các ví trong tab Chuyên sâu (Tài sản / Ví).
+     - Danh sách thẻ ví `PrismWalletReportCard` hiển thị: số dư, số tiền chi trong kỳ, % đóng góp vào tổng chi, danh mục chi nhiều nhất, bấm vào để mở ngay `PrismWalletDetailBottomSheet`.
+  4.1. ✅ **Minh Bạch Hóa Ngữ Nghĩa Thẻ Hero Tổng Quan**:
+     - Bổ sung nhãn rõ ràng: `Dòng tiền ròng (Thu – Chi)` ngay trên con số tổng ròng.
+     - Khi dòng tiền bị âm (Chi > Thu), hiển thị câu giải thích trực quan: `"Chi tiêu vượt thu nhập trong kỳ"`, giúp người dùng phân biệt ngay lập tức giữa dòng tiền ròng của kỳ và số dư ví thực tế, loại bỏ 100% hiểu nhầm số dư tài khoản bị âm.
+  5. ✅ **Kiểm thử & Đóng gói**:
+     - `./gradlew testDebugUnitTest`: **BUILD SUCCESSFUL**, **289/289 Unit Tests PASS 100%** (bổ sung 2 test case kiểm tra chi tiết chi tiêu từng ví và lọc trạng thái báo cáo).
+     - `./gradlew assembleDebug`: **BUILD SUCCESSFUL** (APK đóng gói trơn tru không lỗi).
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+  - `docs/UI_SPEC.md`
+  - `docs/BA_SPEC.md`
+  - `HANDOVER_LOG.md`
+
 
 ### [Task-FULLSCREEN-TRANSACTIONS-TRANSFER-AND-DATEPICKER-UNIFICATION] — Chuyển màn hình tạo Thu/Chi & Chuyển khoản sang Toàn màn hình (Full Screen), chống thoát mất dữ liệu & đồng bộ DateRangePicker
 - **Status**: `[DONE]`

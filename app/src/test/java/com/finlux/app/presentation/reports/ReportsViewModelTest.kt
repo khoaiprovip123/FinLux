@@ -350,4 +350,224 @@ class ReportsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `walletSpendingDetails calculates per-wallet expense share and category breakdown accurately`() = runTest {
+        val now = Instant.now()
+        val w1 = Wallet(id = "w1", name = "Ví Tiền mặt", type = WalletType.CASH, balance = Money(5_000_000L), colorHex = "#3B82F6", isDefault = true, createdAt = now)
+        val w2 = Wallet(id = "w2", name = "Tài khoản VCB", type = WalletType.BANK, balance = Money(20_000_000L), colorHex = "#10B981", isDefault = false, createdAt = now)
+
+        val catFood = Category(id = "cat_food", name = "Ăn uống", type = CategoryType.EXPENSE, icon = "fastfood", colorHex = "#EF4444", isDefault = true, createdAt = now)
+        val catShopping = Category(id = "cat_shopping", name = "Mua sắm", type = CategoryType.EXPENSE, icon = "shopping_cart", colorHex = "#8B5CF6", isDefault = true, createdAt = now)
+        val catSalary = Category(id = "cat_salary", name = "Lương", type = CategoryType.INCOME, icon = "payments", colorHex = "#10B981", isDefault = true, createdAt = now)
+
+        val tx1 = FinanceTransaction(
+            id = "tx1",
+            type = TransactionType.EXPENSE,
+            amount = Money(3_000_000L),
+            categoryId = "cat_food",
+            walletId = "w1",
+            date = now,
+        )
+        val tx2 = FinanceTransaction(
+            id = "tx2",
+            type = TransactionType.EXPENSE,
+            amount = Money(7_000_000L),
+            categoryId = "cat_shopping",
+            walletId = "w2",
+            date = now,
+        )
+        val tx3 = FinanceTransaction(
+            id = "tx3",
+            type = TransactionType.INCOME,
+            amount = Money(25_000_000L),
+            categoryId = "cat_salary",
+            walletId = "w2",
+            date = now,
+        )
+
+        every { walletRepository.observeWallets() } returns flowOf(listOf(w1, w2))
+        every { categoryRepository.observeCategories() } returns flowOf(listOf(catFood, catShopping, catSalary))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns flowOf(listOf(tx1, tx2, tx3))
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem() // initial
+            advanceUntilIdle()
+            val state = awaitItem()
+
+            assertEquals(2, state.walletSpendingDetails.size)
+            val w1Detail = state.walletSpendingDetails.find { it.wallet.id == "w1" }
+            val w2Detail = state.walletSpendingDetails.find { it.wallet.id == "w2" }
+
+            assertTrue(w1Detail != null)
+            assertEquals(3_000_000L, w1Detail!!.expenseInPeriod)
+            assertEquals(0L, w1Detail.incomeInPeriod)
+            assertEquals(-3_000_000L, w1Detail.netCashflowInPeriod)
+            assertEquals(0.3f, w1Detail.expenseShareOfTotal, 0.01f) // 3M / 10M = 30%
+            assertEquals(1, w1Detail.expensesByCategory.size)
+            assertEquals("Ăn uống", w1Detail.expensesByCategory[0].category?.name)
+            assertEquals(3_000_000L, w1Detail.expensesByCategory[0].amount)
+
+            assertTrue(w2Detail != null)
+            assertEquals(7_000_000L, w2Detail!!.expenseInPeriod)
+            assertEquals(25_000_000L, w2Detail.incomeInPeriod)
+            assertEquals(18_000_000L, w2Detail.netCashflowInPeriod)
+            assertEquals(0.7f, w2Detail.expenseShareOfTotal, 0.01f) // 7M / 10M = 70%
+            assertEquals(1, w2Detail.expensesByCategory.size)
+            assertEquals("Mua sắm", w2Detail.expensesByCategory[0].category?.name)
+            assertEquals(7_000_000L, w2Detail.expensesByCategory[0].amount)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `selectWallet filters report summary, expensesByCategory, and daily statements to selected wallet`() = runTest {
+        val now = Instant.now()
+        val w1 = Wallet(id = "w1", name = "Ví Tiền mặt", type = WalletType.CASH, balance = Money(5_000_000L), colorHex = "#3B82F6", isDefault = true, createdAt = now)
+        val w2 = Wallet(id = "w2", name = "Tài khoản VCB", type = WalletType.BANK, balance = Money(20_000_000L), colorHex = "#10B981", isDefault = false, createdAt = now)
+
+        val catFood = Category(id = "cat_food", name = "Ăn uống", type = CategoryType.EXPENSE, icon = "food", colorHex = "#EF4444", isDefault = true, createdAt = now)
+        val catShopping = Category(id = "cat_shopping", name = "Mua sắm", type = CategoryType.EXPENSE, icon = "shopping", colorHex = "#8B5CF6", isDefault = true, createdAt = now)
+
+        val tx1 = FinanceTransaction(
+            id = "tx1",
+            type = TransactionType.EXPENSE,
+            amount = Money(2_000_000L),
+            categoryId = "cat_food",
+            walletId = "w1",
+            date = now,
+        )
+        val tx2 = FinanceTransaction(
+            id = "tx2",
+            type = TransactionType.EXPENSE,
+            amount = Money(8_000_000L),
+            categoryId = "cat_shopping",
+            walletId = "w2",
+            date = now,
+        )
+
+        every { walletRepository.observeWallets() } returns flowOf(listOf(w1, w2))
+        every { categoryRepository.observeCategories() } returns flowOf(listOf(catFood, catShopping))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns flowOf(listOf(tx1, tx2))
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem() // initial
+            advanceUntilIdle()
+            val allState = awaitItem()
+            assertEquals(10_000_000L, allState.summary.expense.value)
+            assertEquals(2, allState.expensesByCategory.size)
+
+            viewModel.selectWallet("w1")
+            advanceUntilIdle()
+            val w1State = awaitItem()
+            assertEquals("w1", w1State.selectedWalletId)
+            assertEquals("Ví Tiền mặt", w1State.selectedWallet?.name)
+            assertEquals(2_000_000L, w1State.summary.expense.value)
+            assertEquals(1, w1State.expensesByCategory.size)
+            assertEquals("cat_food", w1State.expensesByCategory[0].category?.id)
+            assertEquals(2, w1State.walletSpendingDetails.size)
+
+            viewModel.selectWallet(null)
+            advanceUntilIdle()
+            val resetState = awaitItem()
+            assertEquals(null, resetState.selectedWalletId)
+            assertEquals(10_000_000L, resetState.summary.expense.value)
+            assertEquals(2, resetState.expensesByCategory.size)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `reports correctly tracks inter-wallet transfers and updates net wallet change`() = runTest {
+        val now = Instant.now()
+        val mbBank = Wallet(id = "w_mb", name = "MB Bank", type = WalletType.BANK, balance = Money(7_000_000L), colorHex = "#1D4ED8", isDefault = true, createdAt = now)
+        val cashWallet = Wallet(id = "w_cash", name = "Tiền mặt", type = WalletType.CASH, balance = Money(3_000_000L), colorHex = "#10B981", isDefault = false, createdAt = now)
+
+        val catSalary = Category(id = "cat_salary", name = "Lương", type = CategoryType.INCOME, icon = "salary", colorHex = "#10B981", isDefault = true, createdAt = now)
+
+        // MB Bank có thu nhập 7.000.000
+        val txIncome = FinanceTransaction(
+            id = "tx_inc",
+            type = TransactionType.INCOME,
+            amount = Money(7_000_000L),
+            categoryId = "cat_salary",
+            walletId = "w_mb",
+            date = now,
+        )
+        // MB Bank phát sinh chuyển tiền thành tiền mặt 3.000.000 (TRANSFER_OUT từ MB, TRANSFER_IN vào Tiền mặt)
+        val txTransferOut = FinanceTransaction(
+            id = "tx_tf_out",
+            type = TransactionType.TRANSFER_OUT,
+            amount = Money(3_000_000L),
+            categoryId = null,
+            walletId = "w_mb",
+            relatedWalletId = "w_cash",
+            note = "Chuyển tiền mặt tiêu dùng",
+            date = now,
+        )
+        val txTransferIn = FinanceTransaction(
+            id = "tx_tf_in",
+            type = TransactionType.TRANSFER_IN,
+            amount = Money(3_000_000L),
+            categoryId = null,
+            walletId = "w_cash",
+            relatedWalletId = "w_mb",
+            note = "Nhận từ MB Bank",
+            date = now,
+        )
+
+        every { walletRepository.observeWallets() } returns flowOf(listOf(mbBank, cashWallet))
+        every { categoryRepository.observeCategories() } returns flowOf(listOf(catSalary))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns flowOf(listOf(txIncome, txTransferOut, txTransferIn))
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem() // initial
+            advanceUntilIdle()
+            val state = awaitItem()
+
+            // 1. Kiểm tra chi tiết ví MB Bank
+            val mbDetail = state.walletSpendingDetails.find { it.wallet.id == "w_mb" }
+            assertTrue(mbDetail != null)
+            assertEquals(7_000_000L, mbDetail!!.incomeInPeriod)
+            assertEquals(0L, mbDetail.expenseInPeriod)
+            assertEquals(3_000_000L, mbDetail.transferOutInPeriod)
+            assertEquals(0L, mbDetail.transferInInPeriod)
+            assertEquals(7_000_000L, mbDetail.totalMoneyIn)
+            assertEquals(3_000_000L, mbDetail.totalMoneyOut)
+            // Biến động thực tế của ví MB Bank = 7M vào - 3M ra = +4M
+            assertEquals(4_000_000L, mbDetail.netWalletChange)
+
+            // 2. Kiểm tra chi tiết ví Tiền mặt
+            val cashDetail = state.walletSpendingDetails.find { it.wallet.id == "w_cash" }
+            assertTrue(cashDetail != null)
+            assertEquals(0L, cashDetail!!.incomeInPeriod)
+            assertEquals(0L, cashDetail.expenseInPeriod)
+            assertEquals(3_000_000L, cashDetail.transferInInPeriod)
+            assertEquals(0L, cashDetail.transferOutInPeriod)
+            assertEquals(3_000_000L, cashDetail.totalMoneyIn)
+            assertEquals(0L, cashDetail.totalMoneyOut)
+            // Biến động thực tế của ví Tiền mặt = +3M
+            assertEquals(3_000_000L, cashDetail.netWalletChange)
+
+            // 3. Khi lọc theo ví MB Bank
+            viewModel.selectWallet("w_mb")
+            advanceUntilIdle()
+            val mbState = awaitItem()
+            assertEquals("w_mb", mbState.selectedWalletId)
+            assertEquals(7_000_000L, mbState.currentDisplayBalance)
+            assertEquals(3_000_000L, mbState.totalTransferOut)
+            assertEquals(0L, mbState.totalTransferIn)
+            assertEquals(4_000_000L, mbState.currentWalletNetChange)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }
