@@ -86,7 +86,17 @@ class FirebaseDebtRepository(
 
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = firebaseResult("Không thể xóa khoản nợ") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("debts").document(debt.id).delete().await()
+        val debtRef = firestore.collection("users").document(uid).collection("debts").document(debt.id)
+        firestore.runTransaction { tx ->
+            val snapshot = tx.get(debtRef)
+            if (!snapshot.exists()) return@runTransaction
+            val remainingBalance = snapshot.getLong("remainingBalance") ?: 0L
+            val isSettled = snapshot.getBoolean("isSettled") ?: (remainingBalance <= 0L)
+            require(remainingBalance <= 0L && isSettled) {
+                "Khoản nợ vẫn còn dư nợ. Hãy tất toán trước khi xóa."
+            }
+            tx.delete(debtRef)
+        }.await()
         Unit
     }
 
