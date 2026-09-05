@@ -585,6 +585,96 @@ class FirebaseTransactionRepositoryTest {
     }
 
     @Test
+    fun `idempotent transfer returns success without moving balances when deterministic pair already exists`() = runTest {
+        val uid = "test_uid"
+        every { auth.currentUser } returns user
+        every { user.uid } returns uid
+
+        val userDocRef: DocumentReference = mockk()
+        val transactionsColl: CollectionReference = mockk()
+        val walletsColl: CollectionReference = mockk()
+        val outRef: DocumentReference = mockk(relaxed = true)
+        val inRef: DocumentReference = mockk(relaxed = true)
+        val sourceWalletRef: DocumentReference = mockk(relaxed = true)
+        val destWalletRef: DocumentReference = mockk(relaxed = true)
+        val outSnapshot: DocumentSnapshot = mockk(relaxed = true)
+        val inSnapshot: DocumentSnapshot = mockk(relaxed = true)
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("transactions") } returns transactionsColl
+        every { userDocRef.collection("wallets") } returns walletsColl
+        every { transactionsColl.document("saving_spin_test_out") } returns outRef
+        every { transactionsColl.document("saving_spin_test_in") } returns inRef
+        every { walletsColl.document("wallet_src") } returns sourceWalletRef
+        every { walletsColl.document("wallet_dst") } returns destWalletRef
+
+        every { outSnapshot.exists() } returns true
+        every { outSnapshot.id } returns "saving_spin_test_out"
+        every { outSnapshot.getString("type") } returns "transfer_out"
+        every { outSnapshot.getLong("amount") } returns 50_000L
+        every { outSnapshot.getString("categoryId") } returns null
+        every { outSnapshot.getString("walletId") } returns "wallet_src"
+        every { outSnapshot.getString("relatedWalletId") } returns "wallet_dst"
+        every { outSnapshot.getString("dealId") } returns null
+        every { outSnapshot.getString("dealFlowType") } returns null
+        every { outSnapshot.getString("goalId") } returns null
+        every { outSnapshot.getString("goalFlowType") } returns null
+        every { outSnapshot.getString("debtId") } returns null
+        every { outSnapshot.getLong("debtPrincipalAmount") } returns null
+        every { outSnapshot.getLong("debtInterestAmount") } returns null
+        every { outSnapshot.getString("note") } returns "Vòng quay tiết kiệm"
+        every { outSnapshot.getString("receiptImageUrl") } returns null
+        every { outSnapshot.getTimestamp("date") } returns fixedTimestamp
+        every { outSnapshot.getTimestamp("createdAt") } returns fixedTimestamp
+        every { outSnapshot.getTimestamp("updatedAt") } returns fixedTimestamp
+
+        every { inSnapshot.exists() } returns true
+        every { inSnapshot.id } returns "saving_spin_test_in"
+        every { inSnapshot.getString("type") } returns "transfer_in"
+        every { inSnapshot.getLong("amount") } returns 50_000L
+        every { inSnapshot.getString("categoryId") } returns null
+        every { inSnapshot.getString("walletId") } returns "wallet_dst"
+        every { inSnapshot.getString("relatedWalletId") } returns "wallet_src"
+        every { inSnapshot.getString("dealId") } returns null
+        every { inSnapshot.getString("dealFlowType") } returns null
+        every { inSnapshot.getString("goalId") } returns null
+        every { inSnapshot.getString("goalFlowType") } returns null
+        every { inSnapshot.getString("debtId") } returns null
+        every { inSnapshot.getLong("debtPrincipalAmount") } returns null
+        every { inSnapshot.getLong("debtInterestAmount") } returns null
+        every { inSnapshot.getString("note") } returns "Vòng quay tiết kiệm"
+        every { inSnapshot.getString("receiptImageUrl") } returns null
+        every { inSnapshot.getTimestamp("date") } returns fixedTimestamp
+        every { inSnapshot.getTimestamp("createdAt") } returns fixedTimestamp
+        every { inSnapshot.getTimestamp("updatedAt") } returns fixedTimestamp
+
+        val atomicTx: Transaction = mockk(relaxed = true)
+        every { atomicTx.get(outRef) } returns outSnapshot
+        every { atomicTx.get(inRef) } returns inSnapshot
+
+        val transactionSlot = slot<Transaction.Function<Any?>>()
+        every { firestore.runTransaction<Any?>(capture(transactionSlot)) } answers {
+            transactionSlot.captured.apply(atomicTx)
+            Tasks.forResult<Any?>(null)
+        }
+
+        val result = repository.transferBetweenWalletsIdempotent(
+            sourceWalletId = "wallet_src",
+            destinationWalletId = "wallet_dst",
+            amount = 50_000L,
+            note = "Vòng quay tiết kiệm",
+            date = fixedInstant,
+            operationId = "saving_spin_test",
+        )
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+        verify(exactly = 0) { atomicTx.update(sourceWalletRef, any<Map<String, Any>>()) }
+        verify(exactly = 0) { atomicTx.update(destWalletRef, any<Map<String, Any>>()) }
+        verify(exactly = 0) { atomicTx.set(outRef, any<Map<String, Any?>>()) }
+        verify(exactly = 0) { atomicTx.set(inRef, any<Map<String, Any?>>()) }
+    }
+
+    @Test
     fun `transferBetweenWallets fails if source and destination are identical`() = runTest {
         every { auth.currentUser } returns user
         every { user.uid } returns "test_uid"
