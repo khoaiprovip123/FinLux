@@ -60,16 +60,17 @@ data class FinanceTransaction(
     val relatedWalletId: String? = null,
     val dealId: String? = null,
     val dealFlowType: DealFlowType? = null,
-    val goalId: String? = null,
-    val goalFlowType: GoalFlowType? = null,
-    val debtId: String? = null,
-    val debtPrincipalAmount: Money? = null,
-    val debtInterestAmount: Money? = null,
     val note: String = "",
     val receiptImageUrl: String? = null,
     val date: Instant,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
+    // Semantic ledger metadata. Appended for source compatibility with older positional constructors.
+    val goalId: String? = null,
+    val goalFlowType: GoalFlowType? = null,
+    val debtId: String? = null,
+    val debtPrincipalAmount: Money? = null,
+    val debtInterestAmount: Money? = null,
 )
 
 data class Budget(
