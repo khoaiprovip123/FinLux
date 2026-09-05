@@ -4,6 +4,7 @@ import java.time.Instant
 import java.time.YearMonth
 
 enum class TransactionType { INCOME, EXPENSE, TRANSFER_OUT, TRANSFER_IN }
+enum class GoalFlowType { ALLOCATION, RELEASE }
 enum class CategoryType { INCOME, EXPENSE }
 enum class WalletType { CASH, BANK, EWALLET, CARD, INVESTMENT, OTHER }
 enum class ThemePreference { LIGHT, DARK, SYSTEM }
@@ -59,6 +60,11 @@ data class FinanceTransaction(
     val relatedWalletId: String? = null,
     val dealId: String? = null,
     val dealFlowType: DealFlowType? = null,
+    val goalId: String? = null,
+    val goalFlowType: GoalFlowType? = null,
+    val debtId: String? = null,
+    val debtPrincipalAmount: Money? = null,
+    val debtInterestAmount: Money? = null,
     val note: String = "",
     val receiptImageUrl: String? = null,
     val date: Instant,
