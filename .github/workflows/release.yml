@@ -84,22 +84,17 @@ jobs:
           KEY_ALIAS: ${{ secrets.FINLUX_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.FINLUX_KEY_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
-            echo "Decoding private release keystore from GitHub secrets..."
-            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.keystore
-            echo "FINLUX_KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
-            echo "FINLUX_KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> $GITHUB_ENV
-            echo "FINLUX_KEY_ALIAS=${KEY_ALIAS}" >> $GITHUB_ENV
-            echo "FINLUX_KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
-            echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
-          else
-            echo "GitHub release secrets not found. Falling back to embedded gradle/debug.keystore..."
-            echo "FINLUX_KEYSTORE_PATH=gradle/debug.keystore" >> $GITHUB_ENV
-            echo "FINLUX_KEYSTORE_PASSWORD=android" >> $GITHUB_ENV
-            echo "FINLUX_KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
-            echo "FINLUX_KEY_PASSWORD=android" >> $GITHUB_ENV
-            echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Production release signing secrets are incomplete. Refusing to publish a debug-signed release."
+            exit 1
           fi
+
+          echo "Decoding private release keystore from GitHub secrets..."
+          echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.keystore
+          echo "FINLUX_KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
+          echo "FINLUX_KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> $GITHUB_ENV
+          echo "FINLUX_KEY_ALIAS=${KEY_ALIAS}" >> $GITHUB_ENV
+          echo "FINLUX_KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
 
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon
@@ -114,9 +109,10 @@ jobs:
           mkdir -p release_artifacts
           APK_SOURCE="app/build/outputs/apk/release/app-release.apk"
           if [ ! -f "$APK_SOURCE" ]; then
-            APK_SOURCE="app/build/outputs/apk/debug/app-debug.apk"
+            echo "::error::Release APK was not produced. Refusing to package a debug artifact."
+            exit 1
           fi
-          
+
           TARGET_APK="release_artifacts/FinLux-v${{ env.VERSION_NAME }}.apk"
           cp "$APK_SOURCE" "$TARGET_APK"
           
