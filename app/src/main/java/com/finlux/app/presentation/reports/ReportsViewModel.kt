@@ -393,6 +393,7 @@ class ReportsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReportsUiState())
 
     fun selectPeriod(period: ReportPeriod) {
+        userSelectedPeriod.value = period
         selectedPeriod.value = period
     }
 
@@ -402,6 +403,7 @@ class ReportsViewModel @Inject constructor(
 
     fun setCustomRange(start: LocalDate, end: LocalDate) {
         customRange.value = if (start <= end) ReportRange(start, end) else ReportRange(end, start)
+        userSelectedPeriod.value = ReportPeriod.CUSTOM
         selectedPeriod.value = ReportPeriod.CUSTOM
     }
 
