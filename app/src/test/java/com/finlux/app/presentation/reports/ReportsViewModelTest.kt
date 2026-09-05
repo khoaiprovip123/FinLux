@@ -10,6 +10,7 @@ import com.finlux.app.domain.model.DealStatus
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.SavingDestination
@@ -178,10 +179,20 @@ class ReportsViewModelTest {
             totalRecovered = Money(0L),
             status = DealStatus.ACTIVE,
         )
+        val goal = FinancialGoal(
+            id = "goal-1",
+            name = "Quỹ dự phòng",
+            targetAmount = Money(30_000_000L),
+            savedAmount = Money(15_000_000L),
+            deadline = Instant.now().plusSeconds(86_400),
+            category = "savings",
+            monthlyContribution = Money(2_000_000L),
+        )
 
         every { walletRepository.observeWallets() } returns flowOf(listOf(wallet1))
         every { debtRepository.observeDebts() } returns flowOf(listOf(debt1))
         every { dealRepository.observeDeals() } returns flowOf(listOf(activeDeal))
+        every { goalRepository.observeGoals() } returns flowOf(listOf(goal))
 
         val viewModel = createViewModel()
 
@@ -193,8 +204,8 @@ class ReportsViewModelTest {
             assertEquals(40_000_000L, state.totalDebtRemaining)
             // totalNetWorth = 200M - 40M = 160M
             assertEquals(160_000_000L, state.totalNetWorth)
-            // trueNetWorth = 200M (wallets) + 50M (active deal capital) - 40M (debt) = 210M
-            assertEquals(210_000_000L, state.trueNetWorth)
+            // trueNetWorth = 200M wallets + 15M goals + 50M active deal capital - 40M debt = 225M
+            assertEquals(225_000_000L, state.trueNetWorth)
             cancelAndIgnoreRemainingEvents()
         }
     }
