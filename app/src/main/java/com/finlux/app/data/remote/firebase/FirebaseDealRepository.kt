@@ -167,6 +167,11 @@ class FirebaseDealRepository(
             val walletDoc = tx.get(walletRef)
             require(walletDoc.exists()) { "Ví không tồn tại" }
             val currentBalance = walletDoc.getLong("balance") ?: 0L
+            val walletType = walletDoc.getString("type")
+            val isCreditCard = walletType.equals("CARD", ignoreCase = true)
+            require(isCreditCard || currentBalance >= amount) {
+                "Số dư ví không đủ để xuất vốn cho thương vụ"
+            }
 
             val dealDoc = tx.get(dealRef)
             require(dealDoc.exists()) { "Thương vụ không tồn tại" }
