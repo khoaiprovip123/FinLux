@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -359,7 +358,7 @@ private fun DestinationRow(
                     enabled = !busy && destination.enabled,
                 ) {
                     Icon(
-                        if (isDefault) Icons.Default.Star else Icons.Outlined.StarOutline,
+                        Icons.Default.Star,
                         contentDescription = null,
                         modifier = Modifier.size(17.dp),
                     )
