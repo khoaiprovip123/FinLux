@@ -31,6 +31,14 @@ interface FinancialPeriodResolver {
         config: SalaryCycleConfig,
     ): FinancialPeriod
 
+    fun resolveNextReportingPeriodOf(
+        period: FinancialPeriod,
+        config: SalaryCycleConfig,
+    ): FinancialPeriod = resolveReportingPeriodContaining(
+        period.endExclusive.plusMillis(1),
+        config,
+    )
+
     fun resolvePreviousPeriodOf(
         period: FinancialPeriod,
         config: SalaryCycleConfig,
