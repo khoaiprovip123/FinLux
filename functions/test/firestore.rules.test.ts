@@ -169,3 +169,110 @@ describe("Firestore Rules: Saving Spin", () => {
         }));
     });
 });
+
+
+describe("Firestore Rules: Period Budgets", () => {
+    it("allows the canonical period schema and keeps spentAmount server-owned", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const ref = alice.firestore().doc("users/alice/budgets/food_salary:2026-08-25");
+
+        await assertSucceeds(ref.set({
+            categoryId: "food",
+            periodKey: "salary:2026-08-25",
+            periodStart: 1787581200000,
+            periodEndExclusive: 1790259600000,
+            periodBasis: "SALARY_CYCLE",
+            month: null,
+            limitAmount: 5000000,
+            spentAmount: 0,
+            notified80: false,
+            notified100: false,
+        }));
+
+        await assertSucceeds(ref.update({limitAmount: 6000000}));
+        await assertFails(ref.update({spentAmount: 100000}));
+    });
+});
+
+describe("Firestore Rules: Deals", () => {
+    const validDeal = {
+        title: "Cho vay ngắn hạn",
+        description: "Theo dõi thu hồi vốn",
+        category: "lending",
+        targetAmount: 12000000,
+        totalCapitalOutlay: 10000000,
+        totalRecovered: 0,
+        netProfitLoss: 0,
+        status: "active",
+        startDate: new Date(),
+        endDate: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+
+    it("allows only the owner to read and write deals", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const bob = testEnv.authenticatedContext("bob");
+        const path = "users/alice/deals/deal-1";
+
+        await assertSucceeds(alice.firestore().doc(path).set(validDeal));
+        await assertSucceeds(alice.firestore().doc(path).get());
+        await assertFails(bob.firestore().doc(path).get());
+        await assertFails(bob.firestore().doc(path).set(validDeal));
+    });
+
+    it("allows a deal ledger transaction only when the wallet delta is atomic", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc("users/alice/wallets/w1").set({
+                balance: 1000000,
+                lastTransactionId: "seed",
+            });
+        });
+
+        const batch = alice.firestore().batch();
+        const walletRef = alice.firestore().doc("users/alice/wallets/w1");
+        const txRef = alice.firestore().doc("users/alice/transactions/deal-outlay-1");
+
+        batch.update(walletRef, {
+            balance: 900000,
+            lastTransactionId: "deal-outlay-1",
+        });
+        batch.set(txRef, {
+            type: "expense",
+            amount: 100000,
+            categoryId: null,
+            walletId: "w1",
+            relatedWalletId: null,
+            dealId: "deal-1",
+            dealFlowType: "outlay_capital",
+            note: "Xuất vốn",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await assertSucceeds(batch.commit());
+    });
+
+    it("allows capital-loss settlement entries without a fake wallet mutation", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const ref = alice.firestore().doc("users/alice/transactions/deal-loss-1");
+
+        await assertSucceeds(ref.set({
+            type: "expense",
+            amount: 250000,
+            categoryId: null,
+            walletId: "DEAL_SETTLEMENT",
+            relatedWalletId: null,
+            dealId: "deal-1",
+            dealFlowType: "capital_loss",
+            note: "Chốt lỗ",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        }));
+    });
+});
