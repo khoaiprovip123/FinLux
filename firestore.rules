@@ -661,7 +661,10 @@ service cloud.firestore {
               && request.resource.data.method in ['CASH', 'BANK_TRANSFER']
               && request.resource.data.completedAt is timestamp
               && (
-                request.resource.data.transactionId == null
+                (
+                  !('transactionId' in request.resource.data)
+                  || request.resource.data.transactionId == null
+                )
                 ? request.resource.data.method == 'CASH'
                 : (
                   request.resource.data.transactionId == 'saving_spin_' + sessionId + '_out'
