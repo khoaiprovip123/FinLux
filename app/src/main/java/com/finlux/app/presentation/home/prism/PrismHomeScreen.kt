@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.home.prism
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -312,8 +314,8 @@ fun PrismHomeScreen(
                         val remainingCount = if (todayTransactions.isNotEmpty()) todayTransactions.size - 5 else state.transactions.size - 5
                         Surface(
                             shape = RoundedCornerShape(18.dp),
-                            color = if (tokens.isDark) tokens.surfaceSoft else Color.White,
-                            border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.8f)),
+                            color = if (tokens.isDark) tokens.surfaceSoft else FinluxPalette.White,
+                            border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else FinluxPalette.CFFE2E8F0.copy(alpha = 0.8f)),
                             shadowElevation = if (tokens.isDark) 0.dp else 1.5.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -554,10 +556,10 @@ private fun PrismFinancialOverviewCard(
             chartValues = walletBars,
             theme = PrismCardTheme.WALLET,
             backgroundColors = listOf(
-                Color(0xFF0A192F),
-                Color(0xFF1E3A8A),
-                Color(0xFF1D4ED8),
-                Color(0xFF2563EB),
+                FinluxPalette.CFF0A192F,
+                FinluxPalette.CFF1E3A8A,
+                FinluxPalette.CFF1D4ED8,
+                FinluxPalette.CFF2563EB,
             ),
             onClick = onWalletsClick,
         ),
@@ -574,10 +576,10 @@ private fun PrismFinancialOverviewCard(
             chartValues = incomeBars,
             theme = PrismCardTheme.INCOME,
             backgroundColors = listOf(
-                Color(0xFF04382B),
-                Color(0xFF065F46),
-                Color(0xFF047857),
-                Color(0xFF0D9488),
+                FinluxPalette.CFF04382B,
+                FinluxPalette.CFF065F46,
+                FinluxPalette.CFF047857,
+                FinluxPalette.CFF0D9488,
             ),
             onClick = onIncomeClick,
         ),
@@ -594,10 +596,10 @@ private fun PrismFinancialOverviewCard(
             chartValues = expenseBars,
             theme = PrismCardTheme.EXPENSE,
             backgroundColors = listOf(
-                Color(0xFF6B0E27),
-                Color(0xFF881337),
-                Color(0xFF9F1239),
-                Color(0xFFBE123C),
+                FinluxPalette.CFF6B0E27,
+                FinluxPalette.CFF881337,
+                FinluxPalette.CFF9F1239,
+                FinluxPalette.CFFBE123C,
             ),
             onClick = onExpenseClick,
         ),
@@ -620,10 +622,10 @@ private fun PrismFinancialOverviewCard(
             chartValues = netBars,
             theme = PrismCardTheme.CASH_FLOW,
             backgroundColors = listOf(
-                Color(0xFF19163F),
-                Color(0xFF2E236C),
-                Color(0xFF3730A3),
-                Color(0xFF4338CA),
+                FinluxPalette.CFF19163F,
+                FinluxPalette.CFF2E236C,
+                FinluxPalette.CFF3730A3,
+                FinluxPalette.CFF4338CA,
             ),
             onClick = onNetClick,
         ),
@@ -644,7 +646,7 @@ private fun PrismFinancialOverviewCard(
                     elevation = 10.dp,
                     shape = RoundedCornerShape(24.dp),
                     spotColor = page.backgroundColors.first().copy(alpha = if (tokens.isDark) 0.40f else 0.25f),
-                    ambientColor = Color.Black.copy(alpha = if (tokens.isDark) 0.25f else 0.10f),
+                    ambientColor = FinluxPalette.Black.copy(alpha = if (tokens.isDark) 0.25f else 0.10f),
                 )
                 .clip(RoundedCornerShape(24.dp))
                 .background(
@@ -928,7 +930,7 @@ private fun PrismCardBackdropTexture(
                 colors = listOf(
                     tintColor.copy(alpha = 0.14f),
                     tintColor.copy(alpha = 0.03f),
-                    Color.Transparent,
+                    FinluxPalette.Transparent,
                 ),
                 center = Offset(w * 0.85f, h * 0.35f),
                 radius = w * 0.45f,
@@ -941,10 +943,10 @@ private fun PrismCardBackdropTexture(
         drawLine(
             brush = Brush.horizontalGradient(
                 colors = listOf(
-                    Color.Transparent,
+                    FinluxPalette.Transparent,
                     tintColor.copy(alpha = 0.35f),
                     tintColor.copy(alpha = 0.10f),
-                    Color.Transparent,
+                    FinluxPalette.Transparent,
                 ),
                 startX = w * 0.15f,
                 endX = w * 0.85f,
@@ -1068,7 +1070,7 @@ private fun PrismCardBackdropTexture(
                 drawArc(
                     brush = Brush.sweepGradient(
                         colors = listOf(
-                            Color.Transparent,
+                            FinluxPalette.Transparent,
                             tintColor.copy(alpha = 0.08f),
                             tintColor.copy(alpha = 0.22f),
                         ),
@@ -1197,17 +1199,17 @@ private fun PrismHeroNetWorthCard(
             .shadow(
                 elevation = 18.dp,
                 shape = shape,
-                ambientColor = Color(0xFF4C68FF).copy(alpha = 0.32f),
-                spotColor = Color(0xFF865BF9).copy(alpha = 0.42f),
+                ambientColor = FinluxPalette.CFF4C68FF.copy(alpha = 0.32f),
+                spotColor = FinluxPalette.CFF865BF9.copy(alpha = 0.42f),
             )
             .clip(shape)
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF3A5FFF),
-                        Color(0xFF5E50F8),
-                        Color(0xFF7C5AF9),
-                        Color(0xFF9B6EFB),
+                        FinluxPalette.CFF3A5FFF,
+                        FinluxPalette.CFF5E50F8,
+                        FinluxPalette.CFF7C5AF9,
+                        FinluxPalette.CFF9B6EFB,
                     ),
                     start = Offset(0f, 0f),
                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
@@ -1220,7 +1222,7 @@ private fun PrismHeroNetWorthCard(
             // Large top-right glowing orb
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(tokens.onHero.copy(alpha = 0.18f), Color.Transparent),
+                    colors = listOf(tokens.onHero.copy(alpha = 0.18f), FinluxPalette.Transparent),
                     center = Offset(size.width * 0.82f, size.height * 0.0f),
                     radius = size.width * 0.52f,
                 ),
@@ -1231,7 +1233,7 @@ private fun PrismHeroNetWorthCard(
             // Bottom-left secondary orb
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF38BDF8).copy(alpha = 0.22f), Color.Transparent),
+                    colors = listOf(FinluxPalette.CFF38BDF8.copy(alpha = 0.22f), FinluxPalette.Transparent),
                     center = Offset(size.width * 0.15f, size.height * 1.1f),
                     radius = size.width * 0.45f,
                 ),
@@ -1379,7 +1381,7 @@ private fun PrismHeroNetWorthCard(
                             if (totalDebt > 0L) {
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFFE11D48).copy(alpha = 0.35f),
+                                    color = FinluxPalette.CFFE11D48.copy(alpha = 0.35f),
                                     modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDebtsClick() },
                                 ) {
                                     Row(
@@ -1477,7 +1479,7 @@ private fun PrismHeroNetWorthCard(
                             if (totalDebt > 0L) {
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFFE11D48).copy(alpha = 0.35f),
+                                    color = FinluxPalette.CFFE11D48.copy(alpha = 0.35f),
                                     modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onDebtsClick() },
                                 ) {
                                     Row(
@@ -1548,9 +1550,9 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFF38BDF8).copy(alpha = 0.35f),
-                        Color(0xFF818CF8).copy(alpha = 0.18f),
-                        Color.Transparent,
+                        FinluxPalette.CFF38BDF8.copy(alpha = 0.35f),
+                        FinluxPalette.CFF818CF8.copy(alpha = 0.18f),
+                        FinluxPalette.Transparent,
                     ),
                     center = center,
                     radius = size.minDimension * 0.70f,
@@ -1570,12 +1572,12 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                 .shadow(
                     elevation = 10.dp,
                     shape = RoundedCornerShape(10.dp),
-                    ambientColor = Color(0xFF0284C7).copy(alpha = 0.4f),
-                    spotColor = Color(0xFF0284C7).copy(alpha = 0.6f),
+                    ambientColor = FinluxPalette.CFF0284C7.copy(alpha = 0.4f),
+                    spotColor = FinluxPalette.CFF0284C7.copy(alpha = 0.6f),
                 ),
             shape = RoundedCornerShape(10.dp),
-            color = Color.Transparent,
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.65f)),
+            color = FinluxPalette.Transparent,
+            border = BorderStroke(1.dp, FinluxPalette.White.copy(alpha = 0.65f)),
         ) {
             Box(
                 modifier = Modifier
@@ -1583,9 +1585,9 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                Color(0xFF00C6FF),
-                                Color(0xFF0072FF),
-                                Color(0xFF4F46E5),
+                                FinluxPalette.CFF00C6FF,
+                                FinluxPalette.CFF0072FF,
+                                FinluxPalette.CFF4F46E5,
                             ),
                         ),
                     )
@@ -1594,7 +1596,7 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                 // Micro EMV Chip
                 Surface(
                     shape = RoundedCornerShape(2.5.dp),
-                    color = Color(0xFFFDE047),
+                    color = FinluxPalette.CFFFDE047,
                     modifier = Modifier.size(width = 11.dp, height = 8.dp),
                 ) {}
 
@@ -1603,8 +1605,8 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                     modifier = Modifier.align(Alignment.TopEnd),
                     horizontalArrangement = Arrangement.spacedBy(1.5.dp),
                 ) {
-                    Box(modifier = Modifier.size(width = 1.5.dp, height = 5.dp).background(Color.White.copy(alpha = 0.7f), CircleShape))
-                    Box(modifier = Modifier.size(width = 1.5.dp, height = 8.dp).background(Color.White.copy(alpha = 0.7f), CircleShape))
+                    Box(modifier = Modifier.size(width = 1.5.dp, height = 5.dp).background(FinluxPalette.White.copy(alpha = 0.7f), CircleShape))
+                    Box(modifier = Modifier.size(width = 1.5.dp, height = 8.dp).background(FinluxPalette.White.copy(alpha = 0.7f), CircleShape))
                 }
             }
         }
@@ -1621,17 +1623,17 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                 .shadow(
                     elevation = 14.dp,
                     shape = RoundedCornerShape(12.dp),
-                    ambientColor = Color(0xFF4338CA).copy(alpha = 0.35f),
-                    spotColor = Color(0xFF4338CA).copy(alpha = 0.5f),
+                    ambientColor = FinluxPalette.CFF4338CA.copy(alpha = 0.35f),
+                    spotColor = FinluxPalette.CFF4338CA.copy(alpha = 0.5f),
                 ),
             shape = RoundedCornerShape(12.dp),
-            color = Color.Transparent,
+            color = FinluxPalette.Transparent,
             border = BorderStroke(
                 1.5.dp,
                 Brush.linearGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.95f),
-                        Color.White.copy(alpha = 0.35f),
+                        FinluxPalette.White.copy(alpha = 0.95f),
+                        FinluxPalette.White.copy(alpha = 0.35f),
                     ),
                 ),
             ),
@@ -1642,8 +1644,8 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.40f),
-                                Color.White.copy(alpha = 0.15f),
+                                FinluxPalette.White.copy(alpha = 0.40f),
+                                FinluxPalette.White.copy(alpha = 0.15f),
                             ),
                         ),
                     )
@@ -1652,8 +1654,8 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                 // Gold Chip
                 Surface(
                     shape = RoundedCornerShape(3.dp),
-                    color = Color(0xFFF59E0B),
-                    border = BorderStroke(0.5.dp, Color(0xFFFEF08A)),
+                    color = FinluxPalette.CFFF59E0B,
+                    border = BorderStroke(0.5.dp, FinluxPalette.CFFFEF08A),
                     modifier = Modifier
                         .size(width = 14.dp, height = 10.dp)
                         .align(Alignment.TopStart),
@@ -1667,12 +1669,12 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                     Box(
                         modifier = Modifier
                             .size(15.dp)
-                            .background(Color(0xFFEC4899).copy(alpha = 0.80f), CircleShape),
+                            .background(FinluxPalette.CFFEC4899.copy(alpha = 0.80f), CircleShape),
                     )
                     Box(
                         modifier = Modifier
                             .size(15.dp)
-                            .background(Color(0xFFFBBF24).copy(alpha = 0.80f), CircleShape),
+                            .background(FinluxPalette.CFFFBBF24.copy(alpha = 0.80f), CircleShape),
                     )
                 }
 
@@ -1682,7 +1684,7 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                         .align(Alignment.BottomStart)
                         .padding(bottom = 2.dp)
                         .size(width = 22.dp, height = 3.dp)
-                        .background(Color.White.copy(alpha = 0.75f), CircleShape),
+                        .background(FinluxPalette.White.copy(alpha = 0.75f), CircleShape),
                 )
             }
         }
@@ -1699,12 +1701,12 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                 .shadow(
                     elevation = 10.dp,
                     shape = CircleShape,
-                    ambientColor = Color(0xFFF59E0B).copy(alpha = 0.6f),
-                    spotColor = Color(0xFFF59E0B).copy(alpha = 0.8f),
+                    ambientColor = FinluxPalette.CFFF59E0B.copy(alpha = 0.6f),
+                    spotColor = FinluxPalette.CFFF59E0B.copy(alpha = 0.8f),
                 ),
             shape = CircleShape,
-            color = Color.Transparent,
-            border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.95f)),
+            color = FinluxPalette.Transparent,
+            border = BorderStroke(1.5.dp, FinluxPalette.White.copy(alpha = 0.95f)),
         ) {
             Box(
                 modifier = Modifier
@@ -1712,9 +1714,9 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFFBEB),
-                                Color(0xFFFBBF24),
-                                Color(0xFFD97706),
+                                FinluxPalette.CFFFFFBEB,
+                                FinluxPalette.CFFFBBF24,
+                                FinluxPalette.CFFD97706,
                             ),
                         ),
                     ),
@@ -1722,7 +1724,7 @@ private fun PrismWallet3DIllustration(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "₫",
-                    color = Color.White,
+                    color = FinluxPalette.White,
                     fontWeight = FontWeight.Black,
                     fontSize = 17.sp,
                 )
@@ -2202,40 +2204,40 @@ private fun PrismQuickActionsRow(
         PrismRoundTile(
             title = "Ví của tôi",
             icon = Icons.Default.AccountBalanceWallet,
-            accentColor = Color(0xFF0D9488),
-            bgColor = Color(0xFFCCFBF1),
+            accentColor = FinluxPalette.CFF0D9488,
+            bgColor = FinluxPalette.CFFCCFBF1,
             onClick = onWallets,
             modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Ngân sách",
             icon = Icons.Default.Savings,
-            accentColor = Color(0xFF8B5CF6),
-            bgColor = Color(0xFFEDE9FE),
+            accentColor = FinluxPalette.CFF8B5CF6,
+            bgColor = FinluxPalette.CFFEDE9FE,
             onClick = onBudget,
             modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Danh mục",
             icon = Icons.Default.LocalOffer,
-            accentColor = Color(0xFF3B82F6),
-            bgColor = Color(0xFFDBEAFE),
+            accentColor = FinluxPalette.CFF3B82F6,
+            bgColor = FinluxPalette.CFFDBEAFE,
             onClick = onCategories,
             modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Mục tiêu",
             icon = Icons.Default.TrackChanges,
-            accentColor = Color(0xFFF97316),
-            bgColor = Color(0xFFFFEDD5),
+            accentColor = FinluxPalette.CFFF97316,
+            bgColor = FinluxPalette.CFFFFEDD5,
             onClick = onGoals,
             modifier = Modifier.weight(1f),
         )
         PrismRoundTile(
             title = "Xem thêm",
             icon = Icons.Default.MoreHoriz,
-            accentColor = Color(0xFFA855F7),
-            bgColor = Color(0xFFF3E8FF),
+            accentColor = FinluxPalette.CFFA855F7,
+            bgColor = FinluxPalette.CFFF3E8FF,
             onClick = onMore,
             modifier = Modifier.weight(1f),
         )
@@ -2328,24 +2330,24 @@ private fun PrismCategoryExpenseBreakdownCard(
 
     // Default sample palette for charts
     val expensePalette1 = listOf(
-        Color(0xFF6366F1), // Indigo
-        Color(0xFFEC4899), // Pink
-        Color(0xFFF97316), // Orange
+        FinluxPalette.CFF6366F1, // Indigo
+        FinluxPalette.CFFEC4899, // Pink
+        FinluxPalette.CFFF97316, // Orange
     )
     val expensePalette2 = listOf(
-        Color(0xFF14B8A6), // Teal
-        Color(0xFF06B6D4), // Cyan
-        Color(0xFF8B5CF6), // Purple
+        FinluxPalette.CFF14B8A6, // Teal
+        FinluxPalette.CFF06B6D4, // Cyan
+        FinluxPalette.CFF8B5CF6, // Purple
     )
     val incomePalette = listOf(
-        Color(0xFF10B981), // Emerald
-        Color(0xFF06B6D4), // Cyan
-        Color(0xFF3B82F6), // Blue
+        FinluxPalette.CFF10B981, // Emerald
+        FinluxPalette.CFF06B6D4, // Cyan
+        FinluxPalette.CFF3B82F6, // Blue
     )
     val walletPalette = listOf(
-        Color(0xFF3B82F6), // Blue
-        Color(0xFF10B981), // Emerald
-        Color(0xFFF97316), // Orange
+        FinluxPalette.CFF3B82F6, // Blue
+        FinluxPalette.CFF10B981, // Emerald
+        FinluxPalette.CFFF97316, // Orange
     )
 
     // Compute actual grouped expenses
@@ -2725,9 +2727,9 @@ private fun PrismBudgetBreakdownPageContent(
     } else {
         val colors = budgetShares.map { item ->
             when {
-                item.percent >= 100 -> Color(0xFFEF4444)
-                item.percent >= 80 -> Color(0xFFF59E0B)
-                else -> Color(0xFF10B981)
+                item.percent >= 100 -> FinluxPalette.CFFEF4444
+                item.percent >= 80 -> FinluxPalette.CFFF59E0B
+                else -> FinluxPalette.CFF10B981
             }
         }
 
@@ -2754,8 +2756,8 @@ private fun PrismBudgetBreakdownPageContent(
                             fontSize = 18.sp,
                         ),
                         color = when {
-                            totalSpentPercent >= 100 -> Color(0xFFEF4444)
-                            totalSpentPercent >= 80 -> Color(0xFFF59E0B)
+                            totalSpentPercent >= 100 -> FinluxPalette.CFFEF4444
+                            totalSpentPercent >= 80 -> FinluxPalette.CFFF59E0B
                             else -> tokens.onSurface
                         },
                     )
@@ -2778,7 +2780,7 @@ private fun PrismBudgetBreakdownPageContent(
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 budgetShares.take(3).forEachIndexed { index, item ->
-                    val color = colors.getOrElse(index) { Color(0xFF6366F1) }
+                    val color = colors.getOrElse(index) { FinluxPalette.CFF6366F1 }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -2907,7 +2909,7 @@ private fun PrismBreakdownPageContent(
             verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
             shares.forEachIndexed { index, (cat, sum, percent) ->
-                val color = colors.getOrElse(index) { Color(0xFF6366F1) }
+                val color = colors.getOrElse(index) { FinluxPalette.CFF6366F1 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -3017,7 +3019,7 @@ private fun PrismDonutChart(
         // If all 0%, draw a soft default ring
         if (percentages.all { it == 0 }) {
             drawArc(
-                color = Color(0xFF6366F1).copy(alpha = 0.2f),
+                color = FinluxPalette.CFF6366F1.copy(alpha = 0.2f),
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -3187,9 +3189,9 @@ private fun PrismHomeExplorerTransactionCard(
     // Amount Sign & Color
     val amountPrefix = if (isIncome) "+" else "−"
     val amountColor = when {
-        isIncome -> Color(0xFF059669) // Deep Emerald Green
-        isTransfer -> Color(0xFF2563EB) // Blue
-        else -> Color(0xFFE11D48) // Vibrant Crimson Red
+        isIncome -> FinluxPalette.CFF059669 // Deep Emerald Green
+        isTransfer -> FinluxPalette.CFF2563EB // Blue
+        else -> FinluxPalette.CFFE11D48 // Vibrant Crimson Red
     }
 
     val displayAmount = if (showBalance) {
@@ -3223,19 +3225,19 @@ private fun PrismHomeExplorerTransactionCard(
 
     val iconBackgroundBrush = remember(transaction.type, parsedColor) {
         when {
-            isIncome -> Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))
-            isTransfer -> Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))
+            isIncome -> Brush.linearGradient(listOf(FinluxPalette.CFF10B981, FinluxPalette.CFF059669))
+            isTransfer -> Brush.linearGradient(listOf(FinluxPalette.CFF3B82F6, FinluxPalette.CFF6366F1))
             parsedColor != null -> Brush.linearGradient(listOf(parsedColor, parsedColor.copy(alpha = 0.85f)))
-            else -> Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626)))
+            else -> Brush.linearGradient(listOf(FinluxPalette.CFFEF4444, FinluxPalette.CFFDC2626))
         }
     }
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E34).copy(alpha = 0.75f) else Color.White,
+        color = if (tokens.isDark) FinluxPalette.CFF1E1E34.copy(alpha = 0.75f) else FinluxPalette.White,
         border = BorderStroke(
             1.dp,
-            if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.7f),
+            if (tokens.isDark) tokens.border else FinluxPalette.CFFE2E8F0.copy(alpha = 0.7f),
         ),
         shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
         modifier = modifier
@@ -3266,7 +3268,7 @@ private fun PrismHomeExplorerTransactionCard(
                 Icon(
                     imageVector = if (isTransfer) Icons.Default.SwapHoriz else categoryIcon(category?.icon.orEmpty()),
                     contentDescription = category?.name,
-                    tint = Color.White,
+                    tint = FinluxPalette.White,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -3322,7 +3324,7 @@ private fun PrismHomeExplorerTransactionCard(
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Normal,
                     ),
-                    color = Color(0xFF94A3B8),
+                    color = FinluxPalette.CFF94A3B8,
                     textAlign = TextAlign.End,
                 )
             }
