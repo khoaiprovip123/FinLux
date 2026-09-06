@@ -7,6 +7,8 @@ import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.model.FinancialFlowBreakdown
 import com.finlux.app.domain.model.GoalFlowType
 import com.finlux.app.domain.model.TransactionType
+import com.finlux.app.domain.model.operatingExpenseAmount
+import com.finlux.app.domain.model.operatingIncomeAmount
 import javax.inject.Inject
 
 class CalculateFinancialFlowBreakdownUseCase @Inject constructor() {
@@ -54,7 +56,7 @@ class CalculateFinancialFlowBreakdownUseCase @Inject constructor() {
                         dealGain += tx.amount.value
                     }
 
-                    else -> operatingIncome += tx.amount.value
+                    else -> operatingIncome += tx.operatingIncomeAmount()
                 }
 
                 TransactionType.EXPENSE -> when {
@@ -67,7 +69,7 @@ class CalculateFinancialFlowBreakdownUseCase @Inject constructor() {
                         tx.debtInterestAmount != null -> {
                         debtPrincipalOutflow += tx.debtPrincipalAmount.value
                         debtInterestExpense += tx.debtInterestAmount.value
-                        operatingExpense += tx.debtInterestAmount.value
+                        operatingExpense += tx.operatingExpenseAmount()
                     }
 
                     tx.dealFlowType == DealFlowType.OUTLAY_CAPITAL -> {
@@ -84,7 +86,7 @@ class CalculateFinancialFlowBreakdownUseCase @Inject constructor() {
                         dealLoss += tx.amount.value
                     }
 
-                    else -> operatingExpense += tx.amount.value
+                    else -> operatingExpense += tx.operatingExpenseAmount()
                 }
             }
         }
