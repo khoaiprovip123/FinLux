@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.finlux.app.core.time.FinanceClock
 import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.domain.model.Budget
+import com.finlux.app.domain.model.BudgetPeriodBasis
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.DebtAccount
@@ -15,6 +16,8 @@ import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.collapseInternalTransferPairs
 import com.finlux.app.domain.model.totalAssetBalance
+import com.finlux.app.domain.model.operatingExpenseAmount
+import com.finlux.app.domain.model.operatingIncomeAmount
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
@@ -81,7 +84,7 @@ private data class FinancialOverview(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     authRepository: AuthRepository,
-    dashboardRepository: DashboardRepository,
+    @Suppress("UNUSED_PARAMETER") dashboardRepository: DashboardRepository,
     walletRepository: WalletRepository,
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
@@ -100,63 +103,61 @@ class HomeViewModel @Inject constructor(
         val now = clock.now()
         val zone = FinanceTime.zoneOf(cycleConfig.financeTimeZone)
 
-        val transactionsFlow: Flow<List<FinanceTransaction>>
-        val budgetsFlow: Flow<List<Budget>>
+        val reportTransactionsFlow: Flow<List<FinanceTransaction>>
         val cycleLabel: String?
-        val isSalaryCycleActive: Boolean
 
         if (cycleConfig.enabled) {
             val cycle = calculator.cycleContaining(now, cycleConfig, zone)
             val fmt = DateTimeFormatter.ofPattern("dd/MM")
             cycleLabel = "${cycle.start.atZone(zone).format(fmt)} - ${cycle.endExclusive.atZone(zone).minusDays(1).format(fmt)}"
-            val period = financialPeriodResolver.resolvePeriodContaining(now, cycleConfig)
-            transactionsFlow = transactionRepository.observePeriod(cycle.start, cycle.endExclusive)
-            budgetsFlow = budgetRepository.observeBudgets(period.key)
-            isSalaryCycleActive = true
+            reportTransactionsFlow = transactionRepository.observePeriod(cycle.start, cycle.endExclusive)
         } else {
             val month = YearMonth.from(now.atZone(zone))
-            val period = financialPeriodResolver.resolvePeriodContaining(now, cycleConfig)
-            transactionsFlow = transactionRepository.observeMonth(month)
-            budgetsFlow = budgetRepository.observeBudgets(period.key)
             cycleLabel = null
-            isSalaryCycleActive = false
+            reportTransactionsFlow = transactionRepository.observeMonth(month)
+        }
+
+        // Budget basis is intentionally independent from report basis.
+        val budgetPeriod = financialPeriodResolver.resolvePeriodContaining(now, cycleConfig)
+        val budgetsFlow = budgetRepository.observeBudgets(budgetPeriod.key)
+        val budgetTransactionsFlow: Flow<List<FinanceTransaction>> = when (budgetPeriod.basis) {
+            BudgetPeriodBasis.CALENDAR_MONTH -> {
+                val budgetMonth = YearMonth.from(budgetPeriod.start.atZone(zone))
+                transactionRepository.observeMonth(budgetMonth)
+            }
+            BudgetPeriodBasis.SALARY_CYCLE -> {
+                // Reuse the salary-report stream when both windows are the same.
+                if (cycleConfig.enabled) reportTransactionsFlow
+                else transactionRepository.observePeriod(budgetPeriod.start, budgetPeriod.endExclusive)
+            }
         }
 
         combine(
-            dashboardRepository.observeCurrentMonthSummary(),
             budgetsFlow,
-            transactionsFlow,
+            reportTransactionsFlow,
+            budgetTransactionsFlow,
             notificationRepository.observeNotifications(),
-        ) { defaultSummary, budgets, periodTransactions, notifications ->
-            val spentByCategory = periodTransactions
-                .filter {
-                    it.type == TransactionType.EXPENSE &&
-                    it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL &&
-                    it.categoryId != null
-                }
-                .groupBy { it.categoryId!! }
-                .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+        ) { budgets, reportTransactions, budgetTransactions, notifications ->
+            val spentByCategory = budgetTransactions
+                .filter { it.categoryId != null && it.operatingExpenseAmount() > 0L }
+                .groupBy { requireNotNull(it.categoryId) }
+                .mapValues { (_, txs) -> txs.sumOf { it.operatingExpenseAmount() } }
+
             val limit = budgets.sumOf { it.limitAmount.value }
             val spent = budgets.sumOf { spentByCategory[it.categoryId] ?: 0L }
             val remaining = (limit - spent).coerceAtLeast(0L)
-            val percent = if (limit > 0) ((spent.toDouble() / limit.toDouble()) * 100).toInt() else 0
+            val percent = if (limit > 0) {
+                ((spent.toDouble() / limit.toDouble()) * 100).toInt()
+            } else 0
             val unread = notifications.count { !it.isRead }
 
-            val effectiveSummary = if (isSalaryCycleActive) {
-                val inc = periodTransactions
-                    .filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }
-                    .sumOf { it.amount.value }
-                val exp = periodTransactions
-                    .filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }
-                    .sumOf { it.amount.value }
-                DashboardSummary(
-                    income = Money(inc),
-                    expense = Money(exp),
-                    net = inc - exp,
-                )
-            } else {
-                defaultSummary
-            }
+            val income = reportTransactions.sumOf { it.operatingIncomeAmount() }
+            val expense = reportTransactions.sumOf { it.operatingExpenseAmount() }
+            val effectiveSummary = DashboardSummary(
+                income = Money(income),
+                expense = Money(expense),
+                net = income - expense,
+            )
 
             FinancialOverview(
                 summary = effectiveSummary,
@@ -166,7 +167,7 @@ class HomeViewModel @Inject constructor(
                 totalBudgetPercent = percent,
                 budgetRemaining = remaining,
                 budgetRemainingPercent = percent,
-                monthTransactions = periodTransactions,
+                monthTransactions = reportTransactions,
                 unreadCount = unread,
                 salaryCycleLabel = cycleLabel,
             )
