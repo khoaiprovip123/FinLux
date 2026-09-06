@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.reminders
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -160,7 +162,7 @@ fun RemindersScreen(
             )
         },
         snackbarHost = { FinluxSnackbarHost(snackbar, hasBottomBar = false) },
-        containerColor = Color.Transparent,
+        containerColor = FinluxPalette.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -242,7 +244,7 @@ fun RemindersScreen(
                                 checked = reminder.enabled,
                                 onCheckedChange = { viewModel.toggle(reminder) },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
+                                    checkedThumbColor = FinluxPalette.White,
                                     checkedTrackColor = tokens.primary,
                                 ),
                             )
@@ -312,13 +314,13 @@ fun RemindersScreen(
                                 Icon(
                                     imageVector = Icons.Default.Schedule,
                                     contentDescription = null,
-                                    tint = Color(0xFFF59E0B),
+                                    tint = FinluxPalette.CFFF59E0B,
                                     modifier = Modifier.size(14.dp),
                                 )
                                 Text(
                                     text = if (reminder.enabled) "Kỳ tiếp theo: $triggerTimeText" else "Đang tạm dừng nhắc nhở",
                                     style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
-                                    color = if (reminder.enabled) tokens.onSurfaceVariant else Color(0xFF9CA3AF),
+                                    color = if (reminder.enabled) tokens.onSurfaceVariant else FinluxPalette.CFF9CA3AF,
                                 )
                             }
                         }
@@ -391,7 +393,7 @@ private fun ReminderEditorSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (tokens.isDark) Color(0xFF181824) else Color.White,
+        containerColor = if (tokens.isDark) FinluxPalette.CFF181824 else FinluxPalette.White,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(
@@ -477,7 +479,7 @@ private fun ReminderEditorSheet(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                     ),
-                    color = Color(0xFF9CA3AF),
+                    color = FinluxPalette.CFF9CA3AF,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -500,7 +502,7 @@ private fun ReminderEditorSheet(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     fontSize = 13.sp,
                                 ),
-                                color = if (isSelected) (if (tokens.isDark) Color(0xFF002B3D) else Color.White) else tokens.onSurface,
+                                color = if (isSelected) (if (tokens.isDark) FinluxPalette.CFF002B3D else FinluxPalette.White) else tokens.onSurface,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(vertical = 10.dp),
                             )
@@ -518,7 +520,7 @@ private fun ReminderEditorSheet(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                     ),
-                    color = Color(0xFF9CA3AF),
+                    color = FinluxPalette.CFF9CA3AF,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -552,7 +554,7 @@ private fun ReminderEditorSheet(
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Bold,
                                     ),
-                                    color = Color(0xFF9CA3AF),
+                                    color = FinluxPalette.CFF9CA3AF,
                                 )
                                 Text(
                                     text = selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
@@ -595,7 +597,7 @@ private fun ReminderEditorSheet(
                             Icon(
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = null,
-                                tint = Color(0xFFF59E0B),
+                                tint = FinluxPalette.CFFF59E0B,
                                 modifier = Modifier.size(20.dp),
                             )
                             Column {
@@ -605,7 +607,7 @@ private fun ReminderEditorSheet(
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Bold,
                                     ),
-                                    color = Color(0xFF9CA3AF),
+                                    color = FinluxPalette.CFF9CA3AF,
                                 )
                                 Text(
                                     text = selectedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
@@ -657,7 +659,7 @@ private fun ReminderEditorSheet(
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = tokens.primary,
-                    disabledContainerColor = if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0),
+                    disabledContainerColor = if (tokens.isDark) FinluxPalette.CFF2A2A3C else FinluxPalette.CFFE2E8F0,
                 ),
             ) {
                 Icon(
@@ -669,7 +671,7 @@ private fun ReminderEditorSheet(
                 Text(
                     text = if (busy) "Đang lưu..." else if (initial == null) "Tạo nhắc nhở" else "Cập nhật nhắc nhở",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (isFormValid) (if (tokens.isDark) Color(0xFF002B3D) else Color.White) else Color(0xFF94A3B8),
+                    color = if (isFormValid) (if (tokens.isDark) FinluxPalette.CFF002B3D else FinluxPalette.White) else FinluxPalette.CFF94A3B8,
                 )
             }
 
