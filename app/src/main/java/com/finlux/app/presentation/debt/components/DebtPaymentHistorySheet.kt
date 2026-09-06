@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.debt.components
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -158,7 +160,7 @@ fun DebtPaymentHistorySheet(
             // 2. Summary Hero Card
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = if (tokens.isDark) Color(0xFF1E2235) else Color(0xFFF1F5F9),
+                color = if (tokens.isDark) FinluxPalette.CFF1E2235 else FinluxPalette.CFFF1F5F9,
                 border = BorderStroke(1.dp, tokens.onSurface.copy(alpha = 0.08f)),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -181,7 +183,7 @@ fun DebtPaymentHistorySheet(
                             fontSize = 24.sp,
                             fontWeight = FontWeight.ExtraBold,
                         ),
-                        color = Color(0xFF10B981),
+                        color = FinluxPalette.CFF10B981,
                     )
 
                     Row(
@@ -231,7 +233,7 @@ fun DebtPaymentHistorySheet(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.5.sp,
                                     ),
-                                    color = Color(0xFFF43F5E),
+                                    color = FinluxPalette.CFFF43F5E,
                                 )
                             }
                         }
@@ -258,7 +260,7 @@ fun DebtPaymentHistorySheet(
                         },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = FinluxBlue,
-                            selectedLabelColor = Color.White,
+                            selectedLabelColor = FinluxPalette.White,
                         ),
                     )
                 }
@@ -278,7 +280,7 @@ fun DebtPaymentHistorySheet(
                         },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = colorFromHex(debt.colorHex),
-                            selectedLabelColor = Color.White,
+                            selectedLabelColor = FinluxPalette.White,
                         ),
                     )
                 }
@@ -383,7 +385,7 @@ fun DebtPaymentHistorySheet(
                                             fontWeight = FontWeight.ExtraBold,
                                             fontSize = 15.5.sp,
                                         ),
-                                        color = Color(0xFF10B981),
+                                        color = FinluxPalette.CFF10B981,
                                     )
                                 }
 
@@ -411,7 +413,7 @@ fun DebtPaymentHistorySheet(
                                     if (item.interestPaid.value > 0L) {
                                         Surface(
                                             shape = RoundedCornerShape(6.dp),
-                                            color = Color(0xFFF43F5E).copy(alpha = 0.10f),
+                                            color = FinluxPalette.CFFF43F5E.copy(alpha = 0.10f),
                                         ) {
                                             Text(
                                                 text = "Lãi: ${item.interestPaid.value.toVnd()}",
@@ -419,7 +421,7 @@ fun DebtPaymentHistorySheet(
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.SemiBold,
                                                 ),
-                                                color = Color(0xFFF43F5E),
+                                                color = FinluxPalette.CFFF43F5E,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
                                             )
                                         }
