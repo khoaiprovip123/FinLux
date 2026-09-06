@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.deal
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -178,7 +180,7 @@ fun DealAllTransactionsBottomSheet(
                             text = formatVndAmount(totalOutlay, isCompact = true),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFEF4444),
+                                color = FinluxPalette.CFFEF4444,
                             ),
                         )
                     }
@@ -218,7 +220,7 @@ fun DealAllTransactionsBottomSheet(
                             text = "+${formatVndAmount(totalGain, isCompact = true)}",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF8B5CF6),
+                                color = FinluxPalette.CFF8B5CF6,
                             ),
                         )
                     }
@@ -341,19 +343,19 @@ private fun DealTransactionHistoryCard(
     val (flowLabel, amountPrefix, flowColor, iconBrush) = when (flowType) {
         DealFlowType.OUTLAY_CAPITAL -> {
             val label = if (isLending) "Cho vay thêm" else "Xuất vốn deal"
-            Quad(label, "−", Color(0xFFEF4444), Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626))))
+            Quad(label, "−", FinluxPalette.CFFEF4444, Brush.linearGradient(listOf(FinluxPalette.CFFEF4444, FinluxPalette.CFFDC2626)))
         }
         DealFlowType.PRINCIPAL_RECOVERY -> {
             val label = if (isLending) "Thu hồi nợ gốc" else "Thu hồi vốn gốc"
-            Quad(label, "+", FinluxColors.IncomeGreen, Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF059669))))
+            Quad(label, "+", FinluxColors.IncomeGreen, Brush.linearGradient(listOf(FinluxPalette.CFF10B981, FinluxPalette.CFF059669)))
         }
         DealFlowType.CAPITAL_GAIN -> {
             val label = if (isLending) "Tiền lãi nhận được" else "Lợi nhuận vượt vốn"
-            Quad(label, "+", Color(0xFF8B5CF6), Brush.linearGradient(listOf(Color(0xFF8B5CF6), Color(0xFF6366F1))))
+            Quad(label, "+", FinluxPalette.CFF8B5CF6, Brush.linearGradient(listOf(FinluxPalette.CFF8B5CF6, FinluxPalette.CFF6366F1)))
         }
         DealFlowType.CAPITAL_LOSS -> {
             val label = if (isLending) "Xóa nợ xấu" else "Chốt lỗ đóng deal"
-            Quad(label, "−", Color(0xFFF97316), Brush.linearGradient(listOf(Color(0xFFF97316), Color(0xFFEA580C))))
+            Quad(label, "−", FinluxPalette.CFFF97316, Brush.linearGradient(listOf(FinluxPalette.CFFF97316, FinluxPalette.CFFEA580C)))
         }
     }
 
@@ -372,7 +374,7 @@ private fun DealTransactionHistoryCard(
 
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (tokens.isDark) tokens.surfaceSoft else Color.White,
+        color = if (tokens.isDark) tokens.surfaceSoft else FinluxPalette.White,
         border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier
             .fillMaxWidth()
@@ -406,7 +408,7 @@ private fun DealTransactionHistoryCard(
                         DealFlowType.CAPITAL_LOSS -> Icons.AutoMirrored.Filled.ReceiptLong
                     },
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = FinluxPalette.White,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -435,7 +437,7 @@ private fun DealTransactionHistoryCard(
                     // Badge category
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = if (isLending) Color(0xFFF59E0B).copy(alpha = 0.14f) else tokens.primary.copy(alpha = 0.14f),
+                        color = if (isLending) FinluxPalette.CFFF59E0B.copy(alpha = 0.14f) else tokens.primary.copy(alpha = 0.14f),
                     ) {
                         Text(
                             text = if (isLending) "Cho vay" else "Đầu tư",
@@ -443,7 +445,7 @@ private fun DealTransactionHistoryCard(
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
                             ),
-                            color = if (isLending) Color(0xFFD97706) else tokens.primary,
+                            color = if (isLending) FinluxPalette.CFFD97706 else tokens.primary,
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
                         )
                     }
