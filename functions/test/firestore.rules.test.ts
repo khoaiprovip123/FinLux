@@ -137,7 +137,7 @@ describe("Firestore Rules: Saving Spin", () => {
         const alice = testEnv.authenticatedContext("alice");
 
         await assertSucceeds(
-            alice.firestore().doc("users/alice/savingDestinations/bank_saving").set({
+            alice.firestore().doc("users/alice/savingSpinDestinations/bank_saving").set({
                 name: "Quỹ ngân hàng",
                 method: "BANK_TRANSFER",
                 linkedWalletId: "wallet_saving",
