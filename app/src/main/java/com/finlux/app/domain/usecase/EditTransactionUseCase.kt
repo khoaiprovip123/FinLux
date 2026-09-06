@@ -22,6 +22,18 @@ class EditTransactionUseCase @Inject constructor(
         if (original.id.isBlank() || updated.id != original.id) {
             return AppResult.Error("Giao dịch cần sửa không hợp lệ")
         }
+        if (!original.goalId.isNullOrBlank() || !original.debtId.isNullOrBlank()) {
+            return AppResult.Error(
+                if (!original.goalId.isNullOrBlank()) {
+                    "Giao dịch mục tiêu phải được điều chỉnh trong mục Tiết kiệm & Mục tiêu"
+                } else {
+                    "Giao dịch trả nợ phải được điều chỉnh trong mục Nợ & Tín dụng"
+                }
+            )
+        }
+        if (!updated.goalId.isNullOrBlank() || !updated.debtId.isNullOrBlank()) {
+            return AppResult.Error("Không thể gắn giao dịch thường vào ledger Goal/Debt")
+        }
 
         if (updated.type == TransactionType.EXPENSE) {
             val wallets = walletRepository.observeWallets().firstOrNull().orEmpty()
