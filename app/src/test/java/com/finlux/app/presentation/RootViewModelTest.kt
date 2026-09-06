@@ -27,7 +27,7 @@ class RootViewModelTest {
 
     private class FakeThemePreferenceRepository : ThemePreferenceRepository {
         val preferenceFlow = MutableStateFlow(ThemePreference.SYSTEM)
-        val uiStyleFlow = MutableStateFlow(AppUiStyle.CLASSIC_LIQUID)
+        val uiStyleFlow = MutableStateFlow(AppUiStyle.PRISM)
 
         override val preference: Flow<ThemePreference> = preferenceFlow
         override val uiStyle: Flow<AppUiStyle> = uiStyleFlow
@@ -70,9 +70,9 @@ class RootViewModelTest {
     }
 
     @Test
-    fun `initial ui style is CLASSIC_LIQUID`() = runTest {
+    fun `initial ui style is PRISM`() = runTest {
         viewModel.uiStyle.test {
-            assertEquals(AppUiStyle.CLASSIC_LIQUID, awaitItem())
+            assertEquals(AppUiStyle.PRISM, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -80,7 +80,7 @@ class RootViewModelTest {
     @Test
     fun `setting ui style updates repository and state`() = runTest {
         viewModel.uiStyle.test {
-            assertEquals(AppUiStyle.CLASSIC_LIQUID, awaitItem())
+            assertEquals(AppUiStyle.PRISM, awaitItem())
 
             viewModel.setUiStyle(AppUiStyle.MODERN_LUXURY)
             advanceUntilIdle()
@@ -94,7 +94,7 @@ class RootViewModelTest {
     @Test
     fun `switching back to CLASSIC_LIQUID works correctly`() = runTest {
         viewModel.uiStyle.test {
-            assertEquals(AppUiStyle.CLASSIC_LIQUID, awaitItem())
+            assertEquals(AppUiStyle.PRISM, awaitItem())
 
             viewModel.setUiStyle(AppUiStyle.MODERN_LUXURY)
             advanceUntilIdle()
