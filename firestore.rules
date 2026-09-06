@@ -23,6 +23,18 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(uid)/deals/$(dealId);
     }
 
+    function goalPath(uid, goalId) {
+      return /databases/$(database)/documents/users/$(uid)/goals/$(goalId);
+    }
+
+    function debtPath(uid, debtId) {
+      return /databases/$(database)/documents/users/$(uid)/debts/$(debtId);
+    }
+
+    function debtPaymentPath(uid, debtId, paymentId) {
+      return /databases/$(database)/documents/users/$(uid)/debts/$(debtId)/payments/$(paymentId);
+    }
+
     function transactionDelta(data) {
       return data.type in ['income', 'transfer_in', 'INCOME', 'TRANSFER_IN']
         ? data.amount
@@ -33,6 +45,53 @@ service cloud.firestore {
       return exists(walletPath(uid, walletId))
         && getAfter(walletPath(uid, walletId)).data.balance
           == get(walletPath(uid, walletId)).data.balance + delta;
+    }
+
+    function isGoalLedgerTransaction(data) {
+      return ('goalId' in data)
+        && data.goalId is string
+        && data.goalId.size() > 0
+        && ('goalFlowType' in data)
+        && data.goalFlowType != null;
+    }
+
+    function goalLedgerMovesBy(uid, data) {
+      return exists(goalPath(uid, data.goalId))
+        && get(goalPath(uid, data.goalId)).data.savedAmount is int
+        && getAfter(goalPath(uid, data.goalId)).data.savedAmount is int
+        && getAfter(goalPath(uid, data.goalId)).data.savedAmount
+          == get(goalPath(uid, data.goalId)).data.savedAmount
+            + (data.goalFlowType in ['allocation', 'ALLOCATION'] ? data.amount : 0 - data.amount);
+    }
+
+    function isDebtLedgerTransaction(data) {
+      return ('debtId' in data)
+        && data.debtId is string
+        && data.debtId.size() > 0
+        && ('debtPaymentId' in data)
+        && data.debtPaymentId is string
+        && data.debtPaymentId.size() > 0;
+    }
+
+    function debtLedgerMovesBy(uid, data) {
+      return exists(debtPath(uid, data.debtId))
+        && get(debtPath(uid, data.debtId)).data.remainingBalance is int
+        && getAfter(debtPath(uid, data.debtId)).data.remainingBalance is int
+        && getAfter(debtPath(uid, data.debtId)).data.remainingBalance
+          == get(debtPath(uid, data.debtId)).data.remainingBalance - data.debtPrincipalAmount
+        && getAfter(debtPath(uid, data.debtId)).data.remainingBalance >= 0
+        && getAfter(debtPath(uid, data.debtId)).data.isSettled
+          == (getAfter(debtPath(uid, data.debtId)).data.remainingBalance == 0);
+    }
+
+    function debtPaymentMatches(uid, data) {
+      return !exists(debtPaymentPath(uid, data.debtId, data.debtPaymentId))
+        && existsAfter(debtPaymentPath(uid, data.debtId, data.debtPaymentId))
+        && getAfter(debtPaymentPath(uid, data.debtId, data.debtPaymentId)).data.debtId == data.debtId
+        && getAfter(debtPaymentPath(uid, data.debtId, data.debtPaymentId)).data.walletId == data.walletId
+        && getAfter(debtPaymentPath(uid, data.debtId, data.debtPaymentId)).data.amount == data.amount
+        && getAfter(debtPaymentPath(uid, data.debtId, data.debtPaymentId)).data.principalPaid == data.debtPrincipalAmount
+        && getAfter(debtPaymentPath(uid, data.debtId, data.debtPaymentId)).data.interestPaid == data.debtInterestAmount;
     }
 
     function isDealLedgerTransaction(data) {
@@ -56,7 +115,7 @@ service cloud.firestore {
           'type', 'amount', 'categoryId', 'walletId', 'relatedWalletId',
           'dealId', 'dealFlowType',
           'goalId', 'goalFlowType',
-          'debtId', 'debtPrincipalAmount', 'debtInterestAmount',
+          'debtId', 'debtPrincipalAmount', 'debtInterestAmount', 'debtPaymentId',
           'note', 'receiptImageUrl', 'date', 'createdAt', 'updatedAt'
         ])
         && data.type in [
@@ -91,6 +150,7 @@ service cloud.firestore {
         && (!('debtId' in data) || data.debtId == null || data.debtId is string)
         && (!('debtPrincipalAmount' in data) || data.debtPrincipalAmount == null || isNonNegativeMoney(data.debtPrincipalAmount))
         && (!('debtInterestAmount' in data) || data.debtInterestAmount == null || isNonNegativeMoney(data.debtInterestAmount))
+        && (!('debtPaymentId' in data) || data.debtPaymentId == null || data.debtPaymentId is string)
         && (
           (
             !('debtId' in data)
@@ -99,13 +159,17 @@ service cloud.firestore {
           ? (
             (!('debtPrincipalAmount' in data) || data.debtPrincipalAmount == null)
             && (!('debtInterestAmount' in data) || data.debtInterestAmount == null)
+            && (!('debtPaymentId' in data) || data.debtPaymentId == null)
           )
           : (
             data.type in ['expense', 'EXPENSE']
             && ('debtPrincipalAmount' in data)
             && ('debtInterestAmount' in data)
+            && ('debtPaymentId' in data)
             && data.debtPrincipalAmount is int
             && data.debtInterestAmount is int
+            && data.debtPaymentId is string
+            && data.debtPaymentId.size() > 0
             && data.debtPrincipalAmount + data.debtInterestAmount == data.amount
           )
         );
@@ -261,13 +325,30 @@ service cloud.firestore {
           && validTransaction(request.resource.data)
           && (
             isDealSettlement(request.resource.data)
-            || walletMovesBy(
-              uid,
-              request.resource.data.walletId,
-              transactionDelta(request.resource.data)
+            || (
+              walletMovesBy(
+                uid,
+                request.resource.data.walletId,
+                transactionDelta(request.resource.data)
+              )
+              && (
+                !isGoalLedgerTransaction(request.resource.data)
+                || goalLedgerMovesBy(uid, request.resource.data)
+              )
+              && (
+                !isDebtLedgerTransaction(request.resource.data)
+                || (
+                  debtLedgerMovesBy(uid, request.resource.data)
+                  && debtPaymentMatches(uid, request.resource.data)
+                )
+              )
             )
           );
         allow update: if isOwner(uid)
+          && !isGoalLedgerTransaction(resource.data)
+          && !isDebtLedgerTransaction(resource.data)
+          && !isGoalLedgerTransaction(request.resource.data)
+          && !isDebtLedgerTransaction(request.resource.data)
           && validTransaction(request.resource.data)
           && (
             (
@@ -300,6 +381,8 @@ service cloud.firestore {
             )
           );
         allow delete: if isOwner(uid)
+          && !isGoalLedgerTransaction(resource.data)
+          && !isDebtLedgerTransaction(resource.data)
           && (
             isDealSettlement(resource.data)
             || (
@@ -484,8 +567,22 @@ service cloud.firestore {
           && request.resource.data.name.size() > 0;
 
         match /payments/{paymentId} {
-          allow read, delete: if isOwner(uid);
-          allow create, update: if isOwner(uid);
+          allow read: if isOwner(uid);
+          allow create: if isOwner(uid)
+            && request.resource.data.keys().hasOnly([
+              'debtId', 'walletId', 'amount', 'principalPaid',
+              'interestPaid', 'paymentDate', 'note'
+            ])
+            && request.resource.data.debtId == docId
+            && request.resource.data.walletId is string
+            && request.resource.data.walletId.size() > 0
+            && isPositiveMoney(request.resource.data.amount)
+            && isNonNegativeMoney(request.resource.data.principalPaid)
+            && isNonNegativeMoney(request.resource.data.interestPaid)
+            && request.resource.data.principalPaid + request.resource.data.interestPaid
+              == request.resource.data.amount
+            && request.resource.data.paymentDate is timestamp;
+          allow update, delete: if false;
         }
       }
     }
