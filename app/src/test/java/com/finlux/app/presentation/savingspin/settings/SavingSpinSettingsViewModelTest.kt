@@ -4,6 +4,7 @@ import com.finlux.app.core.time.FinanceClock
 import com.finlux.app.data.demo.DemoSalaryCycleRepository
 import com.finlux.app.data.demo.DemoSavingSpinRepository
 import com.finlux.app.domain.model.SavingSpinConfig
+import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.model.SavingSpinStep
 import com.finlux.app.domain.repository.SavingSpinScheduler
 import com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver
@@ -89,7 +90,7 @@ class SavingSpinSettingsViewModelTest {
     }
 
     private suspend fun fixture(config: SavingSpinConfig = SavingSpinConfig()): Fixture {
-        val repository = DemoSavingSpinRepository().also { it.saveConfig(config) }
+        val repository = DemoSavingSpinRepository(mockk<TransactionRepository>(relaxed = true)).also { it.saveConfig(config) }
         val scheduler = mockk<SavingSpinScheduler>(relaxed = true)
         return Fixture(
             SavingSpinSettingsViewModel(
