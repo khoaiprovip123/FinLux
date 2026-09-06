@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.debt
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -195,7 +197,7 @@ fun DebtPaymentSheet(
                                 text = formatVndAmount(debt.minimumPayment.value),
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFEF4444),
+                                    color = FinluxPalette.CFFEF4444,
                                 ),
                             )
                         }
@@ -247,8 +249,8 @@ fun DebtPaymentSheet(
                 onValueChange = { note = it },
                 placeholder = "vd: Thanh toán sao kê thẻ tín dụng",
                 icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
-                iconTintColor = Color(0xFF6366F1),
+                iconBgColor = FinluxPalette.CFF6366F1.copy(alpha = 0.14f),
+                iconTintColor = FinluxPalette.CFF6366F1,
                 onClear = { note = "" },
             )
 
@@ -281,8 +283,8 @@ fun DebtPaymentSheet(
             if (effectiveError != null) {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
-                    border = BorderStroke(1.dp, Color(0xFFF43F5E).copy(alpha = 0.35f)),
+                    color = if (tokens.isDark) FinluxPalette.CFF3B1E2B else FinluxPalette.CFFFFE4E6,
+                    border = BorderStroke(1.dp, FinluxPalette.CFFF43F5E.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
@@ -293,7 +295,7 @@ fun DebtPaymentSheet(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = null,
-                            tint = Color(0xFFE11D48),
+                            tint = FinluxPalette.CFFE11D48,
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
@@ -302,7 +304,7 @@ fun DebtPaymentSheet(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                            color = Color(0xFFE11D48),
+                            color = FinluxPalette.CFFE11D48,
                         )
                     }
                 }
@@ -343,7 +345,7 @@ fun DebtPaymentSheet(
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = tokens.primary,
-                    disabledContainerColor = if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0),
+                    disabledContainerColor = if (tokens.isDark) FinluxPalette.CFF2A2A3C else FinluxPalette.CFFE2E8F0,
                 ),
             ) {
                 Icon(imageVector = Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -351,7 +353,7 @@ fun DebtPaymentSheet(
                 Text(
                     text = if (currentAmount > 0L) "Xác nhận thanh toán • ${formatVndAmount(currentAmount)}" else "Xác nhận thanh toán",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (canConfirm) Color.White else (if (tokens.isDark) Color(0xFF64748B) else Color(0xFF94A3B8)),
+                    color = if (canConfirm) FinluxPalette.White else (if (tokens.isDark) FinluxPalette.CFF64748B else FinluxPalette.CFF94A3B8),
                 )
             }
 
