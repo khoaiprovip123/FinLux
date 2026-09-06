@@ -1,3 +1,40 @@
 <resources>
-    <string name="app_name">Finance Luxury</string>
+    <string name="app_name" translatable="false">FinLux</string>
+
+    <!-- Common actions -->
+    <string name="common_back">Quay lại</string>
+    <string name="common_close">Đóng</string>
+    <string name="common_cancel">Hủy</string>
+    <string name="common_save">Lưu</string>
+    <string name="common_delete">Xóa</string>
+    <string name="common_edit">Chỉnh sửa</string>
+    <string name="common_confirm">Xác nhận</string>
+    <string name="common_retry">Thử lại</string>
+    <string name="common_see_all">Xem tất cả</string>
+    <string name="common_no_data">Chưa có dữ liệu</string>
+
+    <!-- Shared finance vocabulary -->
+    <string name="transaction_income">Thu nhập</string>
+    <string name="transaction_expense">Chi tiêu</string>
+    <string name="transaction_transfer">Chuyển tiền</string>
+    <string name="finance_amount">Số tiền</string>
+    <string name="finance_category">Danh mục</string>
+    <string name="finance_wallet">Ví</string>
+    <string name="finance_note">Ghi chú</string>
+    <string name="finance_salary_cycle">Kỳ lương</string>
+    <string name="finance_calendar_month">Tháng dương lịch</string>
+
+    <!-- Reporting vocabulary -->
+    <string name="reports_title">Báo cáo</string>
+    <string name="reports_opening_balance">Số dư đầu kỳ</string>
+    <string name="reports_closing_balance">Số dư cuối kỳ</string>
+    <string name="reports_operating_income">Thu hoạt động</string>
+    <string name="reports_operating_expense">Chi hoạt động</string>
+    <string name="reports_operating_surplus">Thặng dư hoạt động</string>
+
+    <!-- Feature names -->
+    <string name="saving_spin_title">Vòng quay tiết kiệm</string>
+    <string name="goals_title">Tiết kiệm &amp; Mục tiêu</string>
+    <string name="debts_title">Nợ &amp; Tín dụng</string>
+    <string name="clear_amount">Xóa số tiền</string>
 </resources>
