@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.AppNotification
 import com.finlux.app.domain.model.Budget
+import com.finlux.app.domain.model.BudgetPeriodBasis
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.DebtAccount
@@ -11,6 +12,7 @@ import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialGoal
+import com.finlux.app.domain.model.GoalFlowType
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.ZoneId
 import java.time.YearMonth
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -278,6 +281,183 @@ class HomeViewModelTest {
             assertEquals(20_000_000L, state.summary.net)
             assertEquals(2, state.monthTransactions.size)
             org.junit.jupiter.api.Assertions.assertNotNull(state.salaryCycleLabel)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `home excludes goal allocation and debt principal from operating summary`() = runTest(testDispatcher) {
+        val now = Instant.parse("2026-09-05T12:00:00Z")
+        val clock = object : com.finlux.app.core.time.FinanceClock {
+            override val zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+            override fun now(): Instant = now
+        }
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+        val salaryConfig = com.finlux.app.domain.model.SalaryCycleConfig(
+            enabled = true,
+            paydayDay = 25,
+            budgetPeriodBasis = BudgetPeriodBasis.CALENDAR_MONTH,
+        )
+
+        val reportTxs = listOf(
+            FinanceTransaction(
+                id = "income",
+                type = TransactionType.INCOME,
+                amount = Money(10_000_000L),
+                categoryId = "salary",
+                walletId = "w1",
+                date = now,
+            ),
+            FinanceTransaction(
+                id = "food",
+                type = TransactionType.EXPENSE,
+                amount = Money(2_000_000L),
+                categoryId = "food",
+                walletId = "w1",
+                date = now,
+            ),
+            FinanceTransaction(
+                id = "goal",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_000_000L),
+                categoryId = "savings",
+                walletId = "w1",
+                date = now,
+                goalId = "goal-1",
+                goalFlowType = GoalFlowType.ALLOCATION,
+            ),
+            FinanceTransaction(
+                id = "debt",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_200_000L),
+                categoryId = "debt_payment",
+                walletId = "w1",
+                date = now,
+                debtId = "debt-1",
+                debtPrincipalAmount = Money(1_000_000L),
+                debtInterestAmount = Money(200_000L),
+            ),
+        )
+
+        val txRepo = object : TransactionRepository by FakeHomeTransactionRepository() {
+            override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>> =
+                flowOf(reportTxs)
+            override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> =
+                flowOf(emptyList())
+        }
+        val salaryRepo = object : com.finlux.app.domain.repository.SalaryCycleRepository by FakeHomeSalaryCycleRepository() {
+            override fun observeConfig(): Flow<com.finlux.app.domain.model.SalaryCycleConfig> = flowOf(salaryConfig)
+        }
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(emptyList()),
+            transactionRepository = txRepo,
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = FakeHomeBudgetRepository(),
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(emptyList()),
+            goalRepository = FakeHomeGoalRepository(emptyList()),
+            salaryCycleRepository = salaryRepo,
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = clock,
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            val state = if (initial.summary.income.value == 0L) awaitItem() else initial
+            assertEquals(10_000_000L, state.summary.income.value)
+            assertEquals(2_200_000L, state.summary.expense.value)
+            assertEquals(7_800_000L, state.summary.net)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `calendar budget basis uses calendar transactions while home summary follows salary cycle`() = runTest(testDispatcher) {
+        val now = Instant.parse("2026-09-05T12:00:00Z")
+        val clock = object : com.finlux.app.core.time.FinanceClock {
+            override val zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+            override fun now(): Instant = now
+        }
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+        val salaryConfig = com.finlux.app.domain.model.SalaryCycleConfig(
+            enabled = true,
+            paydayDay = 25,
+            budgetPeriodBasis = BudgetPeriodBasis.CALENDAR_MONTH,
+        )
+
+        val salaryCycleTxs = listOf(
+            FinanceTransaction(
+                id = "cycle-expense",
+                type = TransactionType.EXPENSE,
+                amount = Money(4_000_000L),
+                categoryId = "cat1",
+                walletId = "w1",
+                date = now,
+            ),
+        )
+        val calendarBudgetTxs = listOf(
+            FinanceTransaction(
+                id = "month-expense",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_000_000L),
+                categoryId = "cat1",
+                walletId = "w1",
+                date = now,
+            ),
+        )
+        val budget = Budget(
+            id = "budget-1",
+            categoryId = "cat1",
+            periodKey = "month:2026-09",
+            limitAmount = Money(5_000_000L),
+            spentAmount = Money(0L),
+        )
+
+        val txRepo = object : TransactionRepository by FakeHomeTransactionRepository() {
+            override fun observePeriod(start: Instant, endExclusive: Instant): Flow<List<FinanceTransaction>> =
+                flowOf(salaryCycleTxs)
+            override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> =
+                flowOf(calendarBudgetTxs)
+        }
+        val budgetRepo = object : BudgetRepository by FakeHomeBudgetRepository() {
+            override fun observeBudgets(periodKey: String): Flow<List<Budget>> = flowOf(listOf(budget))
+        }
+        val salaryRepo = object : com.finlux.app.domain.repository.SalaryCycleRepository by FakeHomeSalaryCycleRepository() {
+            override fun observeConfig(): Flow<com.finlux.app.domain.model.SalaryCycleConfig> = flowOf(salaryConfig)
+        }
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(emptyList()),
+            transactionRepository = txRepo,
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = budgetRepo,
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(emptyList()),
+            goalRepository = FakeHomeGoalRepository(emptyList()),
+            salaryCycleRepository = salaryRepo,
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = clock,
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            val state = if (initial.budgets.isEmpty()) awaitItem() else initial
+            assertEquals(4_000_000L, state.summary.expense.value)
+            assertEquals(1_000_000L, state.totalBudgetSpent)
+            assertEquals(20, state.totalBudgetPercent)
+            assertEquals(1, state.monthTransactions.size)
+            assertEquals("cycle-expense", state.monthTransactions.single().id)
             cancelAndIgnoreRemainingEvents()
         }
     }
