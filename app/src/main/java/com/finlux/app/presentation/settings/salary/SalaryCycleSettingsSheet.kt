@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.settings.salary
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -206,8 +208,8 @@ fun SalaryCycleSettingsSheet(
                         checked = state.config.enabled,
                         onCheckedChange = { viewModel.setEnabled(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFF10B981),
+                            checkedThumbColor = FinluxPalette.White,
+                            checkedTrackColor = FinluxPalette.CFF10B981,
                         ),
                     )
                 }
@@ -216,8 +218,8 @@ fun SalaryCycleSettingsSheet(
             // Live Preview Card
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = Color.Transparent,
-                border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.35f)),
+                color = FinluxPalette.Transparent,
+                border = BorderStroke(1.dp, FinluxPalette.CFF10B981.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
@@ -226,8 +228,8 @@ fun SalaryCycleSettingsSheet(
                         .background(
                             Brush.linearGradient(
                                 listOf(
-                                    Color(0xFF059669).copy(alpha = if (tokens.isDark) 0.18f else 0.10f),
-                                    Color(0xFF10B981).copy(alpha = if (tokens.isDark) 0.12f else 0.05f),
+                                    FinluxPalette.CFF059669.copy(alpha = if (tokens.isDark) 0.18f else 0.10f),
+                                    FinluxPalette.CFF10B981.copy(alpha = if (tokens.isDark) 0.12f else 0.05f),
                                     tokens.surfaceSoft,
                                 ),
                             ),
@@ -242,14 +244,14 @@ fun SalaryCycleSettingsSheet(
                         Icon(
                             imageVector = Icons.Default.DateRange,
                             contentDescription = null,
-                            tint = Color(0xFF10B981),
+                            tint = FinluxPalette.CFF10B981,
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
                             text = "Xem trước dải chu kỳ tài chính",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
-                            color = Color(0xFF10B981),
+                            color = FinluxPalette.CFF10B981,
                         )
                     }
 
@@ -269,7 +271,7 @@ fun SalaryCycleSettingsSheet(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text("Kỳ hiện tại", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                                Text("Kỳ hiện tại", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = FinluxPalette.CFF10B981)
                                 Text(
                                     text = state.currentCyclePreview.ifBlank { "Chưa xác định" },
                                     fontWeight = FontWeight.SemiBold,
@@ -365,7 +367,7 @@ fun SalaryCycleSettingsSheet(
                                     text = "Ngày ${state.config.paydayDay}",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
-                                    color = Color(0xFF10B981),
+                                    color = FinluxPalette.CFF10B981,
                                 )
                             }
 
@@ -378,8 +380,8 @@ fun SalaryCycleSettingsSheet(
                                     val isSelected = state.config.paydayDay == day
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),
-                                        color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.18f) else tokens.surfaceSoft,
-                                        border = if (isSelected) BorderStroke(1.2.dp, Color(0xFF10B981)) else null,
+                                        color = if (isSelected) FinluxPalette.CFF10B981.copy(alpha = 0.18f) else tokens.surfaceSoft,
+                                        border = if (isSelected) BorderStroke(1.2.dp, FinluxPalette.CFF10B981) else null,
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(10.dp))
@@ -389,7 +391,7 @@ fun SalaryCycleSettingsSheet(
                                             text = "$day",
                                             textAlign = TextAlign.Center,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
+                                            color = if (isSelected) FinluxPalette.CFF10B981 else tokens.onSurface,
                                             fontSize = 13.sp,
                                             modifier = Modifier.padding(vertical = 8.dp),
                                         )
@@ -404,8 +406,8 @@ fun SalaryCycleSettingsSheet(
                                 valueRange = 1f..31f,
                                 steps = 29,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF10B981),
-                                    activeTrackColor = Color(0xFF10B981),
+                                    thumbColor = FinluxPalette.CFF10B981,
+                                    activeTrackColor = FinluxPalette.CFF10B981,
                                 ),
                             )
                         }
@@ -437,8 +439,8 @@ fun SalaryCycleSettingsSheet(
                                             )
                                         },
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = Color(0xFF10B981).copy(alpha = 0.18f),
-                                            selectedLabelColor = Color(0xFF10B981),
+                                            selectedContainerColor = FinluxPalette.CFF10B981.copy(alpha = 0.18f),
+                                            selectedLabelColor = FinluxPalette.CFF10B981,
                                         ),
                                     )
                                 }
@@ -540,17 +542,17 @@ fun SalaryCycleSettingsSheet(
                     modifier = Modifier.weight(1.5f).height(50.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF10B981),
+                        containerColor = FinluxPalette.CFF10B981,
                     ),
                 ) {
                     if (state.isSaving) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            color = Color.White,
+                            color = FinluxPalette.White,
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Text("Lưu cấu hình", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Lưu cấu hình", fontWeight = FontWeight.Bold, color = FinluxPalette.White)
                     }
                 }
             }
@@ -569,8 +571,8 @@ private fun PaydayRuleCard(
     val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.15f) else tokens.surfaceSoft,
-        border = if (isSelected) BorderStroke(1.5.dp, Color(0xFF10B981)) else null,
+        color = if (isSelected) FinluxPalette.CFF10B981.copy(alpha = 0.15f) else tokens.surfaceSoft,
+        border = if (isSelected) BorderStroke(1.5.dp, FinluxPalette.CFF10B981) else null,
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick),
@@ -584,7 +586,7 @@ private fun PaydayRuleCard(
                 text = title,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 fontSize = 13.sp,
-                color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
+                color = if (isSelected) FinluxPalette.CFF10B981 else tokens.onSurface,
                 textAlign = TextAlign.Center,
             )
             Text(
@@ -607,8 +609,8 @@ private fun RolloverOptionRow(
     val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.12f) else tokens.surfaceSoft,
-        border = if (isSelected) BorderStroke(1.2.dp, Color(0xFF10B981)) else null,
+        color = if (isSelected) FinluxPalette.CFF10B981.copy(alpha = 0.12f) else tokens.surfaceSoft,
+        border = if (isSelected) BorderStroke(1.2.dp, FinluxPalette.CFF10B981) else null,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
@@ -624,7 +626,7 @@ private fun RolloverOptionRow(
                     text = title,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 14.sp,
-                    color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
+                    color = if (isSelected) FinluxPalette.CFF10B981 else tokens.onSurface,
                 )
                 Text(
                     text = description,
@@ -636,7 +638,7 @@ private fun RolloverOptionRow(
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = Color(0xFF10B981),
+                    tint = FinluxPalette.CFF10B981,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -654,8 +656,8 @@ private fun BudgetBasisCard(
     val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.15f) else tokens.surfaceSoft,
-        border = if (isSelected) BorderStroke(1.2.dp, Color(0xFF10B981)) else null,
+        color = if (isSelected) FinluxPalette.CFF10B981.copy(alpha = 0.15f) else tokens.surfaceSoft,
+        border = if (isSelected) BorderStroke(1.2.dp, FinluxPalette.CFF10B981) else null,
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
@@ -663,7 +665,7 @@ private fun BudgetBasisCard(
         Text(
             text = title,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
+            color = if (isSelected) FinluxPalette.CFF10B981 else tokens.onSurface,
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
