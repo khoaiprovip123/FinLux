@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.reports.modern
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import com.finlux.app.presentation.reports.*
 import com.finlux.app.core.designsystem.modern.*
 import com.finlux.app.core.designsystem.component.formatVndAmount
@@ -74,7 +76,7 @@ import java.util.Locale
 
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
-private val ChartColors = listOf(FinluxBlue, FinluxPurple, FinluxCyan, IncomeGreen, Color(0xFFFFB347), ExpenseRed)
+private val ChartColors = listOf(FinluxBlue, FinluxPurple, FinluxCyan, IncomeGreen, FinluxPalette.CFFFFB347, ExpenseRed)
 
 @Composable
 fun ModernReportsScreen(
@@ -101,7 +103,7 @@ fun ModernReportsScreen(
                     actions = { IconButton(onClick = { showRangePicker = true }) { Icon(Icons.Default.FilterAlt, "Lọc báo cáo") } },
                 )
             },
-            containerColor = Color.Transparent,
+            containerColor = FinluxPalette.Transparent,
         ) { padding ->
             Column(
                 Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
@@ -193,7 +195,7 @@ fun ModernReportsScreen(
                                 Text(
                                     text = "Chuyển tiền: -${formatVndAmount(state.totalTransferOut)}" + if (state.totalTransferIn > 0) " | Nhận: +${formatVndAmount(state.totalTransferIn)}" else "",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFFF97316)
+                                    color = FinluxPalette.CFFF97316
                                 )
                                 Text(
                                     text = "Biến động ví: ${if (state.currentWalletNetChange >= 0) "+" else ""}${formatVndAmount(state.currentWalletNetChange)}",
@@ -303,7 +305,7 @@ fun ModernReportsScreen(
         DatePickerDialog(
             onDismissRequest = { showRangePicker = false },
             colors = androidx.compose.material3.DatePickerDefaults.colors(
-                containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                containerColor = if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.White,
             ),
             shape = RoundedCornerShape(28.dp),
             confirmButton = {
@@ -324,7 +326,7 @@ fun ModernReportsScreen(
             DateRangePicker(
                 state = rangeState,
                 colors = androidx.compose.material3.DatePickerDefaults.colors(
-                    containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    containerColor = if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.White,
                     titleContentColor = tokens.onSurface,
                     headlineContentColor = tokens.onSurface,
                     weekdayContentColor = tokens.onSurfaceVariant,
@@ -446,13 +448,13 @@ private fun CategoryBlock(item: CategoryExpense, total: Long, index: Int, modifi
             Icon(
                 imageVector = com.finlux.app.core.designsystem.categoryIcon(item.category?.icon.orEmpty()),
                 contentDescription = item.category?.name,
-                tint = Color.White,
+                tint = FinluxPalette.White,
                 modifier = Modifier.size(16.dp),
             )
         } else {
             Text(
                 text = item.category?.name ?: "Khác",
-                color = Color.White,
+                color = FinluxPalette.White,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -462,14 +464,14 @@ private fun CategoryBlock(item: CategoryExpense, total: Long, index: Int, modifi
         Column {
             Text(
                 text = "$percent%",
-                color = Color.White,
+                color = FinluxPalette.White,
                 style = if (index == 0) MaterialTheme.typography.titleLarge else if (isSmall) MaterialTheme.typography.labelMedium else MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
             if (!isSmall) {
                 Text(
                     text = item.amount.toShortVnd(),
-                    color = Color.White.copy(alpha = .88f),
+                    color = FinluxPalette.White.copy(alpha = .88f),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                 )
@@ -517,8 +519,8 @@ private fun CashFlowChart(items: List<CashFlowPoint>) {
                 if (focus != null) {
                     val x = focusIndex * step
                     drawLine(focusLineColor, Offset(x, chartTop), Offset(x, chartBottom), 1.dp.toPx())
-                    drawCircle(Color.White, 5.dp.toPx(), point(focusIndex, focus.income)); drawCircle(FinluxBlue, 3.dp.toPx(), point(focusIndex, focus.income))
-                    drawCircle(Color.White, 5.dp.toPx(), point(focusIndex, focus.expense)); drawCircle(ExpenseRed, 3.dp.toPx(), point(focusIndex, focus.expense))
+                    drawCircle(FinluxPalette.White, 5.dp.toPx(), point(focusIndex, focus.income)); drawCircle(FinluxBlue, 3.dp.toPx(), point(focusIndex, focus.income))
+                    drawCircle(FinluxPalette.White, 5.dp.toPx(), point(focusIndex, focus.expense)); drawCircle(ExpenseRed, 3.dp.toPx(), point(focusIndex, focus.expense))
                 }
             }
             focus?.let { point ->
@@ -606,7 +608,7 @@ private fun WalletReport(
                                     Text(
                                         "Chuyển: -${spending.transferOutInPeriod.toShortVnd()}",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFFF97316)
+                                        color = FinluxPalette.CFFF97316
                                     )
                                 }
                             }
