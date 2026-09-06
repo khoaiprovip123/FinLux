@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.reports.prism
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,7 +63,7 @@ internal fun PrismReportsHeroBanner(
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF5B4DFF).copy(alpha = 0.4f)),
+            .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = FinluxPalette.CFF5B4DFF.copy(alpha = 0.4f)),
     ) {
         Box(
             modifier = Modifier
@@ -69,9 +71,9 @@ internal fun PrismReportsHeroBanner(
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF5B4DFF),
-                            Color(0xFF6366F1),
-                            Color(0xFF7C3AED),
+                            FinluxPalette.CFF5B4DFF,
+                            FinluxPalette.CFF6366F1,
+                            FinluxPalette.CFF7C3AED,
                         ),
                     ),
                 )
@@ -97,7 +99,7 @@ internal fun PrismReportsHeroBanner(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             ),
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = FinluxPalette.White.copy(alpha = 0.85f),
                         )
                     }
 
@@ -116,7 +118,7 @@ internal fun PrismReportsHeroBanner(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.5.sp,
                         ),
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = FinluxPalette.White.copy(alpha = 0.85f),
                     )
 
                     // Con số to nổi bật nhất: số dư tại đúng mốc cuối kỳ đang xem.
@@ -127,7 +129,7 @@ internal fun PrismReportsHeroBanner(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp,
                         ),
-                        color = Color.White,
+                        color = FinluxPalette.White,
                     )
 
                     // Phía dưới là Dòng tiền ròng (Thu – Chi)
@@ -141,7 +143,7 @@ internal fun PrismReportsHeroBanner(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             ),
-                            color = Color.White.copy(alpha = 0.90f),
+                            color = FinluxPalette.White.copy(alpha = 0.90f),
                         )
                         Text(
                             text = (if (net >= 0) "+" else "") + formatVndAmount(net),
@@ -149,7 +151,7 @@ internal fun PrismReportsHeroBanner(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.ExtraBold,
                             ),
-                            color = if (net >= 0) Color(0xFF4ADE80) else Color(0xFFFCA5A5),
+                            color = if (net >= 0) FinluxPalette.CFF4ADE80 else FinluxPalette.CFFFCA5A5,
                         )
                     }
 
@@ -164,7 +166,7 @@ internal fun PrismReportsHeroBanner(
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Normal,
                         ),
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = FinluxPalette.White.copy(alpha = 0.85f),
                     )
 
                     Spacer(Modifier.height(3.dp))
@@ -175,63 +177,63 @@ internal fun PrismReportsHeroBanner(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Column {
-                            Text("Thu hoạt động", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Thu hoạt động", fontSize = 11.sp, color = FinluxPalette.White.copy(alpha = 0.75f))
                             Text(
                                 "+${formatVndAmount(income)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4ADE80), // Mint Green
+                                color = FinluxPalette.CFF4ADE80, // Mint Green
                             )
                         }
                         Column {
-                            Text("Chi hoạt động", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Chi hoạt động", fontSize = 11.sp, color = FinluxPalette.White.copy(alpha = 0.75f))
                             Text(
                                 "-${formatVndAmount(expense)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFDE047), // Golden Yellow
+                                color = FinluxPalette.CFFFDE047, // Golden Yellow
                             )
                         }
                         if (state.selectedWallet != null) {
                             if (state.totalTransferOut > 0) {
                                 Column {
-                                    Text("Chuyển đi", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                    Text("Chuyển đi", fontSize = 11.sp, color = FinluxPalette.White.copy(alpha = 0.75f))
                                     Text(
                                         "-${formatVndAmount(state.totalTransferOut)}",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFFDBA74), // Orange
+                                        color = FinluxPalette.CFFFDBA74, // Orange
                                     )
                                 }
                             }
                             if (state.totalTransferIn > 0) {
                                 Column {
-                                    Text("Nhận chuyển", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                    Text("Nhận chuyển", fontSize = 11.sp, color = FinluxPalette.White.copy(alpha = 0.75f))
                                     Text(
                                         "+${formatVndAmount(state.totalTransferIn)}",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF93C5FD), // Light Blue
+                                        color = FinluxPalette.CFF93C5FD, // Light Blue
                                     )
                                 }
                             }
                             Column {
-                                Text("Biến động ví", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                Text("Biến động ví", fontSize = 11.sp, color = FinluxPalette.White.copy(alpha = 0.75f))
                                 Text(
                                     "${if (state.currentWalletNetChange >= 0) "+" else ""}${formatVndAmount(state.currentWalletNetChange)}",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (state.currentWalletNetChange >= 0) Color(0xFF4ADE80) else Color(0xFFFCA5A5),
+                                    color = if (state.currentWalletNetChange >= 0) FinluxPalette.CFF4ADE80 else FinluxPalette.CFFFCA5A5,
                                 )
                             }
                         } else {
                             Column {
-                                Text("Đầu kỳ", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                Text("Đầu kỳ", fontSize = 11.sp, color = FinluxPalette.White.copy(alpha = 0.75f))
                                 Text(
                                     formatVndAmount(state.openingBalance),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = FinluxPalette.White,
                                 )
                             }
                         }
@@ -259,7 +261,7 @@ internal fun PrismReportsHeroBanner(
 
                         // Track
                         drawArc(
-                            color = Color.White.copy(alpha = 0.22f),
+                            color = FinluxPalette.White.copy(alpha = 0.22f),
                             startAngle = -90f,
                             sweepAngle = 360f,
                             useCenter = false,
@@ -271,7 +273,7 @@ internal fun PrismReportsHeroBanner(
                         // Progress
                         val progressSweep = (rightCirclePct / 100f) * 360f
                         drawArc(
-                            color = Color.White,
+                            color = FinluxPalette.White,
                             startAngle = -90f,
                             sweepAngle = progressSweep,
                             useCenter = false,
@@ -291,12 +293,12 @@ internal fun PrismReportsHeroBanner(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold,
                             ),
-                            color = Color.White,
+                            color = FinluxPalette.White,
                         )
                         Text(
                             text = rightCircleLabel,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = FinluxPalette.White.copy(alpha = 0.85f),
                         )
                     }
                 }
