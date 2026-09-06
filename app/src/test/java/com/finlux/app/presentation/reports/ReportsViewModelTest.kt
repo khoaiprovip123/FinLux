@@ -13,6 +13,7 @@ import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.model.FinancialGoal
+import com.finlux.app.domain.model.GoalFlowType
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.SavingDestination
@@ -428,6 +429,143 @@ class ReportsViewModelTest {
             assertEquals(0L, shoppingItem.remaining)
             assertEquals(true, shoppingItem.isOverBudget)
 
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `tagged goal allocation and debt principal stay out of operating expense and budget`() = runTest(testDispatcher) {
+        val fixedNow = Instant.parse("2026-09-05T12:00:00Z")
+        val fixedClock = object : FinanceClock {
+            override val zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+            override fun now(): Instant = fixedNow
+        }
+        val zone = fixedClock.zoneId
+
+        val salary = Category(
+            id = "salary",
+            name = "Lương",
+            type = CategoryType.INCOME,
+            icon = "payments",
+            colorHex = "#10B981",
+            isDefault = true,
+            createdAt = fixedNow,
+        )
+        val food = Category(
+            id = "food",
+            name = "Ăn uống",
+            type = CategoryType.EXPENSE,
+            icon = "food",
+            colorHex = "#EF4444",
+            isDefault = true,
+            createdAt = fixedNow,
+        )
+        val savings = Category(
+            id = "savings",
+            name = "Tiết kiệm",
+            type = CategoryType.EXPENSE,
+            icon = "savings",
+            colorHex = "#3B82F6",
+            isDefault = true,
+            createdAt = fixedNow,
+        )
+        val debtPayment = Category(
+            id = "debt_payment",
+            name = "Trả nợ",
+            type = CategoryType.EXPENSE,
+            icon = "credit_card",
+            colorHex = "#F59E0B",
+            isDefault = true,
+            createdAt = fixedNow,
+        )
+        val savingsBudget = Budget(
+            id = "budget-savings",
+            categoryId = "savings",
+            periodKey = "month:2026-09",
+            limitAmount = Money(2_000_000L),
+            spentAmount = Money(0L),
+        )
+
+        fun at(day: Int, hour: Int) =
+            java.time.LocalDate.of(2026, 9, day).atTime(hour, 0).atZone(zone).toInstant()
+
+        val transactions = listOf(
+            FinanceTransaction(
+                id = "salary",
+                type = TransactionType.INCOME,
+                amount = Money(10_000_000L),
+                categoryId = "salary",
+                walletId = "w1",
+                date = at(2, 9),
+            ),
+            FinanceTransaction(
+                id = "food",
+                type = TransactionType.EXPENSE,
+                amount = Money(2_000_000L),
+                categoryId = "food",
+                walletId = "w1",
+                date = at(2, 12),
+            ),
+            FinanceTransaction(
+                id = "goal",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_000_000L),
+                categoryId = "savings",
+                walletId = "w1",
+                date = at(3, 10),
+                goalId = "goal-1",
+                goalFlowType = GoalFlowType.ALLOCATION,
+            ),
+            FinanceTransaction(
+                id = "debt",
+                type = TransactionType.EXPENSE,
+                amount = Money(1_200_000L),
+                categoryId = "debt_payment",
+                walletId = "w1",
+                date = at(4, 10),
+                debtId = "debt-1",
+                debtPrincipalAmount = Money(1_000_000L),
+                debtInterestAmount = Money(200_000L),
+            ),
+        )
+
+        every { categoryRepository.observeCategories() } returns
+            flowOf(listOf(salary, food, savings, debtPayment))
+        every { budgetRepository.observeBudgets(any()) } returns flowOf(listOf(savingsBudget))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns flowOf(transactions)
+
+        val viewModel = createViewModel(fixedClock)
+        viewModel.setCustomRange(
+            java.time.LocalDate.of(2026, 9, 1),
+            java.time.LocalDate.of(2026, 9, 5),
+        )
+
+        viewModel.state.test {
+            awaitItem()
+            advanceUntilIdle()
+            val state = awaitItem()
+
+            // Legacy ledger totals remain available for backward compatibility.
+            assertEquals(10_000_000L, state.summary.income.value)
+            assertEquals(4_200_000L, state.summary.expense.value)
+
+            // Reports 3.0 operating KPIs exclude savings allocation and debt principal.
+            assertEquals(10_000_000L, state.operatingSummary.income.value)
+            assertEquals(2_200_000L, state.operatingSummary.expense.value)
+            assertEquals(7_800_000L, state.operatingSummary.net)
+            assertEquals(78, state.savingsRatePercent)
+
+            assertEquals(1_000_000L, state.financialFlowBreakdown.goalAllocation)
+            assertEquals(1_000_000L, state.financialFlowBreakdown.debtPrincipalOutflow)
+            assertEquals(200_000L, state.financialFlowBreakdown.debtInterestExpense)
+
+            assertTrue(state.expensesByCategory.none { it.category?.id == "savings" })
+            assertEquals(
+                200_000L,
+                state.expensesByCategory.first { it.category?.id == "debt_payment" }.amount,
+            )
+            assertEquals(0L, state.budgetReportItems.single().spent)
+            assertEquals(7_800_000L, state.unspentCashFlow)
             cancelAndIgnoreRemainingEvents()
         }
     }
