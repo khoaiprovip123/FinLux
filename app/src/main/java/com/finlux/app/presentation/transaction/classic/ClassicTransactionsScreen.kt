@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.transaction.classic
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import com.finlux.app.presentation.transaction.*
 
 import androidx.compose.foundation.layout.Arrangement
@@ -168,7 +170,7 @@ fun ClassicTransactionsScreen(
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color.White,
+                                                color = FinluxPalette.White,
                                             ),
                                         )
                                     }
@@ -248,12 +250,12 @@ fun ClassicTransactionsScreen(
                     }
                     GradientHeroCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(heading, color = Color.White.copy(alpha = .8f))
-                            Text(displayAmount, color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                            Text(heading, color = FinluxPalette.White.copy(alpha = .8f))
+                            Text(displayAmount, color = FinluxPalette.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                             if (filter == TransactionFilter.ALL) {
-                                Text("Thu: +${totalIncome.toVnd()}  •  Chi: -${totalExpense.toVnd()}", color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodySmall)
+                                Text("Thu: +${totalIncome.toVnd()}  •  Chi: -${totalExpense.toVnd()}", color = FinluxPalette.White.copy(alpha = .9f), style = MaterialTheme.typography.bodySmall)
                             } else {
-                                Text("${transactions.size} giao dịch", color = Color.White.copy(alpha = .78f))
+                                Text("${transactions.size} giao dịch", color = FinluxPalette.White.copy(alpha = .78f))
                             }
                         }
                     }
@@ -285,12 +287,12 @@ fun ClassicTransactionsScreen(
                                     text = headerTitle,
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = FinluxPalette.White,
                                 )
                                 Text(
                                     text = "(${txList.size})",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.7f),
+                                    color = FinluxPalette.White.copy(alpha = 0.7f),
                                 )
                             }
 
