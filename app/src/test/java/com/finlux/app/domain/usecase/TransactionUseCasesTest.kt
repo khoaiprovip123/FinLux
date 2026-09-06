@@ -3,6 +3,7 @@ package com.finlux.app.domain.usecase
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.GoalFlowType
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
@@ -106,6 +107,48 @@ class TransactionUseCasesTest {
 
         assertEquals(AppResult.Success(Unit), result)
         assertEquals(1, repository.deleteCalls)
+    }
+
+    @Test
+    fun `generic edit and delete reject Goal managed ledger entries`() = runTest {
+        val managed = validTransaction(id = "goal-tx").copy(
+            goalId = "goal-1",
+            goalFlowType = GoalFlowType.ALLOCATION,
+        )
+
+        val editResult = EditTransactionUseCase(repository, walletRepository)(
+            managed,
+            managed.copy(amount = Money(150_000)),
+        )
+        val deleteResult = DeleteTransactionUseCase(repository)(managed)
+
+        assertInstanceOf(AppResult.Error::class.java, editResult)
+        assertInstanceOf(AppResult.Error::class.java, deleteResult)
+        assertEquals(0, repository.editCalls)
+        assertEquals(0, repository.deleteCalls)
+    }
+
+    @Test
+    fun `generic edit and delete reject Debt managed ledger entries`() = runTest {
+        val managed = validTransaction(id = "debt-tx").copy(
+            categoryId = "debt_payment",
+            amount = Money(120_000),
+            debtId = "debt-1",
+            debtPrincipalAmount = Money(100_000),
+            debtInterestAmount = Money(20_000),
+            debtPaymentId = "pay-1",
+        )
+
+        val editResult = EditTransactionUseCase(repository, walletRepository)(
+            managed,
+            managed.copy(amount = Money(130_000)),
+        )
+        val deleteResult = DeleteTransactionUseCase(repository)(managed)
+
+        assertInstanceOf(AppResult.Error::class.java, editResult)
+        assertInstanceOf(AppResult.Error::class.java, deleteResult)
+        assertEquals(0, repository.editCalls)
+        assertEquals(0, repository.deleteCalls)
     }
 
     @Test
