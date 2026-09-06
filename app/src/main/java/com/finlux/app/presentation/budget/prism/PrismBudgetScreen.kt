@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.budget.prism
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -261,7 +263,7 @@ fun PrismBudgetScreen(
                     // Dynamic Risk Palette (0-70% Green, 70-90% Amber, 90-100% Orange, >100% Red)
                     val statusColor = when {
                         isExceeded -> FinluxColors.ExpenseRed
-                        percent >= 90 -> Color(0xFFF97316)
+                        percent >= 90 -> FinluxPalette.CFFF97316
                         percent >= 70 -> FinluxColors.WarningAmber
                         else -> FinluxColors.IncomeGreen
                     }
@@ -571,7 +573,7 @@ fun PrismBudgetScreen(
                     shape = RoundedCornerShape(tokens.radius.input),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = tokens.primary,
-                        contentColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                        contentColor = if (tokens.isDark) FinluxPalette.CFF002B3D else FinluxPalette.White,
                     ),
                     enabled = (limitInput.toLongOrNull() ?: 0L) > 0L && selectedCategoryId.isNotBlank(),
                 ) {
@@ -690,7 +692,7 @@ fun PrismBudgetScreen(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                                .background(if (tokens.isDark) FinluxPalette.White.copy(alpha = 0.08f) else FinluxPalette.CFFE5E7EB),
                         ) {
                             Box(
                                 modifier = Modifier
@@ -727,7 +729,7 @@ fun PrismBudgetScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                     ),
-                    color = Color(0xFF9CA3AF),
+                    color = FinluxPalette.CFF9CA3AF,
                 )
 
                 if (categoryTransactions.isEmpty()) {
