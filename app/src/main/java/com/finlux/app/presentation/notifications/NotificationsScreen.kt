@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.notifications
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -150,7 +152,7 @@ fun NotificationsScreen(
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = FinluxPalette.Transparent,
         snackbarHost = { FinluxSnackbarHost(snackbarHostState, hasBottomBar = false) },
         topBar = {
             GlassTopBar(
@@ -349,7 +351,7 @@ fun NotificationsScreen(
                                 val isSwiping = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
                                 Surface(
                                     shape = RoundedCornerShape(18.dp),
-                                    color = if (isSwiping) ExpenseRed else Color.Transparent,
+                                    color = if (isSwiping) ExpenseRed else FinluxPalette.Transparent,
                                     modifier = Modifier.fillMaxSize(),
                                 ) {
                                     Row(
@@ -362,7 +364,7 @@ fun NotificationsScreen(
                                         Icon(
                                             imageVector = Icons.Default.Delete,
                                             contentDescription = "Xóa",
-                                            tint = Color.White,
+                                            tint = FinluxPalette.White,
                                             modifier = Modifier.size(24.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
@@ -372,7 +374,7 @@ fun NotificationsScreen(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 15.sp,
                                             ),
-                                            color = Color.White,
+                                            color = FinluxPalette.White,
                                         )
                                     }
                                 }
@@ -622,7 +624,7 @@ private fun NotificationItemCard(
                                     Icon(
                                         imageVector = Icons.Default.Payments,
                                         contentDescription = null,
-                                        tint = Color.White,
+                                        tint = FinluxPalette.White,
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Text(
@@ -631,7 +633,7 @@ private fun NotificationItemCard(
                                             fontSize = 12.5.sp,
                                             fontWeight = FontWeight.Bold,
                                         ),
-                                        color = Color.White,
+                                        color = FinluxPalette.White,
                                     )
                                 }
                             }
@@ -666,7 +668,7 @@ private fun PaidNotificationDetailSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (tokens.isDark) Color(0xFF181824) else Color.White,
+        containerColor = if (tokens.isDark) FinluxPalette.CFF181824 else FinluxPalette.White,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(
@@ -757,7 +759,7 @@ private fun PaidNotificationDetailSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Khoản chi", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                        Text("Khoản chi", style = MaterialTheme.typography.bodyMedium, color = FinluxPalette.CFF9CA3AF)
                         Text(notification.title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
                     }
 
@@ -768,7 +770,7 @@ private fun PaidNotificationDetailSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("Danh mục", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                            Text("Danh mục", style = MaterialTheme.typography.bodyMedium, color = FinluxPalette.CFF9CA3AF)
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(catIcon, null, tint = catColor, modifier = Modifier.size(16.dp))
                                 Text(category.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
@@ -783,7 +785,7 @@ private fun PaidNotificationDetailSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("Ví thanh toán", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                            Text("Ví thanh toán", style = MaterialTheme.typography.bodyMedium, color = FinluxPalette.CFF9CA3AF)
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(walletIcon, null, tint = walletColor, modifier = Modifier.size(16.dp))
                                 Text(wallet.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
@@ -800,7 +802,7 @@ private fun PaidNotificationDetailSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Thời gian", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                        Text("Thời gian", style = MaterialTheme.typography.bodyMedium, color = FinluxPalette.CFF9CA3AF)
                         Text(timeStr, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = tokens.onSurface)
                     }
 
@@ -810,7 +812,7 @@ private fun PaidNotificationDetailSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Ghi chú sổ cái", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                        Text("Ghi chú sổ cái", style = MaterialTheme.typography.bodyMedium, color = FinluxPalette.CFF9CA3AF)
                         Text("Thanh toán: ${notification.title}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = tokens.primary)
                     }
                 }
@@ -831,7 +833,7 @@ private fun PaidNotificationDetailSheet(
                 Text(
                     text = "Đóng",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                    color = if (tokens.isDark) FinluxPalette.CFF002B3D else FinluxPalette.White,
                 )
             }
 
@@ -1046,13 +1048,13 @@ private fun QuickPayBottomSheet(
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = tokens.primary,
-                        disabledContainerColor = if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0),
+                        disabledContainerColor = if (tokens.isDark) FinluxPalette.CFF2A2A3C else FinluxPalette.CFFE2E8F0,
                     ),
                 ) {
                     Text(
                         text = if (parsedAmount > 0) "Ghi nhận • ${formatVndAmount(parsedAmount)}" else "Ghi nhận thanh toán",
                         fontWeight = FontWeight.Bold,
-                        color = if (canConfirm) (if (tokens.isDark) Color(0xFF002B3D) else Color.White) else Color(0xFF94A3B8),
+                        color = if (canConfirm) (if (tokens.isDark) FinluxPalette.CFF002B3D else FinluxPalette.White) else FinluxPalette.CFF94A3B8,
                     )
                 }
             }
