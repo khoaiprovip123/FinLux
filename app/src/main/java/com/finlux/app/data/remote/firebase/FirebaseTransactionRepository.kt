@@ -504,35 +504,63 @@ class FirebaseTransactionRepository(
         val uid = requireUid()
         val sourceRef = firestore.userWallets(uid).document(sourceWalletId)
         val destinationRef = firestore.userWallets(uid).document(destinationWalletId)
-        val rolloverRef = firestore.collection("users").document(uid).collection("salaryRollovers").document(cycleKey.replace(":", "_").replace("/", "_").replace(".", "_"))
-        val pairId = UUID.randomUUID().toString()
+        val rolloverId = cycleKey.replace(":", "_").replace("/", "_").replace(".", "_")
+        val rolloverRef = firestore.collection("users").document(uid).collection("salaryRollovers").document(rolloverId)
+        val pairId = "salary_rollover_$rolloverId"
         val outRef = firestore.userTransactions(uid).document("${pairId}_out")
         val inRef = firestore.userTransactions(uid).document("${pairId}_in")
         val now = Instant.now()
 
         firestore.runTransaction { atomic ->
-            // 1. Check if already processed
+            // All reads first for retry safety and Firestore transaction consistency.
             val rolloverDoc = atomic.get(rolloverRef)
+            val sourceDoc = if (amount > 0) atomic.get(sourceRef) else null
+            val destinationDoc = if (amount > 0) atomic.get(destinationRef) else null
+            val existingOut = if (amount > 0) atomic.get(outRef) else null
+            val existingIn = if (amount > 0) atomic.get(inRef) else null
+
             if (rolloverDoc.exists()) {
-                error("Chu kỳ lương này đã được kết chuyển")
+                require(rolloverDoc.getString("cycleKey") == cycleKey) {
+                    "Mã chu kỳ kết chuyển không khớp"
+                }
+                if (amount > 0) {
+                    require(
+                        rolloverDoc.getString("transactionOutId") == outRef.id &&
+                            rolloverDoc.getString("transactionInId") == inRef.id &&
+                            existingOut?.exists() == true &&
+                            existingIn?.exists() == true
+                    ) {
+                        "Phát hiện kết chuyển lương không toàn vẹn"
+                    }
+                }
+                return@runTransaction
             }
 
-            // 2. Write the rollover marker
-            atomic.set(rolloverRef, mapOf(
+            val marker = mutableMapOf<String, Any?>(
                 "cycleKey" to cycleKey,
                 "processedAt" to FieldValue.serverTimestamp(),
-            ))
+                "amount" to amount,
+                "sourceWalletId" to sourceWalletId,
+                "destinationWalletId" to destinationWalletId,
+                "transactionOutId" to if (amount > 0) outRef.id else null,
+                "transactionInId" to if (amount > 0) inRef.id else null,
+            )
+            atomic.set(rolloverRef, marker)
 
             if (amount > 0) {
-                // 3. Execute the transfer if amount > 0
-                val sourceBalance = atomic.get(sourceRef).getLong("balance") ?: error("Không tìm thấy ví nguồn")
-                val sourceDoc = atomic.get(sourceRef)
-                val sourceType = sourceDoc.getString("type")
-                val isCard = sourceType.equals("CARD", ignoreCase = true)
+                require(sourceDoc?.exists() == true) { "Không tìm thấy ví nguồn" }
+                require(destinationDoc?.exists() == true) { "Không tìm thấy ví đích" }
+                require(existingOut?.exists() != true && existingIn?.exists() != true) {
+                    "Mã kết chuyển đã được dùng trước khi marker được tạo"
+                }
+
+                val sourceBalance = sourceDoc.getLong("balance") ?: 0L
+                val destinationBalance = destinationDoc.getLong("balance") ?: 0L
+                val isCard = sourceDoc.getString("type").equals("CARD", ignoreCase = true)
                 if (!isCard && sourceBalance < amount) {
                     error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
                 }
-                val destinationBalance = atomic.get(destinationRef).getLong("balance") ?: error("Không tìm thấy ví đích")
+
                 val outgoing = FinanceTransaction(
                     id = outRef.id,
                     type = TransactionType.TRANSFER_OUT,
@@ -540,6 +568,8 @@ class FirebaseTransactionRepository(
                     categoryId = null,
                     walletId = sourceWalletId,
                     relatedWalletId = destinationWalletId,
+                    managedOperationType = ManagedOperationType.SALARY_ROLLOVER,
+                    managedOperationId = rolloverId,
                     note = note,
                     date = date,
                     createdAt = now,
@@ -555,15 +585,15 @@ class FirebaseTransactionRepository(
                     sourceRef,
                     mapOf(
                         "balance" to Math.subtractExact(sourceBalance, amount),
-                        "lastTransactionId" to outRef.id
-                    )
+                        "lastTransactionId" to outRef.id,
+                    ),
                 )
                 atomic.update(
                     destinationRef,
                     mapOf(
                         "balance" to Math.addExact(destinationBalance, amount),
-                        "lastTransactionId" to inRef.id
-                    )
+                        "lastTransactionId" to inRef.id,
+                    ),
                 )
                 atomic.set(outRef, outgoing.toFirestoreMap())
                 atomic.set(inRef, incoming.toFirestoreMap())
