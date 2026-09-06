@@ -5,6 +5,8 @@ import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SavingDestination
 import com.finlux.app.domain.model.SavingMethod
 import com.finlux.app.domain.model.SavingSpinStatus
+import com.finlux.app.domain.repository.TransactionRepository
+import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -14,7 +16,7 @@ import org.junit.jupiter.api.Test
 class DemoSavingSpinRepositoryTest {
     @Test
     fun `get or create is idempotent and preserves wheel`() = runTest {
-        val repository = DemoSavingSpinRepository()
+        val repository = DemoSavingSpinRepository(mockk<TransactionRepository>(relaxed = true))
         val initial = repository.getOrCreateSession("day:2026-08-31", listOf(Money(5_000), Money(10_000)))
         val repeated = repository.getOrCreateSession("day:2026-08-31", listOf(Money(50_000), Money(100_000)))
 
@@ -24,7 +26,7 @@ class DemoSavingSpinRepositoryTest {
 
     @Test
     fun `spin result is locked once and completion needs an enabled destination`() = runTest {
-        val repository = DemoSavingSpinRepository()
+        val repository = DemoSavingSpinRepository(mockk<TransactionRepository>(relaxed = true))
         repository.getOrCreateSession("day:2026-08-31", listOf(Money(5_000), Money(10_000)))
 
         val first = repository.lockSpinResult("day:2026-08-31", 1) as AppResult.Success
