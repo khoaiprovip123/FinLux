@@ -225,6 +225,7 @@ fun PrismReportsScreen(
                 ReportPrimaryTab.OVERVIEW -> {
                     item { PrismReportsHeroBanner(state, onPickMonth = { showPeriodPickerSheet = true }) }
                     item { PrismDailyStatementCard(state) }
+                    item { PrismFinancialFlowBreakdownCard(state) }
                     item { PrismCumulativeMetricsCard(state) }
                     item {
                         PrismOverviewMultiCards(
@@ -251,6 +252,7 @@ fun PrismReportsScreen(
 
                 ReportPrimaryTab.CASHFLOW -> {
                     item { PrismReportsHeroBanner(state, onPickMonth = { showPeriodPickerSheet = true }) }
+                    item { PrismFinancialFlowBreakdownCard(state) }
                     item {
                         PrismCashflowChartCard(
                             state = state,
@@ -753,14 +755,14 @@ private fun PrismReportsHeroBanner(
     state: ReportsUiState,
     onPickMonth: () -> Unit,
 ) {
-    val net = state.summary.net
-    val income = state.summary.income.value
-    val expense = state.summary.expense.value
+    val net = state.operatingSummary.net
+    val income = state.operatingSummary.income.value
+    val expense = state.operatingSummary.expense.value
     val savingRatePct = state.savingsRatePercent.coerceIn(0, 100)
 
-    val deltaPercent = if (state.previousNet != 0L) {
-        val diff = net - state.previousNet
-        (((diff.toDouble() / Math.abs(state.previousNet).toDouble()) * 100.0)).roundToInt()
+    val deltaPercent = if (state.previousOperatingNet != 0L) {
+        val diff = net - state.previousOperatingNet
+        (((diff.toDouble() / Math.abs(state.previousOperatingNet).toDouble()) * 100.0)).roundToInt()
     } else 0
 
     val monthLabel = remember(state.range) {
@@ -812,13 +814,13 @@ private fun PrismReportsHeroBanner(
                         )
                     }
 
-                    // Tiêu đề nhận diện: Tổng tiền hiện có hoặc Số dư ví
+                    // Báo cáo theo kỳ phải hiển thị số dư cuối kỳ lịch sử, không dùng số dư hiện tại.
                     val heroLabel = if (state.selectedWallet != null) {
-                        "SỐ DƯ VÍ (${state.selectedWallet!!.name.uppercase()})"
+                        "SỐ DƯ CUỐI KỲ · ${state.selectedWallet!!.name.uppercase()}"
                     } else {
-                        "TỔNG TIỀN HIỆN CÓ"
+                        "SỐ DƯ CUỐI KỲ"
                     }
-                    val displayBalance = state.currentDisplayBalance
+                    val displayBalance = state.closingBalance
 
                     Text(
                         text = heroLabel,
@@ -830,7 +832,7 @@ private fun PrismReportsHeroBanner(
                         color = Color.White.copy(alpha = 0.85f),
                     )
 
-                    // Con số to nổi bật nhất: Tổng tiền hiện có / Số dư ví thực tế
+                    // Con số to nổi bật nhất: số dư tại đúng mốc cuối kỳ đang xem.
                     Text(
                         text = formatVndAmount(displayBalance),
                         style = MaterialTheme.typography.headlineMedium.copy(
@@ -847,7 +849,7 @@ private fun PrismReportsHeroBanner(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
-                            text = "Dòng tiền ròng (Thu – Chi):",
+                            text = "Thặng dư hoạt động:",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
@@ -867,9 +869,9 @@ private fun PrismReportsHeroBanner(
                     // Giải thích ngữ nghĩa rõ ràng: Chi vượt thu hoặc Thặng dư
                     Text(
                         text = if (net < 0) {
-                            "Chi tiêu vượt thu nhập trong kỳ"
+                            "Chi hoạt động vượt thu hoạt động trong kỳ"
                         } else {
-                            if (deltaPercent >= 0) "Thặng dư (+${deltaPercent}% so với kỳ trước)" else "Thặng dư (${deltaPercent}% so với kỳ trước)"
+                            if (deltaPercent >= 0) "Thặng dư hoạt động (+${deltaPercent}% so với kỳ trước)" else "Thặng dư hoạt động (${deltaPercent}% so với kỳ trước)"
                         },
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 11.5.sp,
@@ -886,7 +888,7 @@ private fun PrismReportsHeroBanner(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Column {
-                            Text("Tổng thu", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Thu hoạt động", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
                             Text(
                                 "+${formatVndAmount(income)}",
                                 fontSize = 13.sp,
@@ -895,7 +897,7 @@ private fun PrismReportsHeroBanner(
                             )
                         }
                         Column {
-                            Text("Tổng chi", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Chi hoạt động", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
                             Text(
                                 "-${formatVndAmount(expense)}",
                                 fontSize = 13.sp,
@@ -935,14 +937,14 @@ private fun PrismReportsHeroBanner(
                                     color = if (state.currentWalletNetChange >= 0) Color(0xFF4ADE80) else Color(0xFFFCA5A5),
                                 )
                             }
-                        } else if (state.totalTransferOut > 0) {
+                        } else {
                             Column {
-                                Text("Luân chuyển ví", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                Text("Đầu kỳ", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
                                 Text(
-                                    formatVndAmount(state.totalTransferOut),
+                                    formatVndAmount(state.openingBalance),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF93C5FD),
+                                    color = Color.White,
                                 )
                             }
                         }
@@ -957,7 +959,7 @@ private fun PrismReportsHeroBanner(
                 } else {
                     savingRatePct
                 }
-                val rightCircleLabel = if (state.selectedWallet != null) "Tài sản" else "Tiết kiệm"
+                val rightCircleLabel = if (state.selectedWallet != null) "Tài sản" else "Giữ lại"
 
                 Box(
                     contentAlignment = Alignment.Center,
