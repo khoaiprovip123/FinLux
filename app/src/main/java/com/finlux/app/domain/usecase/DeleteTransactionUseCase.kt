@@ -10,6 +10,16 @@ class DeleteTransactionUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(transaction: FinanceTransaction): AppResult<Unit> {
         if (transaction.id.isBlank()) return AppResult.Error("Giao dịch cần xóa không hợp lệ")
+        if (!transaction.goalId.isNullOrBlank()) {
+            return AppResult.Error(
+                "Không thể xóa trực tiếp giao dịch mục tiêu. Hãy điều chỉnh trong mục Tiết kiệm & Mục tiêu."
+            )
+        }
+        if (!transaction.debtId.isNullOrBlank()) {
+            return AppResult.Error(
+                "Không thể xóa trực tiếp giao dịch trả nợ. Hãy điều chỉnh trong mục Nợ & Tín dụng."
+            )
+        }
         return repository.deleteWithBalanceUpdate(transaction)
     }
 }
