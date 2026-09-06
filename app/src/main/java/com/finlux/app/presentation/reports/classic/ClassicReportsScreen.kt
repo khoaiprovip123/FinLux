@@ -174,11 +174,11 @@ fun ClassicReportsScreen(
                         )
                     }
                     Row(Modifier.fillMaxWidth().height(70.dp), verticalAlignment = Alignment.CenterVertically) {
-                        ReportAmount("Thu nhập", state.summary.income.value, state.previousIncome, IncomeGreen, Modifier.weight(1f))
+                        ReportAmount("Thu hoạt động", state.operatingSummary.income.value, state.previousOperatingIncome, IncomeGreen, Modifier.weight(1f))
                         VerticalDivider(Modifier.height(54.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-                        ReportAmount("Chi tiêu", state.summary.expense.value, state.previousExpense, ExpenseRed, Modifier.weight(1f))
+                        ReportAmount("Chi hoạt động", state.operatingSummary.expense.value, state.previousOperatingExpense, ExpenseRed, Modifier.weight(1f))
                         VerticalDivider(Modifier.height(54.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-                        ReportAmount("Tiết kiệm", state.summary.net, state.previousNet, FinluxBlue, Modifier.weight(1f))
+                        ReportAmount("Thặng dư", state.operatingSummary.net, state.previousOperatingNet, FinluxBlue, Modifier.weight(1f))
                     }
                     if (state.selectedWallet != null && (state.totalTransferOut > 0 || state.totalTransferIn > 0)) {
                         Row(
