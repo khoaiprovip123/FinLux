@@ -1,0 +1,561 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
+package com.finlux.app.presentation.wallet.classic
+
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.platform.LocalContext
+import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.finlux.app.core.designsystem.FinancialInstitutionLogo
+import com.finlux.app.core.designsystem.InstitutionSelectorSection
+import com.finlux.app.core.designsystem.findInstitutionForWallet
+import com.finlux.app.core.designsystem.FinanceAccentHexes
+import com.finlux.app.core.designsystem.FinluxStyleBackdrop
+import com.finlux.app.core.designsystem.GlassBottomSheet
+import com.finlux.app.core.designsystem.GlassCard
+import com.finlux.app.core.designsystem.GlassTopBar
+import com.finlux.app.core.designsystem.GradientHeroCard
+import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.walletIcon
+import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.model.WalletType
+import com.finlux.app.presentation.components.MainBottomBar
+import com.finlux.app.presentation.home.toShortVnd
+import com.finlux.app.presentation.home.toVnd
+import com.finlux.app.presentation.wallet.WalletsViewModel
+import com.finlux.app.presentation.wallet.WalletTransactionsBottomSheet
+import com.finlux.app.core.navigation.Route
+import com.finlux.app.domain.model.FinanceTransaction
+
+@Composable
+internal fun WalletEditor(
+    initial: Wallet?,
+    walletsCount: Int,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (Wallet) -> Unit,
+    onDelete: ((Wallet) -> Unit)? = null,
+) {
+    var name by remember(initial) { mutableStateOf(initial?.name.orEmpty()) }
+    var type by remember(initial) { mutableStateOf(initial?.type ?: WalletType.CASH) }
+    var balance by remember(initial) { mutableStateOf(initial?.balance?.value?.toString().orEmpty()) }
+    var color by remember(initial) { mutableStateOf(initial?.colorHex ?: FinanceAccentHexes.first()) }
+    var isDefault by remember(initial) { mutableStateOf(initial?.isDefault ?: (walletsCount == 0)) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteCountdown by remember(showDeleteConfirm) { mutableStateOf(5) }
+
+    LaunchedEffect(showDeleteConfirm) {
+        if (showDeleteConfirm) {
+            deleteCountdown = 5
+            while (deleteCountdown > 0) {
+                kotlinx.coroutines.delay(1000)
+                deleteCountdown--
+            }
+        }
+    }
+
+    val isEditing = initial != null
+    val isDefaultWallet = initial?.isDefault == true
+    val isOnlyWallet = walletsCount <= 1 && isEditing
+    val tokens = LocalFinluxTokens.current
+
+    GlassBottomSheet(onDismiss = onDismiss) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 760.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(
+                        if (!isEditing) "Thêm ví mới" else "Chi tiết & Chỉnh sửa ví",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        "Quản lý tài khoản và dòng tiền tập trung",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                FinancialInstitutionLogo(
+                    institution = findInstitutionForWallet(name),
+                    walletType = type,
+                    customColorHex = color,
+                    size = 46.dp,
+                )
+            }
+
+            // Mẫu Ngân hàng & Ví điện tử
+            InstitutionSelectorSection(
+                selectedInstitution = findInstitutionForWallet(name),
+                onSelectInstitution = { inst ->
+                    name = inst.shortName
+                    type = inst.type
+                    color = inst.colorHex
+                },
+            )
+
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it.take(36) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Tên ví / ngân hàng") },
+                placeholder = { Text("Ví dụ: Vietcombank, Momo, Tiền mặt...") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Loại tài khoản", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(WalletType.entries) { option ->
+                        FilterChip(
+                            selected = type == option,
+                            onClick = { type = option },
+                            label = {
+                                Text(
+                                    option.label,
+                                    fontWeight = if (type == option) FontWeight.Bold else FontWeight.Normal,
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Số dư ban đầu / Số dư hiện tại
+            ErgonomicCompactAmountCard(
+                label = if (!isEditing) "Số dư ban đầu" else "Số dư hiện tại",
+                amountText = balance,
+                onAmountChange = { balance = it },
+                placeholder = "0",
+                amountColor = tokens.primary,
+                showSuggestions = true,
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Màu thẻ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(FinanceAccentHexes) { hex ->
+                        val isSelected = hex == color
+                        Box(
+                            Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(colorFromHex(hex))
+                                .border(
+                                    width = if (isSelected) 3.dp else 1.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else FinluxPalette.White.copy(alpha = 0.4f),
+                                    shape = CircleShape,
+                                )
+                                .clickable { color = hex },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (isSelected) {
+                                Icon(Icons.Default.Check, null, tint = FinluxPalette.White, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Đặt làm ví mặc định Switch
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Default.Star, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    Column {
+                        Text("Đặt làm ví mặc định", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            if (isDefaultWallet) "Ví này đang là ví mặc định của bạn"
+                            else "Tự động chọn cho các giao dịch mới",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Switch(
+                    checked = isDefault,
+                    onCheckedChange = { if (!isDefaultWallet) isDefault = it },
+                    enabled = !isDefaultWallet,
+                )
+            }
+
+            Button(
+                onClick = {
+                    onSave(
+                        Wallet(
+                            initial?.id.orEmpty(),
+                            name.trim(),
+                            type,
+                            Money(balance.toLongOrNull() ?: 0),
+                            color,
+                            isDefault,
+                            initial?.createdAt ?: Instant.now(),
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                enabled = name.isNotBlank() && !busy,
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Text(
+                    if (busy) "Đang lưu…" else (if (!isEditing) "Tạo ví mới" else "Lưu thay đổi"),
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+
+            if (isEditing) {
+                if (isDefaultWallet || isOnlyWallet) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Text(
+                            if (isDefaultWallet) "Không thể xóa ví mặc định. Vui lòng đặt ví khác làm mặc định trước khi xóa!"
+                            else "Không thể xóa ví duy nhất còn lại trong ứng dụng.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Icon(Icons.Default.DeleteOutline, null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Xóa ví này", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+
+    if (showDeleteConfirm && initial != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Xóa ví ${initial.name}?") },
+            text = { Text("Bạn có chắc chắn muốn xóa ví này? Tất cả giao dịch thuộc ví sẽ bị ảnh hưởng. Thao tác này không thể hoàn tác!") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete?.invoke(initial)
+                    },
+                    enabled = deleteCountdown == 0,
+                ) {
+                    Text(
+                        if (deleteCountdown > 0) "Xác nhận xóa (${deleteCountdown}s)" else "Xóa Vĩnh Viễn",
+                        color = if (deleteCountdown == 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Hủy")
+                }
+            },
+        )
+    }
+}
+
+@Composable
+internal fun TransferEditor(
+    wallets: List<Wallet>,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onTransfer: (String, String, Long, String, Instant) -> Unit,
+) {
+    var source by remember { mutableStateOf(wallets.firstOrNull()?.id.orEmpty()) }
+    var destination by remember { mutableStateOf(wallets.getOrNull(1)?.id.orEmpty()) }
+    var amount by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf(Instant.now()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val sourceWallet = wallets.find { it.id == source }
+    val sourceBalance = sourceWallet?.balance?.value ?: 0L
+    val isSourceCard = sourceWallet?.type == com.finlux.app.domain.model.WalletType.CARD
+    val parsedAmount = amount.toLongOrNull() ?: 0L
+    val isInsufficientFunds = !isSourceCard && sourceWallet != null && parsedAmount > sourceBalance
+    val tokens = LocalFinluxTokens.current
+
+    val localDate = selectedDate.atZone(ZoneId.systemDefault()).toLocalDate()
+    val today = LocalDate.now()
+    val dayPrefix = when (localDate) {
+        today -> "Hôm nay, "
+        today.minusDays(1) -> "Hôm qua, "
+        else -> ""
+    }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
+    val formattedDate = dayPrefix + selectedDate.atZone(ZoneId.systemDefault()).format(dateFormatter)
+
+    GlassBottomSheet(onDismiss = onDismiss) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 740.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text("Chuyển tiền giữa các ví", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Dịch chuyển số dư nhanh chóng và an toàn", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+                Icon(Icons.Default.SwapHoriz, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Ví nguồn (Chuyển đi)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(wallets) { wallet ->
+                        FilterChip(
+                            selected = source == wallet.id,
+                            onClick = {
+                                source = wallet.id
+                                if (destination == wallet.id) {
+                                    destination = wallets.firstOrNull { it.id != wallet.id }?.id.orEmpty()
+                                }
+                            },
+                            label = { Text("${wallet.name} (${wallet.balance.value.toShortVnd()})") },
+                        )
+                    }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Ví nhận (Chuyển đến)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(wallets.filter { it.id != source }) { wallet ->
+                        FilterChip(
+                            selected = destination == wallet.id,
+                            onClick = { destination = wallet.id },
+                            label = { Text("${wallet.name} (${wallet.balance.value.toShortVnd()})") },
+                        )
+                    }
+                }
+            }
+
+            // Số tiền chuyển
+            ErgonomicCompactAmountCard(
+                label = "Số tiền chuyển",
+                amountText = amount,
+                onAmountChange = { amount = it },
+                placeholder = "0",
+                amountColor = tokens.primary,
+                showSuggestions = true,
+            )
+
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it.take(120) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Ghi chú chuyển tiền (Tùy chọn)") },
+                shape = RoundedCornerShape(16.dp),
+            )
+
+            // Ergonomic Date/Time Row
+            ErgonomicFormRow(
+                label = "THỜI GIAN CHUYỂN TIỀN",
+                primaryValue = formattedDate,
+                secondaryValue = null,
+                icon = Icons.Default.CalendarMonth,
+                iconTintColor = tokens.primary,
+                iconBgColor = tokens.primary.copy(alpha = 0.12f),
+                onClick = { showDatePicker = true },
+            )
+
+            Button(
+                onClick = { onTransfer(source, destination, amount.toLongOrNull() ?: 0, note.trim(), selectedDate) },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                enabled = parsedAmount > 0L && source.isNotBlank() && destination.isNotBlank() && source != destination && !isInsufficientFunds && !busy,
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Text(
+                    if (busy) "Đang chuyển…" else "Xác nhận chuyển tiền",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+        }
+    }
+
+    // Dialog chọn ngày & giờ
+    if (showDatePicker) {
+        val currentZoned = selectedDate.atZone(ZoneId.systemDefault())
+        val initialDateUtcMillis = currentZoned.toLocalDate()
+            .atStartOfDay(ZoneOffset.UTC)
+            .toInstant()
+            .toEpochMilli()
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = initialDateUtcMillis,
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selectedMillis = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                    if (selectedMillis != null) {
+                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
+                            .atZone(ZoneOffset.UTC)
+                            .toLocalDate()
+
+                        val timePickerDialog = android.app.TimePickerDialog(
+                            context,
+                            { _, hourOfDay, minute ->
+                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
+                                selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                            },
+                            currentZoned.hour,
+                            currentZoned.minute,
+                            true,
+                        )
+                        timePickerDialog.setOnCancelListener {
+                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
+                            selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                        }
+                        timePickerDialog.show()
+                    }
+                }) {
+                    Text("Tiếp tục (Chọn giờ)")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Hủy")
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+internal val WalletType.label: String get() = when (this) {
+    WalletType.CASH -> "Tiền mặt"
+    WalletType.BANK -> "Ngân hàng"
+    WalletType.EWALLET -> "Ví điện tử"
+    WalletType.CARD -> "Thẻ tín dụng"
+    WalletType.INVESTMENT -> "Đầu tư"
+    WalletType.OTHER -> "Ví khác"
+}
