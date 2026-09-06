@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.updater
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -81,7 +83,7 @@ fun AppUpdateDialog(
                 title = "Đã là bản mới nhất",
                 message = "Ứng dụng FinLux đang ở phiên bản mới nhất (${uiState.currentVersion}).",
                 icon = Icons.Rounded.CheckCircle,
-                iconColor = Color(0xFF10B981),
+                iconColor = FinluxPalette.CFF10B981,
                 onDismiss = onDismiss,
             )
         }
@@ -90,7 +92,7 @@ fun AppUpdateDialog(
                 title = "Không thể kiểm tra",
                 message = uiState.message,
                 icon = Icons.Rounded.ErrorOutline,
-                iconColor = Color(0xFFEF4444),
+                iconColor = FinluxPalette.CFFEF4444,
                 onDismiss = onDismiss,
             )
         }
@@ -150,7 +152,7 @@ private fun UpdateAvailableContent(
                         .clip(CircleShape)
                         .background(
                             Brush.linearGradient(
-                                listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6)),
+                                listOf(FinluxPalette.CFF3B82F6, FinluxPalette.CFF8B5CF6),
                             ),
                         ),
                     contentAlignment = Alignment.Center,
@@ -158,7 +160,7 @@ private fun UpdateAvailableContent(
                     Icon(
                         imageVector = Icons.Rounded.RocketLaunch,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = FinluxPalette.White,
                         modifier = Modifier.size(30.dp),
                     )
                 }
@@ -348,13 +350,13 @@ private fun ReadyToInstallContent(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF10B981)),
+                        .background(FinluxPalette.CFF10B981),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = FinluxPalette.White,
                         modifier = Modifier.size(32.dp),
                     )
                 }
@@ -394,9 +396,9 @@ private fun ReadyToInstallContent(
                         onClick = onInstall,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        colors = ButtonDefaults.buttonColors(containerColor = FinluxPalette.CFF10B981),
                     ) {
-                        Text("Cài đặt ngay", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Cài đặt ngay", fontWeight = FontWeight.Bold, color = FinluxPalette.White)
                     }
                 }
             }
