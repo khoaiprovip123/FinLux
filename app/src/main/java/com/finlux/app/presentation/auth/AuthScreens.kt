@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.auth
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
@@ -100,7 +102,7 @@ fun SplashScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF311042))
+                    listOf(FinluxPalette.CFF0F172A, FinluxPalette.CFF1E1B4B, FinluxPalette.CFF311042)
                 )
             ),
     ) {
@@ -116,7 +118,7 @@ fun SplashScreen(
             Spacer(Modifier.height(6.dp))
             Text(
                 "Quản lý tài chính thông minh",
-                color = Color.White.copy(alpha = 0.8f),
+                color = FinluxPalette.White.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
@@ -126,9 +128,9 @@ fun SplashScreen(
                 .padding(bottom = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CircularProgressIndicator(Modifier.size(24.dp), color = Color(0xFF6366F1), strokeWidth = 2.5.dp)
+            CircularProgressIndicator(Modifier.size(24.dp), color = FinluxPalette.CFF6366F1, strokeWidth = 2.5.dp)
             Spacer(Modifier.height(12.dp))
-            Text("Đang tải dữ liệu...", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+            Text("Đang tải dữ liệu...", color = FinluxPalette.White.copy(alpha = 0.7f), fontSize = 13.sp)
         }
     }
 }
@@ -183,8 +185,8 @@ fun AuthScreen(
                     .shadow(
                         elevation = if (mode == AuthMode.LOGIN) 0.dp else 16.dp,
                         shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                        ambientColor = Color(0x203B82F6),
-                        spotColor = Color(0x304F46E5)
+                        ambientColor = FinluxPalette.C203B82F6,
+                        spotColor = FinluxPalette.C304F46E5
                     ),
                 shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                 color = MaterialTheme.colorScheme.surface,
@@ -211,11 +213,11 @@ fun AuthScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
+                    .background(FinluxPalette.Black.copy(alpha = 0.35f))
                     .clickable(enabled = false) {},
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color(0xFF4F46E5))
+                CircularProgressIndicator(color = FinluxPalette.CFF4F46E5)
             }
         }
     }
@@ -284,7 +286,7 @@ private fun AuthHeaderSection(
             .fillMaxWidth()
             .background(
                 Brush.linearGradient(
-                    listOf(Color(0xFF312E81), Color(0xFF5B21B6), Color(0xFF7C3AED)),
+                    listOf(FinluxPalette.CFF312E81, FinluxPalette.CFF5B21B6, FinluxPalette.CFF7C3AED),
                 ),
             )
             .statusBarsPadding()
@@ -299,7 +301,7 @@ private fun AuthHeaderSection(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Quay lại",
-                tint = Color.White,
+                tint = FinluxPalette.White,
             )
         }
 
@@ -312,14 +314,14 @@ private fun AuthHeaderSection(
                 text = mode.heading,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
+                color = FinluxPalette.White,
                 lineHeight = 36.sp,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = mode.description,
                 fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.88f),
+                color = FinluxPalette.White.copy(alpha = 0.88f),
                 lineHeight = 20.sp,
             )
         }
@@ -394,7 +396,7 @@ private fun LoginFormContent(
         ) {
             TextButton(
                 onClick = { onNavigate(AuthMode.FORGOT) },
-                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF5B21B6)),
+                colors = ButtonDefaults.textButtonColors(contentColor = FinluxPalette.CFF5B21B6),
             ) {
                 Text(
                     text = "Quên mật khẩu?",
@@ -408,7 +410,7 @@ private fun LoginFormContent(
             Spacer(Modifier.height(8.dp))
             Text(
                 text = errorMsg,
-                color = Color(0xFFEF4444),
+                color = FinluxPalette.CFFEF4444,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -445,7 +447,7 @@ private fun LoginFormContent(
                 text = "Đăng ký ngay",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF5B21B6),
+                color = FinluxPalette.CFF5B21B6,
                 modifier = Modifier.clickable { onNavigate(AuthMode.REGISTER) },
             )
         }
@@ -566,8 +568,8 @@ private fun RegisterFormContent(
                 checked = state.agreeTerms,
                 onCheckedChange = viewModel::toggleAgreeTerms,
                 colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFF4F46E5),
-                    uncheckedColor = Color(0xFFCBD5E1)
+                    checkedColor = FinluxPalette.CFF4F46E5,
+                    uncheckedColor = FinluxPalette.CFFCBD5E1
                 ),
                 modifier = Modifier.size(20.dp)
             )
@@ -575,16 +577,16 @@ private fun RegisterFormContent(
             Text(
                 text = buildAnnotatedString {
                     append("Tôi đồng ý với ")
-                    withStyle(SpanStyle(color = Color(0xFF4F46E5), fontWeight = FontWeight.Bold)) {
+                    withStyle(SpanStyle(color = FinluxPalette.CFF4F46E5, fontWeight = FontWeight.Bold)) {
                         append("Điều khoản sử dụng")
                     }
                     append(" và ")
-                    withStyle(SpanStyle(color = Color(0xFF4F46E5), fontWeight = FontWeight.Bold)) {
+                    withStyle(SpanStyle(color = FinluxPalette.CFF4F46E5, fontWeight = FontWeight.Bold)) {
                         append("Chính sách bảo mật")
                     }
                 },
                 fontSize = 12.5.sp,
-                color = Color(0xFF475569),
+                color = FinluxPalette.CFF475569,
                 lineHeight = 17.sp
             )
         }
@@ -593,7 +595,7 @@ private fun RegisterFormContent(
             Spacer(Modifier.height(10.dp))
             Text(
                 text = errorMsg,
-                color = Color(0xFFEF4444),
+                color = FinluxPalette.CFFEF4444,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -624,12 +626,12 @@ private fun RegisterFormContent(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Đã có tài khoản? ", fontSize = 13.5.sp, color = Color(0xFF64748B))
+            Text("Đã có tài khoản? ", fontSize = 13.5.sp, color = FinluxPalette.CFF64748B)
             Text(
                 text = "Đăng nhập ngay",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF4F46E5),
+                color = FinluxPalette.CFF4F46E5,
                 modifier = Modifier.clickable { onNavigate(AuthMode.LOGIN) }
             )
         }
@@ -655,7 +657,7 @@ private fun ForgotFormContent(
             Spacer(Modifier.height(10.dp))
             Text(
                 text = errorMsg,
-                color = Color(0xFFEF4444),
+                color = FinluxPalette.CFFEF4444,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -679,7 +681,7 @@ private fun ForgotFormContent(
                 text = "Quay lại đăng nhập",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF4F46E5),
+                color = FinluxPalette.CFF4F46E5,
                 modifier = Modifier.clickable { onNavigate(AuthMode.LOGIN) }
             )
         }
@@ -699,7 +701,7 @@ private fun PasswordStrengthBar(
         Text(
             text = "Độ mạnh mật khẩu",
             fontSize = 12.sp,
-            color = Color(0xFF64748B)
+            color = FinluxPalette.CFF64748B
         )
 
         Row(
@@ -709,18 +711,18 @@ private fun PasswordStrengthBar(
             repeat(4) { index ->
                 val active = index < score
                 val activeColor = when (score) {
-                    1 -> Color(0xFFEF4444)
-                    2 -> Color(0xFFF59E0B)
-                    3 -> Color(0xFF10B981)
-                    4 -> Color(0xFF059669)
-                    else -> Color(0xFFCBD5E1)
+                    1 -> FinluxPalette.CFFEF4444
+                    2 -> FinluxPalette.CFFF59E0B
+                    3 -> FinluxPalette.CFF10B981
+                    4 -> FinluxPalette.CFF059669
+                    else -> FinluxPalette.CFFCBD5E1
                 }
                 Box(
                     modifier = Modifier
                         .width(26.dp)
                         .height(5.dp)
                         .clip(RoundedCornerShape(3.dp))
-                        .background(if (active) activeColor else Color(0xFFE2E8F0))
+                        .background(if (active) activeColor else FinluxPalette.CFFE2E8F0)
                 )
             }
 
@@ -731,11 +733,11 @@ private fun PasswordStrengthBar(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = when (score) {
-                    1 -> Color(0xFFEF4444)
-                    2 -> Color(0xFFF59E0B)
-                    3 -> Color(0xFF10B981)
-                    4 -> Color(0xFF059669)
-                    else -> Color(0xFF64748B)
+                    1 -> FinluxPalette.CFFEF4444
+                    2 -> FinluxPalette.CFFF59E0B
+                    3 -> FinluxPalette.CFF10B981
+                    4 -> FinluxPalette.CFF059669
+                    else -> FinluxPalette.CFF64748B
                 }
             )
         }
@@ -762,7 +764,7 @@ private fun FinluxInput(
         placeholder = {
             Text(
                 text = placeholder,
-                color = Color(0xFF94A3B8),
+                color = FinluxPalette.CFF94A3B8,
                 fontSize = 14.sp
             )
         },
@@ -770,7 +772,7 @@ private fun FinluxInput(
             Icon(
                 imageVector = leadingIcon,
                 contentDescription = null,
-                tint = Color(0xFF94A3B8),
+                tint = FinluxPalette.CFF94A3B8,
                 modifier = Modifier.size(20.dp)
             )
         },
@@ -780,7 +782,7 @@ private fun FinluxInput(
                     Icon(
                         imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         contentDescription = "Hiển thị mật khẩu",
-                        tint = Color(0xFF94A3B8),
+                        tint = FinluxPalette.CFF94A3B8,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -791,7 +793,7 @@ private fun FinluxInput(
         singleLine = true,
         shape = RoundedCornerShape(15.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color(0xFF4F46E5),
+            focusedBorderColor = FinluxPalette.CFF4F46E5,
             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
             focusedContainerColor = MaterialTheme.colorScheme.surface,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -832,12 +834,12 @@ private fun GradientButton(
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(14.dp),
-                ambientColor = Color(0x307C3AED),
-                spotColor = Color(0x405B21B6),
+                ambientColor = FinluxPalette.C307C3AED,
+                spotColor = FinluxPalette.C405B21B6,
             ),
         enabled = !isLoading,
         shape = RoundedCornerShape(15.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+        colors = ButtonDefaults.buttonColors(containerColor = FinluxPalette.Transparent),
         contentPadding = androidx.compose.foundation.layout.PaddingValues()
     ) {
         Box(
@@ -845,7 +847,7 @@ private fun GradientButton(
                 .fillMaxSize()
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color(0xFF5B2BFF), Color(0xFF7C2CFF)),
+                        listOf(FinluxPalette.CFF5B2BFF, FinluxPalette.CFF7C2CFF),
                     )
                 ),
             contentAlignment = Alignment.Center
@@ -853,7 +855,7 @@ private fun GradientButton(
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
-                    color = Color.White,
+                    color = FinluxPalette.White,
                     strokeWidth = 2.5.dp
                 )
             } else {
@@ -861,7 +863,7 @@ private fun GradientButton(
                     text = text,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = FinluxPalette.White,
                 )
             }
         }
@@ -984,13 +986,13 @@ fun FinluxLogoHeader(
             text = "Fin",
             fontSize = fontSize,
             fontWeight = FontWeight.ExtraBold,
-            color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+            color = if (isDark) FinluxPalette.White else MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = "Lux",
             fontSize = fontSize,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF3478F6)
+            color = FinluxPalette.CFF3478F6
         )
     }
 }
