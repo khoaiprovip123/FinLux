@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.map
 
 @Singleton
 class DemoSavingSpinRepository @Inject constructor(
-    private val transactionRepository: TransactionRepository? = null,
+    private val transactionRepository: TransactionRepository,
 ) : SavingSpinRepository {
     private val config = MutableStateFlow(SavingSpinConfig())
     private val destinations = MutableStateFlow<Map<String, SavingDestination>>(emptyMap())
@@ -145,10 +145,8 @@ class DemoSavingSpinRepository @Inject constructor(
             return AppResult.Error("Kết quả vòng quay không khớp số tiền cần cất")
         }
 
-        val txRepository = transactionRepository
-            ?: return AppResult.Error("Demo ledger chưa được liên kết TransactionRepository")
         return when (
-            val transfer = txRepository.transferBetweenWalletsIdempotent(
+            val transfer = transactionRepository.transferBetweenWalletsIdempotent(
                 sourceWalletId = sourceWalletId,
                 destinationWalletId = destinationWalletId,
                 amount = amount,
