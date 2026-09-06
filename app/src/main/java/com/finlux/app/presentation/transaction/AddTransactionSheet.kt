@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.transaction
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -171,7 +173,7 @@ fun AddTransactionSheet(
     }
 
     val isExpense = state.type == TransactionType.EXPENSE
-    val amountColor = if (isExpense) Color(0xFFDC2626) else Color(0xFF16A34A)
+    val amountColor = if (isExpense) FinluxPalette.CFFDC2626 else FinluxPalette.CFF16A34A
     val activeCategory = state.categories.firstOrNull { it.id == state.categoryId }
     val activeWallet = state.wallets.firstOrNull { it.id == state.walletId }
     val enteredAmountValue = state.amountInput.toLongOrNull() ?: 0L
@@ -292,7 +294,7 @@ fun AddTransactionSheet(
                 val canSave = !state.isSaving && !isInsufficientBalance && enteredAmountValue > 0L
                 Surface(
                     shape = CircleShape,
-                    color = if (canSave) Color(0xFF3B5DF8) else (if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0)),
+                    color = if (canSave) FinluxPalette.CFF3B5DF8 else (if (tokens.isDark) FinluxPalette.CFF2A2A3C else FinluxPalette.CFFE2E8F0),
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
@@ -307,7 +309,7 @@ fun AddTransactionSheet(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Lưu",
-                            tint = if (canSave) Color.White else (if (tokens.isDark) Color(0xFF64748B) else Color(0xFF94A3B8)),
+                            tint = if (canSave) FinluxPalette.White else (if (tokens.isDark) FinluxPalette.CFF64748B else FinluxPalette.CFF94A3B8),
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -326,16 +328,16 @@ fun AddTransactionSheet(
                     TransactionTypePill(
                         label = "Chi tiêu",
                         isSelected = isExpense,
-                        activeBg = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
-                        activeText = Color(0xFFE11D48),
+                        activeBg = if (tokens.isDark) FinluxPalette.CFF3B1E2B else FinluxPalette.CFFFFE4E6,
+                        activeText = FinluxPalette.CFFE11D48,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.setType(TransactionType.EXPENSE) },
                     )
                     TransactionTypePill(
                         label = "Thu nhập",
                         isSelected = !isExpense,
-                        activeBg = if (tokens.isDark) Color(0xFF1E3A2B) else Color(0xFFDCFCE7),
-                        activeText = Color(0xFF16A34A),
+                        activeBg = if (tokens.isDark) FinluxPalette.CFF1E3A2B else FinluxPalette.CFFDCFCE7,
+                        activeText = FinluxPalette.CFF16A34A,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.setType(TransactionType.INCOME) },
                     )
@@ -358,8 +360,8 @@ fun AddTransactionSheet(
             if (balanceErrorMessage != null) {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
-                    border = BorderStroke(1.dp, Color(0xFFF43F5E).copy(alpha = 0.35f)),
+                    color = if (tokens.isDark) FinluxPalette.CFF3B1E2B else FinluxPalette.CFFFFE4E6,
+                    border = BorderStroke(1.dp, FinluxPalette.CFFF43F5E.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
@@ -370,7 +372,7 @@ fun AddTransactionSheet(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = null,
-                            tint = Color(0xFFE11D48),
+                            tint = FinluxPalette.CFFE11D48,
                             modifier = Modifier.size(20.dp),
                         )
                         Text(
@@ -379,7 +381,7 @@ fun AddTransactionSheet(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                            color = Color(0xFFE11D48),
+                            color = FinluxPalette.CFFE11D48,
                         )
                     }
                 }
@@ -397,8 +399,8 @@ fun AddTransactionSheet(
                     onValueChange = viewModel::setNote,
                     placeholder = if (isExpense) "Nhập ghi chú chi tiêu..." else "Nhập nguồn tiền, lý do...",
                     icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                    iconBgColor = Color(0xFF06B6D4).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF0891B2),
+                    iconBgColor = FinluxPalette.CFF06B6D4.copy(alpha = 0.14f),
+                    iconTintColor = FinluxPalette.CFF0891B2,
                     fontSize = 18.sp,
                     onClear = { viewModel.setNote("") },
                 )
@@ -417,14 +419,14 @@ fun AddTransactionSheet(
                         primaryValue = dealFlowTitle,
                         secondaryValue = "Dòng tiền độc lập (Quản lý tự động theo Deal)",
                         icon = Icons.AutoMirrored.Filled.TrendingUp,
-                        iconBgColor = Color(0xFF8B5CF6).copy(alpha = 0.14f),
-                        iconTintColor = Color(0xFF8B5CF6),
+                        iconBgColor = FinluxPalette.CFF8B5CF6.copy(alpha = 0.14f),
+                        iconTintColor = FinluxPalette.CFF8B5CF6,
                         onClick = {
                             android.widget.Toast.makeText(context, "Giao dịch thuộc về Thương vụ đầu tư, không áp dụng danh mục sinh hoạt.", android.widget.Toast.LENGTH_SHORT).show()
                         },
                     )
                 } else {
-                    val categoryAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: Color(0xFFF43F5E)
+                    val categoryAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: FinluxPalette.CFFF43F5E
                     ErgonomicFormRow(
                         label = "DANH MỤC",
                         primaryValue = activeCategory?.name ?: "Chưa chọn danh mục",
@@ -443,8 +445,8 @@ fun AddTransactionSheet(
                     primaryValue = activeWallet?.name ?: "Chưa chọn ví",
                     secondaryValue = activeWallet?.balance?.let { "Số dư: ${formatVndAmount(it.value)}" },
                     icon = walletIcon,
-                    iconBgColor = Color(0xFF3B82F6).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF3B82F6),
+                    iconBgColor = FinluxPalette.CFF3B82F6.copy(alpha = 0.14f),
+                    iconTintColor = FinluxPalette.CFF3B82F6,
                     onClick = { showWalletPicker = true },
                 )
 
@@ -454,8 +456,8 @@ fun AddTransactionSheet(
                     primaryValue = formattedDate,
                     secondaryValue = null,
                     icon = Icons.Default.CalendarMonth,
-                    iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF6366F1),
+                    iconBgColor = FinluxPalette.CFF6366F1.copy(alpha = 0.14f),
+                    iconTintColor = FinluxPalette.CFF6366F1,
                     onClick = { showDatePicker = true },
                 )
 
@@ -465,8 +467,8 @@ fun AddTransactionSheet(
                     primaryValue = if (state.receiptUri == null) "Chưa có hóa đơn" else "Đã đính kèm ảnh hóa đơn ✓",
                     secondaryValue = if (state.receiptUri == null) "Chạm để quét hoặc tải ảnh" else "Ảnh được lưu cùng giao dịch",
                     icon = Icons.Default.DocumentScanner,
-                    iconBgColor = Color(0xFF9333EA).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF9333EA),
+                    iconBgColor = FinluxPalette.CFF9333EA.copy(alpha = 0.14f),
+                    iconTintColor = FinluxPalette.CFF9333EA,
                     onClick = { /* Scan receipt action */ },
                 )
             }
@@ -493,7 +495,7 @@ fun AddTransactionSheet(
                     text = if (state.isSaving) "Đang lưu..." else if (state.editingTransaction != null) "Cập nhật giao dịch" else "Lưu giao dịch",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = FinluxPalette.White,
                 )
             }
         }
@@ -653,7 +655,7 @@ private fun TransactionTypePill(
 
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = if (isSelected) activeBg else if (tokens.isDark) Color(0xFF1E1E2D) else Color(0xFFF3F4F6),
+        color = if (isSelected) activeBg else if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.CFFF3F4F6,
         border = if (isSelected) BorderStroke(1.dp, activeText.copy(alpha = 0.3f)) else null,
         modifier = modifier
             .heightIn(min = 42.dp)
@@ -676,7 +678,7 @@ private fun TransactionTypePill(
                     fontSize = 13.5.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 ),
-                color = if (isSelected) activeText else Color(0xFF6B7280),
+                color = if (isSelected) activeText else FinluxPalette.CFF6B7280,
                 textAlign = TextAlign.Center,
             )
         }
@@ -736,16 +738,16 @@ private fun CategoryEditorDialog(
                     TransactionTypePill(
                         label = "Chi tiêu",
                         isSelected = selectedType == CategoryType.EXPENSE,
-                        activeBg = Color(0xFFFFE4E6),
-                        activeText = Color(0xFFE11D48),
+                        activeBg = FinluxPalette.CFFFFE4E6,
+                        activeText = FinluxPalette.CFFE11D48,
                         modifier = Modifier.weight(1f),
                         onClick = { selectedType = CategoryType.EXPENSE },
                     )
                     TransactionTypePill(
                         label = "Thu nhập",
                         isSelected = selectedType == CategoryType.INCOME,
-                        activeBg = Color(0xFFDCFCE7),
-                        activeText = Color(0xFF16A34A),
+                        activeBg = FinluxPalette.CFFDCFCE7,
+                        activeText = FinluxPalette.CFF16A34A,
                         modifier = Modifier.weight(1f),
                         onClick = { selectedType = CategoryType.INCOME },
                     )
@@ -795,7 +797,7 @@ private fun CategoryEditorDialog(
                 ) {
                     if (onDelete != null) {
                         TextButton(onClick = onDelete) {
-                            Text("Xóa", color = Color(0xFFEF4444))
+                            Text("Xóa", color = FinluxPalette.CFFEF4444)
                         }
                         Spacer(Modifier.weight(1f))
                     }
