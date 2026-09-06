@@ -11,6 +11,7 @@ import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.ManagedOperationType
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
 import com.finlux.app.domain.model.TransactionType
@@ -85,6 +86,7 @@ class DemoFinluxRepository @Inject constructor(
     private val notificationState = MutableStateFlow(seedNotifications())
     private val debtState = MutableStateFlow(seedDebts())
     private val paymentHistoryState = MutableStateFlow<List<DebtPaymentHistory>>(seedPaymentHistory())
+    private val processedSalaryRolloverKeys = mutableSetOf<String>()
 
     override val currentUser: Flow<UserProfile?> = userState
 
@@ -852,7 +854,68 @@ class DemoFinluxRepository @Inject constructor(
         amount: Long,
         note: String,
         date: Instant,
-    ): AppResult<Unit> = transferBetweenWallets(sourceWalletId, destinationWalletId, amount, note, date)
+    ): AppResult<Unit> = mutationMutex.withLock {
+        if (cycleKey in processedSalaryRolloverKeys) {
+            return@withLock AppResult.Error("Chu kỳ lương này đã được kết chuyển")
+        }
+        if (sourceWalletId == destinationWalletId) {
+            return@withLock AppResult.Error("Hai ví phải khác nhau")
+        }
+        if (amount < 0L) {
+            return@withLock AppResult.Error("Số tiền không hợp lệ")
+        }
+
+        if (amount == 0L) {
+            processedSalaryRolloverKeys += cycleKey
+            return@withLock AppResult.Success(Unit)
+        }
+
+        val source = walletState.value.find { it.id == sourceWalletId }
+            ?: return@withLock AppResult.Error("Không tìm thấy ví nguồn")
+        val destination = walletState.value.find { it.id == destinationWalletId }
+            ?: return@withLock AppResult.Error("Không tìm thấy ví đích")
+        if (source.type != WalletType.CARD && source.balance.value < amount) {
+            return@withLock AppResult.Error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
+        }
+
+        val walletSnapshot = walletState.value
+        if (!changeWalletBalance(sourceWalletId, -amount) ||
+            !changeWalletBalance(destinationWalletId, amount)
+        ) {
+            walletState.value = walletSnapshot
+            return@withLock AppResult.Error("Không thể cập nhật số dư ví")
+        }
+
+        val rolloverId = cycleKey
+            .replace(":", "_")
+            .replace("/", "_")
+            .replace(".", "_")
+        val pairId = "salary_rollover_$rolloverId"
+        val now = Instant.now()
+        val outgoing = FinanceTransaction(
+            id = "${pairId}_out",
+            type = TransactionType.TRANSFER_OUT,
+            amount = Money(amount),
+            categoryId = null,
+            walletId = sourceWalletId,
+            relatedWalletId = destinationWalletId,
+            managedOperationType = ManagedOperationType.SALARY_ROLLOVER,
+            managedOperationId = rolloverId,
+            note = note,
+            date = date,
+            createdAt = now,
+            updatedAt = now,
+        )
+        val incoming = outgoing.copy(
+            id = "${pairId}_in",
+            type = TransactionType.TRANSFER_IN,
+            walletId = destinationWalletId,
+            relatedWalletId = sourceWalletId,
+        )
+        transactionState.value = transactionState.value + outgoing + incoming
+        processedSalaryRolloverKeys += cycleKey
+        AppResult.Success(Unit)
+    }
 
     private fun changeWalletBalance(walletId: String, delta: Long): Boolean {
         val target = walletState.value.find { it.id == walletId } ?: return false
