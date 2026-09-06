@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.wallet
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -258,8 +260,8 @@ fun TransferMoneyScreen(
                 // 2. Wallets Transfer Bento Box (From Wallet -> Swap -> To Wallet)
                 Surface(
                     shape = RoundedCornerShape(22.dp),
-                    color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                    color = if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.White,
+                    border = BorderStroke(1.dp, if (tokens.isDark) FinluxPalette.White.copy(alpha = 0.08f) else FinluxPalette.CFFE5E7EB),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(
@@ -285,13 +287,13 @@ fun TransferMoneyScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .background(Color(0xFF3B82F6).copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                                    .background(FinluxPalette.CFF3B82F6.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.AccountBalanceWallet,
                                     contentDescription = null,
-                                    tint = Color(0xFF3B82F6),
+                                    tint = FinluxPalette.CFF3B82F6,
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
@@ -304,7 +306,7 @@ fun TransferMoneyScreen(
                                 Text(
                                     text = "Khả dụng: ${formatVndAmount(sourceWallet?.balance?.value ?: 0L)}",
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                                    color = if (isInsufficientFunds) Color(0xFFEF4444) else tokens.onSurfaceVariant,
+                                    color = if (isInsufficientFunds) FinluxPalette.CFFEF4444 else tokens.onSurfaceVariant,
                                 )
                             }
                         }
@@ -368,13 +370,13 @@ fun TransferMoneyScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .background(Color(0xFF10B981).copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                                    .background(FinluxPalette.CFF10B981.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.AccountBalanceWallet,
                                     contentDescription = null,
-                                    tint = Color(0xFF10B981),
+                                    tint = FinluxPalette.CFF10B981,
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
@@ -395,7 +397,7 @@ fun TransferMoneyScreen(
                         if (isSameWallet) {
                             Text(
                                 text = "⚠️ Ví gửi và ví nhận không được trùng nhau",
-                                color = Color(0xFFEF4444),
+                                color = FinluxPalette.CFFEF4444,
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                             )
                         }
@@ -405,8 +407,8 @@ fun TransferMoneyScreen(
                 // 3. Amount Input Card
                 Surface(
                     shape = RoundedCornerShape(22.dp),
-                    color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                    color = if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.White,
+                    border = BorderStroke(1.dp, if (tokens.isDark) FinluxPalette.White.copy(alpha = 0.08f) else FinluxPalette.CFFE5E7EB),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(
@@ -434,7 +436,7 @@ fun TransferMoneyScreen(
                                 textStyle = MaterialTheme.typography.headlineMedium.copy(
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = if (isInsufficientFunds) Color(0xFFEF4444) else tokens.primary,
+                                    color = if (isInsufficientFunds) FinluxPalette.CFFEF4444 else tokens.primary,
                                 ),
                                 cursorBrush = SolidColor(tokens.primary),
                                 singleLine = true,
@@ -466,7 +468,7 @@ fun TransferMoneyScreen(
                         if (isInsufficientFunds && sourceWallet != null) {
                             Text(
                                 text = "Số dư ví [${sourceWallet.name}] không đủ để chuyển (Khả dụng: ${formatVndAmount(sourceWallet.balance.value)})",
-                                color = Color(0xFFEF4444),
+                                color = FinluxPalette.CFFEF4444,
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                             )
                         }
@@ -523,8 +525,8 @@ fun TransferMoneyScreen(
                 // 4. Date & Note Cards
                 Surface(
                     shape = RoundedCornerShape(22.dp),
-                    color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                    color = if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.White,
+                    border = BorderStroke(1.dp, if (tokens.isDark) FinluxPalette.White.copy(alpha = 0.08f) else FinluxPalette.CFFE5E7EB),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(
@@ -615,7 +617,7 @@ fun TransferMoneyScreen(
                         text = if (actionState.busy) "Đang thực hiện chuyển tiền..." else "Xác nhận chuyển tiền",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = FinluxPalette.White,
                     )
                 }
             }
@@ -655,7 +657,7 @@ fun TransferMoneyScreen(
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             colors = DatePickerDefaults.colors(
-                containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                containerColor = if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.White,
             ),
             shape = RoundedCornerShape(28.dp),
             confirmButton = {
@@ -680,7 +682,7 @@ fun TransferMoneyScreen(
             DatePicker(
                 state = datePickerState,
                 colors = DatePickerDefaults.colors(
-                    containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    containerColor = if (tokens.isDark) FinluxPalette.CFF1E1E2D else FinluxPalette.White,
                     titleContentColor = tokens.onSurface,
                     headlineContentColor = tokens.onSurface,
                     weekdayContentColor = tokens.onSurfaceVariant,
