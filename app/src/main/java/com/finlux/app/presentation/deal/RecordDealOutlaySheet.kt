@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.deal
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -145,7 +147,7 @@ fun RecordDealOutlaySheet(
                 label = if (isLending) "SỐ TIỀN CHO VAY THÊM" else "SỐ TIỀN XUẤT VỐN",
                 amountText = amountDigits,
                 onAmountChange = { amountDigits = it },
-                amountColor = if (isLending) Color(0xFFD97706) else tokens.primary,
+                amountColor = if (isLending) FinluxPalette.CFFD97706 else tokens.primary,
             )
 
             // 3. Ghi chú (ErgonomicInputRow)
@@ -155,8 +157,8 @@ fun RecordDealOutlaySheet(
                 onValueChange = { note = it },
                 placeholder = if (isLending) "Ví dụ: Cho mượn thêm đợt 2, Góp vốn bổ sung..." else "Ví dụ: Đặt cọc lô hàng, Xuất vốn đợt 2...",
                 icon = Icons.Default.Description,
-                iconBgColor = (if (isLending) Color(0xFFD97706) else tokens.primary).copy(alpha = 0.12f),
-                iconTintColor = if (isLending) Color(0xFFD97706) else tokens.primary,
+                iconBgColor = (if (isLending) FinluxPalette.CFFD97706 else tokens.primary).copy(alpha = 0.12f),
+                iconTintColor = if (isLending) FinluxPalette.CFFD97706 else tokens.primary,
                 onClear = { note = "" },
             )
 
@@ -166,8 +168,8 @@ fun RecordDealOutlaySheet(
                 primaryValue = formattedDate,
                 secondaryValue = null,
                 icon = Icons.Default.CalendarMonth,
-                iconBgColor = (if (isLending) Color(0xFFD97706) else Color(0xFF6366F1)).copy(alpha = 0.14f),
-                iconTintColor = if (isLending) Color(0xFFD97706) else Color(0xFF6366F1),
+                iconBgColor = (if (isLending) FinluxPalette.CFFD97706 else FinluxPalette.CFF6366F1).copy(alpha = 0.14f),
+                iconTintColor = if (isLending) FinluxPalette.CFFD97706 else FinluxPalette.CFF6366F1,
                 onClick = { showDatePicker = true },
             )
 
@@ -186,12 +188,12 @@ fun RecordDealOutlaySheet(
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLending) Color(0xFFD97706) else tokens.primary,
-                    contentColor = Color.White,
+                    containerColor = if (isLending) FinluxPalette.CFFD97706 else tokens.primary,
+                    contentColor = FinluxPalette.White,
                 ),
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = FinluxPalette.White, strokeWidth = 2.dp)
                 } else {
                     Text(
                         text = if (isLending) "Xác Nhận Cho Vay" else "Xác Nhận Xuất Vốn",
