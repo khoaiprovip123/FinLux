@@ -25,7 +25,7 @@ val hasReleaseSigningConfig = !releaseKeystorePath.isNullOrBlank() &&
 val firebaseDebugKeystore = rootProject.file("gradle/debug.keystore")
 
 android {
-    // TODO: [Cần xác nhận] Replace this provisional namespace/applicationId before Firebase setup.
+    // Stable production identity for the current Firebase project. Changing this requires a coordinated Firebase migration.
     namespace = "com.finlux.app"
     compileSdk = 36
 
