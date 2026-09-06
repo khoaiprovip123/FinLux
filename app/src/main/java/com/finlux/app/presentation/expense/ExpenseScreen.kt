@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.expense
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -193,29 +195,29 @@ private fun PeriodPicker(label: String, previous: () -> Unit, next: () -> Unit, 
 private fun ExpenseHero(total: Long, changePercent: Int) {
     FinluxPanel(
         modifier = Modifier.fillMaxWidth().height(128.dp),
-        containerColor = Color.Transparent,
-        borderColor = Color.White.copy(alpha = .30f),
+        containerColor = FinluxPalette.Transparent,
+        borderColor = FinluxPalette.White.copy(alpha = .30f),
         cornerRadius = 20.dp,
         padding = PaddingValues(0.dp),
     ) {
         Box(
             Modifier.fillMaxSize().background(
-                Brush.linearGradient(listOf(Color(0xFFFF405B), Color(0xFFFF6680), Color(0xFFFF7B91))),
+                Brush.linearGradient(listOf(FinluxPalette.CFFFF405B, FinluxPalette.CFFFF6680, FinluxPalette.CFFFF7B91)),
                 RoundedCornerShape(20.dp),
             ).padding(16.dp),
         ) {
             Column(Modifier.align(Alignment.CenterStart), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Tổng chi", color = Color.White.copy(alpha = .90f))
-                Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("${if (changePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(changePercent)}% so với kỳ trước", color = Color.White.copy(alpha = .92f), style = MaterialTheme.typography.bodyMedium)
+                Text("Tổng chi", color = FinluxPalette.White.copy(alpha = .90f))
+                Text(total.toVnd(), color = FinluxPalette.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("${if (changePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(changePercent)}% so với kỳ trước", color = FinluxPalette.White.copy(alpha = .92f), style = MaterialTheme.typography.bodyMedium)
             }
             Box(
-                Modifier.align(Alignment.CenterEnd).size(68.dp).background(Color.White.copy(alpha = .15f), CircleShape),
+                Modifier.align(Alignment.CenterEnd).size(68.dp).background(FinluxPalette.White.copy(alpha = .15f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("${if (changePercent > 0) "+" else ""}$changePercent%", color = Color.White, fontWeight = FontWeight.Bold)
-                    Icon(Icons.Default.TrendingDown, null, Modifier.size(19.dp), tint = Color.White)
+                    Text("${if (changePercent > 0) "+" else ""}$changePercent%", color = FinluxPalette.White, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.TrendingDown, null, Modifier.size(19.dp), tint = FinluxPalette.White)
                 }
             }
         }
