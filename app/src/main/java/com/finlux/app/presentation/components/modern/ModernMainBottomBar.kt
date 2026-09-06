@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.components.modern
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -65,7 +67,7 @@ fun ModernMainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, onA
                     Icons.Default.Add,
                     contentDescription = "Thêm giao dịch",
                     modifier = Modifier.size(28.dp),
-                    tint = Color.White,
+                    tint = FinluxPalette.White,
                 )
             }
         }
@@ -97,11 +99,11 @@ private fun RowScope.DestinationItem(
     val interactionSource = remember { MutableInteractionSource() }
 
     val selectedColor = when (style) {
-        VisualStyle.MODERN_DARK -> if (dark) Color(0xFF38BDF8) else Color(0xFF176BDF)
-        VisualStyle.GLASSMORPHISM -> if (dark) Color(0xFFC4B5FD) else FinluxPurple
+        VisualStyle.MODERN_DARK -> if (dark) FinluxPalette.CFF38BDF8 else FinluxPalette.CFF176BDF
+        VisualStyle.GLASSMORPHISM -> if (dark) FinluxPalette.CFFC4B5FD else FinluxPurple
         VisualStyle.DYNAMIC_GRADIENT -> if (dark) FinluxCyan else FinluxBlue
     }
-    val unselectedColor = if (dark) Color(0xFF8E9EB5) else Color(0xFF64748B)
+    val unselectedColor = if (dark) FinluxPalette.CFF8E9EB5 else FinluxPalette.CFF64748B
 
     val scale by animateFloatAsState(
         targetValue = if (selected) 1.05f else 1f,
