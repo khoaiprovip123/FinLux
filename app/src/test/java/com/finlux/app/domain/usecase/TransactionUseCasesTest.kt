@@ -142,102 +142,20 @@ class TransactionUseCasesTest {
     }
 
     @Test
-    fun `add expense triggers 80 percent budget warning notification`() = runTest {
-        val fakeBudgetRepo = FakeBudgetRepository(
-            mutableListOf(
-                com.finlux.app.domain.model.Budget(
-                    id = "food_month:2026-08",
-                    categoryId = "food",
-                    periodKey = "month:2026-08",
-                    limitAmount = Money(1_000_000),
-                    spentAmount = Money(750_000),
-                    notified80 = false,
-                    notified100 = false,
-                )
-            )
-        )
-        val fakeNotiRepo = FakeNotificationRepository()
-        val useCase = AddTransactionUseCase(
-            repository = repository,
-            walletRepository = walletRepository,
-            budgetRepository = fakeBudgetRepo,
-            notificationRepository = fakeNotiRepo,
+    fun `add and edit transaction leave budget aggregate ownership to server`() = runTest {
+        val addUseCase = AddTransactionUseCase(repository, walletRepository)
+        val added = addUseCase(validTransaction().copy(amount = Money(100_000)))
+
+        val original = validTransaction("tx-1").copy(amount = Money(100_000))
+        val edited = EditTransactionUseCase(repository, walletRepository)(
+            original,
+            original.copy(amount = Money(250_000)),
         )
 
-        val tx = validTransaction().copy(amount = Money(100_000)) // 750k + 100k = 850k (85% >= 80%)
-        val result = useCase(tx)
-
-        assertEquals(AppResult.Success("generated-id"), result)
-        assertEquals(1, fakeNotiRepo.savedNotifications.size)
-        assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
-        assertEquals(true, fakeBudgetRepo.budgets.first().notified80)
-        assertEquals(false, fakeBudgetRepo.budgets.first().notified100)
-    }
-
-    @Test
-    fun `add expense triggers 100 percent budget exceeded notification`() = runTest {
-        val fakeBudgetRepo = FakeBudgetRepository(
-            mutableListOf(
-                com.finlux.app.domain.model.Budget(
-                    id = "food_month:2026-08",
-                    categoryId = "food",
-                    periodKey = "month:2026-08",
-                    limitAmount = Money(1_000_000),
-                    spentAmount = Money(950_000),
-                    notified80 = true,
-                    notified100 = false,
-                )
-            )
-        )
-        val fakeNotiRepo = FakeNotificationRepository()
-        val useCase = AddTransactionUseCase(
-            repository = repository,
-            walletRepository = walletRepository,
-            budgetRepository = fakeBudgetRepo,
-            notificationRepository = fakeNotiRepo,
-        )
-
-        val tx = validTransaction().copy(amount = Money(100_000)) // 950k + 100k = 1050k (105% >= 100%)
-        val result = useCase(tx)
-
-        assertEquals(AppResult.Success("generated-id"), result)
-        assertEquals(1, fakeNotiRepo.savedNotifications.size)
-        assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
-        assertEquals(true, fakeBudgetRepo.budgets.first().notified100)
-    }
-
-    @Test
-    fun `edit expense triggers budget alert when amount increased across 80 percent threshold`() = runTest {
-        val fakeBudgetRepo = FakeBudgetRepository(
-            mutableListOf(
-                com.finlux.app.domain.model.Budget(
-                    id = "food_month:2026-08",
-                    categoryId = "food",
-                    periodKey = "month:2026-08",
-                    limitAmount = Money(1_000_000),
-                    spentAmount = Money(700_000),
-                    notified80 = false,
-                    notified100 = false,
-                )
-            )
-        )
-        val fakeNotiRepo = FakeNotificationRepository()
-        val useCase = EditTransactionUseCase(
-            repository = repository,
-            walletRepository = walletRepository,
-            budgetRepository = fakeBudgetRepo,
-            notificationRepository = fakeNotiRepo,
-        )
-
-        val orig = validTransaction("tx-1").copy(amount = Money(100_000))
-        val updated = orig.copy(amount = Money(250_000)) // delta +150k -> 700k + 150k = 850k (85% >= 80%)
-
-        val result = useCase(orig, updated)
-
-        assertEquals(AppResult.Success(Unit), result)
-        assertEquals(1, fakeNotiRepo.savedNotifications.size)
-        assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
-        assertEquals(true, fakeBudgetRepo.budgets.first().notified80)
+        assertEquals(AppResult.Success("generated-id"), added)
+        assertEquals(AppResult.Success(Unit), edited)
+        assertEquals(1, repository.addCalls)
+        assertEquals(1, repository.editCalls)
     }
 
     @Test
