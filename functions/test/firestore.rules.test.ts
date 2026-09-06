@@ -66,15 +66,102 @@ describe("Firestore Rules: Salary Rollovers", () => {
         // Write first time -> SUCCEED
         await assertSucceeds(ref.set({
             cycleKey: "salary:2025-08-01",
-            processedAt: new Date()
+            processedAt: new Date(),
+            amount: 0,
+            sourceWalletId: "wallet-main",
+            destinationWalletId: "wallet-saving",
+            transactionOutId: null,
+            transactionInId: null,
         }));
 
         // 3. Ghi salaryRollovers 2 lần cùng một cycleKey -> TỪ CHỐI
         await assertFails(ref.set({
             cycleKey: "salary:2025-08-01",
-            processedAt: new Date()
+            processedAt: new Date(),
+            amount: 0,
+            sourceWalletId: "wallet-main",
+            destinationWalletId: "wallet-saving",
+            transactionOutId: null,
+            transactionInId: null,
         }));
     });
+    it("accepts an atomic salary rollover transfer bundle and protects its ledger", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await context.firestore().doc("users/alice/wallets/salary_source").set({
+                name: "Ví lương",
+                type: "bank",
+                balance: 5000000,
+                color: "#000000",
+                isDefault: true,
+                createdAt: new Date(),
+                lastTransactionId: "seed",
+            });
+            await context.firestore().doc("users/alice/wallets/salary_saving").set({
+                name: "Ví tiết kiệm",
+                type: "bank",
+                balance: 1000000,
+                color: "#111111",
+                isDefault: false,
+                createdAt: new Date(),
+                lastTransactionId: "seed",
+            });
+        });
+
+        const rolloverId = "salary_2026-08-25";
+        const outId = `salary_rollover_${rolloverId}_out`;
+        const inId = `salary_rollover_${rolloverId}_in`;
+        const batch = alice.firestore().batch();
+        batch.set(alice.firestore().doc(`users/alice/salaryRollovers/${rolloverId}`), {
+            cycleKey: "salary:2026-08-25",
+            processedAt: new Date(),
+            amount: 500000,
+            sourceWalletId: "salary_source",
+            destinationWalletId: "salary_saving",
+            transactionOutId: outId,
+            transactionInId: inId,
+        });
+        batch.update(alice.firestore().doc("users/alice/wallets/salary_source"), {
+            balance: 4500000,
+            lastTransactionId: outId,
+        });
+        batch.update(alice.firestore().doc("users/alice/wallets/salary_saving"), {
+            balance: 1500000,
+            lastTransactionId: inId,
+        });
+        batch.set(alice.firestore().doc(`users/alice/transactions/${outId}`), {
+            type: "transfer_out",
+            amount: 500000,
+            categoryId: null,
+            walletId: "salary_source",
+            relatedWalletId: "salary_saving",
+            managedOperationType: "salary_rollover",
+            managedOperationId: rolloverId,
+            note: "Kết chuyển lương",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        batch.set(alice.firestore().doc(`users/alice/transactions/${inId}`), {
+            type: "transfer_in",
+            amount: 500000,
+            categoryId: null,
+            walletId: "salary_saving",
+            relatedWalletId: "salary_source",
+            managedOperationType: "salary_rollover",
+            managedOperationId: rolloverId,
+            note: "Kết chuyển lương",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await assertSucceeds(batch.commit());
+        await assertFails(alice.firestore().doc(`users/alice/transactions/${outId}`).delete());
+    });
+
 });
 
 describe("Firestore Rules: Budgets", () => {
@@ -133,7 +220,7 @@ describe("Firestore Rules: Saving Spin", () => {
         await assertFails(bob.firestore().doc(path).set(validConfig));
     });
 
-    it("allows destination icon and bank completion transaction reference", async () => {
+    it("allows destination icon and atomic linked-wallet completion", async () => {
         const alice = testEnv.authenticatedContext("alice");
 
         await assertSucceeds(
@@ -150,9 +237,9 @@ describe("Firestore Rules: Saving Spin", () => {
             }),
         );
 
-        const path = "users/alice/savingSpinSessions/day_2026-09-05";
+        const sessionPath = "users/alice/savingSpinSessions/day_2026-09-05";
         await testEnv.withSecurityRulesDisabled(async (context) => {
-            await context.firestore().doc(path).set({
+            await context.firestore().doc(sessionPath).set({
                 scheduleKey: "day:2026-09-05",
                 wheelValues: [10000, 15000, 20000, 25000, 30000, 35000],
                 selectedIndex: 2,
@@ -168,18 +255,77 @@ describe("Firestore Rules: Saving Spin", () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
+            await context.firestore().doc("users/alice/wallets/wallet_main").set({
+                name: "Ví chính",
+                type: "bank",
+                balance: 100000,
+                color: "#000000",
+                isDefault: true,
+                createdAt: new Date(),
+                lastTransactionId: "seed",
+            });
+            await context.firestore().doc("users/alice/wallets/wallet_saving").set({
+                name: "Ví tiết kiệm",
+                type: "bank",
+                balance: 50000,
+                color: "#111111",
+                isDefault: false,
+                createdAt: new Date(),
+                lastTransactionId: "seed",
+            });
         });
 
-        await assertSucceeds(alice.firestore().doc(path).update({
+        const outId = "saving_spin_day_2026-09-05_out";
+        const inId = "saving_spin_day_2026-09-05_in";
+        const batch = alice.firestore().batch();
+        batch.update(alice.firestore().doc("users/alice/wallets/wallet_main"), {
+            balance: 80000,
+            lastTransactionId: outId,
+        });
+        batch.update(alice.firestore().doc("users/alice/wallets/wallet_saving"), {
+            balance: 70000,
+            lastTransactionId: inId,
+        });
+        batch.set(alice.firestore().doc(`users/alice/transactions/${outId}`), {
+            type: "transfer_out",
+            amount: 20000,
+            categoryId: null,
+            walletId: "wallet_main",
+            relatedWalletId: "wallet_saving",
+            managedOperationType: "saving_spin",
+            managedOperationId: "day_2026-09-05",
+            note: "Vòng quay tiết kiệm",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        batch.set(alice.firestore().doc(`users/alice/transactions/${inId}`), {
+            type: "transfer_in",
+            amount: 20000,
+            categoryId: null,
+            walletId: "wallet_saving",
+            relatedWalletId: "wallet_main",
+            managedOperationType: "saving_spin",
+            managedOperationId: "day_2026-09-05",
+            note: "Vòng quay tiết kiệm",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        batch.update(alice.firestore().doc(sessionPath), {
             status: "COMPLETED",
             destinationId: "bank_saving",
             method: "BANK_TRANSFER",
             completedAt: new Date(),
-            transactionId: "saving_spin_day_2026-09-05_out",
+            transactionId: outId,
             updatedAt: new Date(),
-        }));
+        });
+        await assertSucceeds(batch.commit());
 
-        await assertFails(alice.firestore().doc(path).update({
+        await assertFails(alice.firestore().doc(`users/alice/transactions/${outId}`).delete());
+        await assertFails(alice.firestore().doc(sessionPath).update({
             destinationId: "another_destination",
             transactionId: "another_tx",
             updatedAt: new Date(),
