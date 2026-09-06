@@ -343,3 +343,164 @@ internal fun SettingActionRow(
         }
     }
 }
+
+@Composable
+internal fun SavingSpinPrimaryOverlays(
+    state: SavingSpinSettingsUiState,
+    viewModel: SavingSpinSettingsViewModel,
+    showMinBottomSheet: Boolean,
+    onDismissMin: () -> Unit,
+    showMaxBottomSheet: Boolean,
+    onDismissMax: () -> Unit,
+    showSlotCountSheet: Boolean,
+    onDismissSlotCount: () -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    // Success Popup Dialog
+    if (state.saved) {
+        FinluxDialog(
+            onDismissRequest = viewModel::dismissSaved,
+            title = "Thiết lập thành công!",
+            message = "Cài đặt vòng quay tiết kiệm của bạn đã được lưu và cập nhật ngay vào hệ thống.",
+            confirmLabel = "Đã hiểu",
+            onConfirm = viewModel::dismissSaved,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = tokens.primary.copy(alpha = if (tokens.isDark) 0.20f else 0.12f),
+                    modifier = Modifier.size(64.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = tokens.primary,
+                            modifier = Modifier.size(36.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Modal Sheet: Nhập Mức tối thiểu
+    if (showMinBottomSheet) {
+        SavingSpinAmountInputSheet(
+            title = "Mức tiết kiệm tối thiểu",
+            subtitle = "Số tiền nhỏ nhất xuất hiện trên các ô vòng quay",
+            initialAmount = state.config.minAmount.value,
+            stepAmount = state.config.step.amount,
+            presetAmounts = listOf(10_000L, 20_000L, 30_000L, 50_000L, 100_000L, 200_000L),
+            onDismissRequest = onDismissMin,
+            onApply = { newAmount ->
+                viewModel.setMinAmount(newAmount.toString())
+                onDismissMin()
+            },
+        )
+    }
+
+    // Modal Sheet: Nhập Mức tối đa
+    if (showMaxBottomSheet) {
+        val minRequired = state.config.minAmount.value + (state.config.slotCount * state.config.step.amount)
+        SavingSpinAmountInputSheet(
+            title = "Mức tiết kiệm tối đa",
+            subtitle = "Số tiền lớn nhất xuất hiện trên các ô vòng quay",
+            initialAmount = state.config.maxAmount.value.coerceAtLeast(minRequired),
+            stepAmount = state.config.step.amount,
+            minRequiredAmount = minRequired,
+            presetAmounts = listOf(50_000L, 100_000L, 200_000L, 300_000L, 500_000L, 1_000_000L),
+            onDismissRequest = onDismissMax,
+            onApply = { newAmount ->
+                viewModel.setMaxAmount(newAmount.toString())
+                onDismissMax()
+            },
+        )
+    }
+
+    // Modal Sheet: Chọn Số ô vòng quay (6/8/10/12 ô)
+    if (showSlotCountSheet) {
+        FinluxBottomSheet(
+            onDismissRequest = onDismissSlotCount,
+            title = "Số ô vòng quay",
+            subtitle = "Chọn số lượng ô chia đều trên vòng quay tiết kiệm",
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val slotOptions = listOf(
+                    SlotOption(6, "6 ô vòng quay", "Nhanh gọn • Thích hợp cho mức tiền tập trung"),
+                    SlotOption(8, "8 ô vòng quay", "Tiêu chuẩn • Cân bằng & phổ biến nhất (Khuyên dùng)"),
+                    SlotOption(10, "10 ô vòng quay", "Đa dạng • Nhiều mức tiền tích lũy khác nhau"),
+                    SlotOption(12, "12 ô vòng quay", "Tối đa • Nhiều cơ hội bất ngờ và phong phú nhất"),
+                )
+
+                slotOptions.forEach { opt ->
+                    val isSelected = state.config.slotCount == opt.count
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) tokens.primary.copy(alpha = if (tokens.isDark) 0.18f else 0.10f) else tokens.surfaceSoft,
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (isSelected) tokens.primary else tokens.border,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.setSlotCount(opt.count)
+                                onDismissSlotCount()
+                            },
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = opt.title,
+                                    fontSize = 15.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = if (isSelected) tokens.primary else tokens.onSurface,
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = opt.description,
+                                    fontSize = 12.5.sp,
+                                    color = tokens.onSurfaceVariant,
+                                )
+                            }
+                            if (isSelected) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = tokens.primary,
+                                    modifier = Modifier.size(24.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = tokens.onHero,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
