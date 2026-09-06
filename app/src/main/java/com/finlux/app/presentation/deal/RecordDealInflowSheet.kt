@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.deal
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -155,7 +157,7 @@ fun RecordDealInflowSheet(
                 label = "SỐ TIỀN THỰC NHẬN VỀ",
                 amountText = amountDigits,
                 onAmountChange = { amountDigits = it },
-                amountColor = Color(0xFF10B981),
+                amountColor = FinluxPalette.CFF10B981,
             )
 
             // 3. LIVE DYNAMIC DECOMPOSITION CARD
@@ -198,7 +200,7 @@ fun RecordDealInflowSheet(
                                 text = headerTag,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981),
+                                    color = if (isLending) FinluxPalette.CFF8B5CF6 else FinluxPalette.CFF10B981,
                                 ),
                             )
                         }
@@ -219,7 +221,7 @@ fun RecordDealInflowSheet(
                                 text = principalPortion.toVnd(),
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2563EB),
+                                    color = FinluxPalette.CFF2563EB,
                                 ),
                             )
                         }
@@ -231,7 +233,7 @@ fun RecordDealInflowSheet(
                             Text(
                                 text = if (isLending) "• Tiền lãi nhận thêm (ghi vào Báo cáo):" else "• Lợi nhuận ròng (ghi vào Báo cáo):",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = if (gainPortion > 0) (if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)) else tokens.onSurfaceVariant,
+                                    color = if (gainPortion > 0) (if (isLending) FinluxPalette.CFF8B5CF6 else FinluxPalette.CFF10B981) else tokens.onSurfaceVariant,
                                     fontWeight = if (gainPortion > 0) FontWeight.Bold else FontWeight.Normal,
                                 ),
                             )
@@ -239,7 +241,7 @@ fun RecordDealInflowSheet(
                                 text = if (gainPortion > 0) "+${gainPortion.toVnd()}" else "0 ₫",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = if (gainPortion > 0) (if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)) else tokens.onSurfaceVariant,
+                                    color = if (gainPortion > 0) (if (isLending) FinluxPalette.CFF8B5CF6 else FinluxPalette.CFF10B981) else tokens.onSurfaceVariant,
                                 ),
                             )
                         }
@@ -254,8 +256,8 @@ fun RecordDealInflowSheet(
                 onValueChange = { note = it },
                 placeholder = if (isLending) "Ví dụ: Trả đợt 1, Tiền lãi tháng 8..." else "Ví dụ: Thu đợt 1, Tiền lời bán xe...",
                 icon = Icons.Default.Description,
-                iconBgColor = Color(0xFF10B981).copy(alpha = 0.12f),
-                iconTintColor = Color(0xFF10B981),
+                iconBgColor = FinluxPalette.CFF10B981.copy(alpha = 0.12f),
+                iconTintColor = FinluxPalette.CFF10B981,
                 onClear = { note = "" },
             )
 
@@ -265,8 +267,8 @@ fun RecordDealInflowSheet(
                 primaryValue = formattedDate,
                 secondaryValue = null,
                 icon = Icons.Default.CalendarMonth,
-                iconBgColor = Color(0xFF10B981).copy(alpha = 0.14f),
-                iconTintColor = Color(0xFF10B981),
+                iconBgColor = FinluxPalette.CFF10B981.copy(alpha = 0.14f),
+                iconTintColor = FinluxPalette.CFF10B981,
                 onClick = { showDatePicker = true },
             )
 
@@ -285,12 +287,12 @@ fun RecordDealInflowSheet(
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLending) Color(0xFFD97706) else Color(0xFF10B981),
-                    contentColor = Color.White,
+                    containerColor = if (isLending) FinluxPalette.CFFD97706 else FinluxPalette.CFF10B981,
+                    contentColor = FinluxPalette.White,
                 ),
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = FinluxPalette.White, strokeWidth = 2.dp)
                 } else {
                     Text(
                         text = if (isLending) "Ghi Nhận Thu Nợ" else "Ghi Nhận Thu Tiền",
