@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.components.classic
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -95,7 +97,7 @@ private fun RowScope.DestinationItem(
             selectedTextColor = selectedColor,
             unselectedIconColor = unselectedColor,
             unselectedTextColor = unselectedColor,
-            indicatorColor = Color.Transparent,
+            indicatorColor = FinluxPalette.Transparent,
         ),
     )
 }
@@ -115,30 +117,30 @@ private fun ThemedNavigationIcon(
     }
     val fill = when (style) {
         VisualStyle.MODERN_DARK -> Brush.linearGradient(
-            listOf(FinluxBlue.copy(alpha = if (selected) .22f else .04f), Color(0xFF08182B)),
+            listOf(FinluxBlue.copy(alpha = if (selected) .22f else .04f), FinluxPalette.CFF08182B),
         )
         VisualStyle.GLASSMORPHISM -> Brush.linearGradient(
-            listOf(Color.White.copy(alpha = if (selected) .28f else .06f), Color(0xFF8B5CFF).copy(alpha = if (selected) .30f else .04f)),
+            listOf(FinluxPalette.White.copy(alpha = if (selected) .28f else .06f), FinluxPalette.CFF8B5CFF.copy(alpha = if (selected) .30f else .04f)),
         )
         VisualStyle.DYNAMIC_GRADIENT -> if (selected) {
-            Brush.linearGradient(listOf(Color(0xFF7C3CFF), Color(0xFF356DFF), Color(0xFF37C7F4)))
+            Brush.linearGradient(listOf(FinluxPalette.CFF7C3CFF, FinluxPalette.CFF356DFF, FinluxPalette.CFF37C7F4))
         } else {
-            Brush.linearGradient(listOf(FinluxPurple.copy(alpha = .07f), Color.Transparent))
+            Brush.linearGradient(listOf(FinluxPurple.copy(alpha = .07f), FinluxPalette.Transparent))
         }
     }
     val borderColor = when (style) {
         VisualStyle.MODERN_DARK -> FinluxBlue.copy(alpha = if (selected) .58f else .12f)
-        VisualStyle.GLASSMORPHISM -> Color.White.copy(alpha = if (selected) .62f else .12f)
+        VisualStyle.GLASSMORPHISM -> FinluxPalette.White.copy(alpha = if (selected) .62f else .12f)
         VisualStyle.DYNAMIC_GRADIENT -> FinluxPurple.copy(alpha = if (selected) .35f else .10f)
     }
     Box(
         modifier = Modifier.size(34.dp)
-            .then(if (selected && style == VisualStyle.GLASSMORPHISM) Modifier.shadow(8.dp, shape, ambientColor = Color.White) else Modifier)
+            .then(if (selected && style == VisualStyle.GLASSMORPHISM) Modifier.shadow(8.dp, shape, ambientColor = FinluxPalette.White) else Modifier)
             .clip(shape)
             .background(fill)
             .border(1.dp, borderColor, shape),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp), tint = if (selected && style == VisualStyle.DYNAMIC_GRADIENT) Color.White else tint)
+        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp), tint = if (selected && style == VisualStyle.DYNAMIC_GRADIENT) FinluxPalette.White else tint)
     }
 }
