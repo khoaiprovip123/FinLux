@@ -24,3 +24,13 @@ fun FinanceTransaction.operatingExpenseAmount(): Long = when {
     dealFlowType == DealFlowType.CAPITAL_LOSS -> 0L
     else -> amount.value
 }
+
+
+/**
+ * Ledger entries owned by a higher-level workflow must not be edited/deleted from generic History.
+ * The saving_spin_ prefix keeps pre-metadata deterministic Saving Spin pairs protected.
+ */
+fun FinanceTransaction.isManagedWorkflowLedger(): Boolean =
+    managedOperationType != null ||
+        id.startsWith("saving_spin_") ||
+        id.startsWith("salary_rollover_")
