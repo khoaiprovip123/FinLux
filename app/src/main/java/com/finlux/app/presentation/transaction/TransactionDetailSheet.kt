@@ -98,6 +98,9 @@ fun TransactionDetailSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
+    val isManagedGoal = !transaction.goalId.isNullOrBlank()
+    val isManagedDebt = !transaction.debtId.isNullOrBlank()
+    val isManagedLedger = isManagedGoal || isManagedDebt
     val isIncome = transaction.type == TransactionType.INCOME
 
     val accentColor = when (transaction.type) {
@@ -394,8 +397,63 @@ fun TransactionDetailSheet(
                 }
             }
 
-            // 4. Action Cards (Khóa Sửa với Chuyển tiền / Đầy đủ Sửa & Xóa với Thu & Chi)
-            if (isTransfer) {
+            // 4. Action Cards. Managed Goal/Debt ledgers are immutable from generic History.
+            if (isManagedLedger) {
+                val managedAccent = if (isManagedGoal) tokens.primary else ExpenseRed
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = managedAccent.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, managedAccent.copy(alpha = 0.22f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = managedAccent.copy(alpha = 0.14f),
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = managedAccent,
+                                    modifier = Modifier.size(17.dp),
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (isManagedGoal) {
+                                    "Giao dịch thuộc Tiết kiệm & Mục tiêu"
+                                } else {
+                                    "Giao dịch thuộc Nợ & Tín dụng"
+                                },
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = managedAccent,
+                            )
+                            Text(
+                                text = if (isManagedGoal) {
+                                    "Khoản này liên kết trực tiếp với số dư mục tiêu. Hãy nạp/rút trong mục Mục tiêu để bảo toàn sổ cái."
+                                } else {
+                                    "Khoản này liên kết với dư nợ và lịch sử trả nợ. Hãy thao tác trong mục Nợ để bảo toàn số liệu."
+                                },
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.5.sp,
+                                    lineHeight = 14.sp,
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            } else if (isTransfer) {
                 // Info Banner giải thích tính toàn vẹn 2 đầu ví
                 Surface(
                     shape = RoundedCornerShape(14.dp),
