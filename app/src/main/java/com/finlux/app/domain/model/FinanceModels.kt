@@ -71,6 +71,7 @@ data class FinanceTransaction(
     val debtId: String? = null,
     val debtPrincipalAmount: Money? = null,
     val debtInterestAmount: Money? = null,
+    val debtPaymentId: String? = null,
 )
 
 data class Budget(
