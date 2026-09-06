@@ -2,6 +2,7 @@ package com.finlux.app.domain.usecase
 
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.isManagedWorkflowLedger
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.TransactionRepository
@@ -22,6 +23,11 @@ class EditTransactionUseCase @Inject constructor(
         if (original.id.isBlank() || updated.id != original.id) {
             return AppResult.Error("Giao dịch cần sửa không hợp lệ")
         }
+        if (original.isManagedWorkflowLedger()) {
+            return AppResult.Error(
+                "Giao dịch này do một quy trình tài chính quản lý và không thể sửa trực tiếp trong Lịch sử"
+            )
+        }
         if (!original.goalId.isNullOrBlank() || !original.debtId.isNullOrBlank()) {
             return AppResult.Error(
                 if (!original.goalId.isNullOrBlank()) {
@@ -30,6 +36,9 @@ class EditTransactionUseCase @Inject constructor(
                     "Giao dịch trả nợ phải được điều chỉnh trong mục Nợ & Tín dụng"
                 }
             )
+        }
+        if (updated.isManagedWorkflowLedger()) {
+            return AppResult.Error("Không thể biến giao dịch thường thành managed ledger")
         }
         if (!updated.goalId.isNullOrBlank() || !updated.debtId.isNullOrBlank()) {
             return AppResult.Error("Không thể gắn giao dịch thường vào ledger Goal/Debt")
