@@ -10,8 +10,10 @@ import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
+import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialGoal
+import com.finlux.app.domain.model.GoalFlowType
 import com.finlux.app.domain.model.FinancialFlowBreakdown
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SalaryCycleConfig
@@ -157,6 +159,8 @@ data class ReportsUiState(
     val period: ReportPeriod = ReportPeriod.MONTH,
     val range: ReportRange = ReportRange(LocalDate.now().withDayOfMonth(1), LocalDate.now()),
     val summary: DashboardSummary = DashboardSummary(),
+    /** Thu/chi hoạt động: loại transfer, Goal allocation/release, gốc nợ và vốn đầu tư. */
+    val operatingSummary: DashboardSummary = DashboardSummary(),
     /** Semantic split used by Reports 3.0 without changing legacy cash summary semantics. */
     val financialFlowBreakdown: FinancialFlowBreakdown = FinancialFlowBreakdown(),
     val expensesByCategory: List<CategoryExpense> = emptyList(),
@@ -179,6 +183,9 @@ data class ReportsUiState(
     val previousIncome: Long = 0,
     val previousExpense: Long = 0,
     val previousNet: Long = 0,
+    val previousOperatingIncome: Long = 0,
+    val previousOperatingExpense: Long = 0,
+    val previousOperatingNet: Long = 0,
     val filteredTransactions: List<FinanceTransaction> = emptyList(),
     val categories: List<Category> = emptyList(),
     val wallets: List<Wallet> = emptyList(),
@@ -432,11 +439,28 @@ class ReportsViewModel @Inject constructor(
             return date >= startInclusive && date < endExclusive
         }
 
-        val allPeriodTransactions = transactions.filter { inRange(it.date, window.currentStart, window.currentEndExclusive) }
-        val allPeriodExpenseItems = allPeriodTransactions.filter {
-            it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
+        fun operatingIncomeAmount(tx: FinanceTransaction): Long = when {
+            tx.type != TransactionType.INCOME -> 0L
+            tx.goalFlowType == GoalFlowType.RELEASE -> 0L
+            tx.dealFlowType == DealFlowType.PRINCIPAL_RECOVERY -> 0L
+            tx.dealFlowType == DealFlowType.CAPITAL_GAIN -> 0L
+            else -> tx.amount.value
         }
-        val totalAllPeriodExpense = allPeriodExpenseItems.sumOf { it.amount.value }
+
+        fun operatingExpenseAmount(tx: FinanceTransaction): Long = when {
+            tx.type != TransactionType.EXPENSE -> 0L
+            tx.goalFlowType == GoalFlowType.ALLOCATION -> 0L
+            tx.debtId != null &&
+                tx.debtPrincipalAmount != null &&
+                tx.debtInterestAmount != null -> tx.debtInterestAmount.value
+            tx.dealFlowType == DealFlowType.OUTLAY_CAPITAL -> 0L
+            tx.dealFlowType == DealFlowType.CAPITAL_LOSS -> 0L
+            else -> tx.amount.value
+        }
+
+        val allPeriodTransactions = transactions.filter { inRange(it.date, window.currentStart, window.currentEndExclusive) }
+        val allPeriodExpenseItems = allPeriodTransactions.filter { operatingExpenseAmount(it) > 0L }
+        val totalAllPeriodExpense = allPeriodExpenseItems.sumOf(::operatingExpenseAmount)
 
         val filtered = if (selectedWalletId != null) {
             allPeriodTransactions.filter { it.walletId == selectedWalletId }
@@ -447,6 +471,10 @@ class ReportsViewModel @Inject constructor(
             transactions = filtered,
             deals = deals,
         )
+        val operatingIncomeItems = filtered.filter { operatingIncomeAmount(it) > 0L }
+        val operatingExpenseItems = filtered.filter { operatingExpenseAmount(it) > 0L }
+        val operatingIncome = financialFlowBreakdown.operatingIncome
+        val operatingExpense = financialFlowBreakdown.operatingExpense
         val incomeItems = filtered.filter {
             it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY
         }
@@ -463,16 +491,16 @@ class ReportsViewModel @Inject constructor(
         val walletMap = wallets.associateBy(Wallet::id)
 
         // Expense by Category
-        val byCategoryExpense = expenseItems.groupBy { it.categoryId }.map { (id, items) ->
-            val sum = items.sumOf { it.amount.value }
-            val pct = if (expense > 0) (sum.toFloat() / expense.toFloat()) else 0f
+        val byCategoryExpense = operatingExpenseItems.groupBy { it.categoryId }.map { (id, items) ->
+            val sum = items.sumOf(::operatingExpenseAmount)
+            val pct = if (operatingExpense > 0) (sum.toFloat() / operatingExpense.toFloat()) else 0f
             CategoryExpense(categoryMap[id], sum, pct, items.size)
         }.sortedByDescending(CategoryExpense::amount)
 
         // Income by Category
-        val byCategoryIncome = incomeItems.groupBy { it.categoryId }.map { (id, items) ->
-            val sum = items.sumOf { it.amount.value }
-            val pct = if (income > 0) (sum.toFloat() / income.toFloat()) else 0f
+        val byCategoryIncome = operatingIncomeItems.groupBy { it.categoryId }.map { (id, items) ->
+            val sum = items.sumOf(::operatingIncomeAmount)
+            val pct = if (operatingIncome > 0) (sum.toFloat() / operatingIncome.toFloat()) else 0f
             CategoryExpense(categoryMap[id], sum, pct, items.size)
         }.sortedByDescending(CategoryExpense::amount)
 
@@ -482,9 +510,9 @@ class ReportsViewModel @Inject constructor(
         val cashFlow = allDates.map { date ->
             val items = byDate[date].orEmpty()
             CashFlowPoint(
-                date,
-                items.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value },
-                items.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value },
+                date = date,
+                income = items.sumOf(::operatingIncomeAmount),
+                expense = items.sumOf(::operatingExpenseAmount),
             )
         }
 
@@ -494,8 +522,15 @@ class ReportsViewModel @Inject constructor(
         } else {
             allPrevious
         }
-        val previousIncome = previous.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value }
-        val previousExpense = previous.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value }
+        val previousIncome = previous.filter { it.type == TransactionType.INCOME && it.dealFlowType != DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value }
+        val previousExpense = previous.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value }
+        val previousFlowBreakdown = calculateFinancialFlowBreakdownUseCase(
+            transactions = previous,
+            deals = deals,
+        )
+        val previousOperatingIncome = previousFlowBreakdown.operatingIncome
+        val previousOperatingExpense = previousFlowBreakdown.operatingExpense
+        val previousOperatingNet = previousOperatingIncome - previousOperatingExpense
 
         // Vay nợ (Debts & Loans)
         val totalDebtRemaining = debts.filter { !it.isSettled }.sumOf { it.remainingBalance.value }
@@ -521,7 +556,11 @@ class ReportsViewModel @Inject constructor(
             val p = if (g.targetAmount.value > 0) (g.savedAmount.value.toFloat() / g.targetAmount.value.toFloat()).coerceIn(0f, 1f) else 0f
             GoalReportItem(g, g.targetAmount.value, g.savedAmount.value, p)
         }
-        val savingsRatePercent = if (income > 0) (((income - expense).toFloat() / income.toFloat()) * 100).roundToInt().coerceIn(-100, 100) else 0
+        val savingsRatePercent = if (operatingIncome > 0) {
+            (((operatingIncome - operatingExpense).toFloat() / operatingIncome.toFloat()) * 100)
+                .roundToInt()
+                .coerceIn(-100, 100)
+        } else 0
         val savingsCategoryIds = categories.filter {
             it.id.equals("savings", ignoreCase = true) ||
                 it.id == "203" ||
@@ -622,16 +661,16 @@ class ReportsViewModel @Inject constructor(
 
         // Ngân sách (Budgets)
         val byCategoryName = categories.associateBy { it.name.lowercase().trim() }
-        val spentByCategoryId = expenseItems
+        val spentByCategoryId = operatingExpenseItems
             .groupBy { tx -> tx.categoryId?.takeIf { it.isNotBlank() } }
             .filterKeys { it != null }
             .mapKeys { it.key!! }
-            .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+            .mapValues { (_, txs) -> txs.sumOf(::operatingExpenseAmount) }
 
-        val spentByCategoryName = expenseItems
+        val spentByCategoryName = operatingExpenseItems
             .filter { !it.categoryId.isNullOrBlank() }
             .groupBy { tx -> tx.categoryId!!.lowercase().trim() }
-            .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
+            .mapValues { (_, txs) -> txs.sumOf(::operatingExpenseAmount) }
 
         val budgetReportItems = budgets.map { b ->
             val cat = categoryMap[b.categoryId] ?: byCategoryName[b.categoryId.lowercase().trim()]
@@ -676,30 +715,26 @@ class ReportsViewModel @Inject constructor(
         // Tính toán chi tiết chi tiêu của từng ví dựa trên toàn bộ giao dịch trong kỳ (allPeriodTransactions)
         val walletSpendingDetails = assetWallets.map { w ->
             val wTxList = allPeriodTransactions.filter { it.walletId == w.id }
-            val wIncomeItems = wTxList.filter {
-                it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY
-            }
-            val wExpenseItems = wTxList.filter {
-                it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
-            }
+            val wIncomeItems = wTxList.filter { operatingIncomeAmount(it) > 0L }
+            val wExpenseItems = wTxList.filter { operatingExpenseAmount(it) > 0L }
             val wTransferInItems = wTxList.filter { it.type == TransactionType.TRANSFER_IN }
             val wTransferOutItems = wTxList.filter { it.type == TransactionType.TRANSFER_OUT }
 
-            val wIncome = wIncomeItems.sumOf { it.amount.value }
-            val wExpense = wExpenseItems.sumOf { it.amount.value }
+            val wIncome = wIncomeItems.sumOf(::operatingIncomeAmount)
+            val wExpense = wExpenseItems.sumOf(::operatingExpenseAmount)
             val wTransferIn = wTransferInItems.sumOf { it.amount.value }
             val wTransferOut = wTransferOutItems.sumOf { it.amount.value }
             val wPctAssets = if (totalAssets > 0) (w.balance.value.toFloat() / totalAssets.toFloat()) else 0f
             val wExpenseShare = if (totalAllPeriodExpense > 0) (wExpense.toFloat() / totalAllPeriodExpense.toFloat()) else 0f
 
             val wExpensesByCategory = wExpenseItems.groupBy { it.categoryId }.map { (id, items) ->
-                val sum = items.sumOf { it.amount.value }
+                val sum = items.sumOf(::operatingExpenseAmount)
                 val pct = if (wExpense > 0) (sum.toFloat() / wExpense.toFloat()) else 0f
                 CategoryExpense(categoryMap[id], sum, pct, items.size)
             }.sortedByDescending(CategoryExpense::amount)
 
             val wIncomeByCategory = wIncomeItems.groupBy { it.categoryId }.map { (id, items) ->
-                val sum = items.sumOf { it.amount.value }
+                val sum = items.sumOf(::operatingIncomeAmount)
                 val pct = if (wIncome > 0) (sum.toFloat() / wIncome.toFloat()) else 0f
                 CategoryExpense(categoryMap[id], sum, pct, items.size)
             }.sortedByDescending(CategoryExpense::amount)
@@ -743,8 +778,8 @@ class ReportsViewModel @Inject constructor(
 
         // Tính trung bình ngày dựa trên số ngày thực tế đã trôi qua trong kỳ (đến ngày hôm nay)
         val daysElapsedInPeriod = maxOf(1, ChronoUnit.DAYS.between(range.start, effectiveEndDate).toInt() + 1)
-        val avgExpense = if (daysElapsedInPeriod > 0) expense / daysElapsedInPeriod else 0
-        val avgIncome = if (daysElapsedInPeriod > 0) income / daysElapsedInPeriod else 0
+        val avgExpense = if (daysElapsedInPeriod > 0) operatingExpense / daysElapsedInPeriod else 0
+        val avgIncome = if (daysElapsedInPeriod > 0) operatingIncome / daysElapsedInPeriod else 0
 
         // Daily Statements & Balance Reconciliation
         val dailyStatementsWallets = if (selectedWalletId != null) {
@@ -813,8 +848,8 @@ class ReportsViewModel @Inject constructor(
             requestedPeriod
         }
 
-        val currentNet = income - expense
-        val previousNet = previousIncome - previousExpense
+        val currentNet = operatingIncome - operatingExpense
+        val previousNet = previousOperatingNet
         val netChange = currentNet - previousNet
         val topExpense = byCategoryExpense.firstOrNull()
         val trendInsights = buildList {
@@ -844,24 +879,32 @@ class ReportsViewModel @Inject constructor(
             period = effectivePeriod,
             range = range,
             summary = DashboardSummary(Money(income), Money(expense), income - expense),
+            operatingSummary = DashboardSummary(
+                Money(operatingIncome),
+                Money(operatingExpense),
+                operatingIncome - operatingExpense,
+            ),
             financialFlowBreakdown = financialFlowBreakdown,
             expensesByCategory = byCategoryExpense,
             incomeByCategory = byCategoryIncome,
             dailyExpenses = cashFlow.filter { it.expense > 0 }.map { DailyExpense(it.date, it.expense) },
             cashFlow = cashFlow,
             walletActivity = walletActivity,
-            transactionCount = incomeItems.size + expenseItems.size,
+            transactionCount = operatingIncomeItems.size + operatingExpenseItems.size,
             averageExpense = avgExpense,
             averageIncome = avgIncome,
-            largestExpense = expenseItems.maxByOrNull { it.amount.value },
-            largestIncome = incomeItems.maxByOrNull { it.amount.value },
-            unspentCashFlow = income - expense,
+            largestExpense = operatingExpenseItems.maxByOrNull(::operatingExpenseAmount),
+            largestIncome = operatingIncomeItems.maxByOrNull(::operatingIncomeAmount),
+            unspentCashFlow = operatingIncome - operatingExpense,
             savingsRatePercent = savingsRatePercent,
             goalContributionInPeriod = goalContributionInPeriod,
             trendInsights = trendInsights,
             previousIncome = previousIncome,
             previousExpense = previousExpense,
             previousNet = previousIncome - previousExpense,
+            previousOperatingIncome = previousOperatingIncome,
+            previousOperatingExpense = previousOperatingExpense,
+            previousOperatingNet = previousOperatingNet,
             filteredTransactions = filtered,
             categories = categories,
             wallets = wallets,
