@@ -135,22 +135,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-private enum class ReportPrimaryTab(val label: String, val icon: ImageVector) {
-    OVERVIEW("Tổng quan", Icons.Default.PieChart),
-    CASHFLOW("Thu & Chi", Icons.Default.SwapVert),
-    CATEGORIES("Danh mục", Icons.Default.GridView),
-    DEEP_DIVE("Chuyên sâu", Icons.Default.Payments),
-}
-
-private enum class DeepDiveSubTab(val label: String, val icon: ImageVector) {
-    DEBTS("Vay nợ", Icons.Default.CreditCard),
-    SAVINGS("Tiết kiệm", Icons.Default.Savings),
-    DEALS("Đầu tư & Cho vay", Icons.Default.TrendingUp),
-    BUDGETS("Ngân sách", Icons.Default.AccountBalanceWallet),
-    WALLETS("Tài sản", Icons.Default.AccountBalance),
-    TREND("Xu hướng", Icons.Default.TrendingUp),
-}
-
 @Composable
 internal fun PrismReportsHeader(
     onFilterClick: () -> Unit,
