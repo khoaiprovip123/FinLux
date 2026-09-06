@@ -75,6 +75,7 @@ import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.model.isManagedWorkflowLedger
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -100,7 +101,8 @@ fun TransactionDetailSheet(
     val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
     val isManagedGoal = !transaction.goalId.isNullOrBlank()
     val isManagedDebt = !transaction.debtId.isNullOrBlank()
-    val isManagedLedger = isManagedGoal || isManagedDebt
+    val isManagedWorkflow = transaction.isManagedWorkflowLedger()
+    val isManagedLedger = isManagedGoal || isManagedDebt || isManagedWorkflow
     val isIncome = transaction.type == TransactionType.INCOME
 
     val accentColor = when (transaction.type) {
@@ -399,7 +401,11 @@ fun TransactionDetailSheet(
 
             // 4. Action Cards. Managed Goal/Debt ledgers are immutable from generic History.
             if (isManagedLedger) {
-                val managedAccent = if (isManagedGoal) tokens.primary else ExpenseRed
+                val managedAccent = when {
+                    isManagedGoal -> tokens.primary
+                    isManagedDebt -> ExpenseRed
+                    else -> FinluxColors.TransferBlue
+                }
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = managedAccent.copy(alpha = 0.08f),
@@ -427,10 +433,10 @@ fun TransactionDetailSheet(
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (isManagedGoal) {
-                                    "Giao dịch thuộc Tiết kiệm & Mục tiêu"
-                                } else {
-                                    "Giao dịch thuộc Nợ & Tín dụng"
+                                text = when {
+                                    isManagedGoal -> "Giao dịch thuộc Tiết kiệm & Mục tiêu"
+                                    isManagedDebt -> "Giao dịch thuộc Nợ & Tín dụng"
+                                    else -> "Giao dịch do quy trình tự động quản lý"
                                 },
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontSize = 12.5.sp,
@@ -439,10 +445,13 @@ fun TransactionDetailSheet(
                                 color = managedAccent,
                             )
                             Text(
-                                text = if (isManagedGoal) {
-                                    "Khoản này liên kết trực tiếp với số dư mục tiêu. Hãy nạp/rút trong mục Mục tiêu để bảo toàn sổ cái."
-                                } else {
-                                    "Khoản này liên kết với dư nợ và lịch sử trả nợ. Hãy thao tác trong mục Nợ để bảo toàn số liệu."
+                                text = when {
+                                    isManagedGoal ->
+                                        "Khoản này liên kết trực tiếp với số dư mục tiêu. Hãy nạp/rút trong mục Mục tiêu để bảo toàn sổ cái."
+                                    isManagedDebt ->
+                                        "Khoản này liên kết với dư nợ và lịch sử trả nợ. Hãy thao tác trong mục Nợ để bảo toàn số liệu."
+                                    else ->
+                                        "Khoản này được tạo bởi Vòng quay tiết kiệm hoặc kết chuyển lương. Không thể sửa/xóa riêng khỏi quy trình gốc."
                                 },
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.5.sp,
