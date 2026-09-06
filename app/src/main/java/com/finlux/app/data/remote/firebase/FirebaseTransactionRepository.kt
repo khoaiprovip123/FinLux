@@ -533,7 +533,7 @@ class FirebaseTransactionRepository(
                         "Phát hiện kết chuyển lương không toàn vẹn"
                     }
                 }
-                return@runTransaction
+                error("Chu kỳ lương này đã được kết chuyển")
             }
 
             val marker = mutableMapOf<String, Any?>(
