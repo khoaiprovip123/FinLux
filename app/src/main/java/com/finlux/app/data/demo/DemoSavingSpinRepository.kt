@@ -8,6 +8,7 @@ import com.finlux.app.domain.model.SavingSpinConfig
 import com.finlux.app.domain.model.SavingSpinSession
 import com.finlux.app.domain.model.SavingSpinStatus
 import com.finlux.app.domain.repository.SavingSpinRepository
+import com.finlux.app.domain.repository.TransactionRepository
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
@@ -18,7 +19,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 @Singleton
-class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
+class DemoSavingSpinRepository @Inject constructor(
+    private val transactionRepository: TransactionRepository,
+) : SavingSpinRepository {
     private val config = MutableStateFlow(SavingSpinConfig())
     private val destinations = MutableStateFlow<Map<String, SavingDestination>>(emptyMap())
     private val sessions = MutableStateFlow<Map<String, SavingSpinSession>>(emptyMap())
@@ -117,6 +120,49 @@ class DemoSavingSpinRepository @Inject constructor() : SavingSpinRepository {
             completedAt = Instant.now(),
             updatedAt = Instant.now(),
         )
+    }
+
+    override suspend fun completeSessionWithWalletTransfer(
+        scheduleKey: String,
+        destinationId: String,
+        method: SavingMethod,
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+        operationId: String,
+    ): AppResult<Unit> {
+        val current = sessions.value[scheduleKey]
+            ?: return AppResult.Error("Lượt quay không tồn tại")
+        if (current.status == SavingSpinStatus.COMPLETED) {
+            return AppResult.Success(Unit)
+        }
+        if (
+            current.status !in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) ||
+            current.selectedAmount?.value != amount
+        ) {
+            return AppResult.Error("Kết quả vòng quay không khớp số tiền cần cất")
+        }
+
+        return when (
+            val transfer = transactionRepository.transferBetweenWalletsIdempotent(
+                sourceWalletId = sourceWalletId,
+                destinationWalletId = destinationWalletId,
+                amount = amount,
+                note = note,
+                date = date,
+                operationId = operationId,
+            )
+        ) {
+            is AppResult.Error -> transfer
+            is AppResult.Success -> completeSession(
+                scheduleKey = scheduleKey,
+                destinationId = destinationId,
+                method = method,
+                transactionId = "${operationId}_out",
+            )
+        }
     }
 
     override suspend fun snoozeSession(scheduleKey: String, until: Instant): AppResult<Unit> =
