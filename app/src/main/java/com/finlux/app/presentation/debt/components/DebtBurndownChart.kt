@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.debt.components
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -225,7 +227,7 @@ fun EmbeddedDebtBurndownChart(
                     center = points.first(),
                 )
                 drawCircle(
-                    color = Color.White,
+                    color = FinluxPalette.White,
                     radius = 2.5.dp.toPx(),
                     center = points.first(),
                 )
@@ -237,7 +239,7 @@ fun EmbeddedDebtBurndownChart(
                     center = points.last(),
                 )
                 drawCircle(
-                    color = Color.White,
+                    color = FinluxPalette.White,
                     radius = 3.dp.toPx(),
                     center = points.last(),
                 )
