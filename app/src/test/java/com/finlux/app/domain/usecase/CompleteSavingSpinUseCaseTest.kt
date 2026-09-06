@@ -10,7 +10,6 @@ import com.finlux.app.domain.model.SavingSpinStatus
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.SavingSpinRepository
-import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -27,7 +26,6 @@ import java.time.ZoneId
 
 class CompleteSavingSpinUseCaseTest {
     private val repository = mockk<SavingSpinRepository>(relaxed = true)
-    private val transactionRepository = mockk<TransactionRepository>(relaxed = true)
     private val walletRepository = mockk<WalletRepository>(relaxed = true)
     private val now = Instant.parse("2026-09-04T08:00:00Z")
     private val clock = object : FinanceClock {
@@ -39,7 +37,7 @@ class CompleteSavingSpinUseCaseTest {
 
     @BeforeEach
     fun setUp() {
-        useCase = CompleteSavingSpinUseCase(repository, transactionRepository, walletRepository, clock)
+        useCase = CompleteSavingSpinUseCase(repository, walletRepository, clock)
     }
 
     @Test
@@ -64,8 +62,11 @@ class CompleteSavingSpinUseCaseTest {
 
         assertTrue(result is AppResult.Success)
         coVerify(exactly = 1) { repository.completeSession("day:2026-09-04", "piggy", SavingMethod.CASH, null) }
-        coVerify(exactly = 0) { transactionRepository.transferBetweenWalletsIdempotent(any(), any(), any(), any(), any(), any()) }
-        coVerify(exactly = 0) { transactionRepository.addWithBalanceUpdate(any()) }
+        coVerify(exactly = 0) {
+            repository.completeSessionWithWalletTransfer(
+                any(), any(), any(), any(), any(), any(), any(), any(), any()
+            )
+        }
     }
 
     @Test
@@ -109,16 +110,16 @@ class CompleteSavingSpinUseCaseTest {
             )
         )
         coEvery {
-            transactionRepository.transferBetweenWalletsIdempotent(
-                "wallet_src", "wallet_dest", 50_000, any(), now, "saving_spin_day_2026-09-04"
-            )
-        } returns AppResult.Success(Unit)
-        coEvery {
-            repository.completeSession(
+            repository.completeSessionWithWalletTransfer(
                 "day:2026-09-04",
                 "mb_dest",
                 SavingMethod.BANK_TRANSFER,
-                "saving_spin_day_2026-09-04_out",
+                "wallet_src",
+                "wallet_dest",
+                50_000,
+                any(),
+                now,
+                "saving_spin_day_2026-09-04",
             )
         } returns AppResult.Success(Unit)
 
@@ -126,16 +127,16 @@ class CompleteSavingSpinUseCaseTest {
 
         assertTrue(result is AppResult.Success)
         coVerify(exactly = 1) {
-            transactionRepository.transferBetweenWalletsIdempotent(
-                "wallet_src", "wallet_dest", 50_000, any(), now, "saving_spin_day_2026-09-04"
-            )
-        }
-        coVerify(exactly = 1) {
-            repository.completeSession(
+            repository.completeSessionWithWalletTransfer(
                 "day:2026-09-04",
                 "mb_dest",
                 SavingMethod.BANK_TRANSFER,
-                "saving_spin_day_2026-09-04_out",
+                "wallet_src",
+                "wallet_dest",
+                50_000,
+                any(),
+                now,
+                "saving_spin_day_2026-09-04",
             )
         }
     }
@@ -184,7 +185,11 @@ class CompleteSavingSpinUseCaseTest {
         val result = useCase(session, bankDestination, sourceWalletId = "wallet_src")
 
         assertTrue(result is AppResult.Error)
-        coVerify(exactly = 0) { transactionRepository.transferBetweenWalletsIdempotent(any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) {
+            repository.completeSessionWithWalletTransfer(
+                any(), any(), any(), any(), any(), any(), any(), any(), any()
+            )
+        }
         coVerify(exactly = 0) { repository.completeSession(any(), any(), any(), any()) }
     }
 
@@ -212,13 +217,16 @@ class CompleteSavingSpinUseCaseTest {
             )
         )
         coEvery {
-            transactionRepository.transferBetweenWalletsIdempotent(
-                "wallet_src", "wallet_cash_savings", 50_000, any(), now, "saving_spin_day_2026-09-04"
-            )
-        } returns AppResult.Success(Unit)
-        coEvery {
-            repository.completeSession(
-                "day:2026-09-04", "cash_savings", SavingMethod.CASH, "saving_spin_day_2026-09-04_out"
+            repository.completeSessionWithWalletTransfer(
+                "day:2026-09-04",
+                "cash_savings",
+                SavingMethod.CASH,
+                "wallet_src",
+                "wallet_cash_savings",
+                50_000,
+                any(),
+                now,
+                "saving_spin_day_2026-09-04",
             )
         } returns AppResult.Success(Unit)
 
@@ -226,14 +234,22 @@ class CompleteSavingSpinUseCaseTest {
 
         assertTrue(result is AppResult.Success)
         coVerify(exactly = 1) {
-            transactionRepository.transferBetweenWalletsIdempotent(
-                "wallet_src", "wallet_cash_savings", 50_000, any(), now, "saving_spin_day_2026-09-04"
+            repository.completeSessionWithWalletTransfer(
+                "day:2026-09-04",
+                "cash_savings",
+                SavingMethod.CASH,
+                "wallet_src",
+                "wallet_cash_savings",
+                50_000,
+                any(),
+                now,
+                "saving_spin_day_2026-09-04",
             )
         }
     }
 
     @Test
-    fun `retry after session completion failure reuses same deterministic operation id`() = runTest {
+    fun `retry reuses same deterministic atomic Saving Spin operation id`() = runTest {
         val session = SavingSpinSession(
             id = "day_2026-09-04",
             scheduleKey = "day:2026-09-04",
@@ -255,18 +271,20 @@ class CompleteSavingSpinUseCaseTest {
                 Wallet("wallet_dest", "Tiết kiệm", WalletType.BANK, Money(0), "#111111", false, now),
             )
         )
-
         coEvery {
-            transactionRepository.transferBetweenWalletsIdempotent(
-                "wallet_src", "wallet_dest", 50_000, any(), now, "saving_spin_day_2026-09-04"
-            )
-        } returns AppResult.Success(Unit)
-        coEvery {
-            repository.completeSession(
-                "day:2026-09-04", "mb_dest", SavingMethod.BANK_TRANSFER, "saving_spin_day_2026-09-04_out"
+            repository.completeSessionWithWalletTransfer(
+                "day:2026-09-04",
+                "mb_dest",
+                SavingMethod.BANK_TRANSFER,
+                "wallet_src",
+                "wallet_dest",
+                50_000,
+                any(),
+                now,
+                "saving_spin_day_2026-09-04",
             )
         } returnsMany listOf(
-            AppResult.Error("Mất kết nối sau khi chuyển tiền"),
+            AppResult.Error("Mất kết nối trước khi commit"),
             AppResult.Success(Unit),
         )
 
@@ -276,13 +294,16 @@ class CompleteSavingSpinUseCaseTest {
         assertTrue(first is AppResult.Error)
         assertTrue(retry is AppResult.Success)
         coVerify(exactly = 2) {
-            transactionRepository.transferBetweenWalletsIdempotent(
-                "wallet_src", "wallet_dest", 50_000, any(), now, "saving_spin_day_2026-09-04"
-            )
-        }
-        coVerify(exactly = 2) {
-            repository.completeSession(
-                "day:2026-09-04", "mb_dest", SavingMethod.BANK_TRANSFER, "saving_spin_day_2026-09-04_out"
+            repository.completeSessionWithWalletTransfer(
+                "day:2026-09-04",
+                "mb_dest",
+                SavingMethod.BANK_TRANSFER,
+                "wallet_src",
+                "wallet_dest",
+                50_000,
+                any(),
+                now,
+                "saving_spin_day_2026-09-04",
             )
         }
     }
@@ -303,6 +324,10 @@ class CompleteSavingSpinUseCaseTest {
 
         assertTrue(result is AppResult.Success)
         coVerify(exactly = 0) { repository.completeSession(any(), any(), any(), any()) }
-        coVerify(exactly = 0) { transactionRepository.transferBetweenWalletsIdempotent(any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) {
+            repository.completeSessionWithWalletTransfer(
+                any(), any(), any(), any(), any(), any(), any(), any(), any()
+            )
+        }
     }
 }
