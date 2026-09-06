@@ -432,6 +432,7 @@ class DemoFinluxRepository @Inject constructor(
             debtId = debtId,
             debtPrincipalAmount = Money(principalPaid),
             debtInterestAmount = Money(interestPaid),
+            debtPaymentId = paymentHistory.id,
             note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
             date = paymentDate,
             createdAt = paymentDate,
