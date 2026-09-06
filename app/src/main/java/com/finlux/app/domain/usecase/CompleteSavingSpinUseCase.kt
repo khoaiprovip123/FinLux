@@ -8,14 +8,12 @@ import com.finlux.app.domain.model.SavingMethod
 import com.finlux.app.domain.model.SavingSpinSession
 import com.finlux.app.domain.model.SavingSpinStatus
 import com.finlux.app.domain.repository.SavingSpinRepository
-import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 class CompleteSavingSpinUseCase @Inject constructor(
     private val repository: SavingSpinRepository,
-    private val transactionRepository: TransactionRepository,
     private val walletRepository: WalletRepository,
     private val clock: FinanceClock,
 ) {
@@ -43,7 +41,6 @@ class CompleteSavingSpinUseCase @Inject constructor(
         val operationId = "saving_spin_" + session.id
             .replace(Regex("[^A-Za-z0-9._-]"), "_")
             .take(150)
-        val outgoingTransactionId = "${operationId}_out"
 
         suspend fun transferToLinkedWallet(targetWalletId: String): AppResult<Unit> {
             if (sourceWalletId.isNullOrBlank()) {
@@ -65,7 +62,10 @@ class CompleteSavingSpinUseCase @Inject constructor(
                 return AppResult.Error("Ví nguồn không đủ số dư để cất ${formatVndAmount(amount.value)}")
             }
 
-            return transactionRepository.transferBetweenWalletsIdempotent(
+            return repository.completeSessionWithWalletTransfer(
+                scheduleKey = session.scheduleKey,
+                destinationId = destination.id,
+                method = destination.method,
                 sourceWalletId = sourceWalletId,
                 destinationWalletId = targetWallet.id,
                 amount = amount.value,
@@ -88,15 +88,7 @@ class CompleteSavingSpinUseCase @Inject constructor(
                         transactionId = null,
                     )
                 } else {
-                    when (val transferResult = transferToLinkedWallet(targetWalletId)) {
-                        is AppResult.Error -> transferResult
-                        is AppResult.Success -> repository.completeSession(
-                            scheduleKey = session.scheduleKey,
-                            destinationId = destination.id,
-                            method = SavingMethod.CASH,
-                            transactionId = outgoingTransactionId,
-                        )
-                    }
+                    transferToLinkedWallet(targetWalletId)
                 }
             }
 
@@ -105,15 +97,7 @@ class CompleteSavingSpinUseCase @Inject constructor(
                 if (targetWalletId.isNullOrBlank()) {
                     AppResult.Error("Nơi tiết kiệm chưa liên kết ví nhận")
                 } else {
-                    when (val transferResult = transferToLinkedWallet(targetWalletId)) {
-                        is AppResult.Error -> transferResult
-                        is AppResult.Success -> repository.completeSession(
-                            scheduleKey = session.scheduleKey,
-                            destinationId = destination.id,
-                            method = SavingMethod.BANK_TRANSFER,
-                            transactionId = outgoingTransactionId,
-                        )
-                    }
+                    transferToLinkedWallet(targetWalletId)
                 }
             }
         }
