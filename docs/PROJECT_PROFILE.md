@@ -1,7 +1,7 @@
 # PROJECT PROFILE
 
 ## Thông tin chung
-- **Tên dự án (tạm đặt):** Finlux — Quản lý Thu Chi Cá Nhân *(có thể đổi tên, đây là placeholder)*
+- **Tên sản phẩm chính thức:** FinLux — Quản lý tài chính cá nhân
 - **Loại dự án:** Mobile Android (native)
 - **Mô tả 1 dòng:** App Android quản lý thu chi cá nhân, đăng nhập + đồng bộ Cloud, giao diện Liquid Glass (giống iOS), hỗ trợ Sáng/Tối.
 - **Người dùng cuối:** Cá nhân dùng để theo dõi thu nhập/chi tiêu hàng ngày, không có vai trò admin/multi-user trong V1.
@@ -36,7 +36,7 @@
 - Phiên bản iOS / Web
 - Gợi ý tài chính bằng AI (insight tự động, dự báo chi tiêu)
 
-> `[Cần xác nhận]`: Tên app chính thức, package name (com.hpc.xxx hoặc cá nhân), có cần khóa sinh trắc học (biometric lock) khi mở app không?
+> **Quyết định sản phẩm 06/09/2026:** Tên app chính thức là **FinLux**. Giữ ổn định package/applicationId `com.finlux.app` cho Firebase hiện tại; mọi thay đổi package về sau phải đi kèm kế hoạch migration Firebase/Google Sign-In. V1 tiếp tục dùng tiếng Việt; hạ tầng string resource đã được chuẩn bị cho i18n nhưng chưa bật bản dịch English nửa vời. Khóa sinh trắc học đã được triển khai.
 
 ## Tích hợp
 
