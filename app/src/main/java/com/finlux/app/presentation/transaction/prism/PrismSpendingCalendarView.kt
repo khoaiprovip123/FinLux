@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.transaction.prism
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -234,7 +236,7 @@ fun PrismSpendingCalendarView(
                         Text("Tiết kiệm/Thu", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = tokens.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFF59E0B)))
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(FinluxPalette.CFFF59E0B))
                         Text("Chi vừa phải", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = tokens.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -327,11 +329,11 @@ private fun CalendarDayCell(
     val cellBackground = when {
         isSelected -> tokens.primary
         isToday -> tokens.primary.copy(alpha = 0.12f)
-        else -> Color.Transparent
+        else -> FinluxPalette.Transparent
     }
 
     val textColor = when {
-        isSelected -> Color.White
+        isSelected -> FinluxPalette.White
         isToday -> tokens.primary
         else -> tokens.onSurface
     }
@@ -340,7 +342,7 @@ private fun CalendarDayCell(
         summary == null || summary.transactionCount == 0 -> null
         summary.netAmount > 0 -> IncomeGreen
         summary.totalExpense > 500_000L -> ExpenseRed
-        else -> Color(0xFFF59E0B)
+        else -> FinluxPalette.CFFF59E0B
     }
 
     Box(
@@ -382,7 +384,7 @@ private fun CalendarDayCell(
                     modifier = Modifier
                         .size(5.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) Color.White else dotColor),
+                        .background(if (isSelected) FinluxPalette.White else dotColor),
                 )
             } else {
                 Spacer(Modifier.size(5.dp))
