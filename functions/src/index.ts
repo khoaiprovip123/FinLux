@@ -4,6 +4,7 @@ import {getMessaging} from "firebase-admin/messaging";
 import {logger} from "firebase-functions";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {operatingExpenseAmount} from "./transactionSemantics.js";
 import {
   isPeriodBoundaryDate,
   resolveFinancialPeriod,
@@ -21,6 +22,11 @@ type TransactionDocument = {
   amount?: number;
   categoryId?: string | null;
   date?: Timestamp;
+  goalFlowType?: string | null;
+  debtId?: string | null;
+  debtPrincipalAmount?: number | null;
+  debtInterestAmount?: number | null;
+  dealFlowType?: string | null;
 };
 
 type ExpenseTransactionDocument = TransactionDocument & {
@@ -94,8 +100,8 @@ async function reconcileBudget(uid: string, categoryId: string, periodKey: strin
     .get();
   const spentAmount = transactionSnapshot.docs.reduce((total, document) => {
     const transaction = document.data() as TransactionDocument;
-    if (transaction.type?.toLowerCase() !== "expense" || transaction.categoryId !== categoryId) return total;
-    return total + Math.max(0, Number(transaction.amount ?? 0));
+    if (transaction.categoryId !== categoryId) return total;
+    return total + operatingExpenseAmount(transaction);
   }, 0);
 
   const push = await db.runTransaction(async (transaction) => {
