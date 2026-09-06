@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.transaction.modern
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import com.finlux.app.presentation.transaction.*
 import com.finlux.app.core.designsystem.modern.*
 
@@ -169,7 +171,7 @@ fun ModernTransactionsScreen(
                                                 style = MaterialTheme.typography.labelSmall.copy(
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
+                                                    color = FinluxPalette.White,
                                                 ),
                                             )
                                         }
