@@ -33,7 +33,7 @@ class RootViewModel @Inject constructor(
     val uiStyle = themeRepository.uiStyle.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = AppUiStyle.CLASSIC_LIQUID,
+        initialValue = AppUiStyle.PRISM,
     )
 
     val uiPreferences = uiPreferencesRepository.preferences.stateIn(
