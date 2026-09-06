@@ -125,7 +125,7 @@ import com.finlux.app.presentation.settings.prism.PrismSettingsScreen
 fun SettingsScreen(
     selectedTheme: ThemePreference,
     onThemeSelected: (ThemePreference) -> Unit,
-    selectedUiStyle: AppUiStyle = AppUiStyle.CLASSIC_LIQUID,
+    selectedUiStyle: AppUiStyle = AppUiStyle.PRISM,
     onUiStyleSelected: (AppUiStyle) -> Unit = {},
     uiPreferences: UiPreferences,
     onUiPreferencesChanged: (UiPreferences) -> Unit,
