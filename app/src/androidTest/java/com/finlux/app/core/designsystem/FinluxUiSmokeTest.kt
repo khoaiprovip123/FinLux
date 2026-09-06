@@ -3,7 +3,7 @@ package com.finlux.app.core.designsystem
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -13,6 +13,7 @@ import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxScreenScaffold
 import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.ThemePreference
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -39,9 +40,9 @@ class FinluxUiSmokeTest {
         }
 
         composeRule.onNodeWithText("+500k").performClick()
-        composeRule.onNodeWithText("500.000", substring = true).assertExists()
+        composeRule.onNodeWithText("500.000", substring = true).assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Xóa số tiền").performClick()
-        composeRule.onNodeWithText("0").assertExists()
+        composeRule.onNodeWithText("0").assertIsDisplayed()
     }
 
     @Test
@@ -62,10 +63,10 @@ class FinluxUiSmokeTest {
             }
         }
 
-        composeRule.onNodeWithText("Chưa có dữ liệu").assertExists()
-        composeRule.onNodeWithText("Tạo giao dịch đầu tiên để bắt đầu").assertExists()
+        composeRule.onNodeWithText("Chưa có dữ liệu").assertIsDisplayed()
+        composeRule.onNodeWithText("Tạo giao dịch đầu tiên để bắt đầu").assertIsDisplayed()
         composeRule.onNodeWithText("Tạo ngay").performClick()
-        assert(clicked)
+        assertTrue(clicked)
     }
 
     @Test
@@ -81,6 +82,6 @@ class FinluxUiSmokeTest {
             }
         }
 
-        composeRule.onNodeWithText("Nội dung FinLux").assertExists()
+        composeRule.onNodeWithText("Nội dung FinLux").assertIsDisplayed()
     }
 }
