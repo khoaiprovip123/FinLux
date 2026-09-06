@@ -5,6 +5,7 @@ import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.ManagedOperationType
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.repository.TransactionRepository
 import com.google.firebase.Timestamp
@@ -610,6 +611,8 @@ private fun FinanceTransaction.toFirestoreMap(): Map<String, Any?> = mapOf(
     "debtPrincipalAmount" to debtPrincipalAmount?.value,
     "debtInterestAmount" to debtInterestAmount?.value,
     "debtPaymentId" to debtPaymentId,
+    "managedOperationType" to managedOperationType?.name?.lowercase(),
+    "managedOperationId" to managedOperationId,
     "note" to note,
     "receiptImageUrl" to receiptImageUrl,
     "date" to Timestamp(Date.from(date)),
@@ -638,6 +641,10 @@ internal fun com.google.firebase.firestore.DocumentSnapshot.toFinanceTransaction
             debtPrincipalAmount = getLong("debtPrincipalAmount")?.let(::Money),
             debtInterestAmount = getLong("debtInterestAmount")?.let(::Money),
             debtPaymentId = getString("debtPaymentId"),
+            managedOperationType = getString("managedOperationType")?.let {
+                runCatching { ManagedOperationType.valueOf(it.uppercase()) }.getOrNull()
+            },
+            managedOperationId = getString("managedOperationId"),
             note = getString("note").orEmpty(),
             receiptImageUrl = getString("receiptImageUrl"),
             date = requireNotNull(getTimestamp("date")).toDate().toInstant(),
