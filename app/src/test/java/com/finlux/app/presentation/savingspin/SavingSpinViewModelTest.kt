@@ -128,11 +128,11 @@ class SavingSpinViewModelTest {
     }
 
     private suspend fun fixture(enabled: Boolean, withDestination: Boolean = false): Fixture {
-        val repository = DemoSavingSpinRepository()
+        val transactionRepository = mockk<TransactionRepository>(relaxed = true)
+        val repository = DemoSavingSpinRepository(transactionRepository)
         repository.saveConfig(SavingSpinConfig(enabled = enabled, minAmount = Money(10_000), maxAmount = Money(100_000)))
         if (withDestination) repository.upsertDestination(SavingDestination("piggy", "Heo đất", SavingMethod.CASH))
         val scheduler = mockk<SavingSpinScheduler>(relaxed = true)
-        val transactionRepository = mockk<TransactionRepository>(relaxed = true)
         coEvery { transactionRepository.addWithBalanceUpdate(any()) } returns AppResult.Success("tx-id")
         coEvery { transactionRepository.transferBetweenWallets(any(), any(), any(), any(), any()) } returns AppResult.Success(Unit)
         val walletRepository = mockk<WalletRepository>(relaxed = true)
@@ -158,7 +158,7 @@ class SavingSpinViewModelTest {
                 resolveScheduleKey = ResolveSavingSpinScheduleKeyUseCase(financialResolver),
                 getOrCreateSession = GetOrCreateSavingSpinSessionUseCase(repository, GenerateSavingSpinWheelUseCase()),
                 spinWheel = SpinSavingWheelUseCase(repository),
-                completeSavingSpin = CompleteSavingSpinUseCase(repository, transactionRepository, walletRepository, clock),
+                completeSavingSpin = CompleteSavingSpinUseCase(repository, walletRepository, clock),
                 calculateStreak = CalculateSavingSpinStreakUseCase(financialResolver, clock),
                 scheduler = scheduler,
                 clock = clock,
