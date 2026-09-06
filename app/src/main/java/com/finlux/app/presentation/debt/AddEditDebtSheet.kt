@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.debt
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -160,7 +162,7 @@ fun AddEditDebtSheet(
                             Icon(
                                 imageVector = debtTypeIcon(itemType),
                                 contentDescription = null,
-                                tint = if (isSelected) Color.White else tokens.onSurfaceVariant,
+                                tint = if (isSelected) FinluxPalette.White else tokens.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(Modifier.height(4.dp))
@@ -169,7 +171,7 @@ fun AddEditDebtSheet(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color.White else tokens.onSurfaceVariant,
+                                    color = if (isSelected) FinluxPalette.White else tokens.onSurfaceVariant,
                                 ),
                                 maxLines = 1,
                             )
@@ -344,7 +346,7 @@ fun AddEditDebtSheet(
                             checked = isReminderEnabled,
                             onCheckedChange = { isReminderEnabled = it },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
+                                checkedThumbColor = FinluxPalette.White,
                                 checkedTrackColor = tokens.primary,
                             ),
                         )
@@ -373,7 +375,7 @@ fun AddEditDebtSheet(
                                             fontSize = 11.5.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         ),
-                                        color = if (isSelected) Color.White else tokens.onSurface,
+                                        color = if (isSelected) FinluxPalette.White else tokens.onSurface,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(vertical = 8.dp),
                                     )
