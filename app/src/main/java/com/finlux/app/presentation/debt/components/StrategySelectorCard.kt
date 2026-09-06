@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.debt.components
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -91,7 +93,7 @@ fun StrategySelectorCard(
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = FinluxPalette.White,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -229,7 +231,7 @@ fun StrategySelectorCard(
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = if (isChipSelected) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 11.sp,
-                                color = if (isChipSelected) Color.White else tokens.onSurfaceVariant,
+                                color = if (isChipSelected) FinluxPalette.White else tokens.onSurfaceVariant,
                             ),
                             modifier = Modifier.padding(vertical = 5.dp),
                             textAlign = TextAlign.Center,
