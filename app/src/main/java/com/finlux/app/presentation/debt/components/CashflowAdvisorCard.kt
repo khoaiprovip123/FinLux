@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.debt.components
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -73,7 +75,7 @@ fun CashflowAdvisorCard(
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = FinluxPalette.White,
                         modifier = Modifier.size(16.dp),
                     )
                 }
