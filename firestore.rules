@@ -115,7 +115,81 @@ service cloud.firestore {
     }
 
     function isLegacyManagedTransactionId(docId) {
-      return docId.matches('^saving_spin_.*_(out|in)
+      return docId.matches('^saving_spin_.*_(out|in)$')
+        || docId.matches('^salary_rollover_.*_(out|in)$');
+    }
+
+    function managedWorkflowMetadataValid(data) {
+      return (
+          (!('managedOperationType' in data) || data.managedOperationType == null)
+          && (!('managedOperationId' in data) || data.managedOperationId == null)
+        )
+        || (
+          ('managedOperationType' in data)
+          && ('managedOperationId' in data)
+          && data.managedOperationType in ['saving_spin', 'salary_rollover']
+          && data.managedOperationId is string
+          && data.managedOperationId.size() > 0
+          && data.type in ['transfer_out', 'transfer_in', 'TRANSFER_OUT', 'TRANSFER_IN']
+        );
+    }
+
+    function savingSpinManagedWriteValid(uid, docId, data) {
+      return data.managedOperationType == 'saving_spin'
+        && existsAfter(savingSpinSessionPath(uid, data.managedOperationId))
+        && getAfter(savingSpinSessionPath(uid, data.managedOperationId)).data.status == 'COMPLETED'
+        && getAfter(savingSpinSessionPath(uid, data.managedOperationId)).data.selectedAmount == data.amount
+        && getAfter(savingSpinSessionPath(uid, data.managedOperationId)).data.transactionId
+          == 'saving_spin_' + data.managedOperationId + '_out'
+        && (
+          (
+            data.type in ['transfer_out', 'TRANSFER_OUT']
+            && docId == 'saving_spin_' + data.managedOperationId + '_out'
+          )
+          || (
+            data.type in ['transfer_in', 'TRANSFER_IN']
+            && docId == 'saving_spin_' + data.managedOperationId + '_in'
+          )
+        );
+    }
+
+    function salaryRolloverManagedWriteValid(uid, docId, data) {
+      return data.managedOperationType == 'salary_rollover'
+        && existsAfter(salaryRolloverPath(uid, data.managedOperationId))
+        && getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.amount == data.amount
+        && getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.sourceWalletId is string
+        && getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.destinationWalletId is string
+        && getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.transactionOutId
+          == 'salary_rollover_' + data.managedOperationId + '_out'
+        && getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.transactionInId
+          == 'salary_rollover_' + data.managedOperationId + '_in'
+        && (
+          (
+            data.type in ['transfer_out', 'TRANSFER_OUT']
+            && docId == 'salary_rollover_' + data.managedOperationId + '_out'
+            && data.walletId
+              == getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.sourceWalletId
+            && data.relatedWalletId
+              == getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.destinationWalletId
+          )
+          || (
+            data.type in ['transfer_in', 'TRANSFER_IN']
+            && docId == 'salary_rollover_' + data.managedOperationId + '_in'
+            && data.walletId
+              == getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.destinationWalletId
+            && data.relatedWalletId
+              == getAfter(salaryRolloverPath(uid, data.managedOperationId)).data.sourceWalletId
+          )
+        );
+    }
+
+    function managedWorkflowCreateValid(uid, docId, data) {
+      return !isManagedWorkflowTransaction(data)
+        || savingSpinManagedWriteValid(uid, docId, data)
+        || salaryRolloverManagedWriteValid(uid, docId, data);
+    }
+
+    function isDealLedgerTransaction(data) {
       return ('dealId' in data)
         && data.dealId is string
         && data.dealId.size() > 0
