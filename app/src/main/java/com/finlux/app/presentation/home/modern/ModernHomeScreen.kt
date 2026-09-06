@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.home.modern
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import com.finlux.app.presentation.home.*
 import com.finlux.app.core.designsystem.modern.*
 
@@ -116,7 +118,7 @@ fun ModernHomeScreen(
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = FinluxPalette.Transparent,
         ) { scaffoldPadding ->
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(bottom = scaffoldPadding.calculateBottomPadding()),
@@ -247,7 +249,7 @@ private fun ReferenceHeader(
                             Text(
                                 text = if (unreadCount > 9) "9+" else unreadCount.toString(),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 7.5.sp, fontWeight = FontWeight.Bold),
-                                color = Color.White,
+                                color = FinluxPalette.White,
                                 maxLines = 1,
                             )
                         }
@@ -266,7 +268,7 @@ private fun ExpenseAnalytics(transactions: List<FinanceTransaction>, categories:
         .map { (categoryId, rows) -> (categories[categoryId]?.name ?: "Khác") to rows.sumOf { it.amount.value } }
         .sortedByDescending { it.second }
     val total = groups.sumOf { it.second }
-    val colors = listOf(FinluxPurple, Color(0xFFFF7A45), FinluxCyan, FinluxBlue, WarningAmber, Color(0xFF9B5CFF))
+    val colors = listOf(FinluxPurple, FinluxPalette.CFFFF7A45, FinluxCyan, FinluxBlue, WarningAmber, FinluxPalette.CFF9B5CFF)
     WaterGlassCard(Modifier.fillMaxWidth(), tint = FinluxPurple, cornerRadius = 20) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Chi tiêu theo danh mục", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
@@ -321,18 +323,18 @@ private fun ReferenceBalanceHero(
     onToggleBalance: () -> Unit,
 ) {
     val shape = RoundedCornerShape(24.dp)
-    val gradient = listOf(Color(0xFF5B38FD), Color(0xFF387BFA), Color(0xFF06B6D4))
+    val gradient = listOf(FinluxPalette.CFF5B38FD, FinluxPalette.CFF387BFA, FinluxPalette.CFF06B6D4)
     val rimBrush = Brush.linearGradient(
         listOf(
-            Color.White.copy(alpha = .95f),
+            FinluxPalette.White.copy(alpha = .95f),
             FinluxCyan.copy(alpha = .60f),
             FinluxPurple.copy(alpha = .45f),
-            Color.White.copy(alpha = .30f),
+            FinluxPalette.White.copy(alpha = .30f),
         ),
     )
     Box(
         Modifier.fillMaxWidth().height(152.dp)
-            .shadow(20.dp, shape, ambientColor = Color(0xFF3B82F6).copy(alpha = .42f), spotColor = Color(0xFF6366F1).copy(alpha = .48f))
+            .shadow(20.dp, shape, ambientColor = FinluxPalette.CFF3B82F6.copy(alpha = .42f), spotColor = FinluxPalette.CFF6366F1.copy(alpha = .48f))
             .clip(shape)
             .background(Brush.linearGradient(gradient))
             .border(1.4.dp, rimBrush, shape),
@@ -349,7 +351,7 @@ private fun ReferenceBalanceHero(
             ) {
                 Text(
                     "Tổng tài sản",
-                    color = Color.White.copy(alpha = .88f),
+                    color = FinluxPalette.White.copy(alpha = .88f),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                 )
@@ -357,15 +359,15 @@ private fun ReferenceBalanceHero(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = .22f))
-                        .border(1.dp, Color.White.copy(alpha = .55f), CircleShape)
+                        .background(FinluxPalette.White.copy(alpha = .22f))
+                        .border(1.dp, FinluxPalette.White.copy(alpha = .55f), CircleShape)
                         .clickable(onClick = onToggleBalance),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         if (showBalance) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         "Ẩn/hiện số dư",
-                        tint = Color.White,
+                        tint = FinluxPalette.White,
                         modifier = Modifier.size(17.dp),
                     )
                 }
@@ -378,14 +380,14 @@ private fun ReferenceBalanceHero(
             }
             Text(
                 text = balanceText,
-                color = Color.White,
+                color = FinluxPalette.White,
                 fontSize = balanceFontSize,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1,
             )
             Text(
                 if (showBalance) "${if (net >= 0) "▲" else "▼"} ${net.toSignedVnd()} trong tháng" else "Dòng tiền trong tháng",
-                color = Color.White.copy(alpha = .92f),
+                color = FinluxPalette.White.copy(alpha = .92f),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
             )
@@ -396,8 +398,8 @@ private fun ReferenceBalanceHero(
 @Composable
 private fun HeroWaterDetails() {
     Canvas(Modifier.fillMaxSize()) {
-        drawCircle(Color.White.copy(alpha = .10f), radius = size.height * .45f, center = Offset(size.width * .92f, size.height * .30f))
-        drawCircle(Color.White.copy(alpha = .06f), radius = size.height * .25f, center = Offset(size.width * .80f, size.height * .80f))
+        drawCircle(FinluxPalette.White.copy(alpha = .10f), radius = size.height * .45f, center = Offset(size.width * .92f, size.height * .30f))
+        drawCircle(FinluxPalette.White.copy(alpha = .06f), radius = size.height * .25f, center = Offset(size.width * .80f, size.height * .80f))
     }
 }
 
