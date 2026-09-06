@@ -68,6 +68,9 @@ jobs:
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --no-daemon
 
+      - name: Compile Compose UI Tests
+        run: ./gradlew compileDebugAndroidTestKotlin --no-daemon
+
       - name: Run Lint
         run: ./gradlew lintDebug --no-daemon
 
