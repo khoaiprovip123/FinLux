@@ -478,7 +478,7 @@ describe("Firestore Rules: Goal and Debt deletion guards", () => {
 
 
 describe("Firestore Rules: Goal and Debt ledger metadata", () => {
-    async function seedWallet() {
+    async function seedManagedLedgerFixtures() {
         await testEnv.withSecurityRulesDisabled(async (context) => {
             await context.firestore().doc("users/alice/wallets/w1").set({
                 name: "Ví chính",
@@ -489,46 +489,83 @@ describe("Firestore Rules: Goal and Debt ledger metadata", () => {
                 createdAt: new Date(),
                 lastTransactionId: "seed",
             });
+            await context.firestore().doc("users/alice/goals/g1").set({
+                name: "Quỹ dự phòng",
+                savedAmount: 0,
+            });
+            await context.firestore().doc("users/alice/debts/d1").set({
+                name: "Khoản vay",
+                remainingBalance: 5000000,
+                isSettled: false,
+            });
         });
     }
 
-    it("accepts a goal allocation only with matching expense semantics", async () => {
-        await seedWallet();
+    it("accepts goal allocation only when wallet and Goal move atomically", async () => {
+        await seedManagedLedgerFixtures();
         const alice = testEnv.authenticatedContext("alice");
         const batch = alice.firestore().batch();
+
         batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
             balance: 9000000,
             lastTransactionId: "goal-allocation",
+        });
+        batch.update(alice.firestore().doc("users/alice/goals/g1"), {
+            savedAmount: 1000000,
         });
         batch.set(alice.firestore().doc("users/alice/transactions/goal-allocation"), {
             type: "expense",
             amount: 1000000,
             categoryId: "savings",
             walletId: "w1",
-            relatedWalletId: null,
-            dealId: null,
-            dealFlowType: null,
             goalId: "g1",
             goalFlowType: "allocation",
-            debtId: null,
-            debtPrincipalAmount: null,
-            debtInterestAmount: null,
             note: "Nạp mục tiêu",
             receiptImageUrl: null,
             date: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+
         await assertSucceeds(batch.commit());
     });
 
+    it("rejects Goal ledger creation when Goal balance does not move", async () => {
+        await seedManagedLedgerFixtures();
+        const alice = testEnv.authenticatedContext("alice");
+        const batch = alice.firestore().batch();
+
+        batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
+            balance: 9000000,
+            lastTransactionId: "orphan-goal",
+        });
+        batch.set(alice.firestore().doc("users/alice/transactions/orphan-goal"), {
+            type: "expense",
+            amount: 1000000,
+            categoryId: "savings",
+            walletId: "w1",
+            goalId: "g1",
+            goalFlowType: "allocation",
+            note: "orphan",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await assertFails(batch.commit());
+    });
+
     it("rejects goal allocation metadata attached to income", async () => {
-        await seedWallet();
+        await seedManagedLedgerFixtures();
         const alice = testEnv.authenticatedContext("alice");
         const batch = alice.firestore().batch();
         batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
             balance: 11000000,
             lastTransactionId: "bad-goal",
+        });
+        batch.update(alice.firestore().doc("users/alice/goals/g1"), {
+            savedAmount: 1000000,
         });
         batch.set(alice.firestore().doc("users/alice/transactions/bad-goal"), {
             type: "income",
@@ -546,13 +583,28 @@ describe("Firestore Rules: Goal and Debt ledger metadata", () => {
         await assertFails(batch.commit());
     });
 
-    it("accepts debt payment only when principal plus interest equals cash amount", async () => {
-        await seedWallet();
+    it("accepts debt payment only with wallet, debt and payment history atomic writes", async () => {
+        await seedManagedLedgerFixtures();
         const alice = testEnv.authenticatedContext("alice");
         const batch = alice.firestore().batch();
+
         batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
             balance: 8800000,
             lastTransactionId: "debt-pay",
+        });
+        batch.update(alice.firestore().doc("users/alice/debts/d1"), {
+            remainingBalance: 4000000,
+            isSettled: false,
+            updatedAt: new Date(),
+        });
+        batch.set(alice.firestore().doc("users/alice/debts/d1/payments/pay-1"), {
+            debtId: "d1",
+            walletId: "w1",
+            amount: 1200000,
+            principalPaid: 1000000,
+            interestPaid: 200000,
+            paymentDate: new Date(),
+            note: "Thanh toán kỳ này",
         });
         batch.set(alice.firestore().doc("users/alice/transactions/debt-pay"), {
             type: "expense",
@@ -562,12 +614,42 @@ describe("Firestore Rules: Goal and Debt ledger metadata", () => {
             debtId: "d1",
             debtPrincipalAmount: 1000000,
             debtInterestAmount: 200000,
+            debtPaymentId: "pay-1",
             note: "Thanh toán nợ",
             receiptImageUrl: null,
             date: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+
         await assertSucceeds(batch.commit());
+    });
+
+    it("rejects orphan debt ledger even when principal plus interest is valid", async () => {
+        await seedManagedLedgerFixtures();
+        const alice = testEnv.authenticatedContext("alice");
+        const batch = alice.firestore().batch();
+
+        batch.update(alice.firestore().doc("users/alice/wallets/w1"), {
+            balance: 8800000,
+            lastTransactionId: "orphan-debt",
+        });
+        batch.set(alice.firestore().doc("users/alice/transactions/orphan-debt"), {
+            type: "expense",
+            amount: 1200000,
+            categoryId: "debt_payment",
+            walletId: "w1",
+            debtId: "d1",
+            debtPrincipalAmount: 1000000,
+            debtInterestAmount: 200000,
+            debtPaymentId: "missing-payment",
+            note: "orphan",
+            receiptImageUrl: null,
+            date: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await assertFails(batch.commit());
     });
 });
