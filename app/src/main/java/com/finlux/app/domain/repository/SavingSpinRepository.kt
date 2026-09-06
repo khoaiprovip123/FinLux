@@ -35,6 +35,23 @@ interface SavingSpinRepository {
         transactionId: String? = null,
     ): AppResult<Unit>
 
+    /**
+     * Completes a linked-wallet Saving Spin and moves money between wallets as one durable
+     * operation. Firebase implementations must commit wallet balances, transfer pair and
+     * session completion atomically.
+     */
+    suspend fun completeSessionWithWalletTransfer(
+        scheduleKey: String,
+        destinationId: String,
+        method: SavingMethod,
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+        operationId: String,
+    ): AppResult<Unit>
+
     suspend fun snoozeSession(
         scheduleKey: String,
         until: Instant,
