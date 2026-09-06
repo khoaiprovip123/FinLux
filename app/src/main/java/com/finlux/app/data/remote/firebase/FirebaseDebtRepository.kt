@@ -195,6 +195,7 @@ class FirebaseDebtRepository(
                     "debtId" to debtId,
                     "debtPrincipalAmount" to principalPaid,
                     "debtInterestAmount" to interestPaid,
+                    "debtPaymentId" to paymentId,
                     "note" to txNote,
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(paymentDate)),
