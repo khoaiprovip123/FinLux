@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.deal
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -89,7 +91,7 @@ fun DealDetailBottomSheet(
                         // Badge Category
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = if (isLending) Color(0xFFF59E0B).copy(alpha = 0.14f) else tokens.primary.copy(alpha = 0.14f),
+                            color = if (isLending) FinluxPalette.CFFF59E0B.copy(alpha = 0.14f) else tokens.primary.copy(alpha = 0.14f),
                         ) {
                             Text(
                                 text = if (isLending) "Cho vay" else "Đầu tư",
@@ -97,7 +99,7 @@ fun DealDetailBottomSheet(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = if (isLending) Color(0xFFD97706) else tokens.primary,
+                                color = if (isLending) FinluxPalette.CFFD97706 else tokens.primary,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
@@ -119,9 +121,9 @@ fun DealDetailBottomSheet(
                 ) {
                     // Badge Status
                     val statusBg = when (deal.status) {
-                        DealStatus.ACTIVE -> Color(0xFF3B82F6).copy(alpha = 0.15f)
-                        DealStatus.COMPLETED -> Color(0xFF10B981).copy(alpha = 0.15f)
-                        DealStatus.CANCELLED -> Color(0xFFEF4444).copy(alpha = 0.15f)
+                        DealStatus.ACTIVE -> FinluxPalette.CFF3B82F6.copy(alpha = 0.15f)
+                        DealStatus.COMPLETED -> FinluxPalette.CFF10B981.copy(alpha = 0.15f)
+                        DealStatus.CANCELLED -> FinluxPalette.CFFEF4444.copy(alpha = 0.15f)
                     }
                     val statusText = when (deal.status) {
                         DealStatus.ACTIVE -> if (isLending) "Đang vay" else "Đang chạy"
@@ -129,9 +131,9 @@ fun DealDetailBottomSheet(
                         DealStatus.CANCELLED -> "Đã hủy"
                     }
                     val statusColor = when (deal.status) {
-                        DealStatus.ACTIVE -> Color(0xFF2563EB)
-                        DealStatus.COMPLETED -> Color(0xFF059669)
-                        DealStatus.CANCELLED -> Color(0xFFDC2626)
+                        DealStatus.ACTIVE -> FinluxPalette.CFF2563EB
+                        DealStatus.COMPLETED -> FinluxPalette.CFF059669
+                        DealStatus.CANCELLED -> FinluxPalette.CFFDC2626
                     }
 
                     Box(
@@ -204,7 +206,7 @@ fun DealDetailBottomSheet(
                                 text = deal.totalRecovered.value.toVnd(),
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2563EB),
+                                    color = FinluxPalette.CFF2563EB,
                                 ),
                             )
                         }
@@ -218,7 +220,7 @@ fun DealDetailBottomSheet(
                                 .fillMaxWidth()
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp)),
-                            color = Color(0xFF10B981),
+                            color = FinluxPalette.CFF10B981,
                             trackColor = tokens.border,
                         )
                         Row(
@@ -257,7 +259,7 @@ fun DealDetailBottomSheet(
                                     text = deal.remainingCapital.value.toVnd(),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = if (deal.remainingCapital.value > 0) Color(0xFFF59E0B) else tokens.textSecondary,
+                                        color = if (deal.remainingCapital.value > 0) FinluxPalette.CFFF59E0B else tokens.textSecondary,
                                     ),
                                 )
                             }
@@ -271,7 +273,7 @@ fun DealDetailBottomSheet(
                                     text = if (profitVal > 0) "+${profitVal.toVnd()}" else profitVal.toVnd(),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = if (profitVal > 0) Color(0xFF8B5CF6) else tokens.textSecondary,
+                                        color = if (profitVal > 0) FinluxPalette.CFF8B5CF6 else tokens.textSecondary,
                                     ),
                                 )
                             }
@@ -286,9 +288,9 @@ fun DealDetailBottomSheet(
                                     else -> "Chưa thu hồi"
                                 }
                                 val debtStatusColor = when {
-                                    deal.isFullyRecovered -> Color(0xFF10B981)
-                                    deal.totalRecovered.value > 0 -> Color(0xFF3B82F6)
-                                    else -> Color(0xFFF59E0B)
+                                    deal.isFullyRecovered -> FinluxPalette.CFF10B981
+                                    deal.totalRecovered.value > 0 -> FinluxPalette.CFF3B82F6
+                                    else -> FinluxPalette.CFFF59E0B
                                 }
                                 Text(
                                     text = debtStatusText,
@@ -314,7 +316,7 @@ fun DealDetailBottomSheet(
                                     text = deal.remainingCapital.value.toVnd(),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = if (deal.remainingCapital.value > 0) Color(0xFFF59E0B) else tokens.textSecondary,
+                                        color = if (deal.remainingCapital.value > 0) FinluxPalette.CFFF59E0B else tokens.textSecondary,
                                     ),
                                 )
                             }
@@ -329,8 +331,8 @@ fun DealDetailBottomSheet(
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = when {
-                                            profitVal > 0 -> Color(0xFF10B981)
-                                            profitVal < 0 -> Color(0xFFEF4444)
+                                            profitVal > 0 -> FinluxPalette.CFF10B981
+                                            profitVal < 0 -> FinluxPalette.CFFEF4444
                                             else -> tokens.textSecondary
                                         },
                                     ),
@@ -346,7 +348,7 @@ fun DealDetailBottomSheet(
                                     text = String.format(java.util.Locale.US, "%+.1f%%", roi),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = if (roi >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                                        color = if (roi >= 0) FinluxPalette.CFF10B981 else FinluxPalette.CFFEF4444,
                                     ),
                                 )
                             }
@@ -395,10 +397,10 @@ fun DealDetailBottomSheet(
                             null -> tx.type.name
                         }
                         val flowColor = when (tx.dealFlowType) {
-                            DealFlowType.OUTLAY_CAPITAL -> Color(0xFFEF4444)
-                            DealFlowType.PRINCIPAL_RECOVERY -> Color(0xFF2563EB)
-                            DealFlowType.CAPITAL_GAIN -> if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)
-                            DealFlowType.CAPITAL_LOSS -> Color(0xFFDC2626)
+                            DealFlowType.OUTLAY_CAPITAL -> FinluxPalette.CFFEF4444
+                            DealFlowType.PRINCIPAL_RECOVERY -> FinluxPalette.CFF2563EB
+                            DealFlowType.CAPITAL_GAIN -> if (isLending) FinluxPalette.CFF8B5CF6 else FinluxPalette.CFF10B981
+                            DealFlowType.CAPITAL_LOSS -> FinluxPalette.CFFDC2626
                             null -> tokens.textPrimary
                         }
 
@@ -484,8 +486,8 @@ fun DealDetailBottomSheet(
                         onClick = onAddInflow,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isLending) Color(0xFFD97706) else Color(0xFF10B981),
-                            contentColor = Color.White,
+                            containerColor = if (isLending) FinluxPalette.CFFD97706 else FinluxPalette.CFF10B981,
+                            contentColor = FinluxPalette.White,
                         ),
                         shape = RoundedCornerShape(12.dp),
                     ) {
@@ -505,7 +507,7 @@ fun DealDetailBottomSheet(
                             onClick = { showStopLossConfirm = true },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = FinluxPalette.CFFEF4444),
                         ) {
                             Text(if (isLending) "Xóa Nợ & Đóng" else "Chốt Lỗ & Đóng", fontSize = 13.sp)
                         }
@@ -515,7 +517,7 @@ fun DealDetailBottomSheet(
                                 onClick = { showRevertStopLossConfirm = true },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF3B82F6)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = FinluxPalette.CFF3B82F6),
                             ) {
                                 Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -526,7 +528,7 @@ fun DealDetailBottomSheet(
                                 onClick = { showReopenDealConfirm = true },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF10B981)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = FinluxPalette.CFF10B981),
                             ) {
                                 Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -583,13 +585,13 @@ fun DealDetailBottomSheet(
                     )
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFEF4444).copy(alpha = 0.12f),
+                        color = FinluxPalette.CFFEF4444.copy(alpha = 0.12f),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
                             text = "⚠️ Lưu ý: Hành động này sẽ hoàn trả số dư các ví đã dùng để xuất vốn hoặc thu hồi tiền về trạng thái ban đầu và xóa vĩnh viễn toàn bộ lịch sử liên quan.",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color(0xFFDC2626),
+                                color = FinluxPalette.CFFDC2626,
                                 fontSize = 12.sp,
                             ),
                             modifier = Modifier.padding(10.dp),
@@ -605,14 +607,14 @@ fun DealDetailBottomSheet(
                     },
                     enabled = countdownSeconds == 0,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFEF4444),
+                        containerColor = FinluxPalette.CFFEF4444,
                         disabledContainerColor = tokens.surfaceSoft,
                     ),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text(
                         text = if (countdownSeconds > 0) "Xác nhận xóa (${countdownSeconds}s)" else "Xóa Vĩnh Viễn",
-                        color = if (countdownSeconds == 0) Color.White else tokens.textSecondary,
+                        color = if (countdownSeconds == 0) FinluxPalette.White else tokens.textSecondary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -661,10 +663,10 @@ fun DealDetailBottomSheet(
                         showStopLossConfirm = false
                         onCloseWithLoss()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    colors = ButtonDefaults.buttonColors(containerColor = FinluxPalette.CFFEF4444),
                     shape = RoundedCornerShape(12.dp),
                 ) {
-                    Text(if (isLending) "Đồng Ý Xóa Nợ" else "Đồng Ý Chốt Lỗ", color = Color.White)
+                    Text(if (isLending) "Đồng Ý Xóa Nợ" else "Đồng Ý Chốt Lỗ", color = FinluxPalette.White)
                 }
             },
             dismissButton = {
@@ -705,10 +707,10 @@ fun DealDetailBottomSheet(
                         showRevertStopLossConfirm = false
                         onRevertStopLoss()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                    colors = ButtonDefaults.buttonColors(containerColor = FinluxPalette.CFF3B82F6),
                     shape = RoundedCornerShape(12.dp),
                 ) {
-                    Text("Đồng Ý Hồi Phục", color = Color.White)
+                    Text("Đồng Ý Hồi Phục", color = FinluxPalette.White)
                 }
             },
             dismissButton = {
@@ -753,10 +755,10 @@ fun DealDetailBottomSheet(
                         showReopenDealConfirm = false
                         onReopenDeal()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    colors = ButtonDefaults.buttonColors(containerColor = FinluxPalette.CFF10B981),
                     shape = RoundedCornerShape(12.dp),
                 ) {
-                    Text("Mở Lại", color = Color.White)
+                    Text("Mở Lại", color = FinluxPalette.White)
                 }
             },
             dismissButton = {
