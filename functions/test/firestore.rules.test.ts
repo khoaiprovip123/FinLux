@@ -85,6 +85,22 @@ describe("Firestore Rules: Salary Rollovers", () => {
             transactionInId: null,
         }));
     });
+    it("rejects a non-zero salary rollover marker without its transfer pair", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const rolloverId = "salary_2026-09-25";
+        await assertFails(
+            alice.firestore().doc(`users/alice/salaryRollovers/${rolloverId}`).set({
+                cycleKey: "salary:2026-09-25",
+                processedAt: new Date(),
+                amount: 500000,
+                sourceWalletId: "salary_source",
+                destinationWalletId: "salary_saving",
+                transactionOutId: `salary_rollover_${rolloverId}_out`,
+                transactionInId: `salary_rollover_${rolloverId}_in`,
+            }),
+        );
+    });
+
     it("accepts an atomic salary rollover transfer bundle and protects its ledger", async () => {
         const alice = testEnv.authenticatedContext("alice");
         await testEnv.withSecurityRulesDisabled(async (context) => {
