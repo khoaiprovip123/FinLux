@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.budget.classic
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import com.finlux.app.presentation.budget.*
 
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -148,11 +150,11 @@ fun ClassicBudgetScreen(
             item {
                 GradientHeroCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Tổng ngân sách", color = Color.White.copy(alpha = .8f))
-                        Text(limit.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium)
+                        Text("Tổng ngân sách", color = FinluxPalette.White.copy(alpha = .8f))
+                        Text(limit.toVnd(), color = FinluxPalette.White, style = MaterialTheme.typography.headlineMedium)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Đã chi ${spent.toShortVnd()}", color = Color.White.copy(alpha = .84f))
-                            Text("Còn lại ${(limit - spent).toVnd()}", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Đã chi ${spent.toShortVnd()}", color = FinluxPalette.White.copy(alpha = .84f))
+                            Text("Còn lại ${(limit - spent).toVnd()}", color = FinluxPalette.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
