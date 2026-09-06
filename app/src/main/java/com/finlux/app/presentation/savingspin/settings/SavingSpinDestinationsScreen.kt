@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -194,7 +193,7 @@ fun SavingSpinDestinationsScreen(
                         border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.25f)),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(viewModel::consumeMessage),
+                            .clickable(onClick = viewModel::consumeMessage),
                     ) {
                         Text(
                             text = message,
