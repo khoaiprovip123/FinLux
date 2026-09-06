@@ -108,7 +108,7 @@ fun ExportReportDialog(
                                 val uri = ReportExporter.exportToXlsx(
                                     context = context,
                                     range = state.range,
-                                    summary = state.summary,
+                                    summary = state.operatingSummary,
                                     expensesByCategory = state.expensesByCategory,
                                     transactions = state.filteredTransactions,
                                     categories = state.categories,
@@ -125,7 +125,7 @@ fun ExportReportDialog(
                                 val uri = ReportExporter.exportToPdf(
                                     context = context,
                                     range = state.range,
-                                    summary = state.summary,
+                                    summary = state.operatingSummary,
                                     expensesByCategory = state.expensesByCategory,
                                     transactions = state.filteredTransactions,
                                     categories = state.categories,
