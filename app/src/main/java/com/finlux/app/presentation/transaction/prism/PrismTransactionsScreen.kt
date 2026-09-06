@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.transaction.prism
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -168,7 +170,7 @@ fun PrismTransactionsScreen(
                 // Nút chuyển chế độ Lịch / Danh sách
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.14f) else (if (tokens.isDark) tokens.surfaceSoft else Color.White),
+                    color = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.14f) else (if (tokens.isDark) tokens.surfaceSoft else FinluxPalette.White),
                     border = BorderStroke(
                         1.dp,
                         if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.35f) else tokens.border.copy(alpha = 0.6f),
@@ -198,7 +200,7 @@ fun PrismTransactionsScreen(
                 }
             }
         },
-        containerColor = Color.Transparent,
+        containerColor = FinluxPalette.Transparent,
         snackbarHost = { FinluxSnackbarHost(snackbar, hasBottomBar = isRootTab) },
     ) { padding ->
         Column(
@@ -432,8 +434,8 @@ private fun PrismTransactionSearchBarWithFilter(
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (tokens.isDark) tokens.surfaceSoft else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.75f)),
+        color = if (tokens.isDark) tokens.surfaceSoft else FinluxPalette.White,
+        border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else FinluxPalette.CFFE2E8F0.copy(alpha = 0.75f)),
         shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
         modifier = modifier
             .fillMaxWidth()
@@ -449,7 +451,7 @@ private fun PrismTransactionSearchBarWithFilter(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Tìm kiếm",
-                tint = if (query.isNotBlank()) tokens.primary else Color(0xFF94A3B8),
+                tint = if (query.isNotBlank()) tokens.primary else FinluxPalette.CFF94A3B8,
                 modifier = Modifier.size(20.dp),
             )
 
@@ -470,7 +472,7 @@ private fun PrismTransactionSearchBarWithFilter(
                             text = "Tìm kiếm giao dịch...",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 14.sp,
-                                color = Color(0xFF94A3B8),
+                                color = FinluxPalette.CFF94A3B8,
                                 fontWeight = FontWeight.Normal,
                             ),
                         )
@@ -510,7 +512,7 @@ private fun PrismTransactionSearchBarWithFilter(
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = "Bộ lọc",
-                    tint = if (activeFilterCount > 0) tokens.primary else Color(0xFF64748B),
+                    tint = if (activeFilterCount > 0) tokens.primary else FinluxPalette.CFF64748B,
                     modifier = Modifier.size(22.dp),
                 )
 
@@ -528,7 +530,7 @@ private fun PrismTransactionSearchBarWithFilter(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = FinluxPalette.White,
                                 ),
                             )
                         }
@@ -558,17 +560,17 @@ private fun PrismQuickSegmentedTabsWithIcons(
 
     val filters = listOf(
         TabItem(TransactionFilter.ALL, "Tất cả", Icons.Default.GridView, tokens.primary),
-        TabItem(TransactionFilter.INCOME, "Thu", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF10B981)),
-        TabItem(TransactionFilter.EXPENSE, "Chi", Icons.AutoMirrored.Filled.TrendingDown, Color(0xFFEF4444)),
-        TabItem(TransactionFilter.TRANSFER, "Chuyển", Icons.Default.SwapHoriz, Color(0xFF3B82F6)),
+        TabItem(TransactionFilter.INCOME, "Thu", Icons.AutoMirrored.Filled.TrendingUp, FinluxPalette.CFF10B981),
+        TabItem(TransactionFilter.EXPENSE, "Chi", Icons.AutoMirrored.Filled.TrendingDown, FinluxPalette.CFFEF4444),
+        TabItem(TransactionFilter.TRANSFER, "Chuyển", Icons.Default.SwapHoriz, FinluxPalette.CFF3B82F6),
     )
 
     val tabShape = RoundedCornerShape(14.dp)
     val activeGradient = Brush.horizontalGradient(
         listOf(
-            Color(0xFF00C6FF),
-            Color(0xFF0072FF),
-            Color(0xFF9B51E0),
+            FinluxPalette.CFF00C6FF,
+            FinluxPalette.CFF0072FF,
+            FinluxPalette.CFF9B51E0,
         ),
     )
 
@@ -586,13 +588,13 @@ private fun PrismQuickSegmentedTabsWithIcons(
                     .then(
                         if (isSelected) {
                             Modifier
-                                .shadow(elevation = 4.dp, shape = tabShape, spotColor = Color(0xFF0072FF).copy(alpha = 0.35f))
+                                .shadow(elevation = 4.dp, shape = tabShape, spotColor = FinluxPalette.CFF0072FF.copy(alpha = 0.35f))
                                 .background(brush = activeGradient, shape = tabShape)
                         } else {
                             Modifier
-                                .shadow(elevation = if (tokens.isDark) 0.dp else 1.dp, shape = tabShape, spotColor = Color.Black.copy(alpha = 0.05f))
-                                .background(color = if (tokens.isDark) tokens.surfaceSoft else Color.White, shape = tabShape)
-                                .border(width = 1.dp, color = if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.8f), shape = tabShape)
+                                .shadow(elevation = if (tokens.isDark) 0.dp else 1.dp, shape = tabShape, spotColor = FinluxPalette.Black.copy(alpha = 0.05f))
+                                .background(color = if (tokens.isDark) tokens.surfaceSoft else FinluxPalette.White, shape = tabShape)
+                                .border(width = 1.dp, color = if (tokens.isDark) tokens.border else FinluxPalette.CFFE2E8F0.copy(alpha = 0.8f), shape = tabShape)
                         }
                     )
                     .clip(tabShape)
@@ -611,7 +613,7 @@ private fun PrismQuickSegmentedTabsWithIcons(
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.label,
-                        tint = if (isSelected) Color.White else item.accentColor,
+                        tint = if (isSelected) FinluxPalette.White else item.accentColor,
                         modifier = Modifier.size(15.dp),
                     )
                     Spacer(Modifier.width(4.5.dp))
@@ -621,7 +623,7 @@ private fun PrismQuickSegmentedTabsWithIcons(
                             fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                         ),
-                        color = if (isSelected) Color.White else tokens.onSurface,
+                        color = if (isSelected) FinluxPalette.White else tokens.onSurface,
                         maxLines = 1,
                     )
                 }
@@ -651,9 +653,9 @@ private fun PrismExplorerTransactionCard(
     // Amount Sign & Color
     val amountPrefix = if (isIncome) "+" else "−"
     val amountColor = when {
-        isIncome -> Color(0xFF059669) // Deep Emerald Green
-        isTransfer -> Color(0xFF2563EB) // Blue
-        else -> Color(0xFFE11D48) // Vibrant Crimson Red
+        isIncome -> FinluxPalette.CFF059669 // Deep Emerald Green
+        isTransfer -> FinluxPalette.CFF2563EB // Blue
+        else -> FinluxPalette.CFFE11D48 // Vibrant Crimson Red
     }
 
     val displayAmount = amountPrefix + formatVndAmount(transaction.amount.value).replace("đ", "₫")
@@ -683,19 +685,19 @@ private fun PrismExplorerTransactionCard(
 
     val iconBackgroundBrush = remember(transaction.type, parsedColor) {
         when {
-            isIncome -> Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))
-            isTransfer -> Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))
+            isIncome -> Brush.linearGradient(listOf(FinluxPalette.CFF10B981, FinluxPalette.CFF059669))
+            isTransfer -> Brush.linearGradient(listOf(FinluxPalette.CFF3B82F6, FinluxPalette.CFF6366F1))
             parsedColor != null -> Brush.linearGradient(listOf(parsedColor, parsedColor.copy(alpha = 0.85f)))
-            else -> Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626)))
+            else -> Brush.linearGradient(listOf(FinluxPalette.CFFEF4444, FinluxPalette.CFFDC2626))
         }
     }
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E34).copy(alpha = 0.75f) else Color.White,
+        color = if (tokens.isDark) FinluxPalette.CFF1E1E34.copy(alpha = 0.75f) else FinluxPalette.White,
         border = BorderStroke(
             1.dp,
-            if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.7f),
+            if (tokens.isDark) tokens.border else FinluxPalette.CFFE2E8F0.copy(alpha = 0.7f),
         ),
         shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
         modifier = modifier
@@ -726,7 +728,7 @@ private fun PrismExplorerTransactionCard(
                 Icon(
                     imageVector = if (isTransfer) Icons.Default.SwapHoriz else categoryIcon(category?.icon.orEmpty()),
                     contentDescription = category?.name,
-                    tint = Color.White,
+                    tint = FinluxPalette.White,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -782,7 +784,7 @@ private fun PrismExplorerTransactionCard(
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Normal,
                     ),
-                    color = Color(0xFF94A3B8),
+                    color = FinluxPalette.CFF94A3B8,
                     textAlign = TextAlign.End,
                 )
             }
@@ -801,8 +803,8 @@ private fun PrismSecurityFooterCard(
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (tokens.isDark) tokens.surfaceSoft.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.8f),
-        border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.6f)),
+        color = if (tokens.isDark) tokens.surfaceSoft.copy(alpha = 0.5f) else FinluxPalette.White.copy(alpha = 0.8f),
+        border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else FinluxPalette.CFFE2E8F0.copy(alpha = 0.6f)),
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(
@@ -847,7 +849,7 @@ private fun PrismSecurityFooterCard(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color(0xFF94A3B8),
+                tint = FinluxPalette.CFF94A3B8,
                 modifier = Modifier.size(16.dp),
             )
         }
