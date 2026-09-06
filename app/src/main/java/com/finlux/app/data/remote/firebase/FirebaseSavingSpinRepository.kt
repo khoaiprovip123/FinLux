@@ -2,11 +2,13 @@ package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.ManagedOperationType
 import com.finlux.app.domain.model.SavingDestination
 import com.finlux.app.domain.model.SavingMethod
 import com.finlux.app.domain.model.SavingSpinConfig
 import com.finlux.app.domain.model.SavingSpinSession
 import com.finlux.app.domain.model.SavingSpinStatus
+import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.repository.SavingSpinRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -194,6 +196,168 @@ class FirebaseSavingSpinRepository(
                 updates["transactionId"] = transactionId
             }
             transaction.update(sessionRef, updates)
+        }.await()
+        Unit
+    }
+
+    override suspend fun completeSessionWithWalletTransfer(
+        scheduleKey: String,
+        destinationId: String,
+        method: SavingMethod,
+        sourceWalletId: String,
+        destinationWalletId: String,
+        amount: Long,
+        note: String,
+        date: Instant,
+        operationId: String,
+    ): AppResult<Unit> = firebaseResult("Không thể cất tiền Vòng quay vào ví") {
+        require(sourceWalletId != destinationWalletId) { "Ví nguồn và ví nhận không được trùng nhau" }
+        require(amount > 0L) { "Số tiền tiết kiệm không hợp lệ" }
+
+        val uid = requireUid()
+        val safeOperationId = operationId
+            .trim()
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .take(180)
+        require(safeOperationId.isNotBlank()) { "Mã thao tác tiết kiệm không hợp lệ" }
+
+        val sessionRef = sessionRef(uid, scheduleKey)
+        val sourceRef = userRef(uid).collection("wallets").document(sourceWalletId)
+        val destinationRef = userRef(uid).collection("wallets").document(destinationWalletId)
+        val outRef = userRef(uid).collection("transactions").document("${safeOperationId}_out")
+        val inRef = userRef(uid).collection("transactions").document("${safeOperationId}_in")
+        val now = Instant.now()
+
+        firestore.runTransaction { transaction ->
+            // All reads first.
+            val sessionSnapshot = transaction.get(sessionRef)
+            val current = requireNotNull(SavingSpinFirestoreMapper.sessionFromDocument(sessionSnapshot)) {
+                "Lượt quay không tồn tại"
+            }
+            val sourceSnapshot = transaction.get(sourceRef)
+            val destinationSnapshot = transaction.get(destinationRef)
+            val existingOut = transaction.get(outRef)
+            val existingIn = transaction.get(inRef)
+
+            if (current.status == SavingSpinStatus.COMPLETED) {
+                require(current.transactionId == outRef.id) {
+                    "Lượt quay đã hoàn tất bằng một giao dịch khác"
+                }
+                return@runTransaction
+            }
+
+            require(
+                current.status in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) &&
+                    current.selectedAmount?.value == amount
+            ) {
+                "Kết quả vòng quay không khớp số tiền cần cất"
+            }
+            require(sourceSnapshot.exists()) { "Ví nguồn không tồn tại" }
+            require(destinationSnapshot.exists()) { "Ví nhận không tồn tại" }
+
+            val sourceBalance = sourceSnapshot.getLong("balance") ?: 0L
+            val destinationBalance = destinationSnapshot.getLong("balance") ?: 0L
+            val sourceIsCard = sourceSnapshot.getString("type").equals("CARD", ignoreCase = true)
+
+            // Recover a deterministic pair created by the previous two-phase implementation
+            // without moving wallet balances a second time.
+            if (existingOut.exists() || existingIn.exists()) {
+                require(existingOut.exists() && existingIn.exists()) {
+                    "Phát hiện cặp giao dịch Vòng quay không toàn vẹn"
+                }
+                require(
+                    existingOut.getString("type").equals("transfer_out", ignoreCase = true) &&
+                        existingIn.getString("type").equals("transfer_in", ignoreCase = true) &&
+                        existingOut.getString("walletId") == sourceWalletId &&
+                        existingIn.getString("walletId") == destinationWalletId &&
+                        existingOut.getString("relatedWalletId") == destinationWalletId &&
+                        existingIn.getString("relatedWalletId") == sourceWalletId &&
+                        existingOut.getLong("amount") == amount &&
+                        existingIn.getLong("amount") == amount
+                ) {
+                    "Mã thao tác Vòng quay đã được dùng cho giao dịch khác"
+                }
+
+                transaction.update(
+                    sessionRef,
+                    mapOf(
+                        "status" to SavingSpinStatus.COMPLETED.name,
+                        "destinationId" to destinationId,
+                        "method" to method.name,
+                        "transactionId" to outRef.id,
+                        "completedAt" to now.toTimestamp(),
+                        "updatedAt" to now.toTimestamp(),
+                    ),
+                )
+                return@runTransaction
+            }
+
+            if (!sourceIsCard && sourceBalance < amount) {
+                error("Ví nguồn không đủ số dư để cất tiền")
+            }
+
+            val managedId = sessionRef.id
+            val common = mapOf(
+                "amount" to amount,
+                "categoryId" to null,
+                "dealId" to null,
+                "dealFlowType" to null,
+                "goalId" to null,
+                "goalFlowType" to null,
+                "debtId" to null,
+                "debtPrincipalAmount" to null,
+                "debtInterestAmount" to null,
+                "debtPaymentId" to null,
+                "managedOperationType" to ManagedOperationType.SAVING_SPIN.name.lowercase(),
+                "managedOperationId" to managedId,
+                "note" to note,
+                "receiptImageUrl" to null,
+                "date" to date.toTimestamp(),
+                "createdAt" to now.toTimestamp(),
+                "updatedAt" to now.toTimestamp(),
+            )
+
+            transaction.update(
+                sourceRef,
+                mapOf(
+                    "balance" to Math.subtractExact(sourceBalance, amount),
+                    "lastTransactionId" to outRef.id,
+                ),
+            )
+            transaction.update(
+                destinationRef,
+                mapOf(
+                    "balance" to Math.addExact(destinationBalance, amount),
+                    "lastTransactionId" to inRef.id,
+                ),
+            )
+            transaction.set(
+                outRef,
+                common + mapOf(
+                    "type" to TransactionType.TRANSFER_OUT.name.lowercase(),
+                    "walletId" to sourceWalletId,
+                    "relatedWalletId" to destinationWalletId,
+                ),
+            )
+            transaction.set(
+                inRef,
+                common + mapOf(
+                    "type" to TransactionType.TRANSFER_IN.name.lowercase(),
+                    "walletId" to destinationWalletId,
+                    "relatedWalletId" to sourceWalletId,
+                ),
+            )
+            transaction.update(
+                sessionRef,
+                mapOf(
+                    "status" to SavingSpinStatus.COMPLETED.name,
+                    "destinationId" to destinationId,
+                    "method" to method.name,
+                    "transactionId" to outRef.id,
+                    "completedAt" to now.toTimestamp(),
+                    "updatedAt" to now.toTimestamp(),
+                ),
+            )
         }.await()
         Unit
     }
