@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.transaction
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -352,8 +354,8 @@ fun TransactionDetailSheet(
                     }
                     DetailItemRow(
                         icon = if (isTransfer) Icons.Default.SwapHoriz else Icons.Default.AccountBalanceWallet,
-                        iconTint = Color(0xFF2563EB),
-                        iconBg = Color(0xFF2563EB).copy(alpha = 0.12f),
+                        iconTint = FinluxPalette.CFF2563EB,
+                        iconBg = FinluxPalette.CFF2563EB.copy(alpha = 0.12f),
                         label = walletLabel,
                         value = walletValue,
                     )
@@ -365,8 +367,8 @@ fun TransactionDetailSheet(
                     // Thời gian
                     DetailItemRow(
                         icon = Icons.Default.CalendarToday,
-                        iconTint = Color(0xFF0284C7),
-                        iconBg = Color(0xFF0284C7).copy(alpha = 0.12f),
+                        iconTint = FinluxPalette.CFF0284C7,
+                        iconBg = FinluxPalette.CFF0284C7.copy(alpha = 0.12f),
                         label = "Thời gian",
                         value = formattedDate,
                     )
@@ -378,8 +380,8 @@ fun TransactionDetailSheet(
                     // Ghi chú
                     DetailItemRow(
                         icon = Icons.AutoMirrored.Filled.Notes,
-                        iconTint = Color(0xFF7C3AED),
-                        iconBg = Color(0xFF7C3AED).copy(alpha = 0.12f),
+                        iconTint = FinluxPalette.CFF7C3AED,
+                        iconBg = FinluxPalette.CFF7C3AED.copy(alpha = 0.12f),
                         label = "Ghi chú",
                         value = transaction.note.ifBlank { "Không có ghi chú" },
                     )
@@ -390,8 +392,8 @@ fun TransactionDetailSheet(
                         )
                         DetailItemRow(
                             icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                            iconTint = Color(0xFF2563EB),
-                            iconBg = Color(0xFF2563EB).copy(alpha = 0.12f),
+                            iconTint = FinluxPalette.CFF2563EB,
+                            iconBg = FinluxPalette.CFF2563EB.copy(alpha = 0.12f),
                             label = "Hóa đơn & Chứng từ",
                             value = "Đã lưu chứng từ đính kèm ✓",
                         )
@@ -726,7 +728,7 @@ fun TransactionDetailSheet(
                 Icon(
                     imageVector = Icons.Default.Shield,
                     contentDescription = null,
-                    tint = Color(0xFF6366F1),
+                    tint = FinluxPalette.CFF6366F1,
                     modifier = Modifier.size(15.dp),
                 )
                 Spacer(Modifier.width(6.dp))
