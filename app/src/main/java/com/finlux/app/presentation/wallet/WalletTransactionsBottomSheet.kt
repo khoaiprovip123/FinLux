@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.wallet
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -465,7 +467,7 @@ private fun WalletTransactionCard(
     // Xác định dấu và màu số tiền
     val (amountPrefix, amountColor) = when {
         isIncome -> "+" to FinluxColors.IncomeGreen
-        isTransfer -> if (isTransferOut) "−" to Color(0xFF3B82F6) else "+" to FinluxColors.IncomeGreen
+        isTransfer -> if (isTransferOut) "−" to FinluxPalette.CFF3B82F6 else "+" to FinluxColors.IncomeGreen
         else -> "−" to FinluxColors.ExpenseRed
     }
 
@@ -493,16 +495,16 @@ private fun WalletTransactionCard(
 
     val iconBackgroundBrush = remember(transaction.type, parsedColor) {
         when {
-            isIncome -> Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))
-            isTransfer -> Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))
+            isIncome -> Brush.linearGradient(listOf(FinluxPalette.CFF10B981, FinluxPalette.CFF059669))
+            isTransfer -> Brush.linearGradient(listOf(FinluxPalette.CFF3B82F6, FinluxPalette.CFF6366F1))
             parsedColor != null -> Brush.linearGradient(listOf(parsedColor, parsedColor.copy(alpha = 0.85f)))
-            else -> Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626)))
+            else -> Brush.linearGradient(listOf(FinluxPalette.CFFEF4444, FinluxPalette.CFFDC2626))
         }
     }
 
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (tokens.isDark) tokens.surfaceSoft else Color.White,
+        color = if (tokens.isDark) tokens.surfaceSoft else FinluxPalette.White,
         border = BorderStroke(1.dp, tokens.border),
         shadowElevation = if (tokens.isDark) 0.dp else 1.dp,
         modifier = modifier
@@ -537,7 +539,7 @@ private fun WalletTransactionCard(
                         else -> Icons.AutoMirrored.Filled.TrendingDown
                     },
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = FinluxPalette.White,
                     modifier = Modifier.size(20.dp),
                 )
             }
