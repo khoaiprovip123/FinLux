@@ -56,6 +56,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Verify Presentation Theme Tokens
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'Color\(0x[0-9A-Fa-f]+\)|Color\.(White|Black)' app/src/main/java/com/finlux/app/presentation; then
+            echo "::error::Presentation code must use LocalFinluxTokens / centralized design-system palette instead of raw colors."
+            exit 1
+          fi
+
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --no-daemon
 
