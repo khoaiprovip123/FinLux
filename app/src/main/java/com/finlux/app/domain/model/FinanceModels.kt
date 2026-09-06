@@ -5,6 +5,7 @@ import java.time.YearMonth
 
 enum class TransactionType { INCOME, EXPENSE, TRANSFER_OUT, TRANSFER_IN }
 enum class GoalFlowType { ALLOCATION, RELEASE }
+enum class ManagedOperationType { SAVING_SPIN, SALARY_ROLLOVER }
 enum class CategoryType { INCOME, EXPENSE }
 enum class WalletType { CASH, BANK, EWALLET, CARD, INVESTMENT, OTHER }
 enum class ThemePreference { LIGHT, DARK, SYSTEM }
@@ -72,6 +73,8 @@ data class FinanceTransaction(
     val debtPrincipalAmount: Money? = null,
     val debtInterestAmount: Money? = null,
     val debtPaymentId: String? = null,
+    val managedOperationType: ManagedOperationType? = null,
+    val managedOperationId: String? = null,
 )
 
 data class Budget(
