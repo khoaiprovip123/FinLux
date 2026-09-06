@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.goal
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -119,7 +121,7 @@ fun GoalsScreen(onBack: () -> Unit, viewModel: GoalsViewModel = hiltViewModel())
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = FinluxPalette.Transparent,
             topBar = {
                 GlassTopBar(
                     title = { Text("Mục tiêu tài chính", fontWeight = FontWeight.Bold) },
@@ -206,7 +208,7 @@ private fun GoalCard(
 
     WaterGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        tint = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+        tint = if (isCompleted) FinluxPalette.CFF10B981 else FinluxPurple,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -221,7 +223,7 @@ private fun GoalCard(
                     modifier = Modifier
                         .size(42.dp)
                         .background(
-                            (if (isCompleted) Color(0xFF10B981) else FinluxPurple).copy(alpha = 0.16f),
+                            (if (isCompleted) FinluxPalette.CFF10B981 else FinluxPurple).copy(alpha = 0.16f),
                             CircleShape,
                         ),
                     contentAlignment = Alignment.Center,
@@ -229,7 +231,7 @@ private fun GoalCard(
                     Icon(
                         imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.Savings,
                         contentDescription = null,
-                        tint = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+                        tint = if (isCompleted) FinluxPalette.CFF10B981 else FinluxPurple,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -273,7 +275,7 @@ private fun GoalCard(
                     Text(
                         text = "Tiến độ: $percentInt%",
                         style = FinluxTextStyles.Caption.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
-                        color = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+                        color = if (isCompleted) FinluxPalette.CFF10B981 else FinluxPurple,
                     )
                     Text(
                         text = "${formatVndAmount(goal.savedAmount.value)} / ${formatVndAmount(goal.targetAmount.value)}",
@@ -288,7 +290,7 @@ private fun GoalCard(
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(CircleShape),
-                    color = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+                    color = if (isCompleted) FinluxPalette.CFF10B981 else FinluxPurple,
                     trackColor = tokens.surfaceSoft,
                 )
             }
@@ -314,7 +316,7 @@ private fun GoalCard(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = FinluxPurple,
-                        contentColor = Color.White,
+                        contentColor = FinluxPalette.White,
                     ),
                     contentPadding = PaddingValues(horizontal = 12.dp),
                 ) {
@@ -516,7 +518,7 @@ private fun GoalDepositWithdrawSheet(
                 enabled = !state.isSubmitting,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isDeposit) tokens.primary else FinluxColors.ExpenseRed,
-                    contentColor = Color.White,
+                    contentColor = FinluxPalette.White,
                 ),
             ) {
                 Text(
@@ -541,7 +543,7 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = FinluxPalette.Transparent,
             topBar = { GlassTopBar(title = { Text("Thêm mục tiêu", fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onDismiss) { Icon(Icons.Default.Close, "Đóng") } }, actions = { TextButton(viewModel::save, enabled = !state.saving) { Text("Lưu") } }) },
         ) { padding ->
             LazyColumn(
