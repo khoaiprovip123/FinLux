@@ -1,5 +1,7 @@
 package com.finlux.app.presentation.debt
 
+import com.finlux.app.core.designsystem.theme.FinluxPalette
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -287,7 +289,7 @@ fun DebtDashboardScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f)),
+                        .background(FinluxPalette.Black.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(color = FinluxBlue)
@@ -381,13 +383,13 @@ private fun DebtOverviewHeroCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Brush.linearGradient(listOf(Color(0xFFE11D48), Color(0xFF9333EA)))),
+                            .background(Brush.linearGradient(listOf(FinluxPalette.CFFE11D48, FinluxPalette.CFF9333EA))),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.CreditScore,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = FinluxPalette.White,
                             modifier = Modifier.size(22.dp),
                         )
                     }
@@ -411,13 +413,13 @@ private fun DebtOverviewHeroCard(
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFE11D48).copy(alpha = 0.12f),
+                    color = FinluxPalette.CFFE11D48.copy(alpha = 0.12f),
                 ) {
                     Text(
                         text = "${uiState.activeDebtsCount} khoản nợ",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE11D48),
+                            color = FinluxPalette.CFFE11D48,
                         ),
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                     )
@@ -433,7 +435,7 @@ private fun DebtOverviewHeroCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
-                color = Color(0xFF10B981),
+                color = FinluxPalette.CFF10B981,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
             )
 
@@ -448,7 +450,7 @@ private fun DebtOverviewHeroCard(
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF10B981),
+                        color = FinluxPalette.CFF10B981,
                     ),
                 )
                 Text(
@@ -485,7 +487,7 @@ private fun FilterChipItem(
                 text = label,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isSelected) FinluxPalette.White else MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
                 textAlign = TextAlign.Center,
             )
