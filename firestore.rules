@@ -612,6 +612,24 @@ service cloud.firestore {
             : (
               request.resource.data.transactionOutId == 'salary_rollover_' + docId + '_out'
               && request.resource.data.transactionInId == 'salary_rollover_' + docId + '_in'
+              && existsAfter(transactionPath(uid, request.resource.data.transactionOutId))
+              && existsAfter(transactionPath(uid, request.resource.data.transactionInId))
+              && getAfter(transactionPath(uid, request.resource.data.transactionOutId)).data.type
+                in ['transfer_out', 'TRANSFER_OUT']
+              && getAfter(transactionPath(uid, request.resource.data.transactionInId)).data.type
+                in ['transfer_in', 'TRANSFER_IN']
+              && getAfter(transactionPath(uid, request.resource.data.transactionOutId)).data.amount
+                == request.resource.data.amount
+              && getAfter(transactionPath(uid, request.resource.data.transactionInId)).data.amount
+                == request.resource.data.amount
+              && getAfter(transactionPath(uid, request.resource.data.transactionOutId)).data.walletId
+                == request.resource.data.sourceWalletId
+              && getAfter(transactionPath(uid, request.resource.data.transactionOutId)).data.relatedWalletId
+                == request.resource.data.destinationWalletId
+              && getAfter(transactionPath(uid, request.resource.data.transactionInId)).data.walletId
+                == request.resource.data.destinationWalletId
+              && getAfter(transactionPath(uid, request.resource.data.transactionInId)).data.relatedWalletId
+                == request.resource.data.sourceWalletId
             )
           );
         allow update: if false;
