@@ -63,13 +63,17 @@ users/{uid}
   │    ├─ createdAt: timestamp
   │    └─ updatedAt: timestamp
   │
-  ├─ budgets/{budgetId}             -- id format: {categoryId}_{yyyyMM}
+  ├─ budgets/{budgetId}             -- id format mới: {categoryId}_{periodKey}
   │    ├─ categoryId: string
-  │    ├─ month: string             -- "2026-08"
+  │    ├─ periodKey: string         -- "month:2026-08" | "salary:2026-08-25"
+  │    ├─ periodStart: timestamp    -- inclusive, theo financeTimeZone
+  │    ├─ periodEndExclusive: timestamp
+  │    ├─ periodBasis: "CALENDAR_MONTH" | "SALARY_CYCLE"
+  │    ├─ month: string?            -- legacy read/update compatibility: "2026-08"
   │    ├─ limitAmount: number
-  │    ├─ spentAmount: number       -- Cloud Function cập nhật khi có transaction mới (denormalize để đọc nhanh)
-  │    ├─ notified80: boolean       -- đã gửi cảnh báo 80% chưa (BR-09)
-  │    └─ notified100: boolean
+  │    ├─ spentAmount: number       -- server-owned; Cloud Function đối soát từ ledger EXPENSE
+  │    ├─ notified80: boolean       -- server-owned; đã gửi cảnh báo 80% chưa (BR-09)
+  │    └─ notified100: boolean      -- server-owned
   │
   ├─ reminders/{reminderId}         -- bill định kỳ (UC-18)
   │    ├─ title: string
@@ -89,6 +93,7 @@ users/{uid}
   │    ├─ category: string
   │    ├─ monthlyContribution: number
   │    ├─ imageUri: string          -- optional
+  │    ├─ lastTransactionId: string? -- correlation của lần nạp/rút gần nhất
   │    └─ createdAt: timestamp
   │
   ├─ debts/{debtId}                 -- quản lý công nợ & tín dụng (UC-26, BR-DEBT-01..03)
@@ -104,6 +109,8 @@ users/{uid}
   │    ├─ isSettled: boolean
   │    ├─ createdAt: timestamp
   │    ├─ updatedAt: timestamp
+  │    ├─ lastPaymentId: string?    -- correlation của atomic payment gần nhất
+  │    ├─ paymentCount: number      -- khởi tạo 0, tăng cùng atomic payment
   │    │
   │    └─ payments/{paymentId}      -- lịch sử thanh toán nợ
   │         ├─ debtId: string
@@ -111,6 +118,7 @@ users/{uid}
   │         ├─ amount: number
   │         ├─ principalPaid: number
   │         ├─ interestPaid: number
+  │         ├─ transactionId: string -- ledger EXPENSE liên kết bắt buộc
   │         ├─ paymentDate: timestamp
   │         └─ note: string
   │
@@ -140,9 +148,27 @@ users/{uid}
        └─ createdAt: timestamp
 ```
 
+**Contract kỳ tài chính dùng chung:** Android và Cloud Functions đều đọc cấu hình chính thức tại
+`users/{uid}/financialPreferences/salaryCycle`. Cloud Functions chỉ đọc fallback
+`users/{uid}/preferences/salaryCycle` và field `baseDay` để tương thích dữ liệu cũ trong giai đoạn
+chuyển tiếp; mọi dữ liệu mới phải dùng path/field chính thức. Resolver hai nền tảng phải thỏa fixture
+`contracts/financial-period-vectors.tsv`, tính biên ngày theo `financeTimeZone` và dùng khoảng
+`[periodStart, periodEndExclusive)`.
+
 **Ghi chú thiết kế:**
 - Dùng **subcollection** dưới `users/{uid}` thay vì collection gốc kèm `ownerId` field → Security Rules đơn giản, tự nhiên phân vùng dữ liệu theo user, tránh vượt giới hạn document.
-- `wallets.balance` và `budgets.spentAmount` là dữ liệu **denormalized** (tính sẵn) để đọc nhanh trên Home/Budget mà không cần aggregate query mỗi lần mở app — đánh đổi lấy việc phải cập nhật đồng bộ khi ghi transaction (qua Firestore Transaction ở client, và Cloud Function double-check).
+- `wallets.balance` được cập nhật cùng ledger bằng Firestore Transaction ở client. `budgets.spentAmount` và
+  `notified80/notified100` là dữ liệu **denormalized server-owned**: Android không sửa trực tiếp;
+  `onTransactionWrite`/`onBudgetWrite` đối soát lại từ ledger EXPENSE theo đúng khoảng
+  `[periodStart, periodEndExclusive)`.
+- Goal/Debt/Deal dùng correlation ID (`lastTransactionId`/`lastPaymentId`) chỉ hợp lệ khi ledger/payment
+  thật sự create/update/delete trong cùng atomic request và delta aggregate khớp chính xác. Metadata-only
+  hoặc stale/no-op ledger không được dùng để thay đổi balance/aggregate.
+- Client không được xóa trực tiếp Debt/Deal. `deleteDebtCascade` xóa parent + payments nguyên tử;
+  `deleteDealCascade` hoàn tác wallet theo ledger rồi xóa ledger + Deal trong server transaction.
+- Document Budget legacy chỉ có `month: YYYY-MM` vẫn được đọc và cho phép sửa `limitAmount` trong giai
+  đoạn chuyển tiếp. Ghi mới phải dùng schema kỳ hiện đại và Firestore Timestamp; mapper Android/Functions
+  chỉ giữ khả năng đọc epoch-millis cũ, không tiếp tục ghi kiểu cũ.
 
 ---
 
@@ -216,10 +242,13 @@ service cloud.firestore {
 
 | Function | Trigger | Mô tả |
 |----------|---------|-------|
-| `onTransactionWrite` | Firestore trigger: `users/{uid}/transactions/{id}` onCreate/onUpdate/onDelete | Đối soát `budgets.spentAmount` theo dữ liệu giao dịch thực tế và gửi cảnh báo 80%/100%; số dư ví đã được Security Rules bắt buộc ghi nguyên tử cùng transaction |
-| `checkBudgetThreshold` | Gọi từ `onTransactionWrite` sau khi update `spentAmount` | So sánh với `limitAmount`, nếu ≥80%/100% và chưa `notified80/100` → gửi FCM + tạo `notifications` doc, set flag true (BR-09) |
-| `monthlyBudgetReset` | Scheduled (Cloud Scheduler, 00:00 ngày 1 hàng tháng) | Tạo document `budgets` mới cho tháng mới dựa trên hạn mức tháng trước (giữ nguyên `limitAmount`, reset `spentAmount=0`) |
+| `onTransactionWrite` | Firestore trigger: `users/{uid}/transactions/{id}` onCreate/onUpdate/onDelete | Đọc Salary Cycle tại `financialPreferences/salaryCycle`, resolve đúng timezone rồi đối soát `budgets.spentAmount`; gửi cảnh báo 80%/100% |
+| `onBudgetWrite` | Firestore trigger: `users/{uid}/budgets/{id}` | Khi tạo Budget hoặc đổi contract/hạn mức, đối soát aggregate ngay; bỏ qua write chỉ thay aggregate để tránh trigger loop |
+| `reconcileBudget` | Nội bộ từ hai trigger Budget/Transaction | Tính lại `spentAmount`, khóa cảnh báo 80%/100% trong transaction và dùng notification ID idempotent |
+| `monthlyBudgetReset` | Scheduled mỗi ngày 00:00 theo timezone tài chính | Chỉ copy hạn mức khi ngày hiện tại đúng biên kỳ calendar/salary; ghi biên kỳ bằng Timestamp và reset aggregate server-side |
 | `sendReminderPush` | Scheduled (chạy mỗi giờ, kiểm tra `reminders.nextTriggerDate`) | Gửi FCM nhắc user nhập giao dịch bill định kỳ, cập nhật `nextTriggerDate` kế tiếp |
+| `deleteDebtCascade` | Callable, owner authenticated | Xóa Debt và toàn bộ payments trong một server transaction; client Rules cấm delete trực tiếp |
+| `deleteDealCascade` | Callable, owner authenticated | Tính delta hoàn tác từ Deal ledger, cập nhật wallet và xóa ledger + Deal nguyên tử; client Rules cấm delete trực tiếp |
 
 ---
 

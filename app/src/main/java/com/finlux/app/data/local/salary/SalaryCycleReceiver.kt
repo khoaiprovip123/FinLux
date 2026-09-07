@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.finlux.app.BuildConfig
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.time.FinanceClock
 import com.finlux.app.data.local.notification.SystemNotificationHelper
@@ -64,11 +65,11 @@ class SalaryCycleReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val config = salaryCycleRepository.observeConfig().firstOrNull() ?: SalaryCycleConfig()
-                val isForced = intent.getBooleanExtra("force", false)
+                val isForced = BuildConfig.DEBUG && intent.getBooleanExtra("force", false)
                 Log.d(TAG, "SalaryCycleConfig: enabled=${config.enabled}, paydayDay=${config.paydayDay}, rolloverRule=${config.rolloverRule}, isForced=$isForced")
 
                 if (!config.enabled && !isForced) {
-                    Log.w(TAG, "Salary cycle is disabled in settings. Skipping execution. (Use --ez force true to test).")
+                    Log.w(TAG, "Salary cycle is disabled in settings. Skipping execution.")
                     return@launch
                 }
 

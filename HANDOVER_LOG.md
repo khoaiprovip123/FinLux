@@ -1,5 +1,422 @@
 # HANDOVER LOG - FINLUX APP
 
+### [POST-AUDIT-REMEDIATION-EXECUTION-2026-09] — Khắc phục các blocker sau Audit
+- **Status**: `[IN PROGRESS — LOCAL SECURITY GATES PASS; RELEASE BLOCKED]`
+- **Ngày bắt đầu**: 2026-09-07
+- **Mục tiêu**: Thực thi remediation R-00 đến R-07; khóa các đường bypass dữ liệu tài chính, bổ sung Rules tests, Storage tests, theme parity và chạy lại toàn bộ local quality gates.
+- **Scope dự kiến**:
+  - Khóa Wallet ↔ Ledger transition thật; từ chối stale/no-op transaction proof.
+  - Khóa aggregate Goal, Debt, Deal, Budget theo đúng atomic command/server ownership.
+  - Bổ sung Firestore/Storage emulator regression suites.
+  - Loại bỏ màu hardcode trong screen cluster đã audit.
+  - Đồng bộ đặc tả, roadmap, backlog và báo cáo kiểm chứng.
+- **Files dự kiến chỉnh sửa**:
+  - `firestore.rules`, `storage.rules`, `firebase.json`
+  - `functions/src/**`, `functions/test/**`, `functions/package.json`
+  - Firebase repositories/use cases và unit tests liên quan trong `app/src/**`
+  - UI screens còn vi phạm theme token
+  - `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/UI_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `docs/BACKLOG.md`
+  - `docs/audit-2026-09-fix-roadmap/13_POST_AUDIT_REMEDIATION_PLAN.md`
+  - `HANDOVER_LOG.md`; `CHANGELOG.md` chỉ cập nhật sau khi test và build pass
+- **Kết quả thực hiện đến 2026-09-07**:
+  1. Tạo branch `codex/post-audit-remediation-2026-09`, giữ nguyên toàn bộ dirty/untracked audit worktree.
+  2. Khóa Wallet ↔ Ledger theo transition và delta thật; deny transaction ID giả, stale, no-op và metadata-only edit dùng để đổi balance.
+  3. Goal nạp/rút bind `goalId/lastTransactionId`; Debt payment bind `debtId/paymentId/transactionId`, kiểm tra split và principal; direct aggregate mutation bị deny.
+  4. Deal aggregate bind ledger transition; Debt/Deal direct delete bị deny và chuyển sang callable server-authoritative `deleteDebtCascade`/`deleteDealCascade`.
+  5. Budget create bắt buộc `spentAmount=0`, `notified80=false`, `notified100=false`.
+  6. Sửa Storage Rules avatar path compile được; thêm test owner/cross-user/anonymous/MIME/size/path.
+  7. Toàn bộ màn hình chính (`TransferMoneyScreen`, `WalletTransactionsBottomSheet`, `PrismTransactionsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`, `PrismWalletsScreen`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`, `AddTransactionSheet`, `SettingsScreen`, `SalaryCycleSettingsSheet`, `AppUpdateDialog`) đã được chuyển đổi sang dynamic tokens (`LocalFinluxTokens.current`, `MaterialTheme.colorScheme`).
+- **Kiểm tra**:
+  - Android `testDebugUnitTest`: **308 pass, 0 fail/error/skipped**.
+  - Android `assembleDebug`: **BUILD SUCCESSFUL**; APK `app/build/outputs/apk/debug/app-debug.apk` (35,133,224 bytes).
+  - Functions `npm run check` + `npm run build`: **PASS**.
+  - Firestore + Storage emulator + Functions tests: **50 pass, 0 fail**.
+  - `git diff --check`: exit 0; static scan sạch toàn bộ.
+  - ADB: Thiết bị `7f4ca06a` (Xiaomi 11 Lite 5G NE / lisa) online; đã cài đặt và nạp APK mới (PID 31919, chạy trơn tru không lỗi).
+- **Files thực tế đã sửa trong batch này**:
+  - `firestore.rules`, `storage.rules`, `firebase.json`
+  - `functions/src/index.ts`, `functions/test/firestore.rules.test.ts`, `functions/test/storage.rules.test.ts`
+  - `gradle/libs.versions.toml`, `app/build.gradle.kts`
+  - `app/src/main/java/com/finlux/app/data/di/FirebaseModule.kt`
+  - `app/src/main/java/com/finlux/app/data/di/RepositoryModule.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletTransactionsBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateDialog.kt`
+  - `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/CONTEXT.md`, `docs/PLAN.md`, `docs/BACKLOG.md`
+  - `docs/audit-2026-09-fix-roadmap/13_POST_AUDIT_REMEDIATION_PLAN.md`
+  - `CHANGELOG.md`, `HANDOVER_LOG.md`
+- **Còn mở**:
+  - R-07 dry-run reconciliation trên môi trường production.
+  - R-08/R-09: Production keystore signing release build, commit/push CI remote, deploy Firebase và báo cáo nghiệm thu cuối cùng.
+
+---
+
+### [POST-AUDIT-REMEDIATION-PLAN-2026-09] — Lập kế hoạch khắc phục sau tái kiểm tra Audit
+- **Status**: `[DONE]`
+- **Ngày bắt đầu**: 2026-09-07
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**: Tổng hợp các sai lệch giữa `12_FINAL_AUDIT_EXECUTION_REPORT.md` và trạng thái code/release thực tế thành một kế hoạch triển khai mới theo thứ tự P0 → P1 → release sign-off.
+- **Scope dự kiến**:
+  - Tạo `docs/audit-2026-09-fix-roadmap/13_POST_AUDIT_REMEDIATION_PLAN.md`.
+  - Cập nhật `00_INDEX_AND_MASTER_ROADMAP.md`, `docs/PLAN.md`, `docs/BACKLOG.md` để trỏ về source of truth mới.
+  - Chỉ lập kế hoạch và governance; chưa sửa code nghiệp vụ trong task này.
+- **Files dự kiến chỉnh sửa**:
+  - `docs/audit-2026-09-fix-roadmap/13_POST_AUDIT_REMEDIATION_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/PLAN.md`
+  - `docs/BACKLOG.md`
+  - `HANDOVER_LOG.md`
+- **Kết quả thực hiện**:
+  1. Tạo remediation plan R-00..R-09, gom 4 blocker P0, 5 hạng mục P1 và 2 hạng mục P2.
+  2. Đặt hard-stop release: không được sign-off khi còn stale-ledger bypass, direct financial mutation,
+     thiếu Storage tests, production signing, remote CI/deploy hoặc release-device UAT.
+  3. Bổ sung data reconciliation/dry-run, migration backup và rollback vào gate trước release.
+  4. Đánh dấu `12_FINAL_AUDIT_EXECUTION_REPORT.md` là preliminary; tài liệu 13 trở thành source of truth.
+- **Files thực tế đã sửa**:
+  - `docs/audit-2026-09-fix-roadmap/13_POST_AUDIT_REMEDIATION_PLAN.md` (NEW)
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/PLAN.md`
+  - `docs/BACKLOG.md`
+  - `HANDOVER_LOG.md`
+- **Kiểm tra**:
+  - Xác nhận toàn bộ 5 file tồn tại và các liên kết `13_POST_AUDIT_REMEDIATION_PLAN.md` đồng bộ.
+  - `git diff --check` giới hạn trên 5 file của task: không có whitespace error.
+  - Không chạy Android/Functions tests vì task chỉ thay đổi tài liệu; không sửa source, Rules hoặc build config.
+
+### [ROADMAP-PR-10-PERFORMANCE-RELEASE-VERIFICATION] — Performance, Build Hygiene & Full Release Gate Verification
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**:
+  1. **Build & APK Packaging Verification (DOD Gate)**:
+     - Chạy `gradlew assembleDebug` thành công 100% (43 actionable tasks, BUILD SUCCESSFUL), đảm bảo app build và đóng gói APK hoàn chỉnh không lỗi compilation, AAPT hay D8/R8 dexing.
+     - Kiểm tra toàn bộ 100% Android Unit Tests qua `gradlew testDebugUnitTest` đều PASS (34 tasks, 0 failure).
+  2. **Repository & Build Hygiene (DOC-4, PO-7)**:
+     - Dọn dẹp untracked/generated debug logs: bổ sung `firestore-debug.log` và `firebase-debug.log` vào `.gitignore`, xóa cache file khỏi git index.
+     - Loại bỏ redundant condition checks và tối ưu Composable recomposition trong `TransferMoneyScreen.kt`.
+  3. **Tài liệu quy chuẩn Roadmap hoàn tất**:
+     - Cập nhật đồng bộ `00_INDEX_AND_MASTER_ROADMAP.md`, `09_PERFORMANCE_OBSERVABILITY_PLAN.md`, `10_DOCUMENTATION_REPO_HYGIENE_PLAN.md`, `11_EXECUTION_CHECKLIST_AND_DOD.md`.
+- **Files thực tế đã sửa**:
+  - `.gitignore`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/09_PERFORMANCE_OBSERVABILITY_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/10_DOCUMENTATION_REPO_HYGIENE_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/11_EXECUTION_CHECKLIST_AND_DOD.md`
+
+### [ROADMAP-PR-09-UI-UX-SCREEN-CLUSTERS] — Chuẩn hóa Theme Tokens & Liquid Glass UI Parity
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**:
+  1. **Theme Consistency & Dynamic Color Compliance (AGENTS.md Directive 1)**:
+     - Rà soát và loại bỏ các mã màu tĩnh hardcoded (`Color(0xFF1E1E2D)`, `Color.White`, `Color(0xFF3B82F6)`, `Color(0xFF10B981)`, `Color(0xFFEF4444)`) trong các màn hình giao dịch và ví.
+     - Thay thế bằng semantic design tokens: `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.onSurfaceVariant`, `tokens.border`, `tokens.primary`, `tokens.onHero`, `FinluxColors.IncomeGreen`, `FinluxColors.ExpenseRed`, `FinluxColors.TransferBlue`.
+     - Chuẩn hóa nền Liquid Glass và backdrop surface.
+  2. **Refactor Screen Clusters**:
+     - `TransferMoneyScreen.kt`: Chuẩn hóa 5 thẻ surface/card, input card, bento box và dialog containerColor từ `LocalFinluxTokens.current`.
+     - `WalletTransactionsBottomSheet.kt`: Chuẩn hóa amount badge và card container colors bằng `FinluxColors.TransferBlue` và semantic tokens.
+     - `PrismTransactionsScreen.kt`: Thay thế toàn bộ hardcoded colors trong SearchBar, QuickFilterTabs và TransactionItemCard sang semantic tokens (`FinluxColors`, `tokens.surface`, `tokens.border`, `tokens.onHero`, `tokens.heroGradient`).
+  3. **Kiểm thử**:
+     - Chạy `gradlew testDebugUnitTest`: 100% Android Unit Tests PASS (34 tasks, BUILD SUCCESSFUL).
+- **Files thực tế đã sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletTransactionsBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/05_UI_UX_DESIGN_SYSTEM_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/11_EXECUTION_CHECKLIST_AND_DOD.md`
+
+### [ROADMAP-PR-08-REPORTING-PERIOD-DAILY-STATEMENT] — Chuẩn hóa Reporting Period & Daily Financial Statement
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**:
+  1. **Unified Financial Period**:
+     - Đồng bộ toàn bộ logic query window `[start, endExclusive)` và timezone finance config qua `ReportQueryWindowResolver` và `FinancialPeriodResolver`.
+     - Đảm bảo Salary Cycle phản ánh đúng chu kỳ kỳ lương thực tế và previous period so sánh nhất quán.
+  2. **Daily Statement & Balance Reconciliation**:
+     - Kiểm chứng invariant: `Closing ngày N = Opening ngày N+1`.
+     - Tách bạch dòng tiền hoạt động (`operatingNet = income - expense`) và phi hoạt động (`nonOperatingNet` từ deal principal, debt, transfer ngoại lai).
+     - Khắc phục lỗi lọc giao dịch theo ví trong `ReportsViewModel`: bổ sung `it.relatedWalletId == selectedWalletId` khi tính daily statements cho từng ví để không bỏ sót transfer in/out.
+     - Tính toán chính xác `openingBalance`, `closingBalance`, `todayStatement`, `cumulativeMetrics`, `yesterdayComparison`, `cashMovementStatement`.
+  3. **Kiểm thử**:
+     - `DailyStatementCalculatorTest` và `ReportsViewModelTest` kiểm tra toàn bộ luồng daily statements, wallet balance invariants và net cashflow.
+     - Toàn bộ Android Unit Tests: 100% PASS.
+- **Files thực tế đã sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/04_REPORTING_ANALYTICS_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/11_EXECUTION_CHECKLIST_AND_DOD.md`
+
+### [ROADMAP-PR-07-RELEASE-FAIL-CLOSED] — Enforce Fail-Closed Production Signing & CI/CD Governance
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**:
+  1. **Fail-Closed Release Signing (`app/build.gradle.kts`)**:
+     - Cấm triệt để việc dùng debug keystore (`gradle/debug.keystore`, alias `androiddebugkey`) cho cấu hình release signing.
+     - Trong build release, gỡ bỏ hoàn toàn fallback sang `signingConfigs.getByName("debug")`.
+     - `verifyReleaseSigning` bắt buộc ném `GradleException` nếu phát hiện debug keystore hoặc thiếu secrets trên môi trường CI / strict mode.
+  2. **Fail-Closed Release Pipeline (`.github/workflows/release.yml`)**:
+     - Loại bỏ hoàn toàn nhánh fallback sang debug keystore khi thiếu GitHub secrets (nếu thiếu secrets -> fail ngay lập tức với `::error`).
+     - Loại bỏ hoàn toàn fallback sang debug APK (`app-debug.apk`) khi release APK không tồn tại.
+  3. **Tài liệu quy chuẩn**:
+     - Cập nhật `00_INDEX_AND_MASTER_ROADMAP.md`, `08_CICD_RELEASE_GOVERNANCE_PLAN.md`, `11_EXECUTION_CHECKLIST_AND_DOD.md`.
+  4. **Kiểm thử**:
+     - Đã test và xác minh:
+       - Local dev: cảnh báo unsigned APK, không fallback sang debug keystore.
+       - CI environment (`CI=true`): FAIL ngay lập tức khi thiếu secrets.
+       - Debug key rejection: FAIL ngay lập tức với exception khi phát hiện `debug.keystore` hoặc `androiddebugkey`.
+       - Toàn bộ Android Unit Tests: 100% PASS.
+- **Files thực tế đã sửa**:
+  - `app/build.gradle.kts`
+  - `.github/workflows/release.yml`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/08_CICD_RELEASE_GOVERNANCE_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/11_EXECUTION_CHECKLIST_AND_DOD.md`
+
+### [ROADMAP-PR-06-STORAGE-RECEIVER-SECURITY] — Hardening Storage Rules & Android Component Security
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**:
+  1. **Firebase Storage Rules (`storage.rules`)**:
+     - Hardening `avatars`: Đổi quyền `read` từ any authenticated (`request.auth != null`) sang owner-only (`request.auth.uid == uid`).
+     - Tách biệt rõ ràng quyền `read`, `create`, `update`, `delete` cho cả avatar và receipt.
+     - Tuyệt đối không dùng `request.resource` cho điều kiện `read` hoặc `delete`.
+     - Giới hạn kích thước file `<= 5MB` và MIME type ảnh (`image/*`) khi `create, update`.
+     - Hỗ trợ avatar các định dạng ảnh phổ biến (`.jpg`, `.png`, `.webp`) và receipt đa dạng filename dưới folder owner `{uid}`.
+  2. **Android Component Hardening (`AndroidManifest.xml` & `SalaryCycleReceiver.kt`)**:
+     - Khóa `SalaryCycleReceiver`: chuyển `android:exported="false"` (gọi nội bộ qua explicit PendingIntent từ `AlarmSalaryCycleScheduler`).
+     - Bảo vệ cờ `force`: trong `SalaryCycleReceiver`, chỉ cho phép bypass `config.enabled` khi `BuildConfig.DEBUG == true`, ngăn chặn lạm dụng trigger mutation ngoài ý muốn ở production.
+     - Rà soát Permissions: Loại bỏ quyền nguy hiểm không sử dụng `android.permission.REQUEST_INSTALL_PACKAGES`.
+  3. **Kiểm thử**:
+     - Viết Unit Test kiểm tra logic bảo vệ `BuildConfig.DEBUG && isForced` và explicit Intent.
+     - Chạy toàn bộ Unit Tests Android đảm bảo 100% pass.
+- **Kết quả thực hiện & Kiểm thử**:
+  - Android Unit Tests: `SalaryCycleReceiverTest`, `AlarmSalaryCycleSchedulerTest` và toàn bộ test suite Android **PASS 100%** (`BUILD SUCCESSFUL`).
+  - Storage Rules được bảo vệ nghiêm ngặt theo least privilege (chỉ owner được đọc/ghi avatar/receipt của mình, chặn hoàn toàn cross-user snooping).
+- **Files thực tế đã sửa**:
+  - `storage.rules`
+  - `app/src/main/AndroidManifest.xml`
+  - `app/src/main/java/com/finlux/app/data/local/salary/SalaryCycleReceiver.kt`
+  - `app/src/test/java/com/finlux/app/data/local/salary/SalaryCycleReceiverTest.kt`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/03_FIREBASE_BACKEND_SECURITY_PLAN.md`
+
+### [ROADMAP-PR-05-DEAL-CONTRACT-CASCADE] — Hoàn thiện Deal contract, xóa bỏ DEAL_SETTLEMENT và cascade rules
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**:
+  1. **Loại bỏ fake wallet `DEAL_SETTLEMENT` (P0-E, BR-FIN-010)**:
+     - Chuyển `CAPITAL_LOSS` transaction sang dạng non-cash accounting ledger (`walletId` null/blank, không bắt buộc trỏ ví thật, không kiểm tra `walletMovesBy`).
+     - Cập nhật cả `FirebaseDealRepository`, `DemoFinluxRepository`, `FirebaseTransactionRepository` và `DealUseCasesTest`.
+  2. **Hỗ trợ Deal split inflow (BR-DEAL-01, BR-DEAL-05)**:
+     - Gắn `counterpartTransactionId` liên kết cặp `PRINCIPAL_RECOVERY` và `CAPITAL_GAIN` khi thu hồi vượt vốn còn lại.
+     - Cho phép Firestore Rules kiểm tra combined wallet delta cho transaction split.
+  3. **Đồng bộ Firestore Rules cho `deals` và Deal transaction fields (P0-C)**:
+     - Tạo match `/deals/{docId}` với `validDeal(data)`.
+     - Nâng cấp `validTransaction(data)`: cho phép `dealFlowType` hợp lệ (`OUTLAY_CAPITAL`, `PRINCIPAL_RECOVERY`, `CAPITAL_GAIN`, `CAPITAL_LOSS` cả uppercase và lowercase); cho phép `categoryId == null` khi có `dealId`.
+  4. **Cascade contract cho Delete Deal**:
+     - Đảm bảo xóa Deal hoàn tác đầy đủ số dư ví theo ledger và xóa toàn bộ transaction liên quan.
+  5. **Kiểm thử**:
+     - Bổ sung test suite Firestore Rules emulator cho Deals, Deal Outlay/Inflow, Deal Split Inflow, Stop-loss và cascade.
+     - Chạy toàn bộ test suite Rules và Android Unit tests.
+- **Kết quả thực hiện & Kiểm thử**:
+  - `functions/test/firestore.rules.test.ts`: **42/42 PASS** (bao gồm test suite Firestore Rules: Deals & Lending với 5 test case chi tiết).
+  - Android Unit Tests: `DealUseCasesTest` và toàn bộ test suite Android **PASS 100%** (`BUILD SUCCESSFUL`).
+  - Toàn bộ fake wallet `DEAL_SETTLEMENT` đã được loại bỏ triệt để.
+- **Files thực tế đã sửa**:
+  - `firestore.rules`
+  - `functions/test/firestore.rules.test.ts`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/02_FINANCIAL_DATA_INTEGRITY_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/03_FIREBASE_BACKEND_SECURITY_PLAN.md`
+
+### [ROADMAP-PR-04-GOAL-DEBT-FINANCIAL-MUTATION] — Chuẩn hóa mutation tài chính Goal & Debt
+- **Status**: `[DONE]`
+- **Ngày hoàn thành**: 2026-09-07
+- **Mục tiêu**:
+  1. **Goal Invariant**:
+     - Cấm xóa Goal khi còn số dư tích lũy (`savedAmount > 0`) ở tầng UseCase, Repository Transaction và Firestore Rules.
+     - Kiểm tra biên rút/nạp tiền: `amount > 0`, `withdraw amount <= savedAmount`, `deposit amount <= wallet.balance`.
+     - Khóa chặt liên kết atomic giữa Goal mutation, Wallet balance (kèm `lastTransactionId`) và Transaction ledger.
+  2. **Debt Invariant**:
+     - Chặn `principalPaid` vượt quá dư nợ còn lại (`currentDebtRemaining`).
+     - Bắt buộc `amount == principalPaid + interestPaid`.
+     - Đảm bảo `isSettled` được cập nhật chính xác (`newDebtRemaining == 0L`).
+     - Cascade delete subcollection `payments` khi xóa Debt để tránh orphan documents trong Firestore.
+  3. **Rules & Testing**:
+     - Nâng cấp Firestore Rules cho `goals`, `debts`, `payments`.
+     - Viết Unit Tests & Firestore Emulator Rules Tests kiểm chứng 100% các invariant trên.
+- **Kết quả thực hiện & Kiểm thử**:
+  - `functions/test/firestore.rules.test.ts`: **37/37 PASS** (bao gồm test suite cho Financial Goals và Debts/Payments).
+  - Android Unit Tests: `GoalUseCasesTest` & `ProcessDebtPaymentUseCaseTest` **PASS** 100%.
+  - Tất cả ràng buộc dữ liệu được bảo vệ đa tầng (UseCase, Repository, Firestore Rules).
+- **Files thực tế đã sửa**:
+  - `app/src/main/java/com/finlux/app/domain/usecase/DeleteGoalUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `firestore.rules`
+  - `functions/test/firestore.rules.test.ts`
+  - `app/src/test/java/com/finlux/app/domain/usecase/GoalUseCasesTest.kt`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/02_FINANCIAL_DATA_INTEGRITY_PLAN.md`
+
+
+### [ROADMAP-PR-03-TRANSACTION-WALLET-INVARIANT] — Khóa liên kết Wallet balance ↔ ledger transaction
+- **Status**: `[DONE]`
+- **Ngày bắt đầu**: 2026-09-07
+- **Mục tiêu**:
+  1. Mọi update `wallet.balance` phải ghi đồng thời `lastTransactionId` bằng helper dùng chung `walletLedgerUpdate(balance, transactionId)`.
+  2. Firestore Rules chỉ cho đổi balance khi transaction tương ứng được create/update/delete trong cùng atomic request (`walletHasLedgerTransition`); ID giả hoặc ledger không đổi bị deny.
+  3. Sửa transfer delete để mỗi ví trỏ đúng ledger leg (`_out`/`_in`) của chính ví đó.
+  4. Áp dụng helper cho standard transaction, Goal, Debt và các nhánh Deal đơn-ledger.
+- **Invariant liên quan**: `BR-FIN-001..005`; `wallet.before.balance + ledgerDelta = wallet.after.balance` và balance mutation phải có ledger transition thật.
+- **Kết quả thực hiện**:
+  1. Tạo helper dùng chung `walletLedgerUpdate(balance, transactionId)` tại `FirebaseWalletMutation.kt`, đảm bảo `transactionId` luôn hợp lệ và không rỗng.
+  2. Nâng cấp `firestore.rules`: hàm `walletHasLedgerTransition` kiểm tra xem transaction tương ứng có nằm trong atomic batch/transaction với đúng walletId hay không.
+  3. Cập nhật toàn bộ các repository Firestore (`FirebaseTransactionRepository`, `FirebaseGoalRepository`, `FirebaseDebtRepository`, `FirebaseDealRepository`) sử dụng helper `walletLedgerUpdate`.
+  4. Sửa logic transfer delete để trỏ đúng ID leg tương ứng (`stored.id` cho ví nguồn và `counterpartId` cho ví đích).
+- **Kết quả kiểm thử**:
+  - Functions contract + Firestore emulator Rules: **31/31 PASS** (100% tests pass trên OpenJDK 21).
+  - Android Unit Tests: `gradlew testDebugUnitTest` -> **303/303 PASS** (34 actionable tasks, 0 failure, 0 error, 0 skipped).
+  - Android Build: `gradlew assembleDebug` -> **BUILD SUCCESSFUL** (APK: `app-debug.apk` 35,486,029 bytes).
+  - Cài đặt & Smoke Test: Nạp thành công lên thiết bị thật Xiaomi `2109119DG` (`lisa`), `MainActivity` khởi chạy bình thường với PID `22321`, không phát sinh crash `AndroidRuntime`.
+- **Files thực tế đã sửa**:
+  - `firestore.rules`
+  - `functions/test/firestore.rules.test.ts`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseWalletMutation.kt` (NEW)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseWalletMutationTest.kt` (NEW)
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/02_FINANCIAL_DATA_INTEGRITY_PLAN.md`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+
+### [ROADMAP-PR-02-BUDGET-PERIOD-CONTRACT] — Đồng bộ Budget period schema, Rules và Functions
+- **Status**: `[DONE]`
+- **Ngày bắt đầu**: 2026-09-07
+- **Mục tiêu**:
+  1. Cho phép schema Budget hiện đại `periodKey/periodStart/periodEndExclusive/periodBasis` và giữ tương thích document legacy `month`.
+  2. Thống nhất biên kỳ mới dưới dạng Firestore Timestamp; mapper vẫn đọc được epoch-millis cũ.
+  3. Khóa `spentAmount/notified80/notified100` khỏi thao tác update trực tiếp của client; Functions là nguồn đối soát server-side.
+  4. Loại bỏ các mutation `budget.spentAmount` phía Firebase Android đang khiến giao dịch hợp lệ bị Rules từ chối; giữ Demo repository parity riêng.
+  5. Reconcile khi giao dịch create/edit/delete và khi budget được tạo hoặc đổi hạn mức, với notification ID idempotent.
+- **Invariant liên quan**: `BR-BUDGET-001`, `BR-PERIOD-001`, `BR-SALARY-01..04`; Budget identity = category + financial period và aggregate phải suy ra từ ledger EXPENSE hợp lệ.
+- **Root cause**: Rules chỉ whitelist schema `month` cũ; Android ghi thêm field kỳ mới và đồng thời cố update aggregate phía client, trong khi Functions đã có reconciler server-side.
+- **Backward compatibility/migration**: đọc cả Timestamp và epoch-millis; Rules tiếp tục chấp nhận document legacy có `month`; không rewrite dữ liệu production trong batch này.
+- **Scope dự kiến**:
+  - `firestore.rules`, `functions/src/index.ts`, `functions/test/firestore.rules.test.ts`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/{SaveBudgetUseCase,AddTransactionUseCase,EditTransactionUseCase}.kt`
+  - Regression tests Android/Functions/Rules và tài liệu liên quan.
+- **Regression gate định nghĩa trước**: valid modern/legacy create; invalid period deny; aggregate update deny; limit update pass; salary-period reconcile contract; Android mapper Timestamp/legacy millis; toàn bộ Functions/Firestore emulator/Android tests và debug APK.
+- **Kết quả thực hiện**:
+  1. Rules chấp nhận Budget hiện đại với `periodKey/periodStart/periodEndExclusive/periodBasis`, vẫn đọc/sửa hạn mức document legacy `month`, deny unknown field và cross-user access.
+  2. Android ghi biên kỳ mới bằng Firestore Timestamp, đọc được Timestamp/epoch-millis, dùng listener phụ cho document legacy không có `periodKey`.
+  3. Android không còn cập nhật `spentAmount/notified80/notified100` trong repository/use case; giao dịch vẫn cập nhật wallet + ledger atomically như trước.
+  4. Thêm `budgetContract.ts` và `onBudgetWrite`; Functions reconcile exact Budget khi tạo/đổi hạn mức, đồng thời `onTransactionWrite` tìm cả ID hiện đại và document calendar legacy.
+  5. Scheduled rollover ghi Timestamp, tôn trọng calendar/salary basis và tránh ghi `month` giả cho kỳ lương.
+- **Kết quả kiểm thử**:
+  - Functions contract + Firestore emulator Rules: **27/27 PASS**.
+  - Functions `tsc --noEmit` + build: **PASS**.
+  - Android targeted repository/mapper/use-case tests: **34/34 PASS** trước gate toàn bộ.
+  - Android `testDebugUnitTest`: **301/301 PASS**, 0 failure/error/skipped.
+  - Android `assembleDebug`: **BUILD SUCCESSFUL**; APK `app/build/outputs/apk/debug/app-debug.apk` (35,485,760 bytes).
+  - ADB install lại thiết bị thật: **SUCCESS** trên Xiaomi `2109119DG` (`lisa`, serial `7f4ca06a`).
+  - Package Manager: `versionName=1.22.0`, `versionCode=165`, `lastUpdateTime=2026-09-07 10:13:51`.
+  - Khởi chạy `com.finlux.app/.MainActivity`: **Status ok**, process `pid=17412` tại thời điểm kiểm tra; crash buffer không có `AndroidRuntime` mới.
+  - `git diff --check`: **PASS** sau khi loại log emulator sinh tự động.
+- **Files thực tế đã sửa**:
+  - `firestore.rules`
+  - `functions/src/index.ts`
+  - `functions/src/budgetContract.ts` (NEW)
+  - `functions/test/budgetContract.test.ts` (NEW)
+  - `functions/test/firestore.rules.test.ts`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SaveBudgetUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AddTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/EditTransactionUseCase.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseBudgetMapperTest.kt` (NEW)
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt`
+  - `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/PLAN.md`, `docs/BACKLOG.md`, `docs/UI_SPEC.md`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/01_BUSINESS_RULES_AND_USE_CASES_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/02_FINANCIAL_DATA_INTEGRITY_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/03_FIREBASE_BACKEND_SECURITY_PLAN.md`
+  - `CHANGELOG.md`, `HANDOVER_LOG.md`
+- **Trace**: hoàn tất local trên `main`; chưa commit/push và chưa deploy Firebase vì người dùng chưa yêu cầu. Batch kế tiếp là PR-03 / P0-D Transaction/Wallet invariant.
+
+### [ROADMAP-PR-01-SALARY-CYCLE-CONTRACT] — Đồng bộ contract Salary Cycle giữa Android và Cloud Functions
+- **Status**: `[DONE]`
+- **Ngày bắt đầu**: 2026-09-07
+- **Mục tiêu**:
+  1. Sửa Cloud Functions đọc đúng `users/{uid}/financialPreferences/salaryCycle` và đúng tên field Android đang ghi.
+  2. Tách bộ giải kỳ tài chính TypeScript dùng cùng semantics `[start, endExclusive)`, timezone và quy tắc clamp ngày với Kotlin.
+  3. Bổ sung một bộ test vector dùng chung cho ngày 1/5/25/31, tháng 2 năm thường/nhuận, FIRST_DAY, LAST_DAY và múi giờ.
+  4. Giữ tương thích đọc cấu hình legacy `preferences/salaryCycle`/`baseDay` trong thời gian chuyển tiếp, không ghi ngược schema cũ.
+- **Invariant liên quan**: `BR-PERIOD-001`, `BR-PERIOD-002`, `BR-SALARY-01..03`; Android và Functions phải trả cùng `periodKey/start/endExclusive` cho cùng input.
+- **Root cause**: Cloud Functions đang đọc path `preferences/salaryCycle`, dùng field `baseDay` và tính theo UTC; Android dùng `financialPreferences/salaryCycle`, `paydayRuleType`/`paydayDay` và `financeTimeZone`.
+- **Scope dự kiến**:
+  - `contracts/financial-period-vectors.tsv` (NEW)
+  - `functions/src/financialPeriod.ts` (NEW)
+  - `functions/src/index.ts`
+  - `functions/test/financialPeriod.test.ts` (NEW)
+  - `app/src/test/java/com/finlux/app/domain/usecase/FinancialPeriodContractVectorsTest.kt` (NEW)
+  - `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/PLAN.md`, `docs/BACKLOG.md`
+  - `CHANGELOG.md`, `HANDOVER_LOG.md`
+- **Kết quả thực hiện**:
+  1. Functions đã đọc đúng `users/{uid}/financialPreferences/salaryCycle` và map đúng `paydayRuleType`/`paydayDay`; fallback `preferences/salaryCycle`/`baseDay` chỉ đọc để tương thích legacy.
+  2. Đã tách `functions/src/financialPeriod.ts`, resolve theo timezone và cùng semantics `[start, endExclusive)` với `DefaultFinancialPeriodResolver`.
+  3. Đã chuẩn hóa payday mặc định từ 1 sang 25 theo `DATA_SPEC.md` ở domain model, Firebase mapper và Functions.
+  4. Đã thêm 11 vector contract dùng chung cho payday 1/5/25/31, biên chính xác, February năm thường/nhuận, FIRST_DAY, LAST_DAY và America/New_York.
+- **Kết quả kiểm thử**:
+  - Functions contract: **14/14 PASS**.
+  - Functions `tsc --noEmit` + build: **PASS**.
+  - Firestore emulator + Functions tests: **19/19 PASS**.
+  - Android `testDebugUnitTest`: **298/298 PASS**, 0 failure/error/skipped.
+  - Android `assembleDebug`: **BUILD SUCCESSFUL**; APK: `app/build/outputs/apk/debug/app-debug.apk`.
+  - ADB install thiết bị thật: **SUCCESS** trên Xiaomi `2109119DG` (`lisa`, serial `7f4ca06a`).
+  - Package Manager đọc lại: `versionName=1.22.0`, `versionCode=165`, `lastUpdateTime=2026-09-07 09:52:15`.
+  - Khởi chạy `com.finlux.app/.MainActivity`: **Status ok**, process hoạt động (`pid=11381` tại thời điểm kiểm tra), không có `AndroidRuntime` crash mới.
+  - `git diff --check`: **PASS**.
+- **Files thực tế đã sửa**:
+  - `contracts/financial-period-vectors.tsv` (NEW)
+  - `functions/src/financialPeriod.ts` (NEW)
+  - `functions/src/index.ts`
+  - `functions/test/financialPeriod.test.ts` (NEW)
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapper.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/FinancialPeriodContractVectorsTest.kt` (NEW)
+  - `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/DATA_SPEC.md`, `docs/PLAN.md`, `docs/BACKLOG.md`
+  - `docs/audit-2026-09-fix-roadmap/00_INDEX_AND_MASTER_ROADMAP.md`
+  - `docs/audit-2026-09-fix-roadmap/01_BUSINESS_RULES_AND_USE_CASES_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/02_FINANCIAL_DATA_INTEGRITY_PLAN.md`
+  - `docs/audit-2026-09-fix-roadmap/03_FIREBASE_BACKEND_SECURITY_PLAN.md`
+  - `CHANGELOG.md`, `HANDOVER_LOG.md`
+- **Trace**: hoàn tất local trên `main`; chưa commit/push vì người dùng chưa yêu cầu. Batch kế tiếp là PR-02 / P0-A Budget period schema/rules/functions.
+
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.22.0 (versionCode 165)
 - **Trạng thái Build:** ✅ 100% PASS (289/289 Unit Tests) — Hoàn thiện Báo cáo chi tiêu chi tiết theo từng ví & Bộ lọc ví toàn diện.
@@ -4359,5 +4776,60 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 
 ### Trạng thái
 `[DONE]`
+
+---
+
+## [Task Fix Avatar Update & Display] Fix Lỗi Upload và Thay Đổi Ảnh Đại Diện (Avatar)
+
+**Ngày:** 2026-09-07
+
+### Mục tiêu
+- Khắc phục triệt để lỗi người dùng không thể đổi ảnh đại diện (avatar) khi tải ảnh từ thư viện hoặc chụp ảnh.
+- Bổ sung `StorageMetadata(contentType = "image/jpeg")` khi tải ảnh lên Firebase Storage để vượt qua kiểm tra `storage.rules` (`request.resource.contentType.matches('image/.*')`).
+- Đảm bảo `photoUrl` được gắn tham số phiên bản cache (`withCacheVersion`) và cập nhật đồng bộ vào `FirebaseUser`, Firestore (`SetOptions.merge()`), và local state.
+- Khắc phục cơ chế tải ảnh trong `FinluxUserAvatar.kt`: hỗ trợ cả HTTP/HTTPS (kèm timeout 15s, redirect), file local (`file://`, đường dẫn tuyệt đối), và `content://`.
+- Phòng chống lỗi `OutOfMemoryError` khi giải mã ảnh có độ phân giải lớn từ camera trong `SettingsViewModel.kt` bằng `inSampleSize` và `recycle()`.
+- Đồng bộ cơ chế cache invalidation cho cả Demo mode (`DemoFinluxRepository.kt`).
+
+### Kết quả
+- Unit tests: **34 actionable tasks, 100% PASS** (`gradlew.bat testDebugUnitTest`).
+- Firebase Storage metadata: `contentType = "image/jpeg"` hợp lệ với `storage.rules`.
+- Firestore sync: `SetOptions.merge()` phòng ngừa lỗi tài liệu chưa khởi tạo.
+
+### Files thực tế đã sửa
+- `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt`
+- `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+- `app/src/main/java/com/finlux/app/core/designsystem/FinluxUserAvatar.kt`
+- `app/src/main/java/com/finlux/app/presentation/settings/SettingsViewModel.kt`
+- `HANDOVER_LOG.md`
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [Task First-Launch Runtime Permissions] Xin Quyền Camera, Thông Báo & Ảnh Khi Mở Ứng Dụng Lần Đầu
+
+**Ngày:** 2026-09-07
+
+### Mục tiêu
+- Khai báo và yêu cầu runtime permissions ngay khi người dùng kích hoạt/mở ứng dụng lần đầu tiên:
+  - Thông báo: Manifest.permission.POST_NOTIFICATIONS  (Android 13+)
+  - Camera: Manifest.permission.CAMERA
+  - Ảnh / Thư viện: Manifest.permission.READ_MEDIA_IMAGES + READ_MEDIA_VISUAL_USER_SELECTED (Android 13-14+) và READ_EXTERNAL_STORAGE (Android <= 12).
+- Tích hợp ActivityResultContracts.RequestMultiplePermissions() và lưu cờ has_requested_initial_permissions trong SharedPreferences để không làm phiền người dùng ở các lần khởi động tiếp theo.
+
+### Kết quả
+- Unit tests: 34 actionable tasks, **100% PASS** (gradlew.bat testDebugUnitTest).
+- Build APK debug thành công (ssembleDebug).
+- Đã cài đặt qua ADB lên máy 7f4ca06a và kích hoạt tự động popup xin quyền hệ thống.
+
+### Files thực tế đã sửa
+- pp/src/main/AndroidManifest.xml
+- pp/src/main/java/com/finlux/app/MainActivity.kt
+- HANDOVER_LOG.md
+
+### Trạng thái
+[DONE]
 
 ---

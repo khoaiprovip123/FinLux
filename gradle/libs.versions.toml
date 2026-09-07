@@ -54,6 +54,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
+firebase-functions = { module = "com.google.firebase:firebase-functions" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }

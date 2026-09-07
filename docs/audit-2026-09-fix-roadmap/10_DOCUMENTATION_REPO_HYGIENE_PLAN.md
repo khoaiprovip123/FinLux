@@ -82,8 +82,8 @@ Ghi rõ:
 - backup/migration.
 
 ## 9. Acceptance
-
-- README phản ánh build thực.
-- DATA_SPEC khớp Rules + Repository.
-- Không generated cache tăng repo.
-- Mỗi P0 fix trace được vào plan/test/PR.
+- [x] README phản ánh build thực.
+- [x] DATA_SPEC khớp Rules + Repository.
+- [x] Không generated cache tăng repo (`firestore-debug.log`, `firebase-debug.log` ignored & untracked).
+- [x] Mỗi P0 fix trace được vào plan/test/PR trong HANDOVER_LOG.md.
+- **Status**: `[DONE]` (2026-09-07)

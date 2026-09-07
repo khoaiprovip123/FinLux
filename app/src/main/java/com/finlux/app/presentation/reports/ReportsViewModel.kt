@@ -729,7 +729,7 @@ class ReportsViewModel @Inject constructor(
         }
         val dailyStatements = dailyStatementCalculator.calculateDailyStatements(
             wallets = dailyStatementsWallets,
-            allTransactions = if (selectedWalletId != null) transactions.filter { it.walletId == selectedWalletId } else transactions,
+            allTransactions = if (selectedWalletId != null) transactions.filter { it.walletId == selectedWalletId || it.relatedWalletId == selectedWalletId } else transactions,
             deals = if (selectedWalletId != null) emptyList() else deals,
             startDate = range.start,
             endDate = effectiveEndDate,

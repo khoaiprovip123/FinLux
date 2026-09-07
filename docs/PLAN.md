@@ -3,6 +3,20 @@
 > Giả định team 1 dev (hoặc 1 dev + hỗ trợ AI coding agent). Điều chỉnh lại nếu team khác.
 > `[Cần xác nhận]`: ngày bắt đầu thực tế để điền deadline cụ thể.
 
+## Audit 09/2026 — Fix Roadmap
+- [IN PROGRESS 2026-09-07] Post-audit remediation R-00..R-09 theo
+  `audit-2026-09-fix-roadmap/13_POST_AUDIT_REMEDIATION_PLAN.md`.
+- [LOCAL DONE 2026-09-07] R-00..R-05: khóa Wallet/Goal/Debt/Deal/Budget invariants, server cascade,
+  Storage Rules suite; 50 emulator tests và 308 Android tests pass, debug APK build thành công.
+- [PARTIAL] R-06: audit cluster Transfer/Wallet History/Prism History đã sạch hardcode; full-app theme scan và visual matrix còn mở.
+- [BLOCKED] Production release/sign-off: chờ full theme parity, reconciliation production, CI/deploy,
+  production signing và release-device UAT.
+- [DONE 2026-09-07] PR-01 Salary Cycle shared contract: đồng bộ path/field Android–Functions,
+  resolver timezone `[start, endExclusive)`, mặc định payday 25 và fixture contract dùng chung.
+- [DONE 2026-09-07] PR-02 Budget period schema/rules/functions: Timestamp mới + legacy read,
+  khóa aggregate server-owned, reconcile khi transaction/budget thay đổi và Rules emulator tests.
+- [PRELIMINARY] PR-03..PR-10 đã có implementation local nhưng phải qua re-audit remediation trước khi xác nhận `[DONE]`.
+
 ## Sprint 0 — Setup (3-4 ngày)
 - Khởi tạo project Android Studio, cấu hình Hilt, Navigation Compose
 - Setup Firebase project (Auth, Firestore, Storage, FCM, Functions), `google-services.json`

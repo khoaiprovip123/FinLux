@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.updater.AppUpdateInfo
 
 @Composable
@@ -148,17 +149,13 @@ private fun UpdateAvailableContent(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6)),
-                            ),
-                        ),
+                        .background(LocalFinluxTokens.current.primaryBrush),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.RocketLaunch,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = LocalFinluxTokens.current.onHero,
                         modifier = Modifier.size(30.dp),
                     )
                 }
@@ -348,13 +345,13 @@ private fun ReadyToInstallContent(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF10B981)),
+                        .background(LocalFinluxTokens.current.primary),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = LocalFinluxTokens.current.onHero,
                         modifier = Modifier.size(32.dp),
                     )
                 }
@@ -394,9 +391,9 @@ private fun ReadyToInstallContent(
                         onClick = onInstall,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        colors = ButtonDefaults.buttonColors(containerColor = LocalFinluxTokens.current.primary),
                     ) {
-                        Text("Cài đặt ngay", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Cài đặt ngay", fontWeight = FontWeight.Bold, color = LocalFinluxTokens.current.onHero)
                     }
                 }
             }

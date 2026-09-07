@@ -174,10 +174,10 @@ fun PrismSettingsScreen(
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let(viewModel::updateAvatar)
+        uri?.let { viewModel.updateAvatar(it) }
     }
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
-        if (saved) pendingCameraUri?.let(viewModel::updateAvatar)
+        if (saved) pendingCameraUri?.let { viewModel.updateAvatar(it) }
     }
     fun openCamera() {
         createCameraUri(context).also {

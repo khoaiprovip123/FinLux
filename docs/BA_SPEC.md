@@ -172,17 +172,19 @@ Business rule: BR-07: Giao dịch loại "transfer" không được cộng dồn
 UC-14 — Đặt ngân sách theo danh mục
 Actor: User
 Main flow:
-  1. Vào Ngân sách → chọn Danh mục → nhập hạn mức (theo tháng)
-  2. Lưu vào budgets/{uid}_{categoryId}_{yyyyMM}
-Business rule: BR-08: Ngân sách áp dụng theo chu kỳ tháng (reset đầu tháng), không cộng dồn tháng trước.
+  1. Vào Ngân sách → chọn Danh mục → nhập hạn mức cho kỳ tài chính hiện tại
+  2. Lưu contract category + `periodKey/periodStart/periodEndExclusive/periodBasis` vào `users/{uid}/budgets/{categoryId}_{periodKey}`
+Business rule:
+  BR-08: Ngân sách áp dụng theo căn cứ đã chọn (tháng dương lịch hoặc chu kỳ lương), không cộng dồn kỳ trước.
+  BR-08.1: Client chỉ được tạo contract và đổi `limitAmount`; `spentAmount/notified80/notified100` là aggregate server-owned suy ra từ ledger EXPENSE.
 
 UC-15 — Nhận cảnh báo vượt ngân sách
 Actor: System (Cloud Function trigger on transaction write) → User (FCM)
 Main flow:
-  1. Khi giao dịch Chi mới được ghi, Cloud Function tính tổng chi trong tháng theo danh mục
+  1. Khi giao dịch Chi create/edit/delete hoặc Budget create/đổi hạn mức, Cloud Function tính lại tổng chi trong đúng khoảng `[periodStart, periodEndExclusive)` theo danh mục
   2. Nếu đạt 80% hạn mức → gửi thông báo cảnh báo "sắp vượt ngân sách"
   3. Nếu đạt/vượt 100% → gửi thông báo "đã vượt ngân sách [tên danh mục]"
-Business rule: BR-09: Mỗi ngưỡng (80%, 100%) chỉ gửi thông báo 1 lần/chu kỳ tháng, tránh spam.
+Business rule: BR-09: Mỗi ngưỡng (80%, 100%) chỉ gửi thông báo 1 lần/kỳ tài chính bằng ID idempotent, tránh spam.
 ```
 
 ### UC-16 & UC-17: Báo cáo & Xuất file
@@ -326,6 +328,7 @@ Main flow:
   5. Người dùng có thể nhấn [Rút tiền] trên thẻ Mục tiêu: Chọn ví đích, nhập số tiền rút -> Hệ thống giảm savedAmount của Mục tiêu, cộng tiền vào ví đích và ghi giao dịch INCOME (danh mục "savings") vào Sổ cái nguyên tử.
 Business rule:
   BR-GOAL-01: Thao tác nạp/rút tiền mục tiêu tài chính bắt buộc thực thi qua Firestore Atomic Transaction, đảm bảo tính toàn vẹn giữa số dư ví nguồn/đích, số tiền tích lũy của mục tiêu và sổ cái dòng tiền.
+  BR-GOAL-02: Client không được sửa trực tiếp savedAmount; mỗi delta phải liên kết transaction mới bằng goalId/lastTransactionId và khớp ngược với delta ví.
 ```
 
 ### UC-26: Quản lý và thoát nợ (Debt Freedom & Credit Hub)
@@ -341,6 +344,8 @@ Business rule:
   BR-DEBT-01: Phân loại khoản nợ theo Thẻ tín dụng (hạn mức, sao kê, đến hạn, APR), Vay ngân hàng/cá nhân, và Trả góp.
   BR-DEBT-02: Mô phỏng Snowball (ưu tiên nợ nhỏ nhất trước) và Avalanche (ưu tiên APR cao nhất trước) kèm tính toán tiền lãi tiết kiệm và ngày sạch nợ.
   BR-DEBT-03: Mọi giao dịch trả nợ bắt buộc chạy qua Firestore Transaction (Trừ số dư ví -> Giảm dư nợ khoản vay -> Tạo giao dịch chi tiêu category "debt_payment" -> Ghi lịch sử trả nợ).
+  BR-DEBT-04: amount phải bằng principalPaid + interestPaid; principalPaid không vượt remainingBalance và payment/debt/wallet/ledger phải dùng cùng correlation trong một atomic request.
+  BR-DEBT-05: Xóa Debt chỉ qua server cascade đã xác thực để không để lại payments mồ côi.
 ```
 
 ### UC-27: Cấu hình và theo dõi Tháng tài chính / Chu kỳ lương (Salary Cycle & Financial Month)
@@ -429,6 +434,7 @@ Business rule:
   BR-DEAL-03: Tuyệt đối loại trừ OUTLAY_CAPITAL và PRINCIPAL_RECOVERY khỏi Ngân sách sinh hoạt (Budget) và Báo cáo Thu/Chi sinh hoạt hàng ngày.
   BR-DEAL-04: Ghi nhận CAPITAL_GAIN vào Báo cáo Thu nhập và CAPITAL_LOSS vào Báo cáo Chi tiêu tại thời điểm phát sinh/chốt lỗ.
   BR-DEAL-05: Mọi thao tác xuất vốn, thu hồi, phân tách lãi/lỗ và đóng Deal bắt buộc chạy qua Firestore Atomic Transaction để bảo toàn số dư ví và tính toàn vẹn dữ liệu.
+  BR-DEAL-06: Aggregate Deal chỉ đổi khi có Deal ledger transition tương ứng; xóa Deal chỉ qua server cascade hoàn tác wallet và xóa ledger nguyên tử.
 ```
 
 ---
@@ -479,6 +485,7 @@ Business rules: BR-SS-01..14 theo FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md.
 | BR-SALARY-01 | Dải chu kỳ lương tính chính xác [start, endExclusive) theo múi giờ tài chính |
 | BR-SALARY-02 | Tự động xử lý ngày cuối tháng ngắn hơn (leap year, 28/30/31 ngày) |
 | BR-SALARY-03 | Báo cáo và trang chủ tự động tính toán tổng thu, chi, dòng tiền theo chu kỳ khi bật |
+| BR-SALARY-04 | Android và Cloud Functions phải resolve cùng `periodKey/start/endExclusive` từ cùng cấu hình, instant và múi giờ; ngày mặc định là 25 |
 | BR-PERIOD-01 | Home, Lịch sử, Thu nhập, Chi tiêu, Ngân sách và Báo cáo phải dùng cùng `FinancialPeriod`; kỳ trước giữ cùng loại kỳ và múi giờ tài chính |
 | BR-TRANSFER-UI-01 | Cặp `TRANSFER_OUT`/`TRANSFER_IN` của một lần chuyển nội bộ được trình bày thành một dòng logic; vẫn giữ double-entry ở data layer và không tính vào Thu/Chi |
 | BR-SAVING-01 | `Dòng tiền còn lại = Thu - Chi`; `Tỷ lệ giữ lại = (Thu - Chi) / Thu`; `Đã phân bổ mục tiêu = Nạp savings - Rút savings`, ba số liệu không được dùng thay thế nhau |

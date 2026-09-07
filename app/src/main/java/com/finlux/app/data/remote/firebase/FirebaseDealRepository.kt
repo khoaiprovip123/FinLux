@@ -13,6 +13,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -24,6 +26,7 @@ import java.util.UUID
 class FirebaseDealRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
+    private val functions: FirebaseFunctions,
 ) : DealRepository {
 
     override fun observeDeals(): Flow<List<FinancialDeal>> = callbackFlow {
@@ -83,69 +86,15 @@ class FirebaseDealRepository(
             "createdAt" to Timestamp(Date.from(deal.createdAt)),
             "updatedAt" to Timestamp.now(),
         )
-        dealDoc.set(data).await()
+        dealDoc.set(data, SetOptions.merge()).await()
         id
     }
 
     override suspend fun deleteDeal(dealId: String): AppResult<Unit> = firebaseResult("Không thể xóa thương vụ") {
-        val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        val dealDocRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
-
-        val txSnapshot = firestore.collection("users").document(uid).collection("transactions")
-            .whereEqualTo("dealId", dealId)
-            .get()
+        requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
+        functions.getHttpsCallable("deleteDealCascade")
+            .call(mapOf("dealId" to dealId))
             .await()
-
-        val txDocs = txSnapshot.documents
-        if (txDocs.isEmpty()) {
-            dealDocRef.delete().await()
-            return@firebaseResult
-        }
-
-        firestore.runTransaction { atomic ->
-            // Phase A: All reads first
-            val walletIds = txDocs.mapNotNull { it.getString("walletId") }
-                .filter { it.isNotBlank() && it != "DEAL_SETTLEMENT" }
-                .toSet()
-            val walletRefs = walletIds.associateWith {
-                firestore.collection("users").document(uid).collection("wallets").document(it)
-            }
-            val walletDocs = walletRefs.mapValues { (_, ref) -> atomic.get(ref) }
-
-            // Calculate balance adjustment per wallet
-            val balanceDeltas = mutableMapOf<String, Long>()
-            for (txDoc in txDocs) {
-                val flowTypeStr = txDoc.getString("dealFlowType")?.uppercase()
-                val walletId = txDoc.getString("walletId").orEmpty()
-                val amount = txDoc.getLong("amount") ?: 0L
-                if (walletId.isBlank() || walletId == "DEAL_SETTLEMENT" || amount <= 0L) continue
-
-                when (flowTypeStr) {
-                    "OUTLAY_CAPITAL" -> {
-                        balanceDeltas[walletId] = (balanceDeltas[walletId] ?: 0L) + amount
-                    }
-                    "PRINCIPAL_RECOVERY", "CAPITAL_GAIN" -> {
-                        balanceDeltas[walletId] = (balanceDeltas[walletId] ?: 0L) - amount
-                    }
-                }
-            }
-
-            // Phase B: All writes after reads
-            for ((walletId, delta) in balanceDeltas) {
-                val doc = walletDocs[walletId] ?: continue
-                if (doc.exists()) {
-                    val currentBal = doc.getLong("balance") ?: 0L
-                    val newBal = currentBal + delta
-                    atomic.update(walletRefs.getValue(walletId), "balance", newBal)
-                }
-            }
-
-            for (txDoc in txDocs) {
-                atomic.delete(txDoc.reference)
-            }
-
-            atomic.delete(dealDocRef)
-        }.await()
     }
 
     override suspend fun recordDealOutlay(
@@ -173,14 +122,15 @@ class FirebaseDealRepository(
             val currentOutlay = dealDoc.getLong("totalCapitalOutlay") ?: 0L
 
             // 1. Trừ tiền ví
-            tx.update(walletRef, "balance", currentBalance - amount, "updatedAt", Timestamp.now())
+            tx.update(walletRef, walletLedgerUpdate(currentBalance - amount, txId))
 
             // 2. Tăng vốn đã xuất của Deal
             tx.update(
                 dealRef,
                 "totalCapitalOutlay", currentOutlay + amount,
                 "status", DealStatus.ACTIVE.name.lowercase(),
-                "updatedAt", Timestamp.now()
+                "updatedAt", Timestamp.now(),
+                "lastTransactionId", txId,
             )
 
             // 3. Ghi giao dịch Sổ cái
@@ -214,6 +164,8 @@ class FirebaseDealRepository(
 
         val walletRef = firestore.collection("users").document(uid).collection("wallets").document(walletId)
         val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
+        val principalTransactionId = UUID.randomUUID().toString()
+        val gainTransactionId = UUID.randomUUID().toString()
 
         firestore.runTransaction { tx ->
             val walletDoc = tx.get(walletRef)
@@ -229,7 +181,8 @@ class FirebaseDealRepository(
             val remainingCapital = (totalOutlay - totalRecovered).coerceAtLeast(0L)
 
             // 1. Cộng toàn bộ tiền vào ví
-            tx.update(walletRef, "balance", currentBalance + amount, "updatedAt", Timestamp.now())
+            val walletTransactionId = if (amount <= remainingCapital) principalTransactionId else gainTransactionId
+            tx.update(walletRef, walletLedgerUpdate(currentBalance + amount, walletTransactionId))
 
             // 2. Phân rã dòng tiền
             if (amount <= remainingCapital) {
@@ -241,11 +194,11 @@ class FirebaseDealRepository(
                     dealRef,
                     "totalRecovered", newRecovered,
                     "status", newStatus,
-                    "updatedAt", Timestamp.now()
+                    "updatedAt", Timestamp.now(),
+                    "lastTransactionId", principalTransactionId,
                 )
 
-                val txId = UUID.randomUUID().toString()
-                val txRef = firestore.collection("users").document(uid).collection("transactions").document(txId)
+                val txRef = firestore.collection("users").document(uid).collection("transactions").document(principalTransactionId)
                 val txData = mapOf(
                     "type" to TransactionType.INCOME.name.lowercase(),
                     "amount" to amount,
@@ -271,18 +224,19 @@ class FirebaseDealRepository(
                     "totalRecovered", totalOutlay,
                     "netProfitLoss", currentProfitLoss + gainPortion,
                     "status", DealStatus.COMPLETED.name.lowercase(),
-                    "updatedAt", Timestamp.now()
+                    "updatedAt", Timestamp.now(),
+                    "lastTransactionId", gainTransactionId,
                 )
 
                 if (principalPortion > 0) {
-                    val txId1 = UUID.randomUUID().toString()
-                    val txRef1 = firestore.collection("users").document(uid).collection("transactions").document(txId1)
+                    val txRef1 = firestore.collection("users").document(uid).collection("transactions").document(principalTransactionId)
                     val txData1 = mapOf(
                         "type" to TransactionType.INCOME.name.lowercase(),
                         "amount" to principalPortion,
                         "categoryId" to null,
                         "walletId" to walletId,
                         "relatedWalletId" to null,
+                        "counterpartTransactionId" to gainTransactionId,
                         "dealId" to deal.id,
                         "dealFlowType" to DealFlowType.PRINCIPAL_RECOVERY.name.lowercase(),
                         "note" to note.ifBlank { buildDefaultNote(deal, DealFlowType.PRINCIPAL_RECOVERY, isSplitPrincipal = true) },
@@ -294,14 +248,14 @@ class FirebaseDealRepository(
                     tx.set(txRef1, txData1)
                 }
 
-                val txId2 = UUID.randomUUID().toString()
-                val txRef2 = firestore.collection("users").document(uid).collection("transactions").document(txId2)
+                val txRef2 = firestore.collection("users").document(uid).collection("transactions").document(gainTransactionId)
                 val txData2 = mapOf(
                     "type" to TransactionType.INCOME.name.lowercase(),
                     "amount" to gainPortion,
                     "categoryId" to null,
                     "walletId" to walletId,
                     "relatedWalletId" to null,
+                    "counterpartTransactionId" to if (principalPortion > 0) principalTransactionId else null,
                     "dealId" to deal.id,
                     "dealFlowType" to DealFlowType.CAPITAL_GAIN.name.lowercase(),
                     "note" to note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_GAIN) },
@@ -332,22 +286,22 @@ class FirebaseDealRepository(
 
             val lossAmount = (totalOutlay - totalRecovered).coerceAtLeast(0L)
 
-            tx.update(
-                dealRef,
-                "netProfitLoss", currentProfitLoss - lossAmount,
-                "status", DealStatus.COMPLETED.name.lowercase(),
-                "endDate", Timestamp(Date.from(date)),
-                "updatedAt", Timestamp.now()
-            )
-
             if (lossAmount > 0) {
                 val txId = UUID.randomUUID().toString()
+                tx.update(
+                    dealRef,
+                    "netProfitLoss", currentProfitLoss - lossAmount,
+                    "status", DealStatus.COMPLETED.name.lowercase(),
+                    "endDate", Timestamp(Date.from(date)),
+                    "updatedAt", Timestamp.now(),
+                    "lastTransactionId", txId,
+                )
                 val txRef = firestore.collection("users").document(uid).collection("transactions").document(txId)
                 val txData = mapOf(
                     "type" to TransactionType.EXPENSE.name.lowercase(),
                     "amount" to lossAmount,
                     "categoryId" to null,
-                    "walletId" to "DEAL_SETTLEMENT",
+                    "walletId" to null,
                     "relatedWalletId" to null,
                     "dealId" to deal.id,
                     "dealFlowType" to DealFlowType.CAPITAL_LOSS.name.lowercase(),
@@ -358,6 +312,13 @@ class FirebaseDealRepository(
                     "updatedAt" to Timestamp.now(),
                 )
                 tx.set(txRef, txData)
+            } else {
+                tx.update(
+                    dealRef,
+                    "status", DealStatus.COMPLETED.name.lowercase(),
+                    "endDate", Timestamp(Date.from(date)),
+                    "updatedAt", Timestamp.now(),
+                )
             }
         }.await()
     }
@@ -370,25 +331,25 @@ class FirebaseDealRepository(
             .get()
             .await()
 
-        val totalLossToRevert = lossDocs.documents.sumOf { it.getLong("amount") ?: 0L }
         val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
 
-        firestore.runTransaction { tx ->
-            val dealDoc = tx.get(dealRef)
-            if (dealDoc.exists()) {
+        for (doc in lossDocs.documents) {
+            val lossAmount = doc.getLong("amount") ?: 0L
+            firestore.runTransaction { tx ->
+                val dealDoc = tx.get(dealRef)
+                if (!dealDoc.exists()) return@runTransaction
                 val currentProfitLoss = dealDoc.getLong("netProfitLoss") ?: 0L
                 tx.update(
                     dealRef,
-                    "netProfitLoss", currentProfitLoss + totalLossToRevert,
+                    "netProfitLoss", currentProfitLoss + lossAmount,
                     "status", DealStatus.ACTIVE.name.lowercase(),
                     "endDate", null,
                     "updatedAt", Timestamp.now(),
+                    "lastTransactionId", doc.id,
                 )
-            }
-            for (doc in lossDocs.documents) {
                 tx.delete(doc.reference)
-            }
-        }.await()
+            }.await()
+        }
     }
 
     override suspend fun reopenDeal(dealId: String): AppResult<Unit> = firebaseResult("Không thể mở lại thương vụ") {
@@ -402,14 +363,6 @@ class FirebaseDealRepository(
             )
         ).await()
     }
-
-    /**
-     * Build ghi chú mặc định cho giao dịch Deal theo category và tên thương vụ.
-     * Định dạng: "[<Category>] <Hành động>: <Tên thương vụ>"
-     *
-     * @param isSplitPrincipal true khi PRINCIPAL_RECOVERY được tạo trong nhánh tách đôi
-     *   (tống hoà về > vốn còn lại) để phân biệt "Thu hồi vốn" vs "Thu hồi vốn gốc".
-     */
     private fun buildDefaultNote(
         deal: FinancialDeal,
         flowType: DealFlowType,

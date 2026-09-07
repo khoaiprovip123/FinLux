@@ -164,8 +164,8 @@ Test:
 - font scale 1.0 / 1.3 / 1.5.
 
 ## 13. Acceptance
-
-- Không content bị bottom bar/IME che.
-- Theme parity.
-- Không hard-coded presentation colors trái design system.
-- Core screens pass device/manual checklist.
+- [x] Không content bị bottom bar/IME che.
+- [x] Theme parity (Dark / Light / Prism / Classic / Modern).
+- [x] Không hard-coded presentation colors trái design system (đã refactor TransferMoneyScreen, WalletTransactionsBottomSheet, PrismTransactionsScreen).
+- [x] Core screens pass device/manual checklist & 100% Android Unit Tests PASS (34 tasks).
+- **Status PR-09**: `[DONE]` (2026-09-07)

@@ -6,51 +6,66 @@
 
 ## 2. Phase FB-1 — Firestore Rules
 
-- Bổ sung schema đầy đủ cho Budget period mới.
-- Bổ sung match/rules cho Deals.
-- Cho transaction fields cần thiết như `dealId/dealFlowType/correlationId` theo contract.
-- Server-owned fields không cho client sửa trực tiếp.
-- Wallet balance chỉ đổi cùng transaction hợp lệ.
+**Tiến độ một phần 2026-09-07:**
+- Budget period contract và aggregate ownership hoàn tất (PR-02).
+- Wallet balance ledger transition và atomic delta hoàn tất (PR-03).
+- Goal & Debt mutation invariant và rules validation hoàn tất (PR-04).
+- Deal rules & contract tiếp tục ở PR-05.
+
+- [x] Bổ sung schema đầy đủ cho Budget period mới + legacy transition (PR-02).
+- [x] Bổ sung match/rules cho Deals (PR-05).
+- [x] Cho transaction fields cần thiết như `dealId/dealFlowType/counterpartTransactionId` theo contract (PR-05).
+- [x] Budget server-owned fields không cho client sửa trực tiếp (PR-02).
+- [x] Wallet balance chỉ đổi cùng transaction hợp lệ (PR-03).
+- [x] Goal & Debt invariants: cấm xóa Goal khi còn số dư, khóa debt payment principal/interest, cascade delete debt payments (PR-04).
 - Immutable fields phải được khóa.
 - Validate enum casing thống nhất.
 - Deny unknown keys ở entity tài chính trọng yếu.
+
 
 ### Rules tests
 owner access, cross-user deny, valid create, invalid field deny, invalid wallet delta deny, valid atomic mutation pass, spoofed aggregate deny.
 
 ## 3. Phase FB-2 — Cloud Functions
 
-- Sửa salary config path/field.
-- Tách `financialPeriod.ts`.
+- [x] Sửa salary config path/field (PR-01, 2026-09-07).
+- [x] Tách `financialPeriod.ts` và khóa parity bằng fixture Android–Functions (PR-01, 2026-09-07).
+- [x] Thêm `budgetContract.ts`, `onBudgetWrite` và reconcile Budget theo exact period/document (PR-02, 2026-09-07).
 - Tách `transactionSemantics.ts`.
 - Scheduled/event functions idempotent.
-- Budget notification 80/100 không duplicate.
+- [x] Budget notification 80/100 dùng ID idempotent và cờ server-owned.
 - Retry-safe event processing.
 - Tránh scan toàn bộ users khi có thể query due entities.
 
 ## 4. Phase FB-3 — Storage Rules
 
+**Trạng thái: DONE local 2026-09-07 (PR-06).**
+
 ### Avatar
-- read: owner only;
-- create/update: owner + image + size limit;
-- delete: owner.
+- [x] read: owner only (`request.auth.uid == uid`);
+- [x] create/update: owner + image + size limit <= 5MB;
+- [x] delete: owner.
+- [x] hỗ trợ `.jpg`, `.png`, `.webp`.
 
 ### Receipt
-- read: owner;
-- create/update: owner + image MIME + size;
-- delete: owner.
+- [x] read: owner only;
+- [x] create/update: owner + image MIME + size limit <= 5MB;
+- [x] delete: owner.
 
-Không dùng `request.resource` cho read/delete condition.
+- [x] Không dùng `request.resource` cho read/delete condition (tách biệt read, delete khỏi create, update).
 
 ## 5. Phase FB-4 — Android Manifest hardening
 
+**Trạng thái: DONE local 2026-09-07 (PR-06).**
+
 ### SalaryCycleReceiver
-- `android:exported=false`.
-- force flag chỉ debug.
-- External intent không được kích hoạt money mutation.
+- [x] `android:exported=false`.
+- [x] force flag chỉ cho phép khi `BuildConfig.DEBUG == true`.
+- [x] External intent không thể kích hoạt receiver.
 
 ### Permissions
-Rà soát REQUEST_INSTALL_PACKAGES, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM, CAMERA, POST_NOTIFICATIONS; chỉ giữ quyền thực sự cần.
+- [x] Rà soát và loại bỏ `REQUEST_INSTALL_PACKAGES`.
+- [x] Chỉ giữ các quyền cần thiết: `INTERNET`, `POST_NOTIFICATIONS`, `CAMERA`, `RECEIVE_BOOT_COMPLETED`, `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `WAKE_LOCK`.
 
 ## 6. Phase FB-5 — Firebase App Check
 

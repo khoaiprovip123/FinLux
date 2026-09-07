@@ -328,6 +328,10 @@ LAYOUT:
 │   - Màu: xanh (<80%), vàng (80-100%), đỏ (>100%) │
 │ FAB "+" → đặt ngân sách cho danh mục chưa có │
 └─────────────────────────────────────┘
+
+DATA CONTRACT: nhãn kỳ và danh sách phải dùng cùng `FinancialPeriodResolver`; tiến độ lấy aggregate
+server-owned hoặc tổng giao dịch realtime trong đúng `[periodStart, periodEndExclusive)`. PR-02 không
+thay đổi bố cục/visual của màn hình.
 ```
 
 ## 10. SCREEN: Báo cáo (Reports)

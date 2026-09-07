@@ -1,19 +1,39 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /avatars/{uid}.jpg {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-        && request.auth.uid == uid
-        && request.resource.size < 5 * 1024 * 1024
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isValidImage() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
-    match /receipts/{uid}/{transactionId}.jpg {
-      allow read, write: if request.auth != null
-        && request.auth.uid == uid
-        && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+    function isOwnAvatar(fileName) {
+      return request.auth != null
+        && fileName in [
+          request.auth.uid + '.jpg',
+          request.auth.uid + '.png',
+          request.auth.uid + '.webp'
+        ];
+    }
+
+    // Avatar storage: owner only, size <= 5MB, image MIME type.
+    match /avatars/{fileName} {
+      allow read: if isOwnAvatar(fileName);
+      allow create, update: if isOwnAvatar(fileName) && isValidImage();
+      allow delete: if isOwnAvatar(fileName);
+    }
+
+    // Receipt storage: owner only, size <= 5MB, image MIME type.
+    // Separates read/delete (no request.resource) from create/update.
+    match /receipts/{uid}/{fileName} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && isValidImage();
+      allow delete: if isOwner(uid);
     }
   }
 }

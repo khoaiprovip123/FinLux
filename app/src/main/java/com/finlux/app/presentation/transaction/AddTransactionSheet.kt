@@ -307,7 +307,7 @@ fun AddTransactionSheet(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Lưu",
-                            tint = if (canSave) Color.White else (if (tokens.isDark) Color(0xFF64748B) else Color(0xFF94A3B8)),
+                            tint = if (canSave) tokens.onHero else tokens.onSurfaceVariant.copy(alpha = 0.4f),
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -493,7 +493,7 @@ fun AddTransactionSheet(
                     text = if (state.isSaving) "Đang lưu..." else if (state.editingTransaction != null) "Cập nhật giao dịch" else "Lưu giao dịch",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
             }
         }

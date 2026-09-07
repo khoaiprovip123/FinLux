@@ -213,7 +213,7 @@ fun PrismWalletsScreen(
                         shape = RoundedCornerShape(tokens.radius.input),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = tokens.primary,
-                            contentColor = Color.White,
+                            contentColor = tokens.onHero,
                         ),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -599,7 +599,7 @@ private fun PrismWalletEditor(
                             contentAlignment = Alignment.Center,
                         ) {
                             if (isSelected) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Check, contentDescription = null, tint = tokens.onHero, modifier = Modifier.size(20.dp))
                             }
                         }
                     }
@@ -668,7 +668,7 @@ private fun PrismWalletEditor(
                     text = if (busy) "Đang lưu…" else (if (!isEditing) "Tạo ví mới" else "Lưu thay đổi"),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
             }
 

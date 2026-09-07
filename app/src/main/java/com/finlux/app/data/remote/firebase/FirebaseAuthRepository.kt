@@ -118,20 +118,29 @@ class FirebaseAuthRepository(
     override suspend fun updateAvatar(jpegBytes: ByteArray): AppResult<UserProfile> = runCatching {
         val user = auth.currentUser ?: error("Chưa đăng nhập")
         val reference = storage.reference.child("avatars/${user.uid}.jpg")
-        reference.putBytes(jpegBytes).await()
+        val metadata = com.google.firebase.storage.StorageMetadata.Builder()
+            .setContentType("image/jpeg")
+            .build()
+        reference.putBytes(jpegBytes, metadata).await()
         val downloadUrl = reference.downloadUrl.await()
-        user.updateProfile(UserProfileChangeRequest.Builder().setPhotoUri(downloadUrl).build()).await()
+        val versionedUrl = downloadUrl.withCacheVersion()
+        user.updateProfile(UserProfileChangeRequest.Builder().setPhotoUri(versionedUrl).build()).await()
         try {
-            firestore.collection("users").document(user.uid).update("photoUrl", downloadUrl.toString()).await()
+            firestore.collection("users").document(user.uid)
+                .set(mapOf("photoUrl" to versionedUrl.toString()), com.google.firebase.firestore.SetOptions.merge())
+                .await()
         } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
             android.util.Log.w("Firestore", "Chưa cấp quyền Firestore Rules: ${e.message}", e)
         } catch (e: Exception) {
             android.util.Log.w("Firestore", "Không thể cập nhật ảnh trên Firestore: ${e.message}", e)
         }
-        user.toDomain().copy(photoUrl = downloadUrl.withCacheVersion().toString()).also { profileUpdates.tryEmit(it) }
+        user.toDomain().copy(photoUrl = versionedUrl.toString()).also { profileUpdates.tryEmit(it) }
     }.fold(
         onSuccess = { AppResult.Success(it) },
-        onFailure = { AppResult.Error(it.localizedMessage ?: "Không thể cập nhật ảnh đại diện", it) },
+        onFailure = {
+            android.util.Log.e("FirebaseAuthRepo", "Lỗi cập nhật ảnh đại diện: ${it.message}", it)
+            AppResult.Error(it.localizedMessage ?: "Không thể cập nhật ảnh đại diện", it)
+        },
     )
 
     override suspend fun signOut() = auth.signOut()

@@ -16,25 +16,31 @@ Tạo matrix cho Transaction, Wallet, Budget, Salary Cycle, Goal, Debt/Payment, 
 
 ## 3. Phase FI-1 — Budget contract P0
 
+**Trạng thái: DONE local 2026-09-07 (PR-02).**
+
 ### Hiện trạng cần sửa
 Repository dùng `periodKey/periodStart/periodEndExclusive/periodBasis`, trong khi Rules main chưa đồng bộ hoàn toàn.
 
 ### Tasks
-- Cập nhật Rules cho schema mới.
-- Migration compatibility cho legacy `month`.
-- Thống nhất timestamp representation.
-- Client không được tự thay `spentAmount` sau create.
-- Functions reconcile spentAmount.
-- Test salary-period budget create/update/delete.
+- [x] Cập nhật Rules cho schema mới và deny unknown keys.
+- [x] Migration compatibility cho legacy `month`/epoch-millis ở read path.
+- [x] Thống nhất ghi mới bằng Firestore Timestamp.
+- [x] Client không được tự thay `spentAmount/notified80/notified100`.
+- [x] Functions reconcile aggregate khi transaction hoặc Budget contract/hạn mức thay đổi.
+- [x] Test modern salary period, legacy calendar period, create/update/delete và spoof aggregate.
 
 ## 4. Phase FI-2 — Salary Period shared semantics
 
-- Sửa Functions đọc đúng path hiện hành.
-- Sửa field name theo Android contract.
-- Viết shared test vectors cho payday 1/5/25/31, February, leap year, LAST_DAY, FIRST_DAY, timezone.
-- Test Kotlin resolver và TypeScript resolver cùng expected output.
+**Trạng thái: DONE local 2026-09-07 (PR-01).**
+
+- [x] Sửa Functions đọc đúng path hiện hành.
+- [x] Sửa field name theo Android contract.
+- [x] Viết shared test vectors cho payday 1/5/25/31, February, leap year, LAST_DAY, FIRST_DAY, timezone.
+- [x] Test Kotlin resolver và TypeScript resolver cùng expected output.
 
 ## 5. Phase FI-3 — Wallet mutation invariant
+
+**Trạng thái: DONE local 2026-09-07 (PR-03).**
 
 Mọi mutation phải thỏa:
 ```
@@ -42,24 +48,32 @@ wallet.before.balance + ledgerDelta = wallet.after.balance
 ```
 
 ### Tasks
-- Chuẩn hóa helper cho wallet mutation.
-- Luôn set `lastTransactionId` khi balance đổi.
-- Không update balance thủ công ngoài AdjustBalance use case có ledger adjustment.
-- Add/Edit/Delete transaction cùng một invariant.
+- [x] Chuẩn hóa helper `walletLedgerUpdate(balance, transactionId)` cho wallet mutation.
+- [x] Luôn set `lastTransactionId` khi balance đổi và xác thực transactionId không rỗng.
+- [x] Firestore Rules `walletHasLedgerTransition` chỉ cho đổi balance khi transaction tương ứng tồn tại trong atomic batch.
+- [x] Sửa transfer delete trỏ đúng transaction leg (`_out` / `_in`) cho từng ví.
+- [x] Tích hợp helper cho Transaction, Goal, Debt và Deal đơn-ledger.
+- [x] Emulator + unit tests xác minh 100% invariant.
 
 ## 6. Phase FI-4 — Goal/Debt/Deal
 
+**Trạng thái: DONE local 2026-09-07 (Goal & Debt ở PR-04, Deal ở PR-05).**
+
 ### Goal
-wallet mutation + goal mutation + ledger trong một Firestore Transaction.
+- [x] wallet mutation + goal mutation + ledger trong một Firestore Transaction.
+- [x] Cấm xóa Goal khi còn số dư tích lũy (`savedAmount > 0`).
 
 ### Debt
-wallet + debt + payment + ledger atomically; validate principal/interest.
+- [x] wallet + debt + payment + ledger atomically; validate principal/interest.
+- [x] Chặn thanh toán nợ vượt dư nợ còn lại (`principalPaid <= currentDebtRemaining`).
+- [x] Cascade delete subcollection `payments` khi xóa Debt.
 
 ### Deal
-- Rules hỗ trợ `deals`.
-- Transaction schema hỗ trợ `dealId/dealFlowType`.
-- Không dùng `DEAL_SETTLEMENT`.
-- Delete/cascade có contract rõ.
+- [x] Rules hỗ trợ `deals` (`validDeal`).
+- [x] Transaction schema hỗ trợ `dealId/dealFlowType/counterpartTransactionId`.
+- [x] Loại bỏ triệt để fake wallet `DEAL_SETTLEMENT` (P0-E, `CAPITAL_LOSS` là non-cash accounting ledger).
+- [x] Hỗ trợ split deal inflow atomic với `counterpartTransactionId`.
+- [x] Delete/cascade có contract rõ ràng hoàn tác ledger ví.
 
 ## 7. Phase FI-5 — Transfer double-entry
 

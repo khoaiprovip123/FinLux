@@ -48,9 +48,33 @@ fun FinluxUserAvatar(
         value = photoUrl?.takeIf(String::isNotBlank)?.let { source ->
             withContext(Dispatchers.IO) {
                 runCatching {
-                    val stream = if (source.startsWith("http")) URL(source).openStream()
-                    else context.contentResolver.openInputStream(Uri.parse(source)) ?: error("Không đọc được ảnh")
+                    val stream = when {
+                        source.startsWith("http://") || source.startsWith("https://") -> {
+                            val conn = (URL(source).openConnection() as java.net.HttpURLConnection).apply {
+                                connectTimeout = 15_000
+                                readTimeout = 15_000
+                                instanceFollowRedirects = true
+                            }
+                            conn.inputStream
+                        }
+                        source.startsWith("file:") || source.startsWith("/") -> {
+                            val path = Uri.parse(source).path ?: source.removePrefix("file://")
+                            val file = java.io.File(path)
+                            if (file.exists()) {
+                                file.inputStream()
+                            } else {
+                                context.contentResolver.openInputStream(Uri.parse(source))
+                                    ?: error("Không tìm thấy file avatar: $source")
+                            }
+                        }
+                        else -> {
+                            context.contentResolver.openInputStream(Uri.parse(source))
+                                ?: error("Không thể mở nguồn ảnh avatar: $source")
+                        }
+                    }
                     stream.use { BitmapFactory.decodeStream(it)?.asImageBitmap() }
+                }.onFailure { err ->
+                    android.util.Log.e("FinluxUserAvatar", "Không thể tải avatar từ '$source': ${err.message}", err)
                 }.getOrNull()
             }
         }

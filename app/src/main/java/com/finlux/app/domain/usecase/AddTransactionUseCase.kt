@@ -102,13 +102,6 @@ class AddTransactionUseCase @Inject constructor(
                     )
                 )
 
-                budgetRepo.upsertBudget(
-                    budget.copy(
-                        spentAmount = Money(newSpent),
-                        notified80 = true,
-                        notified100 = true,
-                    )
-                )
             } else if (reached80 && !budget.notified80) {
                 val percent = (newSpent * 100) / limit
                 val title = "Sắp chạm hạn mức ngân sách"
@@ -137,12 +130,6 @@ class AddTransactionUseCase @Inject constructor(
                     )
                 )
 
-                budgetRepo.upsertBudget(
-                    budget.copy(
-                        spentAmount = Money(newSpent),
-                        notified80 = true,
-                    )
-                )
             }
         }
     }

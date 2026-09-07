@@ -142,7 +142,7 @@ class TransactionUseCasesTest {
     }
 
     @Test
-    fun `add expense triggers 80 percent budget warning notification`() = runTest {
+    fun `add expense triggers 80 percent warning without mutating server owned flags`() = runTest {
         val fakeBudgetRepo = FakeBudgetRepository(
             mutableListOf(
                 com.finlux.app.domain.model.Budget(
@@ -170,12 +170,12 @@ class TransactionUseCasesTest {
         assertEquals(AppResult.Success("generated-id"), result)
         assertEquals(1, fakeNotiRepo.savedNotifications.size)
         assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
-        assertEquals(true, fakeBudgetRepo.budgets.first().notified80)
+        assertEquals(false, fakeBudgetRepo.budgets.first().notified80)
         assertEquals(false, fakeBudgetRepo.budgets.first().notified100)
     }
 
     @Test
-    fun `add expense triggers 100 percent budget exceeded notification`() = runTest {
+    fun `add expense triggers 100 percent warning without mutating server owned flags`() = runTest {
         val fakeBudgetRepo = FakeBudgetRepository(
             mutableListOf(
                 com.finlux.app.domain.model.Budget(
@@ -203,11 +203,11 @@ class TransactionUseCasesTest {
         assertEquals(AppResult.Success("generated-id"), result)
         assertEquals(1, fakeNotiRepo.savedNotifications.size)
         assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
-        assertEquals(true, fakeBudgetRepo.budgets.first().notified100)
+        assertEquals(false, fakeBudgetRepo.budgets.first().notified100)
     }
 
     @Test
-    fun `edit expense triggers budget alert when amount increased across 80 percent threshold`() = runTest {
+    fun `edit expense triggers alert without mutating server owned flags`() = runTest {
         val fakeBudgetRepo = FakeBudgetRepository(
             mutableListOf(
                 com.finlux.app.domain.model.Budget(
@@ -237,11 +237,11 @@ class TransactionUseCasesTest {
         assertEquals(AppResult.Success(Unit), result)
         assertEquals(1, fakeNotiRepo.savedNotifications.size)
         assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
-        assertEquals(true, fakeBudgetRepo.budgets.first().notified80)
+        assertEquals(false, fakeBudgetRepo.budgets.first().notified80)
     }
 
     @Test
-    fun `save budget automatically triggers alert if spent exceeds threshold of new limit`() = runTest {
+    fun `save budget triggers alert without mutating server owned flags`() = runTest {
         val fakeBudgetRepo = FakeBudgetRepository()
         val fakeNotiRepo = FakeNotificationRepository()
         val saveBudgetUseCase = SaveBudgetUseCase(
@@ -264,7 +264,7 @@ class TransactionUseCasesTest {
         assertEquals(AppResult.Success("food_month:2026-08"), result)
         assertEquals(1, fakeNotiRepo.savedNotifications.size)
         assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, fakeNotiRepo.savedNotifications.first().type)
-        assertEquals(true, fakeBudgetRepo.budgets.first().notified100)
+        assertEquals(false, fakeBudgetRepo.budgets.first().notified100)
     }
 
     private fun validTransaction(id: String = "") = FinanceTransaction(

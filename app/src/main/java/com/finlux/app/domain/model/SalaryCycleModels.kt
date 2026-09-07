@@ -22,7 +22,7 @@ enum class BudgetPeriodBasis {
 data class SalaryCycleConfig(
     val enabled: Boolean = false,
     val paydayRuleType: PaydayRuleType = PaydayRuleType.DAY_OF_MONTH,
-    val paydayDay: Int = 1,
+    val paydayDay: Int = 25,
     val salaryWalletId: String? = null,
     val savingsWalletId: String? = null,
     val expectedSalary: Money? = null,

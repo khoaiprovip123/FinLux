@@ -3,6 +3,7 @@ package com.finlux.app.data.di
 import com.finlux.app.BuildConfig
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
@@ -23,6 +24,11 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseFirestore(): FirebaseFirestore? =
         if (BuildConfig.FIREBASE_CONFIGURED) runCatching { FirebaseFirestore.getInstance() }.getOrNull() else null
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFunctions(): FirebaseFunctions? =
+        if (BuildConfig.FIREBASE_CONFIGURED) runCatching { FirebaseFunctions.getInstance("asia-southeast1") }.getOrNull() else null
 
     @Provides
     @Singleton

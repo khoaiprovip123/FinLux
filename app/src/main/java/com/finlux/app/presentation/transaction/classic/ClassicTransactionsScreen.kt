@@ -67,6 +67,7 @@ import com.finlux.app.core.navigation.Route
 
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.FormatListBulleted
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.presentation.transaction.TransactionViewMode
 import com.finlux.app.presentation.transaction.prism.PrismSpendingCalendarView
 
@@ -78,6 +79,7 @@ fun ClassicTransactionsScreen(
     onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: TransactionsViewModel = hiltViewModel(),
 ) {
+    val tokens = LocalFinluxTokens.current
     val transactions = viewModel.transactions.collectAsStateWithLifecycle().value
     val categories = viewModel.categories.collectAsStateWithLifecycle().value
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
@@ -168,7 +170,7 @@ fun ClassicTransactionsScreen(
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color.White,
+                                                color = MaterialTheme.colorScheme.onPrimary,
                                             ),
                                         )
                                     }
@@ -248,12 +250,12 @@ fun ClassicTransactionsScreen(
                     }
                     GradientHeroCard(Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(heading, color = Color.White.copy(alpha = .8f))
-                            Text(displayAmount, color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                            Text(heading, color = tokens.onHeroMuted)
+                            Text(displayAmount, color = tokens.onHero, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                             if (filter == TransactionFilter.ALL) {
-                                Text("Thu: +${totalIncome.toVnd()}  •  Chi: -${totalExpense.toVnd()}", color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodySmall)
+                                Text("Thu: +${totalIncome.toVnd()}  •  Chi: -${totalExpense.toVnd()}", color = tokens.onHeroMuted, style = MaterialTheme.typography.bodySmall)
                             } else {
-                                Text("${transactions.size} giao dịch", color = Color.White.copy(alpha = .78f))
+                                Text("${transactions.size} giao dịch", color = tokens.onHeroMuted)
                             }
                         }
                     }
@@ -285,12 +287,12 @@ fun ClassicTransactionsScreen(
                                     text = headerTitle,
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = tokens.onSurface,
                                 )
                                 Text(
                                     text = "(${txList.size})",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.7f),
+                                    color = tokens.onSurfaceVariant,
                                 )
                             }
 

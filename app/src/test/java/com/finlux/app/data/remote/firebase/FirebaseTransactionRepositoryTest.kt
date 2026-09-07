@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.time.ZoneId
 import java.util.Date
 
 class FirebaseTransactionRepositoryTest {
@@ -291,6 +290,7 @@ class FirebaseTransactionRepositoryTest {
         every { userDocRef.collection("wallets") } returns walletsColl
         every { userDocRef.collection("budgets") } returns budgetsColl
         every { transactionsColl.document("tx_123") } returns transactionDocRef
+        every { transactionDocRef.id } returns "tx_123"
         every { walletsColl.document("wallet_old") } returns oldWalletDocRef
         every { walletsColl.document("wallet_new") } returns newWalletDocRef
         every { budgetsColl.document(any()) } returns oldBudgetDocRef
@@ -337,11 +337,15 @@ class FirebaseTransactionRepositoryTest {
         assertInstanceOf(AppResult.Success::class.java, result)
 
         // Verify old wallet reversed with stored amount 1_000_000 -> 2_000_000 + 1_000_000 = 3_000_000
-        verify { atomicTx.update(oldWalletDocRef, match<Map<String, Any>> { it["balance"] == 3_000_000L }) }
+        verify { atomicTx.update(oldWalletDocRef, match<Map<String, Any>> {
+            it["balance"] == 3_000_000L && it["lastTransactionId"] == "tx_123"
+        }) }
         // Verify new wallet deducted 300_000 -> 500_000 - 300_000 = 200_000
-        verify { atomicTx.update(newWalletDocRef, match<Map<String, Any>> { it["balance"] == 200_000L }) }
-        // Verify budget updated with net delta
-        verify { atomicTx.update(oldBudgetDocRef, "spentAmount", any<FieldValue>()) }
+        verify { atomicTx.update(newWalletDocRef, match<Map<String, Any>> {
+            it["balance"] == 200_000L && it["lastTransactionId"] == "tx_123"
+        }) }
+        // Budget aggregates are reconciled by Cloud Functions, never by the client transaction.
+        verify(exactly = 0) { atomicTx.update(oldBudgetDocRef, "spentAmount", any<FieldValue>()) }
     }
 
     @Test
@@ -403,6 +407,7 @@ class FirebaseTransactionRepositoryTest {
         every { userDocRef.collection("wallets") } returns walletsColl
         every { userDocRef.collection("budgets") } returns budgetsColl
         every { transactionsColl.document("tx_del") } returns transactionDocRef
+        every { transactionDocRef.id } returns "tx_del"
         every { walletsColl.document("wallet_del") } returns walletDocRef
         every { budgetsColl.document(any()) } returns budgetDocRef
 
@@ -442,9 +447,11 @@ class FirebaseTransactionRepositoryTest {
         assertInstanceOf(AppResult.Success::class.java, result)
 
         // Verify balance refunded with stored amount: 1_000_000 + 500_000 = 1_500_000
-        verify { atomicTx.update(walletDocRef, match<Map<String, Any>> { it["balance"] == 1_500_000L }) }
-        // Verify budget reversed with stored amount: -500_000
-        verify { atomicTx.update(budgetDocRef, "spentAmount", any<FieldValue>()) }
+        verify { atomicTx.update(walletDocRef, match<Map<String, Any>> {
+            it["balance"] == 1_500_000L && it["lastTransactionId"] == "tx_del"
+        }) }
+        // Budget aggregates are reconciled by Cloud Functions from the remaining ledger.
+        verify(exactly = 0) { atomicTx.update(budgetDocRef, "spentAmount", any<FieldValue>()) }
         // Verify document deleted
         verify { atomicTx.delete(transactionDocRef) }
     }
@@ -521,9 +528,13 @@ class FirebaseTransactionRepositoryTest {
         assertInstanceOf(AppResult.Success::class.java, result)
 
         // Verify source wallet balance refunded: 1_000_000 + 300_000 = 1_300_000
-        verify { atomicTx.update(srcWalletRef, match<Map<String, Any>> { it["balance"] == 1_300_000L }) }
+        verify { atomicTx.update(srcWalletRef, match<Map<String, Any>> {
+            it["balance"] == 1_300_000L && it["lastTransactionId"] == "tx123_out"
+        }) }
         // Verify destination wallet balance revoked: 500_000 - 300_000 = 200_000
-        verify { atomicTx.update(dstWalletRef, match<Map<String, Any>> { it["balance"] == 200_000L }) }
+        verify { atomicTx.update(dstWalletRef, match<Map<String, Any>> {
+            it["balance"] == 200_000L && it["lastTransactionId"] == "tx123_in"
+        }) }
         // Verify BOTH documents are deleted
         verify { atomicTx.delete(outTxDocRef) }
         verify { atomicTx.delete(inTxDocRef) }
@@ -650,22 +661,6 @@ class FirebaseTransactionRepositoryTest {
         val result = repository.transferBetweenWallets("wallet_src", "wallet_dst", 200_000L, "", fixedInstant)
         assertInstanceOf(AppResult.Error::class.java, result)
         assertTrue((result as AppResult.Error).message.contains("Số dư ví nguồn không đủ"))
-    }
-
-    @Test
-    fun `budgetRef generates standard period format matching cloud functions`() {
-        val uid = "test_uid"
-        val sampleTx = sampleTransaction(categoryId = "cat_food")
-        val userDocRef: DocumentReference = mockk()
-        val budgetsColl: CollectionReference = mockk()
-        val budgetDocRef: DocumentReference = mockk()
-
-        every { firestore.collection("users").document(uid) } returns userDocRef
-        every { userDocRef.collection("budgets") } returns budgetsColl
-        every { budgetsColl.document("cat_food_month:2026-08") } returns budgetDocRef
-
-        val ref = sampleTx.budgetRef(firestore, uid, ZoneId.of("Asia/Ho_Chi_Minh"))
-        assertEquals(budgetDocRef, ref)
     }
 
     private fun sampleTransaction(

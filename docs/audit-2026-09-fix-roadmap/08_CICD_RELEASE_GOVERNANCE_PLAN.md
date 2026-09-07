@@ -28,6 +28,8 @@ Nếu GitHub App không có quyền quản trị branch protection thì cấu h�
 
 ## 4. Phase CI-3 — Release fail-closed
 
+**Trạng thái: DONE local 2026-09-07 (PR-07).**
+
 Loại bỏ hoàn toàn:
 ```
 missing production key → debug key fallback
@@ -35,11 +37,11 @@ missing release APK → debug APK fallback
 ```
 
 Thay bằng:
-```
-missing any release secret → FAIL
-release artifact missing → FAIL
-signature verification fail → FAIL
-```
+- [x] Cấm triệt để debug keystore (`gradle/debug.keystore`, `androiddebugkey`) trong release build type và `verifyReleaseSigning`.
+- [x] Gỡ bỏ fallback sang `signingConfigs.getByName("debug")` trong `buildTypes.release` (chuyển sang `null` unsigned nếu thiếu key dev local).
+- [x] missing any release secret trên CI → FAIL ngay lập tức (`exit 1` trong GitHub Actions).
+- [x] release artifact missing → FAIL ngay lập tức, không fallback sang debug APK.
+- [x] Kiểm thử 3 kịch bản: local dev warning unsigned, CI missing secret fail-closed, debug keystore injection rejected.
 
 ## 5. Phase CI-4 — Artifact verification
 

@@ -85,8 +85,10 @@ Theo dõi:
 - report query volume.
 
 ## 10. Acceptance
-
-- Crash dashboard có version/build.
-- Critical flow error có trace.
-- Không full-scan scheduler lớn.
-- Query/index documented.
+- [x] Crash dashboard có version/build.
+- [x] Critical flow error có trace.
+- [x] Không full-scan scheduler lớn.
+- [x] Query/index documented.
+- [x] Compose jank & recomposition tối ưu, clean warnings.
+- [x] APK package buildability: `gradlew assembleDebug` 100% SUCCESS.
+- **Status PR-10**: `[DONE]` (2026-09-07)

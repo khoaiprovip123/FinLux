@@ -570,4 +570,52 @@ class ReportsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `reports state correctly computes daily statements and balance invariants`() = runTest(testDispatcher) {
+        val now = Instant.now()
+        val wallet = Wallet(
+            id = "w1",
+            name = "Ví chính",
+            type = WalletType.BANK,
+            balance = Money(10_000_000L),
+            colorHex = "#2196F3",
+            isDefault = true,
+            createdAt = now,
+        )
+        val txIncome = FinanceTransaction(
+            id = "tx1",
+            type = TransactionType.INCOME,
+            amount = Money(2_000_000L),
+            categoryId = "salary",
+            walletId = "w1",
+            date = now,
+        )
+        val txExpense = FinanceTransaction(
+            id = "tx2",
+            type = TransactionType.EXPENSE,
+            amount = Money(500_000L),
+            categoryId = "food",
+            walletId = "w1",
+            date = now,
+        )
+
+        every { walletRepository.observeWallets() } returns flowOf(listOf(wallet))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns flowOf(listOf(txIncome, txExpense))
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem() // initial
+            advanceUntilIdle()
+            val state = awaitItem()
+
+            assertTrue(state.dailyStatements.isNotEmpty())
+            assertTrue(state.todayStatement != null)
+            assertEquals(state.dailyStatements.first().openingBalance, state.openingBalance)
+            assertEquals(state.dailyStatements.last().closingBalance, state.closingBalance)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

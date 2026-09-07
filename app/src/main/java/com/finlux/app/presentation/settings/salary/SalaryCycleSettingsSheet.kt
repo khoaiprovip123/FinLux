@@ -206,8 +206,8 @@ fun SalaryCycleSettingsSheet(
                         checked = state.config.enabled,
                         onCheckedChange = { viewModel.setEnabled(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFF10B981),
+                            checkedThumbColor = tokens.onHero,
+                            checkedTrackColor = tokens.primary,
                         ),
                     )
                 }
@@ -540,17 +540,17 @@ fun SalaryCycleSettingsSheet(
                     modifier = Modifier.weight(1.5f).height(50.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF10B981),
+                        containerColor = tokens.primary,
                     ),
                 ) {
                     if (state.isSaving) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            color = Color.White,
+                            color = tokens.onHero,
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Text("Lưu cấu hình", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Lưu cấu hình", fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                 }
             }

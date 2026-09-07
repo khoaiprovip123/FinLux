@@ -129,10 +129,14 @@ class DemoFinluxRepository @Inject constructor(
         val current = userState.value ?: error("Chưa đăng nhập")
         val avatar = context.filesDir.resolve("finlux-avatar-${current.uid}.jpg")
         avatar.writeBytes(jpegBytes)
-        current.copy(photoUrl = avatar.toUri().toString()).also { userState.value = it }
+        val versionedUri = avatar.toUri().buildUpon().appendQueryParameter("v", System.currentTimeMillis().toString()).build()
+        current.copy(photoUrl = versionedUri.toString()).also { userState.value = it }
     }.fold(
         onSuccess = { AppResult.Success(it) },
-        onFailure = { AppResult.Error(it.localizedMessage ?: "Không thể lưu ảnh đại diện", it) },
+        onFailure = {
+            android.util.Log.e("DemoFinluxRepo", "Lỗi cập nhật ảnh đại diện: ${it.message}", it)
+            AppResult.Error(it.localizedMessage ?: "Không thể lưu ảnh đại diện", it)
+        },
     )
 
     override suspend fun signOut() {
@@ -251,6 +255,10 @@ class DemoFinluxRepository @Inject constructor(
     }
 
     override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = mutationMutex.withLock {
+        val currentGoal = goalState.value.find { it.id == goal.id }
+        if (currentGoal != null && currentGoal.savedAmount.value > 0L) {
+            return@withLock AppResult.Error("Không thể xóa mục tiêu khi vẫn còn số dư tích lũy (${currentGoal.savedAmount.value} ₫). Vui lòng rút hết tiền về ví trước khi xóa.")
+        }
         goalState.value = goalState.value.filterNot { it.id == goal.id }
         AppResult.Success(Unit)
     }
@@ -637,7 +645,7 @@ class DemoFinluxRepository @Inject constructor(
                     it.id == current.id || (counterpartId != null && it.id == counterpartId)
                 }
             } else {
-                val isSettlement = current.walletId == "DEAL_SETTLEMENT" || current.dealFlowType == DealFlowType.CAPITAL_LOSS
+                val isSettlement = current.dealFlowType == DealFlowType.CAPITAL_LOSS || current.walletId == "DEAL_SETTLEMENT" || current.walletId.isBlank()
                 if (!isSettlement) {
                     if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
                         return@withLock AppResult.Error("Không tìm thấy ví")
@@ -945,7 +953,7 @@ class DemoFinluxRepository @Inject constructor(
                 type = TransactionType.EXPENSE,
                 amount = Money(lossAmount),
                 categoryId = null,
-                walletId = "DEAL_SETTLEMENT",
+                walletId = "",
                 dealId = deal.id,
                 dealFlowType = DealFlowType.CAPITAL_LOSS,
                 note = note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_LOSS) },

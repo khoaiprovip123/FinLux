@@ -28,7 +28,7 @@ internal object SalaryCycleFirestoreMapper {
                 raw = data["paydayRuleType"] as? String,
                 fallback = PaydayRuleType.DAY_OF_MONTH,
             ),
-            paydayDay = (data["paydayDay"] as? Number)?.toInt() ?: 1,
+            paydayDay = (data["paydayDay"] as? Number)?.toInt() ?: 25,
             salaryWalletId = data["salaryWalletId"] as? String,
             savingsWalletId = data["savingsWalletId"] as? String,
             expectedSalary = (data["expectedSalary"] as? Number)?.toLong()?.let(::Money),

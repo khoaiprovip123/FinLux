@@ -56,6 +56,8 @@ Chuẩn hóa toàn bộ nghiệp vụ FinLux thành business contract rõ ràng 
 
 ## 5. Phase BR-2 — Salary Cycle
 
+**Tiến độ 2026-09-07:** contract model/path, resolver timezone và test vector parity Android–Functions đã hoàn tất trong PR-01. Rollover/state mutation tiếp tục được kiểm chứng ở các batch financial invariant liên quan.
+
 ### Tasks
 - Một model duy nhất cho `enabled/paydayRuleType/paydayDay/budgetPeriodBasis/financeTimeZone/rolloverRule/salaryWalletId/savingsWalletId`.
 - Xử lý FIRST_DAY_OF_MONTH, LAST_DAY_OF_MONTH, DAY_OF_MONTH, tháng thiếu ngày 29/30/31, leap year, timezone.
@@ -68,12 +70,14 @@ Android và Functions resolve cùng `periodKey/start/endExclusive` cho cùng inp
 
 ## 6. Phase BR-3 — Budget
 
-- Budget identity = category + financial period.
-- `spentAmount` server-owned derived aggregate.
-- Không hard-code month nếu basis = SALARY_CYCLE.
-- Copy budget reset spent + threshold flags.
-- Threshold 80/100 idempotent.
-- Expense edit/delete phải reconcile lại budget.
+**Tiến độ 2026-09-07: DONE local (PR-02).**
+
+- [x] Budget identity = category + financial period.
+- [x] `spentAmount/notified80/notified100` là server-owned derived aggregate.
+- [x] Không hard-code month nếu basis = SALARY_CYCLE; biên kỳ mới ghi bằng Timestamp.
+- [x] Copy budget tạo contract kỳ mới; Functions reset/reconcile aggregate.
+- [x] Threshold 80/100 dùng notification ID idempotent.
+- [x] Expense create/edit/delete và Budget create/đổi hạn mức đều reconcile lại budget.
 
 ## 7. Phase BR-4 — Goals
 

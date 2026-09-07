@@ -3,68 +3,271 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
     function isOwner(uid) {
-      return request.auth != null && request.auth.uid == uid;
+      return isAuthenticated() && request.auth.uid == uid;
     }
 
-    function isPositiveMoney(value) {
-      return value is int && value > 0;
+    function isPositiveMoney(val) {
+      return val is int && val > 0 && val <= 999999999999999;
     }
 
-    function isNonNegativeMoney(value) {
-      return value is int && value >= 0;
-    }
-
-    function walletPath(uid, walletId) {
-      return /databases/$(database)/documents/users/$(uid)/wallets/$(walletId);
-    }
-
-    function transactionDelta(data) {
-      return data.type in ['income', 'transfer_in', 'INCOME', 'TRANSFER_IN']
-        ? data.amount
-        : 0 - data.amount;
-    }
-
-    function walletMovesBy(uid, walletId, delta) {
-      return exists(walletPath(uid, walletId))
-        && getAfter(walletPath(uid, walletId)).data.balance
-          == get(walletPath(uid, walletId)).data.balance + delta;
+    function isNonNegativeMoney(val) {
+      return val is int && val >= 0 && val <= 999999999999999;
     }
 
     function validTransaction(data) {
-      return data.keys().hasOnly([
-          'type', 'amount', 'categoryId', 'walletId', 'relatedWalletId',
-          'note', 'receiptImageUrl', 'date', 'createdAt', 'updatedAt'
-        ])
-        && data.type in [
-          'income', 'expense', 'transfer_out', 'transfer_in',
-          'INCOME', 'EXPENSE', 'TRANSFER_OUT', 'TRANSFER_IN'
-        ]
+      return (data.type in ['EXPENSE', 'INCOME', 'TRANSFER_OUT', 'TRANSFER_IN', 'ADJUSTMENT', 'DEAL_OUTLAY', 'DEAL_INFLOW']
+        || data.type in ['expense', 'income', 'transfer_out', 'transfer_in', 'adjustment'])
         && isPositiveMoney(data.amount)
-        && data.walletId is string
-        && data.walletId.size() > 0
+        && (
+          ('dealFlowType' in data && data.dealFlowType in ['CAPITAL_LOSS', 'capital_loss'])
+          || (data.walletId is string && data.walletId.size() > 0)
+        )
+        && (
+          data.type in ['TRANSFER_OUT', 'TRANSFER_IN', 'transfer_out', 'transfer_in']
+          || ('dealId' in data && data.dealId != null && data.dealId != '')
+          || ('dealFlowType' in data && data.dealFlowType != null)
+          || (data.categoryId is string && data.categoryId.size() > 0)
+        )
+        && (!('relatedWalletId' in data) || data.relatedWalletId == null || (data.relatedWalletId is string && data.relatedWalletId != data.walletId))
+        && (!('counterpartTransactionId' in data) || data.counterpartTransactionId == null || data.counterpartTransactionId is string)
+        && (!('dealId' in data) || data.dealId == null || data.dealId is string)
+        && (!('dealFlowType' in data) || data.dealFlowType == null || data.dealFlowType in [
+          'OUTLAY_CAPITAL', 'PRINCIPAL_RECOVERY', 'CAPITAL_GAIN', 'CAPITAL_LOSS',
+          'outlay_capital', 'principal_recovery', 'capital_gain', 'capital_loss',
+          'OUTLAY', 'INFLOW'
+        ])
         && data.date is timestamp;
     }
 
-    function validSalaryCyclePreference(data) {
-      return data.keys().hasOnly([
-          'enabled', 'paydayRuleType', 'paydayDay', 'salaryWalletId',
-          'savingsWalletId', 'expectedSalary', 'rolloverRule',
-          'budgetPeriodBasis', 'financeTimeZone', 'updatedAt'
+    function transactionDelta(data) {
+      return ('dealFlowType' in data && data.dealFlowType in ['CAPITAL_LOSS', 'capital_loss']) ? 0
+        : (data.type in ['INCOME', 'TRANSFER_IN', 'DEAL_INFLOW', 'income', 'transfer_in']) ? data.amount
+        : (data.type in ['EXPENSE', 'TRANSFER_OUT', 'DEAL_OUTLAY', 'expense', 'transfer_out']) ? 0 - data.amount
+        : 0;
+    }
+
+    function dealSplitMovesWallet(uid, data) {
+      let otherDoc = getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(data.counterpartTransactionId));
+      let combinedDelta = transactionDelta(data) + transactionDelta(otherDoc.data);
+      return otherDoc.data.walletId == data.walletId
+        && walletMovesBy(uid, data.walletId, combinedDelta);
+    }
+
+    function transactionWalletMovesOnCreate(uid, data) {
+      return ('dealFlowType' in data && data.dealFlowType in ['CAPITAL_LOSS', 'capital_loss'])
+        || (
+          'counterpartTransactionId' in data && data.counterpartTransactionId != null
+          && 'dealId' in data && data.dealId != null
+          && existsAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(data.counterpartTransactionId))
+          && dealSplitMovesWallet(uid, data)
+        )
+        || (
+          'walletId' in data && data.walletId is string && data.walletId.size() > 0
+          && walletMovesBy(uid, data.walletId, transactionDelta(data))
+        );
+    }
+
+    function walletMovesBy(uid, walletId, delta) {
+      return delta == 0
+        || (
+          getAfter(/databases/$(database)/documents/users/$(uid)/wallets/$(walletId)).data.balance
+          == get(/databases/$(database)/documents/users/$(uid)/wallets/$(walletId)).data.balance + delta
+        );
+    }
+
+    function walletBalanceDelta(uid, walletId) {
+      return getAfter(/databases/$(database)/documents/users/$(uid)/wallets/$(walletId)).data.balance
+        - get(/databases/$(database)/documents/users/$(uid)/wallets/$(walletId)).data.balance;
+    }
+
+    function createdLedgerDelta(uid, data) {
+      return ('counterpartTransactionId' in data && data.counterpartTransactionId != null
+          && 'dealId' in data && data.dealId != null
+          && ledgerCreated(uid, data.counterpartTransactionId))
+        ? transactionDelta(data)
+          + transactionDelta(getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(data.counterpartTransactionId)).data)
+        : transactionDelta(data);
+    }
+
+    function walletHasLedgerTransition(uid, walletId, transactionId) {
+      let beforeExists = exists(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId));
+      let afterExists = existsAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId));
+      let before = beforeExists
+        ? get(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId)).data
+        : null;
+      let after = afterExists
+        ? getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId)).data
+        : null;
+      let balanceDelta = walletBalanceDelta(uid, walletId);
+      return (!beforeExists && afterExists
+          && after.walletId == walletId
+          && balanceDelta == createdLedgerDelta(uid, after))
+        || (beforeExists && afterExists && before != after
+          && (
+            (before.walletId == walletId && after.walletId == walletId
+              && balanceDelta == transactionDelta(after) - transactionDelta(before))
+            || (before.walletId == walletId && after.walletId != walletId
+              && balanceDelta == 0 - transactionDelta(before))
+            || (before.walletId != walletId && after.walletId == walletId
+              && balanceDelta == transactionDelta(after))
+          ))
+        || (beforeExists && !afterExists
+          && before.walletId == walletId
+          && balanceDelta == 0 - transactionDelta(before));
+    }
+
+    function ledgerCreated(uid, transactionId) {
+      return !exists(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId))
+        && existsAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId));
+    }
+
+    function ledgerDeleted(uid, transactionId) {
+      return exists(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId))
+        && !existsAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId));
+    }
+
+    function goalLedgerTransitionIsValid(uid, goalId, before, after) {
+      let transactionId = after.lastTransactionId;
+      let ledger = getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId)).data;
+      return ledgerCreated(uid, transactionId)
+        && ledger.goalId == goalId
+        && ledger.categoryId == 'savings'
+        && after.savedAmount - before.savedAmount == 0 - transactionDelta(ledger);
+    }
+
+    function debtPaymentTransitionIsValid(uid, debtId, before, after) {
+      let paymentId = after.lastPaymentId;
+      let payment = getAfter(/databases/$(database)/documents/users/$(uid)/debts/$(debtId)/payments/$(paymentId)).data;
+      let ledger = getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(payment.transactionId)).data;
+      let beforePaymentCount = 'paymentCount' in before ? before.paymentCount : 0;
+      return !exists(/databases/$(database)/documents/users/$(uid)/debts/$(debtId)/payments/$(paymentId))
+        && existsAfter(/databases/$(database)/documents/users/$(uid)/debts/$(debtId)/payments/$(paymentId))
+        && ledgerCreated(uid, payment.transactionId)
+        && payment.debtId == debtId
+        && payment.amount == payment.principalPaid + payment.interestPaid
+        && payment.principalPaid <= before.remainingBalance
+        && ledger.debtId == debtId
+        && ledger.debtPaymentId == paymentId
+        && ledger.walletId == payment.walletId
+        && ledger.amount == payment.amount
+        && after.remainingBalance == before.remainingBalance - payment.principalPaid
+        && after.isSettled == (after.remainingBalance == 0)
+        && after.paymentCount == beforePaymentCount + 1;
+    }
+
+    function dealGainAggregateIsValid(uid, dealId, before, after, ledger, direction) {
+      return after.netProfitLoss == before.netProfitLoss + direction * ledger.amount
+        && (
+          (!('counterpartTransactionId' in ledger) || ledger.counterpartTransactionId == null)
+            && after.totalRecovered == before.totalRecovered
+          || (
+            direction == 1
+            && ledgerCreated(uid, ledger.counterpartTransactionId)
+            && getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(ledger.counterpartTransactionId)).data.dealId == dealId
+            && getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(ledger.counterpartTransactionId)).data.walletId == ledger.walletId
+            && getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(ledger.counterpartTransactionId)).data.dealFlowType in ['PRINCIPAL_RECOVERY', 'principal_recovery']
+            && after.totalRecovered == before.totalRecovered
+              + getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(ledger.counterpartTransactionId)).data.amount
+          )
+        );
+    }
+
+    function dealLedgerTransitionIsValid(uid, dealId, before, after) {
+      let transactionId = after.lastTransactionId;
+      let created = ledgerCreated(uid, transactionId);
+      let deleted = ledgerDeleted(uid, transactionId);
+      let ledger = created
+        ? getAfter(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId)).data
+        : get(/databases/$(database)/documents/users/$(uid)/transactions/$(transactionId)).data;
+      let direction = created ? 1 : -1;
+      return (created || deleted)
+        && ledger.dealId == dealId
+        && (
+          (ledger.dealFlowType in ['OUTLAY_CAPITAL', 'outlay_capital']
+            && after.totalCapitalOutlay == before.totalCapitalOutlay + direction * ledger.amount
+            && after.totalRecovered == before.totalRecovered
+            && after.netProfitLoss == before.netProfitLoss)
+          || (ledger.dealFlowType in ['PRINCIPAL_RECOVERY', 'principal_recovery']
+            && after.totalRecovered == before.totalRecovered + direction * ledger.amount
+            && after.totalCapitalOutlay == before.totalCapitalOutlay
+            && after.netProfitLoss == before.netProfitLoss)
+          || (ledger.dealFlowType in ['CAPITAL_GAIN', 'capital_gain']
+            && after.totalCapitalOutlay == before.totalCapitalOutlay
+            && dealGainAggregateIsValid(uid, dealId, before, after, ledger, direction))
+          || (ledger.dealFlowType in ['CAPITAL_LOSS', 'capital_loss']
+            && after.totalCapitalOutlay == before.totalCapitalOutlay
+            && after.totalRecovered == before.totalRecovered
+            && after.netProfitLoss == before.netProfitLoss - direction * ledger.amount)
+        );
+    }
+
+    function validDeal(data) {
+      return data.title is string && data.title.size() > 0
+        && (!('description' in data) || data.description is string)
+        && data.category in ['INVESTMENT', 'LENDING', 'investment', 'lending']
+        && isNonNegativeMoney(data.targetAmount)
+        && isNonNegativeMoney(data.totalCapitalOutlay)
+        && isNonNegativeMoney(data.totalRecovered)
+        && data.netProfitLoss is int
+        && data.status in ['ACTIVE', 'COMPLETED', 'CANCELLED', 'active', 'completed', 'cancelled']
+        && data.startDate is timestamp
+        && (!('endDate' in data) || data.endDate == null || data.endDate is timestamp)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validBudget(data) {
+      return (
+        data.keys().hasOnly([
+          'categoryId', 'periodKey', 'periodStart', 'periodEndExclusive', 'periodBasis',
+          'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
         ])
-        && data.enabled is bool
-        && data.paydayRuleType in ['DAY_OF_MONTH', 'FIRST_DAY_OF_MONTH', 'LAST_DAY_OF_MONTH']
-        && data.paydayDay is int
-        && data.paydayDay >= 1
-        && data.paydayDay <= 31
-        && data.rolloverRule in ['KEEP_IN_WALLET', 'MOVE_TO_SAVINGS', 'ASK_EACH_CYCLE']
-        && data.budgetPeriodBasis in ['CALENDAR_MONTH', 'SALARY_CYCLE']
-        && data.financeTimeZone is string
-        && data.financeTimeZone.size() > 0
-        && data.financeTimeZone.size() <= 64
+        && data.categoryId is string && data.categoryId.size() > 0
+        && isNonNegativeMoney(data.limitAmount)
+        && (!('spentAmount' in data) || isNonNegativeMoney(data.spentAmount))
+        && (!('notified80' in data) || data.notified80 is bool)
+        && (!('notified100' in data) || data.notified100 is bool)
+        && (
+          (
+            data.periodBasis == 'SALARY_CYCLE'
+            && data.periodKey.matches('^salary:[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+            && data.periodStart is timestamp
+            && data.periodEndExclusive is timestamp
+            && data.periodEndExclusive > data.periodStart
+            && (!('month' in data) || data.month == null)
+          )
+          || (
+            data.periodBasis == 'CALENDAR_MONTH'
+            && data.periodKey.matches('^month:[0-9]{4}-[0-9]{2}$')
+            && data.periodStart is timestamp
+            && data.periodEndExclusive is timestamp
+            && data.periodEndExclusive > data.periodStart
+            && (!('month' in data) || data.month == null || data.month is string)
+          )
+          || (
+            (!('periodKey' in data) || data.periodKey == null)
+            && (!('periodBasis' in data) || data.periodBasis == null)
+            && 'month' in data && data.month is string && data.month.matches('^[0-9]{4}-[0-9]{2}$')
+          )
+        )
+      );
+    }
+
+    function validSalaryCyclePreference(data) {
+      return data.enabled is bool
+        && data.paydayRuleType in ['DAY_OF_MONTH', 'LAST_DAY_OF_MONTH', 'FIRST_DAY_OF_MONTH']
+        && data.paydayDay is int && data.paydayDay >= 1 && data.paydayDay <= 31
+        && data.budgetPeriodBasis in ['SALARY_CYCLE', 'CALENDAR_MONTH']
+        && data.financeTimeZone is string && data.financeTimeZone.size() > 0
+        && data.rolloverRule in ['ASK_EACH_CYCLE', 'MOVE_TO_SAVINGS', 'KEEP_IN_WALLET']
         && (!('salaryWalletId' in data) || data.salaryWalletId == null || data.salaryWalletId is string)
         && (!('savingsWalletId' in data) || data.savingsWalletId == null || data.savingsWalletId is string)
-        && (!('expectedSalary' in data) || data.expectedSalary == null || isPositiveMoney(data.expectedSalary))
+        && (!('createdAt' in data) || data.createdAt is timestamp)
         && (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
@@ -151,31 +354,38 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid)
           && validTransaction(request.resource.data)
-          && walletMovesBy(
-            uid,
-            request.resource.data.walletId,
-            transactionDelta(request.resource.data)
-          );
+          && transactionWalletMovesOnCreate(uid, request.resource.data);
         allow update: if isOwner(uid)
           && validTransaction(request.resource.data)
           && (
-            (resource.data.walletId == request.resource.data.walletId
+            (
+              'dealFlowType' in resource.data && resource.data.dealFlowType in ['CAPITAL_LOSS', 'capital_loss']
+              && 'dealFlowType' in request.resource.data && request.resource.data.dealFlowType in ['CAPITAL_LOSS', 'capital_loss']
+            )
+            || (
+              resource.data.walletId == request.resource.data.walletId
               && walletMovesBy(
                 uid,
                 request.resource.data.walletId,
                 transactionDelta(request.resource.data) - transactionDelta(resource.data)
-              ))
-            ||
-            (resource.data.walletId != request.resource.data.walletId
+              )
+            )
+            || (
+              resource.data.walletId != request.resource.data.walletId
               && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
               && walletMovesBy(
                 uid,
                 request.resource.data.walletId,
                 transactionDelta(request.resource.data)
-              ))
+              )
+            )
           );
         allow delete: if isOwner(uid)
-          && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data));
+          && (
+            ('dealFlowType' in resource.data && resource.data.dealFlowType in ['CAPITAL_LOSS', 'capital_loss'])
+            || (!('walletId' in resource.data) || resource.data.walletId == null || resource.data.walletId == '' || resource.data.walletId == 'DEAL_SETTLEMENT')
+            || walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data))
+          );
       }
 
       // Subcollection: Wallets
@@ -203,11 +413,25 @@ service cloud.firestore {
           && (!('status' in request.resource.data) || request.resource.data.status in ['active', 'archived'])
           && (!('archivedAt' in request.resource.data) || request.resource.data.archivedAt is timestamp)
           && (
-            request.resource.data.balance == resource.data.balance
+            (
+              request.resource.data.balance == resource.data.balance
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'name', 'type', 'color', 'isDefault', 'status', 'archivedAt'
+              ])
+            )
             || (
-              'lastTransactionId' in request.resource.data
+              request.resource.data.balance != resource.data.balance
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'balance', 'lastTransactionId'
+              ])
+              && 'lastTransactionId' in request.resource.data
               && request.resource.data.lastTransactionId is string
               && request.resource.data.lastTransactionId.size() > 0
+              && walletHasLedgerTransition(
+                uid,
+                docId,
+                request.resource.data.lastTransactionId
+              )
             )
           );
       }
@@ -217,26 +441,13 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow delete: if isOwner(uid);
         allow create: if isOwner(uid)
-          && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
-          ])
-          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount is int)
-          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
-          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
-          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
-
+          && validBudget(request.resource.data)
+          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == 0)
+          && (!('notified80' in request.resource.data) || request.resource.data.notified80 == false)
+          && (!('notified100' in request.resource.data) || request.resource.data.notified100 == false);
         allow update: if isOwner(uid)
-          && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
-          ])
-          && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount)
-          && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
-          && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
-          && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
+          && validBudget(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['limitAmount']);
       }
 
       // Subcollection: Categories
@@ -251,10 +462,30 @@ service cloud.firestore {
       // Subcollection: Financial Goals
       match /goals/{docId} {
         allow read: if isOwner(uid);
-        allow delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
+        allow delete: if isOwner(uid)
+          && (!('savedAmount' in resource.data) || resource.data.savedAmount == 0);
+        allow create: if isOwner(uid)
           && request.resource.data.name is string
-          && request.resource.data.name.size() > 0;
+          && request.resource.data.name.size() > 0
+          && (!('savedAmount' in request.resource.data) || request.resource.data.savedAmount == 0)
+          && (!('targetAmount' in request.resource.data) || (request.resource.data.targetAmount is int && request.resource.data.targetAmount >= 0));
+        allow update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.savedAmount is int
+          && request.resource.data.savedAmount >= 0
+          && request.resource.data.targetAmount is int
+          && request.resource.data.targetAmount >= 0
+          && (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'name', 'targetAmount', 'deadline', 'category', 'monthlyContribution', 'imageUri', 'createdAt'
+            ])
+            || (
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['savedAmount', 'lastTransactionId'])
+              && request.resource.data.lastTransactionId is string
+              && goalLedgerTransitionIsValid(uid, docId, resource.data, request.resource.data)
+            )
+          );
       }
 
       // Subcollection: Reminders
@@ -332,15 +563,71 @@ service cloud.firestore {
 
       // Subcollection: Debts & Debt Payments
       match /debts/{docId} {
-        allow read, delete: if isOwner(uid);
-        allow create, update: if isOwner(uid)
+        allow read: if isOwner(uid);
+        allow delete: if false;
+        allow create: if isOwner(uid)
           && request.resource.data.name is string
-          && request.resource.data.name.size() > 0;
+          && request.resource.data.name.size() > 0
+          && (!('totalAmount' in request.resource.data) || (request.resource.data.totalAmount is int && request.resource.data.totalAmount >= 0))
+          && (!('remainingBalance' in request.resource.data) || (request.resource.data.remainingBalance is int && request.resource.data.remainingBalance >= 0))
+          && request.resource.data.paymentCount == 0;
+        allow update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.totalAmount is int && request.resource.data.totalAmount >= 0
+          && request.resource.data.remainingBalance is int && request.resource.data.remainingBalance >= 0
+          && (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'name', 'type', 'totalAmount', 'interestRateApr', 'minimumPayment', 'dueDate',
+              'statementDate', 'colorHex', 'isReminderEnabled', 'reminderDaysBefore', 'updatedAt'
+            ])
+            || (
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'remainingBalance', 'isSettled', 'updatedAt', 'lastPaymentId', 'paymentCount'
+              ])
+              && request.resource.data.lastPaymentId is string
+              && debtPaymentTransitionIsValid(uid, docId, resource.data, request.resource.data)
+            )
+          );
 
         match /payments/{paymentId} {
-          allow read, delete: if isOwner(uid);
-          allow create, update: if isOwner(uid);
+          allow read: if isOwner(uid);
+          allow update, delete: if false;
+          allow create: if isOwner(uid)
+            && request.resource.data.amount is int && request.resource.data.amount > 0
+            && request.resource.data.principalPaid is int && request.resource.data.principalPaid >= 0
+            && request.resource.data.interestPaid is int && request.resource.data.interestPaid >= 0
+            && request.resource.data.amount == request.resource.data.principalPaid + request.resource.data.interestPaid
+            && request.resource.data.transactionId is string
+            && getAfter(/databases/$(database)/documents/users/$(uid)/debts/$(docId)).data.lastPaymentId == paymentId;
         }
+      }
+
+      // Subcollection: Deals
+      match /deals/{docId} {
+        allow read: if isOwner(uid);
+        allow delete: if false;
+        allow create: if isOwner(uid)
+          && validDeal(request.resource.data)
+          && request.resource.data.totalCapitalOutlay == 0
+          && request.resource.data.totalRecovered == 0
+          && request.resource.data.netProfitLoss == 0
+          && request.resource.data.status in ['ACTIVE', 'active'];
+        allow update: if isOwner(uid)
+          && validDeal(request.resource.data)
+          && (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'title', 'description', 'category', 'targetAmount', 'startDate', 'status', 'endDate', 'updatedAt'
+            ])
+            || (
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'totalCapitalOutlay', 'totalRecovered', 'netProfitLoss', 'status', 'endDate',
+                'updatedAt', 'lastTransactionId'
+              ])
+              && request.resource.data.lastTransactionId is string
+              && dealLedgerTransitionIsValid(uid, docId, resource.data, request.resource.data)
+            )
+          );
       }
     }
   }

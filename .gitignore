@@ -29,3 +29,7 @@ graphify-out/20*/
 
 # Local JDK
 jdk/
+
+# Firebase debug logs
+firestore-debug.log
+firebase-debug.log

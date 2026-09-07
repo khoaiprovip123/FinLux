@@ -30,19 +30,15 @@ class SaveBudgetUseCase @Inject constructor(
         val reached100 = spent >= limit
         val reached80 = spent >= (limit * 80L) / 100L
 
-        val normalizedBudget = budget.copy(
-            notified80 = reached80,
-            notified100 = reached100,
-        )
-
         // Trigger immediate notification if newly saved budget limit causes threshold to be reached immediately
         if (reached100 && !budget.notified100) {
-            triggerAlert(normalizedBudget, isExceeded = true)
+            triggerAlert(budget, isExceeded = true)
         } else if (reached80 && !budget.notified80 && !reached100) {
-            triggerAlert(normalizedBudget, isExceeded = false)
+            triggerAlert(budget, isExceeded = false)
         }
 
-        return repository.upsertBudget(normalizedBudget)
+        // spentAmount and threshold flags are server-owned aggregates reconciled by Cloud Functions.
+        return repository.upsertBudget(budget)
     }
 
     private suspend fun triggerAlert(budget: Budget, isExceeded: Boolean) {

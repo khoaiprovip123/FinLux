@@ -101,6 +101,7 @@ import com.finlux.app.presentation.home.toVnd
 import com.finlux.app.presentation.wallet.WalletsViewModel
 import com.finlux.app.presentation.wallet.WalletTransactionsBottomSheet
 import com.finlux.app.core.navigation.Route
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.FinanceTransaction
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,6 +115,7 @@ fun ClassicWalletsScreen(
     transferRequestKey: Int = 0,
     viewModel: WalletsViewModel = hiltViewModel(),
 ) {
+    val tokens = LocalFinluxTokens.current
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
     val categories = viewModel.categories.collectAsStateWithLifecycle().value
     val recentTransactions = viewModel.recentTransactions.collectAsStateWithLifecycle().value
@@ -190,9 +192,9 @@ fun ClassicWalletsScreen(
                     Box(Modifier.padding(horizontal = 16.dp)) {
                         GradientHeroCard(Modifier.fillMaxWidth()) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Tổng số dư", color = Color.White.copy(alpha = .85f), style = MaterialTheme.typography.bodySmall)
-                                Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                                Text("${wallets.size} ví · quản lý tập trung và an toàn", color = Color.White.copy(alpha = .78f), style = MaterialTheme.typography.labelSmall)
+                                Text("Tổng số dư", color = tokens.onHeroMuted, style = MaterialTheme.typography.bodySmall)
+                                Text(total.toVnd(), color = tokens.onHero, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                Text("${wallets.size} ví · quản lý tập trung và an toàn", color = tokens.onHeroMuted, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -540,14 +542,14 @@ private fun WalletEditor(
                                 .background(colorFromHex(hex))
                                 .border(
                                     width = if (isSelected) 3.dp else 1.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.White.copy(alpha = 0.4f),
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else tokens.border.copy(alpha = 0.4f),
                                     shape = CircleShape,
                                 )
                                 .clickable { color = hex },
                             contentAlignment = Alignment.Center,
                         ) {
                             if (isSelected) {
-                                Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Check, null, tint = tokens.onHero, modifier = Modifier.size(20.dp))
                             }
                         }
                     }

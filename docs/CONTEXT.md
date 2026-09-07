@@ -62,6 +62,18 @@ functions/                    -- Cloud Functions (TypeScript), xem DATA_SPEC.md 
   blur/Liquid Glass/glow. Số tiền dùng baseline cố định và co cỡ chữ theo độ dài để không tràn.
 - Kỳ tài chính dùng `FinancialPeriodResolver` ở Home/History/Income/Expense/Reports; feature không tự
   suy diễn mốc tháng khi Salary Cycle đang bật.
+- Cloud Functions dùng `functions/src/financialPeriod.ts` với cùng contract
+  `enabled/paydayRuleType/paydayDay/budgetPeriodBasis/financeTimeZone` và cùng biên
+  `[start, endExclusive)` như Android. Hai resolver được khóa bằng fixture chung
+  `contracts/financial-period-vectors.tsv`.
+- Budget ghi mới dùng `periodKey/periodStart/periodEndExclusive/periodBasis`; biên kỳ là Firestore
+  Timestamp. Android chỉ sở hữu contract kỳ và `limitAmount`; `spentAmount/notified80/notified100`
+  do `onTransactionWrite`/`onBudgetWrite` đối soát từ ledger, tránh hai nguồn cùng mutation aggregate.
+- Mapper Budget vẫn đọc epoch-millis và document `month` cũ trong giai đoạn chuyển tiếp; không tự động
+  rewrite dữ liệu production khi chưa có backup/dry-run migration.
+- Firestore Rules bind `wallet.balance`, Goal, Debt và Deal aggregate với ledger/payment transition thật
+  bằng correlation ID và delta chính xác; stale/no-op ledger bị từ chối. Debt/Deal delete đi qua callable
+  server-authoritative ở `asia-southeast1`, không cho client xóa parent trực tiếp.
 - Các phép diễn giải dùng chung (`collapseInternalTransferPairs`, `assetWallets`,
   `netGoalContribution`) nằm trong domain model để Home, History và Reports không lệch công thức.
 - Home/Lịch sử Prism dùng `core/designsystem/component/FinluxTransactionGroup` cho danh sách kiểu

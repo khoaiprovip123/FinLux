@@ -3,12 +3,103 @@ import {FieldValue, Timestamp, getFirestore} from "firebase-admin/firestore";
 import {getMessaging} from "firebase-admin/messaging";
 import {logger} from "firebase-functions";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
+import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {
+  BudgetDocument,
+  budgetClientContractSignature,
+  resolveBudgetContract,
+} from "./budgetContract.js";
+import {
+  DEFAULT_FINANCE_TIME_ZONE,
+  FinancialPeriod,
+  SalaryCycleConfig,
+  normalizeSalaryCycleConfig,
+  resolveFinancialPeriod,
+  sameLocalDate,
+} from "./financialPeriod.js";
 
 initializeApp();
 
 const db = getFirestore();
-const FINANCE_TIME_ZONE = "Asia/Ho_Chi_Minh";
+const FINANCE_TIME_ZONE = DEFAULT_FINANCE_TIME_ZONE;
+
+function requireDocumentId(value: unknown, field: string): string {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(value)) {
+    throw new HttpsError("invalid-argument", `${field} không hợp lệ`);
+  }
+  return value;
+}
+
+export const deleteDebtCascade = onCall(
+  {region: "asia-southeast1"},
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Phiên đăng nhập không hợp lệ");
+    const debtId = requireDocumentId(request.data?.debtId, "debtId");
+    const debtRef = db.doc(`users/${uid}/debts/${debtId}`);
+    const deleted = await db.runTransaction(async (atomic) => {
+      const debt = await atomic.get(debtRef);
+      if (!debt.exists) return false;
+      const payments = await atomic.get(debtRef.collection("payments"));
+      if (payments.size > 450) {
+        throw new HttpsError("resource-exhausted", "Khoản nợ có quá nhiều lịch sử thanh toán để xóa an toàn trong một lần");
+      }
+      payments.docs.forEach((payment) => atomic.delete(payment.ref));
+      atomic.delete(debtRef);
+      return true;
+    });
+    return {deleted};
+  },
+);
+
+export const deleteDealCascade = onCall(
+  {region: "asia-southeast1", timeoutSeconds: 120},
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Phiên đăng nhập không hợp lệ");
+    const dealId = requireDocumentId(request.data?.dealId, "dealId");
+    const userRef = db.doc(`users/${uid}`);
+    const dealRef = userRef.collection("deals").doc(dealId);
+    const ledgerQuery = userRef.collection("transactions").where("dealId", "==", dealId);
+
+    await db.runTransaction(async (atomic) => {
+      const deal = await atomic.get(dealRef);
+      if (!deal.exists) return;
+      const ledger = await atomic.get(ledgerQuery);
+      if (ledger.size > 400) {
+        throw new HttpsError("resource-exhausted", "Deal có quá nhiều bút toán để xóa an toàn trong một lần");
+      }
+
+      const deltas = new Map<string, number>();
+      for (const entry of ledger.docs) {
+        const walletId = entry.get("walletId");
+        const amount = Number(entry.get("amount") ?? 0);
+        const flowType = String(entry.get("dealFlowType") ?? "").toUpperCase();
+        if (typeof walletId !== "string" || walletId.length === 0 || !Number.isSafeInteger(amount) || amount <= 0) continue;
+        const reverseDelta = flowType === "OUTLAY_CAPITAL" ? amount :
+          flowType === "PRINCIPAL_RECOVERY" || flowType === "CAPITAL_GAIN" ? -amount : 0;
+        deltas.set(walletId, (deltas.get(walletId) ?? 0) + reverseDelta);
+      }
+
+      const walletRefs = [...deltas.keys()].map((walletId) => userRef.collection("wallets").doc(walletId));
+      if (ledger.size + walletRefs.length + 1 > 500) {
+        throw new HttpsError("resource-exhausted", "Deal vượt giới hạn ghi nguyên tử; cần quy trình migration có kiểm soát");
+      }
+      const wallets = await Promise.all(walletRefs.map((walletRef) => atomic.get(walletRef)));
+      wallets.forEach((wallet, index) => {
+        if (!wallet.exists) throw new HttpsError("failed-precondition", "Ví liên kết với Deal không còn tồn tại");
+        const balance = Number(wallet.get("balance") ?? 0);
+        const next = balance + (deltas.get(wallet.id) ?? 0);
+        if (!Number.isSafeInteger(next)) throw new HttpsError("failed-precondition", "Số dư ví sau hoàn tác không hợp lệ");
+        atomic.update(wallet.ref, {balance: next, lastTransactionId: FieldValue.delete()});
+      });
+      ledger.docs.forEach((entry) => atomic.delete(entry.ref));
+      atomic.delete(dealRef);
+    });
+    return {deleted: true};
+  },
+);
 
 type TransactionDocument = {
   type?: string;
@@ -32,62 +123,28 @@ type ReminderDocument = {
   walletId?: string;
 };
 
-type SalaryCycleConfig = {
-  enabled?: boolean;
-  baseDay?: number;
-  budgetPeriodBasis?: "CALENDAR_MONTH" | "SALARY_CYCLE";
-  financeTimeZone?: string;
-};
-
 async function getSalaryConfig(uid: string): Promise<SalaryCycleConfig> {
-  const snapshot = await db.doc(`users/${uid}/preferences/salaryCycle`).get();
-  return snapshot.exists ? (snapshot.data() as SalaryCycleConfig) : {};
+  const current = await db.doc(`users/${uid}/financialPreferences/salaryCycle`).get();
+  if (current.exists) return normalizeSalaryCycleConfig(current.data());
+
+  // Transitional read-only fallback. New writes remain on financialPreferences/salaryCycle.
+  const legacy = await db.doc(`users/${uid}/preferences/salaryCycle`).get();
+  return normalizeSalaryCycleConfig(legacy.exists ? legacy.data() : undefined);
 }
 
-function resolvePeriod(date: Date, config: SalaryCycleConfig): { key: string; start: Timestamp; end: Timestamp; basis: string } {
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
-  
-  if (!config.enabled || config.budgetPeriodBasis === "CALENDAR_MONTH" || config.budgetPeriodBasis === undefined) {
-    const start = new Date(Date.UTC(year, month, 1));
-    const end = new Date(Date.UTC(year, month + 1, 1));
-    const mStr = String(month + 1).padStart(2, "0");
-    return {
-      key: `month:${year}-${mStr}`,
-      start: Timestamp.fromDate(start),
-      end: Timestamp.fromDate(end),
-      basis: "CALENDAR_MONTH"
-    };
-  } else {
-    const baseDay = config.baseDay || 5;
-    
-    // Helper to get safe day (handles 31st etc)
-    const getSafeDay = (y: number, m: number, d: number) => {
-      const maxDays = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-      return Math.min(d, maxDays);
-    };
-
-    let start = new Date(Date.UTC(year, month, getSafeDay(year, month, baseDay)));
-    if (date < start) {
-      start = new Date(Date.UTC(year, month - 1, getSafeDay(year, month - 1, baseDay)));
-    }
-    const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, getSafeDay(start.getUTCFullYear(), start.getUTCMonth() + 1, baseDay)));
-    
-    const yStr = start.getUTCFullYear();
-    const mStr = String(start.getUTCMonth() + 1).padStart(2, "0");
-    const dStr = String(start.getUTCDate()).padStart(2, "0");
-    return {
-      key: `salary:${yStr}-${mStr}-${dStr}`,
-      start: Timestamp.fromDate(start),
-      end: Timestamp.fromDate(end),
-      basis: "SALARY_CYCLE"
-    };
-  }
-}
-
-function resolveNextPeriod(date: Date, config: SalaryCycleConfig): { key: string; start: Timestamp; end: Timestamp; basis: string } {
-    const current = resolvePeriod(date, config);
-    return resolvePeriod(current.end.toDate(), config);
+function resolvePeriod(date: Date, config: SalaryCycleConfig): {
+  key: string;
+  start: Timestamp;
+  end: Timestamp;
+  basis: FinancialPeriod["basis"];
+} {
+  const period = resolveFinancialPeriod(date, config);
+  return {
+    key: period.key,
+    start: Timestamp.fromDate(period.start),
+    end: Timestamp.fromDate(period.endExclusive),
+    basis: period.basis,
+  };
 }
 
 function isExpense(data: TransactionDocument | undefined): data is ExpenseTransactionDocument {
@@ -120,8 +177,15 @@ async function sendUserPush(
   }
 }
 
-async function reconcileBudget(uid: string, categoryId: string, periodKey: string, start: Timestamp, end: Timestamp): Promise<void> {
-  const budgetRef = db.doc(`users/${uid}/budgets/${categoryId}_${periodKey}`);
+async function reconcileBudget(
+  uid: string,
+  categoryId: string,
+  periodKey: string,
+  start: Timestamp,
+  end: Timestamp,
+  budgetId = `${categoryId}_${periodKey}`,
+): Promise<void> {
+  const budgetRef = db.doc(`users/${uid}/budgets/${budgetId}`);
   const budgetSnapshot = await budgetRef.get();
   if (!budgetSnapshot.exists) return;
 
@@ -192,6 +256,36 @@ async function reconcileBudget(uid: string, categoryId: string, periodKey: strin
   }
 }
 
+async function reconcileBudgetsForPeriod(
+  uid: string,
+  categoryId: string,
+  periodKey: string,
+  start: Timestamp,
+  end: Timestamp,
+): Promise<void> {
+  const budgets = db.collection(`users/${uid}/budgets`);
+  const budgetIds = new Set<string>();
+  const deterministicId = `${categoryId}_${periodKey}`;
+  const deterministic = await budgets.doc(deterministicId).get();
+  if (deterministic.exists) budgetIds.add(deterministicId);
+
+  const modern = await budgets.where("periodKey", "==", periodKey).get();
+  for (const document of modern.docs) {
+    if (document.get("categoryId") === categoryId) budgetIds.add(document.id);
+  }
+
+  if (periodKey.startsWith("month:")) {
+    const legacy = await budgets.where("month", "==", periodKey.slice("month:".length)).get();
+    for (const document of legacy.docs) {
+      if (document.get("categoryId") === categoryId) budgetIds.add(document.id);
+    }
+  }
+
+  await Promise.all([...budgetIds].map((budgetId) =>
+    reconcileBudget(uid, categoryId, periodKey, start, end, budgetId),
+  ));
+}
+
 export const onTransactionWrite = onDocumentWritten(
   {document: "users/{uid}/transactions/{transactionId}", region: "asia-southeast1"},
   async (event) => {
@@ -215,8 +309,36 @@ export const onTransactionWrite = onDocumentWritten(
     }
 
     await Promise.all([...affected.values()].map(({categoryId, periodKey, start, end}) =>
-      reconcileBudget(uid, categoryId, periodKey, start, end),
+      reconcileBudgetsForPeriod(uid, categoryId, periodKey, start, end),
     ));
+  },
+);
+
+export const onBudgetWrite = onDocumentWritten(
+  {document: "users/{uid}/budgets/{budgetId}", region: "asia-southeast1"},
+  async (event) => {
+    const before = event.data?.before.data() as BudgetDocument | undefined;
+    const after = event.data?.after.data() as BudgetDocument | undefined;
+    if (!after || budgetClientContractSignature(before) === budgetClientContractSignature(after)) return;
+
+    const config = await getSalaryConfig(event.params.uid);
+    const budget = resolveBudgetContract(after, config);
+    if (!budget) {
+      logger.warn("Skipping budget reconciliation because the period contract is invalid", {
+        uid: event.params.uid,
+        budgetId: event.params.budgetId,
+      });
+      return;
+    }
+
+    await reconcileBudget(
+      event.params.uid,
+      budget.categoryId,
+      budget.periodKey,
+      Timestamp.fromDate(budget.start),
+      Timestamp.fromDate(budget.endExclusive),
+      event.params.budgetId,
+    );
   },
 );
 
@@ -240,11 +362,8 @@ export const monthlyBudgetReset = onSchedule(
       const previousPeriod = resolvePeriod(previousDate, config);
       
       // We only want to duplicate budgets if today is EXACTLY the start of the current period.
-      // E.g. if today is baseDay (or 1st), then we roll over.
-      const todayString = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
-      const startString = `${currentPeriod.start.toDate().getUTCFullYear()}-${currentPeriod.start.toDate().getUTCMonth()}-${currentPeriod.start.toDate().getUTCDate()}`;
-      
-      if (todayString !== startString) {
+      // For example, a fixed payday or the first/last-day rule starts a new period today.
+      if (!sameLocalDate(now, currentPeriod.start.toDate(), config.financeTimeZone)) {
           continue; // Not the boundary day for this user
       }
 
@@ -266,10 +385,12 @@ export const monthlyBudgetReset = onSchedule(
         batch.set(user.ref.collection("budgets").doc(`${categoryId}_${currentPeriod.key}`), {
           categoryId,
           periodKey: currentPeriod.key,
-          periodStart: currentPeriod.start.toMillis(),
-          periodEndExclusive: currentPeriod.end.toMillis(),
+          periodStart: currentPeriod.start,
+          periodEndExclusive: currentPeriod.end,
           periodBasis: currentPeriod.basis,
-          month: currentPeriod.key.replace("month:", ""), // Keep for backward compatibility
+          month: currentPeriod.basis === "CALENDAR_MONTH"
+            ? currentPeriod.key.replace("month:", "")
+            : null,
           limitAmount: Number(previous.get("limitAmount") ?? 0),
           spentAmount: 0,
           notified80: false,

@@ -88,6 +88,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -174,10 +175,10 @@ fun SettingsScreen(
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let(viewModel::updateAvatar)
+        uri?.let { viewModel.updateAvatar(it) }
     }
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
-        if (saved) pendingCameraUri?.let(viewModel::updateAvatar)
+        if (saved) pendingCameraUri?.let { viewModel.updateAvatar(it) }
     }
     fun openCamera() {
         createCameraUri(context).also {
@@ -644,23 +645,16 @@ private fun ProfileHero(
     onAvatar: () -> Unit,
     onEditName: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
         color = Color.Transparent,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
+        border = BorderStroke(1.dp, tokens.border.copy(alpha = 0.25f)),
     ) {
         Column(
             modifier = Modifier
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            Color(0xFF2563EB),
-                            Color(0xFF4F46E5),
-                            Color(0xFF06B6D4),
-                        ),
-                    ),
-                )
+                .background(tokens.heroBrush)
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -681,7 +675,7 @@ private fun ProfileHero(
                     ) {
                         Text(
                             text = name.ifBlank { "Người dùng" },
-                            color = Color.White,
+                            color = tokens.onHero,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
@@ -701,7 +695,7 @@ private fun ProfileHero(
                     if (email.isNotBlank()) {
                         Text(
                             text = email,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = tokens.onHeroMuted,
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -710,13 +704,13 @@ private fun ProfileHero(
                     }
                     Text(
                         text = "Chạm để chỉnh sửa thông tin",
-                        color = Color.White.copy(alpha = 0.72f),
+                        color = tokens.onHeroMuted.copy(alpha = 0.72f),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
                 IconButton(onClick = onEditName) {
-                    Icon(Icons.Default.Edit, "Đổi tên người dùng", tint = Color.White)
+                    Icon(Icons.Default.Edit, "Đổi tên người dùng", tint = tokens.onHero)
                 }
             }
 
@@ -724,8 +718,8 @@ private fun ProfileHero(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White.copy(alpha = 0.16f))
-                    .border(1.dp, Color.White.copy(alpha = 0.24f), RoundedCornerShape(18.dp))
+                    .background(tokens.heroGlassSurface)
+                    .border(1.dp, tokens.border.copy(alpha = 0.24f), RoundedCornerShape(18.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Row(
@@ -734,21 +728,21 @@ private fun ProfileHero(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Tổng tài sản", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall)
-                        Text(totalAssets.toVnd(), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text("Quản lý tập trung và an toàn", color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelSmall)
+                        Text("Tổng tài sản", color = tokens.onHeroMuted, style = MaterialTheme.typography.bodySmall)
+                        Text(totalAssets.toVnd(), color = tokens.onHero, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("Quản lý tập trung và an toàn", color = tokens.onHeroMuted.copy(alpha = 0.75f), style = MaterialTheme.typography.labelSmall)
                     }
                     Box(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.20f)),
+                            .background(tokens.heroGlassSurface),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             Icons.Default.AccountBalanceWallet,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = tokens.onHero,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -919,6 +913,7 @@ private fun VisualStylePreview(option: VisualStyle, selected: Boolean, onClick: 
         VisualStyle.GLASSMORPHISM -> listOf(Color(0xFF264990), Color(0xFF7457CE), Color(0xFF54B5E8))
         VisualStyle.DYNAMIC_GRADIENT -> listOf(Color(0xFF8B28F7), Color(0xFF4E56FF), Color(0xFF14D1D0))
     }
+    val tokens = LocalFinluxTokens.current
     Surface(
         modifier = Modifier.width(150.dp).height(116.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
@@ -929,12 +924,12 @@ private fun VisualStylePreview(option: VisualStyle, selected: Boolean, onClick: 
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     repeat(3) { index ->
-                        Box(Modifier.weight(1f).height(if (index == 0) 31.dp else 23.dp).background(Color.White.copy(alpha = if (option == VisualStyle.MODERN_DARK) .08f else .20f), RoundedCornerShape(7.dp)))
+                        Box(Modifier.weight(1f).height(if (index == 0) 31.dp else 23.dp).background(tokens.onHero.copy(alpha = if (option == VisualStyle.MODERN_DARK) .08f else .20f), RoundedCornerShape(7.dp)))
                     }
                 }
                 Column {
-                    Text(option.label, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
-                    Text(option.description, color = Color.White.copy(alpha = .78f), style = MaterialTheme.typography.labelSmall)
+                    Text(option.label, color = tokens.onHero, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                    Text(option.description, color = tokens.onHeroMuted, style = MaterialTheme.typography.labelSmall)
                 }
             }
             if (selected) {
@@ -942,13 +937,13 @@ private fun VisualStylePreview(option: VisualStyle, selected: Boolean, onClick: 
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .size(20.dp)
-                        .background(Color.White, CircleShape),
+                        .background(tokens.onHero, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Đang chọn",
-                        tint = Color(0xFF3478F6),
+                        tint = tokens.primary,
                         modifier = Modifier.size(14.dp),
                     )
                 }
@@ -1041,7 +1036,7 @@ private fun UiStyleCard(
                                 text = badge,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
+                                color = LocalFinluxTokens.current.onHero,
                                 maxLines = 1,
                                 softWrap = false,
                             )
@@ -1053,7 +1048,7 @@ private fun UiStyleCard(
                     selected = isSelected,
                     onClick = onClick,
                     colors = RadioButtonDefaults.colors(
-                        selectedColor = Color(0xFF3478F6),
+                        selectedColor = MaterialTheme.colorScheme.primary,
                         unselectedColor = MaterialTheme.colorScheme.outlineVariant,
                     ),
                 )

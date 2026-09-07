@@ -17,11 +17,14 @@ val releaseKeystorePath = System.getenv("FINLUX_KEYSTORE_PATH")
 val releaseKeystorePassword = System.getenv("FINLUX_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("FINLUX_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("FINLUX_KEY_PASSWORD")
+val isDebugKeystore = releaseKeystorePath?.contains("debug.keystore", ignoreCase = true) == true ||
+    releaseKeyAlias?.equals("androiddebugkey", ignoreCase = true) == true
 val hasReleaseSigningConfig = !releaseKeystorePath.isNullOrBlank() &&
     file(releaseKeystorePath).exists() &&
     !releaseKeystorePassword.isNullOrBlank() &&
     !releaseKeyAlias.isNullOrBlank() &&
-    !releaseKeyPassword.isNullOrBlank()
+    !releaseKeyPassword.isNullOrBlank() &&
+    !isDebugKeystore
 val firebaseDebugKeystore = rootProject.file("gradle/debug.keystore")
 
 android {
@@ -33,8 +36,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 165
-        versionName = "1.22.0"
+        versionCode = 166
+        versionName = "1.23.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -67,7 +70,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = if (hasReleaseSigningConfig) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseSigningConfig) signingConfigs.getByName("release") else null
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -97,15 +100,21 @@ android {
 
 val verifyReleaseSigning by tasks.registering {
     group = "verification"
-    description = "Fails release packaging when the production signing configuration is incomplete."
+    description = "Fails release packaging when the production signing configuration is incomplete or invalid."
     doLast {
-        if (System.getenv("CI") == "true") {
+        if (isDebugKeystore) {
+            throw GradleException(
+                "Bản build release TUYỆT ĐỐI KHÔNG được sử dụng debug keystore " +
+                    "(path=$releaseKeystorePath, alias=$releaseKeyAlias)."
+            )
+        }
+        if (System.getenv("CI") == "true" || project.hasProperty("strictReleaseSigning")) {
             check(hasReleaseSigningConfig) {
                 "Thiếu cấu hình ký release. Hãy đặt FINLUX_KEYSTORE_PATH, " +
                     "FINLUX_KEYSTORE_PASSWORD, FINLUX_KEY_ALIAS và FINLUX_KEY_PASSWORD."
             }
         } else if (!hasReleaseSigningConfig) {
-            logger.warn("Cảnh báo: Bản build release sử dụng chữ ký debug fallback do chưa đặt biến môi trường release keystore.")
+            logger.warn("Cảnh báo: Bản build release không có chữ ký production hợp lệ. Artifact tạo ra sẽ là unsigned APK.")
         }
     }
 }
@@ -149,6 +158,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.functions)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
 

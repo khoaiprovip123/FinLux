@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.23.0] - 2026-09-07
+### Added
+- **Bảo mật dữ liệu tài chính toàn diện:** Bảo vệ số dư ví, mục tiêu tiết kiệm, khoản nợ và danh mục đầu tư luôn chính xác tuyệt đối, ngăn ngừa mọi rủi ro sai lệch số tiền.
+- **Bảo vệ chứng từ & ảnh đại diện:** Hệ thống lưu trữ ảnh hồ sơ và hóa đơn giao dịch được nâng cấp bảo mật cao cấp theo tài khoản cá nhân.
+- **Chu kỳ tài chính & nhận lương thông minh:** Tự động đồng bộ ngân sách chi tiêu và dòng tiền theo chu kỳ nhận lương linh hoạt của người dùng.
+
+### Changed
+- **Đồng bộ giao diện Liquid Glass:** Chuẩn hóa toàn bộ hệ thống màu động và hiệu ứng kính mờ, tối ưu độ tương phản trên mọi phong cách (Prism, Modern, Classic) ở cả chế độ Sáng và Tối.
+- **Tối ưu trải nghiệm giao dịch:** Màn hình chuyển tiền giữa các ví, thêm giao dịch và cài đặt hoạt động nhanh, mượt mà và chính xác hơn.
+
+### Fixed
+- **Khắc phục triệt để sai lệch số dư:** Sửa hoàn toàn các trường hợp lệch số tiền khi chuyển khoản giữa các ví, hoàn tác và cập nhật hạn mức chi tiêu.
+- **Tối ưu hiệu năng ứng dụng:** Khởi động nhanh, vận hành trơn tru và tương thích mượt mà trên tất cả các thiết bị Android.
+
 ## [1.22.0] - 2026-09-05
 ### Added
 - **FINLUX REPORTING 2.0 — Release A: Reporting Foundation (Phases 0–4)**:

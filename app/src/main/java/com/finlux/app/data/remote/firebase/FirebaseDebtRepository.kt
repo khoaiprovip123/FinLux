@@ -13,6 +13,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -28,6 +30,7 @@ import java.util.UUID
 class FirebaseDebtRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
+    private val functions: FirebaseFunctions,
 ) : DebtRepository {
 
     override fun observeDebts(): Flow<List<DebtAccount>> = callbackFlow {
@@ -78,15 +81,20 @@ class FirebaseDebtRepository(
 
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = firebaseResult("Không thể lưu khoản nợ") {
         val uid = requireUid()
+        val isNew = debt.id.isBlank()
         val id = debt.id.ifBlank { UUID.randomUUID().toString() }
+        val data = debt.copy(id = id, userId = uid).toDebtMap().toMutableMap()
+        if (isNew) data["paymentCount"] = 0L
         firestore.collection("users").document(uid).collection("debts").document(id)
-            .set(debt.copy(id = id, userId = uid).toDebtMap()).await()
+            .set(data, SetOptions.merge()).await()
         id
     }
 
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = firebaseResult("Không thể xóa khoản nợ") {
-        val uid = requireUid()
-        firestore.collection("users").document(uid).collection("debts").document(debt.id).delete().await()
+        requireUid()
+        functions.getHttpsCallable("deleteDebtCascade")
+            .call(mapOf("debtId" to debt.id))
+            .await()
         Unit
     }
 
@@ -99,6 +107,11 @@ class FirebaseDebtRepository(
         note: String,
         paymentDate: Instant,
     ): AppResult<Unit> = firebaseResult("Không thể thực hiện thanh toán nợ") {
+        require(amount > 0L) { "Số tiền thanh toán nợ phải lớn hơn 0" }
+        require(principalPaid >= 0L) { "Tiền gốc thanh toán không được âm" }
+        require(interestPaid >= 0L) { "Tiền lãi thanh toán không được âm" }
+        require(principalPaid + interestPaid == amount) { "Tổng tiền gốc ($principalPaid) và tiền lãi ($interestPaid) phải bằng tổng số tiền thanh toán ($amount)" }
+
         val uid = requireUid()
         val userDoc = firestore.collection("users").document(uid)
         val walletRef = userDoc.collection("wallets").document(walletId)
@@ -141,11 +154,15 @@ class FirebaseDebtRepository(
 
             val debtName = debtSnap.getString("name") ?: "Khoản nợ"
             val currentDebtRemaining = debtSnap.getLong("remainingBalance") ?: 0L
-            val newDebtRemaining = (currentDebtRemaining - principalPaid).coerceAtLeast(0L)
+            val currentPaymentCount = debtSnap.getLong("paymentCount") ?: 0L
+            if (principalPaid > currentDebtRemaining) {
+                throw IllegalArgumentException("Tiền gốc thanh toán ($principalPaid) không thể vượt quá dư nợ còn lại ($currentDebtRemaining)")
+            }
+            val newDebtRemaining = currentDebtRemaining - principalPaid
             val isSettled = newDebtRemaining <= 0L
 
             // 1. Trừ tiền ví nguồn
-            tx.update(walletRef, "balance", currentWalletBalance - amount)
+            tx.update(walletRef, walletLedgerUpdate(currentWalletBalance - amount, transactionId))
 
             // 2. Cập nhật dư nợ
             tx.update(
@@ -154,6 +171,8 @@ class FirebaseDebtRepository(
                     "remainingBalance" to newDebtRemaining,
                     "isSettled" to isSettled,
                     "updatedAt" to Timestamp(Date.from(paymentDate)),
+                    "lastPaymentId" to paymentId,
+                    "paymentCount" to currentPaymentCount + 1L,
                 )
             )
 
@@ -166,6 +185,8 @@ class FirebaseDebtRepository(
                     "amount" to amount,
                     "walletId" to walletId,
                     "categoryId" to "debt_payment",
+                    "debtId" to debtId,
+                    "debtPaymentId" to paymentId,
                     "note" to txNote,
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(paymentDate)),
@@ -183,6 +204,7 @@ class FirebaseDebtRepository(
                     "amount" to amount,
                     "principalPaid" to principalPaid,
                     "interestPaid" to interestPaid,
+                    "transactionId" to transactionId,
                     "paymentDate" to Timestamp(Date.from(paymentDate)),
                     "note" to note,
                 )

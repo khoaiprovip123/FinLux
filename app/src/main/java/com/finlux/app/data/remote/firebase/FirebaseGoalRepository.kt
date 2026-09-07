@@ -10,6 +10,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -41,13 +42,23 @@ class FirebaseGoalRepository(
         val uid = requireUid()
         val id = goal.id.ifBlank { UUID.randomUUID().toString() }
         firestore.collection("users").document(uid).collection("goals").document(id)
-            .set(goal.copy(id = id).toGoalMap()).await()
+            .set(goal.copy(id = id).toGoalMap(), SetOptions.merge()).await()
         id
     }
 
     override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = firebaseResult("Không thể xóa mục tiêu") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("goals").document(goal.id).delete().await()
+        val goalRef = firestore.collection("users").document(uid).collection("goals").document(goal.id)
+        firestore.runTransaction { tx ->
+            val snap = tx.get(goalRef)
+            if (snap.exists()) {
+                val savedAmount = snap.getLong("savedAmount") ?: 0L
+                if (savedAmount > 0L) {
+                    throw IllegalStateException("Không thể xóa mục tiêu khi vẫn còn số dư tích lũy. Vui lòng rút hết tiền về ví trước.")
+                }
+                tx.delete(goalRef)
+            }
+        }.await()
         Unit
     }
 
@@ -58,6 +69,7 @@ class FirebaseGoalRepository(
         note: String,
         date: Instant,
     ): AppResult<Unit> = firebaseResult("Không thể nạp tiền vào mục tiêu") {
+        require(amount > 0L) { "Số tiền nạp vào mục tiêu phải lớn hơn 0" }
         val uid = requireUid()
         val userDoc = firestore.collection("users").document(uid)
         val walletRef = userDoc.collection("wallets").document(walletId)
@@ -101,10 +113,10 @@ class FirebaseGoalRepository(
             }
 
             // 1. Trừ tiền ví nguồn
-            tx.update(walletRef, "balance", currentWalletBalance - amount)
+            tx.update(walletRef, walletLedgerUpdate(currentWalletBalance - amount, transactionId))
 
             // 2. Tăng số tiền tích lũy của Goal
-            tx.update(goalRef, "savedAmount", newSaved)
+            tx.update(goalRef, mapOf("savedAmount" to newSaved, "lastTransactionId" to transactionId))
 
             // 3. Ghi transaction chi tiêu tích lũy vào Sổ cái
             val txNote = if (note.isNotBlank()) note else "Nạp tích lũy: $goalName"
@@ -115,6 +127,7 @@ class FirebaseGoalRepository(
                     "amount" to amount,
                     "walletId" to walletId,
                     "categoryId" to "savings",
+                    "goalId" to goalId,
                     "note" to txNote,
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(date)),
@@ -133,6 +146,7 @@ class FirebaseGoalRepository(
         note: String,
         date: Instant,
     ): AppResult<Unit> = firebaseResult("Không thể rút tiền từ mục tiêu") {
+        require(amount > 0L) { "Số tiền rút từ mục tiêu phải lớn hơn 0" }
         val uid = requireUid()
         val userDoc = firestore.collection("users").document(uid)
         val walletRef = userDoc.collection("wallets").document(walletId)
@@ -173,10 +187,10 @@ class FirebaseGoalRepository(
             }
 
             // 1. Giảm số tiền tích lũy của Goal
-            tx.update(goalRef, "savedAmount", newSaved)
+            tx.update(goalRef, mapOf("savedAmount" to newSaved, "lastTransactionId" to transactionId))
 
             // 2. Tăng số tiền ví nhận
-            tx.update(walletRef, "balance", currentWalletBalance + amount)
+            tx.update(walletRef, walletLedgerUpdate(currentWalletBalance + amount, transactionId))
 
             // 3. Ghi transaction thu nhập/hoàn tiền từ tích lũy vào Sổ cái
             val txNote = if (note.isNotBlank()) note else "Rút tích lũy: $goalName"
@@ -187,6 +201,7 @@ class FirebaseGoalRepository(
                     "amount" to amount,
                     "walletId" to walletId,
                     "categoryId" to "savings",
+                    "goalId" to goalId,
                     "note" to txNote,
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(date)),

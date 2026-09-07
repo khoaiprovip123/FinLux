@@ -97,6 +97,26 @@ class GoalUseCasesTest {
         assertEquals("Rút tiền mua sắm", repository.lastWithdrawNote)
     }
 
+    @Test
+    fun `delete rejects goal with positive savedAmount without writing`() = runTest {
+        val useCase = DeleteGoalUseCase(repository)
+        val result = useCase(validGoal().copy(id = "goal-1", savedAmount = Money(1_000_000L)))
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals(0, repository.deleteCalls)
+    }
+
+    @Test
+    fun `delete delegates valid goal with zero savedAmount`() = runTest {
+        val useCase = DeleteGoalUseCase(repository)
+        val goal = validGoal().copy(id = "goal-1", savedAmount = Money(0L))
+        val result = useCase(goal)
+
+        assertEquals(AppResult.Success(Unit), result)
+        assertEquals(1, repository.deleteCalls)
+        assertEquals(goal, repository.lastDeletedGoal)
+    }
+
     private fun validGoal() = FinancialGoal(
         name = "Quỹ dự phòng",
         targetAmount = Money(50_000_000),
@@ -109,6 +129,8 @@ class GoalUseCasesTest {
 private class RecordingGoalRepository : GoalRepository {
     var upsertCalls = 0
     var lastGoal: FinancialGoal? = null
+    var deleteCalls = 0
+    var lastDeletedGoal: FinancialGoal? = null
     var depositCalls = 0
     var lastDepositGoalId: String? = null
     var lastDepositWalletId: String? = null
@@ -129,7 +151,11 @@ private class RecordingGoalRepository : GoalRepository {
         return AppResult.Success("goal-1")
     }
 
-    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> {
+        deleteCalls++
+        lastDeletedGoal = goal
+        return AppResult.Success(Unit)
+    }
 
     override suspend fun depositToGoal(
         goalId: String,

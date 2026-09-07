@@ -4,6 +4,41 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## 🚨 [P0/P1 — READY FOR EXECUTION 2026-09-07] - Post-Audit Remediation
+
+Source of truth: `audit-2026-09-fix-roadmap/13_POST_AUDIT_REMEDIATION_PLAN.md`.
+
+- [x] R-00 bảo toàn working tree, chuyển sang branch `codex/post-audit-remediation-2026-09` và chốt baseline.
+- [x] R-01 chặn stale/no-op/metadata-only ledger dùng để sửa `wallet.balance`; bind đúng delta create/update/delete.
+- [x] R-02 khóa Goal/Debt aggregates, payment contract và direct orphan delete.
+- [x] R-03 khóa Deal aggregates; delete chuyển sang authenticated server-authoritative cascade.
+- [x] R-04 khóa Budget create aggregates/notification flags theo ownership contract.
+- [x] R-05 bổ sung Firebase Storage Rules emulator suite.
+- [ ] R-06 audit cluster đã sạch hardcode; còn full-app semantic color migration và theme/device matrix.
+- [ ] R-07 local regression pass; còn production reconciliation dry-run và migration readiness.
+- [ ] R-08 bump version mới, production signing, remote CI, deploy và release-device UAT.
+- [ ] R-09 phát hành corrected final execution report.
+
+**Hard stop:** Không ghi `Production Ready`, không tái sử dụng tag `v1.22.0` và không dùng debug APK/certificate
+làm bằng chứng release trước khi toàn bộ R-01..R-08 hoàn tất.
+
+## ✅ [DONE 2026-09-07] - Audit Roadmap PR-02: Budget Period Contract
+
+- Ghi mới Budget bằng `periodKey/periodStart/periodEndExclusive/periodBasis` với Firestore Timestamp; đọc tương thích `month` và epoch-millis cũ.
+- Android chỉ ghi contract kỳ + `limitAmount`; `spentAmount/notified80/notified100` được khóa server-owned.
+- `onTransactionWrite` và `onBudgetWrite` cùng đối soát aggregate/threshold theo ledger; notification ID idempotent.
+- Firestore Rules khóa cross-user, unknown fields, period sai và client spoof aggregate; vẫn cho cập nhật hạn mức legacy.
+- Gate: Functions/Rules emulator 27/27, Android 301/301, Functions build và `assembleDebug` PASS.
+
+## ✅ [DONE 2026-09-07] - Audit Roadmap PR-01: Salary Cycle Shared Contract
+
+- Functions đọc đúng `users/{uid}/financialPreferences/salaryCycle`; fallback path/`baseDay` cũ chỉ để đọc chuyển tiếp.
+- Resolver TypeScript hỗ trợ DAY_OF_MONTH, FIRST_DAY, LAST_DAY, clamp 29/30/31, leap year và timezone giống Kotlin.
+- Android/Functions cùng chạy fixture `contracts/financial-period-vectors.tsv`; payday mặc định thống nhất là 25.
+- Gate: Functions 14 test pass + typecheck/build; Firestore emulator 19 test pass; Android 298 test pass và debug APK build thành công.
+
+---
+
 ## ✅ [DONE 2026-08-27] - Tinh chỉnh khả năng đọc Home Prism
 
 - KPI dùng Liquid Glass REGULAR và phản hồi spring dùng chung; ba vùng số tiền giữ baseline cố định.

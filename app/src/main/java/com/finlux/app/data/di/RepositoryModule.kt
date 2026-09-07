@@ -48,6 +48,7 @@ import com.finlux.app.domain.repository.UiPreferencesRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import dagger.Binds
@@ -236,9 +237,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
+        functions: FirebaseFunctions?,
     ): DebtRepository =
-        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
-            FirebaseDebtRepository(auth, firestore)
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null && functions != null) {
+            FirebaseDebtRepository(auth, firestore, functions)
         } else demo
 
     @Provides
@@ -269,9 +271,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
+        functions: FirebaseFunctions?,
     ): com.finlux.app.domain.repository.DealRepository =
-        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
-            com.finlux.app.data.remote.firebase.FirebaseDealRepository(auth, firestore)
+        if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null && functions != null) {
+            com.finlux.app.data.remote.firebase.FirebaseDealRepository(auth, firestore, functions)
         } else demo
 
     @Provides

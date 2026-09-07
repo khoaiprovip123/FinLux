@@ -168,7 +168,7 @@ fun PrismTransactionsScreen(
                 // Nút chuyển chế độ Lịch / Danh sách
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.14f) else (if (tokens.isDark) tokens.surfaceSoft else Color.White),
+                    color = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.14f) else tokens.surface,
                     border = BorderStroke(
                         1.dp,
                         if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.35f) else tokens.border.copy(alpha = 0.6f),
@@ -212,12 +212,12 @@ fun PrismTransactionsScreen(
                 onQueryChange = { viewModel.setSearchQuery(it) },
                 onClear = { viewModel.setSearchQuery("") },
                 activeFilterCount = activeFilterCount,
-                onOpenFilter = { showFilterSheet = true },
+                onFilterClick = { showFilterSheet = true },
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
             )
 
             // 3. Chuẩn hóa 4 mục lọc nhanh [ Tất cả | Thu | Chi | Chuyển ] kèm Icon mới và chống tràn chữ
-            PrismQuickSegmentedTabsWithIcons(
+            PrismTransactionTypeTabs(
                 selectedFilter = filter,
                 onFilterSelect = { viewModel.filter.value = it },
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
@@ -306,13 +306,13 @@ fun PrismTransactionsScreen(
                                 val category = transaction.categoryId?.let { categories[it] }
                                 val wallet = wallets[transaction.walletId]
 
-                                PrismExplorerTransactionCard(
+                                PrismTransactionItemCard(
                                     transaction = transaction,
                                     category = category,
                                     wallet = wallet,
+                                    zone = financeZone,
                                     onClick = { viewingTransaction = transaction },
                                     onLongClick = { actionTransaction = transaction },
-                                    zone = financeZone,
                                 )
                             }
                         }
@@ -424,7 +424,7 @@ private fun PrismTransactionSearchBarWithFilter(
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit,
     activeFilterCount: Int,
-    onOpenFilter: () -> Unit,
+    onFilterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
@@ -432,8 +432,8 @@ private fun PrismTransactionSearchBarWithFilter(
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (tokens.isDark) tokens.surfaceSoft else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.75f)),
+        color = if (tokens.isDark) tokens.surfaceSoft else tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
         modifier = modifier
             .fillMaxWidth()
@@ -449,7 +449,7 @@ private fun PrismTransactionSearchBarWithFilter(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Tìm kiếm",
-                tint = if (query.isNotBlank()) tokens.primary else Color(0xFF94A3B8),
+                tint = if (query.isNotBlank()) tokens.primary else tokens.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
 
@@ -470,7 +470,7 @@ private fun PrismTransactionSearchBarWithFilter(
                             text = "Tìm kiếm giao dịch...",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 14.sp,
-                                color = Color(0xFF94A3B8),
+                                color = tokens.onSurfaceVariant.copy(alpha = 0.6f),
                                 fontWeight = FontWeight.Normal,
                             ),
                         )
@@ -481,10 +481,7 @@ private fun PrismTransactionSearchBarWithFilter(
 
             if (query.isNotEmpty()) {
                 IconButton(
-                    onClick = {
-                        onClear()
-                        focusManager.clearFocus()
-                    },
+                    onClick = { onQueryChange("") },
                     modifier = Modifier.size(28.dp),
                 ) {
                     Icon(
@@ -496,43 +493,38 @@ private fun PrismTransactionSearchBarWithFilter(
                 }
             }
 
-            // Nút Lọc tích hợp bên trong thanh tìm kiếm
+            // Nút bộ lọc (Filter Icon Button)
             Box(
                 modifier = Modifier
+                    .size(38.dp)
                     .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (activeFilterCount > 0) tokens.primary.copy(alpha = 0.15f)
+                        else tokens.surfaceSoft,
+                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple(bounded = true),
-                        onClick = onOpenFilter,
-                    )
-                    .padding(6.dp),
+                        onClick = onFilterClick,
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Default.FilterList,
+                    imageVector = Icons.Default.Tune,
                     contentDescription = "Bộ lọc",
-                    tint = if (activeFilterCount > 0) tokens.primary else Color(0xFF64748B),
-                    modifier = Modifier.size(22.dp),
+                    tint = if (activeFilterCount > 0) tokens.primary else tokens.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp),
                 )
 
                 if (activeFilterCount > 0) {
-                    Surface(
-                        shape = CircleShape,
-                        color = tokens.primary,
+                    Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .size(14.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = activeFilterCount.toString(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 8.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                ),
-                            )
-                        }
-                    }
+                            .padding(top = 6.dp, end = 6.dp)
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(tokens.primary),
+                    )
                 }
             }
         }
@@ -540,10 +532,10 @@ private fun PrismTransactionSearchBarWithFilter(
 }
 
 /**
- * 3. Chuẩn hóa 4 mục lọc nhanh [ Tất cả | Thu | Chi | Chuyển ] kèm Icon và layout cân đối
+ * Filter Tabs: Tất cả / Thu / Chi / Chuyển (Design Spec 2026)
  */
 @Composable
-private fun PrismQuickSegmentedTabsWithIcons(
+private fun PrismTransactionTypeTabs(
     selectedFilter: TransactionFilter,
     onFilterSelect: (TransactionFilter) -> Unit,
     modifier: Modifier = Modifier,
@@ -558,19 +550,13 @@ private fun PrismQuickSegmentedTabsWithIcons(
 
     val filters = listOf(
         TabItem(TransactionFilter.ALL, "Tất cả", Icons.Default.GridView, tokens.primary),
-        TabItem(TransactionFilter.INCOME, "Thu", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF10B981)),
-        TabItem(TransactionFilter.EXPENSE, "Chi", Icons.AutoMirrored.Filled.TrendingDown, Color(0xFFEF4444)),
-        TabItem(TransactionFilter.TRANSFER, "Chuyển", Icons.Default.SwapHoriz, Color(0xFF3B82F6)),
+        TabItem(TransactionFilter.INCOME, "Thu", Icons.AutoMirrored.Filled.TrendingUp, FinluxColors.IncomeGreen),
+        TabItem(TransactionFilter.EXPENSE, "Chi", Icons.AutoMirrored.Filled.TrendingDown, FinluxColors.ExpenseRed),
+        TabItem(TransactionFilter.TRANSFER, "Chuyển", Icons.Default.SwapHoriz, FinluxColors.TransferBlue),
     )
 
     val tabShape = RoundedCornerShape(14.dp)
-    val activeGradient = Brush.horizontalGradient(
-        listOf(
-            Color(0xFF00C6FF),
-            Color(0xFF0072FF),
-            Color(0xFF9B51E0),
-        ),
-    )
+    val activeGradient = Brush.horizontalGradient(tokens.heroGradient)
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -586,13 +572,13 @@ private fun PrismQuickSegmentedTabsWithIcons(
                     .then(
                         if (isSelected) {
                             Modifier
-                                .shadow(elevation = 4.dp, shape = tabShape, spotColor = Color(0xFF0072FF).copy(alpha = 0.35f))
+                                .shadow(elevation = 4.dp, shape = tabShape, spotColor = tokens.primary.copy(alpha = 0.35f))
                                 .background(brush = activeGradient, shape = tabShape)
                         } else {
                             Modifier
-                                .shadow(elevation = if (tokens.isDark) 0.dp else 1.dp, shape = tabShape, spotColor = Color.Black.copy(alpha = 0.05f))
-                                .background(color = if (tokens.isDark) tokens.surfaceSoft else Color.White, shape = tabShape)
-                                .border(width = 1.dp, color = if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.8f), shape = tabShape)
+                                .shadow(elevation = if (tokens.isDark) 0.dp else 1.dp, shape = tabShape, spotColor = tokens.onSurface.copy(alpha = 0.05f))
+                                .background(color = if (tokens.isDark) tokens.surfaceSoft else tokens.surface, shape = tabShape)
+                                .border(width = 1.dp, color = tokens.border, shape = tabShape)
                         }
                     )
                     .clip(tabShape)
@@ -604,25 +590,22 @@ private fun PrismQuickSegmentedTabsWithIcons(
                 contentAlignment = Alignment.Center,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Icon(
                         imageVector = item.icon,
-                        contentDescription = item.label,
-                        tint = if (isSelected) Color.White else item.accentColor,
+                        contentDescription = null,
+                        tint = if (isSelected) tokens.onHero else tokens.onSurfaceVariant,
                         modifier = Modifier.size(15.dp),
                     )
-                    Spacer(Modifier.width(4.5.dp))
                     Text(
                         text = item.label,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                        style = FinluxTextStyles.Caption.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 12.5.sp,
                         ),
-                        color = if (isSelected) Color.White else tokens.onSurface,
-                        maxLines = 1,
+                        color = if (isSelected) tokens.onHero else tokens.onSurfaceVariant,
                     )
                 }
             }
@@ -631,16 +614,17 @@ private fun PrismQuickSegmentedTabsWithIcons(
 }
 
 /**
- * 6. Thẻ giao dịch theo 3 cột chuẩn: Số tiền To & Rõ ràng
+ * Item giao dịch phong cách FinLux Prism (Phiên bản cao cấp, dữ liệu sắc nét, icon nổi bật)
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun PrismExplorerTransactionCard(
+private fun PrismTransactionItemCard(
     transaction: FinanceTransaction,
     category: Category?,
     wallet: Wallet?,
+    zone: java.time.ZoneId,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    zone: java.time.ZoneId,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
@@ -651,9 +635,9 @@ private fun PrismExplorerTransactionCard(
     // Amount Sign & Color
     val amountPrefix = if (isIncome) "+" else "−"
     val amountColor = when {
-        isIncome -> Color(0xFF059669) // Deep Emerald Green
-        isTransfer -> Color(0xFF2563EB) // Blue
-        else -> Color(0xFFE11D48) // Vibrant Crimson Red
+        isIncome -> FinluxColors.IncomeGreen
+        isTransfer -> FinluxColors.TransferBlue
+        else -> FinluxColors.ExpenseRed
     }
 
     val displayAmount = amountPrefix + formatVndAmount(transaction.amount.value).replace("đ", "₫")
@@ -683,20 +667,17 @@ private fun PrismExplorerTransactionCard(
 
     val iconBackgroundBrush = remember(transaction.type, parsedColor) {
         when {
-            isIncome -> Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))
-            isTransfer -> Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))
+            isIncome -> Brush.linearGradient(listOf(FinluxColors.IncomeGreen, FinluxColors.IncomeGreen.copy(alpha = 0.85f)))
+            isTransfer -> Brush.linearGradient(listOf(FinluxColors.TransferBlue, tokens.primary))
             parsedColor != null -> Brush.linearGradient(listOf(parsedColor, parsedColor.copy(alpha = 0.85f)))
-            else -> Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626)))
+            else -> Brush.linearGradient(listOf(FinluxColors.ExpenseRed, FinluxColors.ExpenseRed.copy(alpha = 0.85f)))
         }
     }
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E34).copy(alpha = 0.75f) else Color.White,
-        border = BorderStroke(
-            1.dp,
-            if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.7f),
-        ),
+        color = if (tokens.isDark) tokens.surfaceSoft else tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         shadowElevation = if (tokens.isDark) 0.dp else 2.dp,
         modifier = modifier
             .fillMaxWidth()
@@ -726,7 +707,7 @@ private fun PrismExplorerTransactionCard(
                 Icon(
                     imageVector = if (isTransfer) Icons.Default.SwapHoriz else categoryIcon(category?.icon.orEmpty()),
                     contentDescription = category?.name,
-                    tint = Color.White,
+                    tint = tokens.onHero,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -782,7 +763,7 @@ private fun PrismExplorerTransactionCard(
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Normal,
                     ),
-                    color = Color(0xFF94A3B8),
+                    color = tokens.textSecondary,
                     textAlign = TextAlign.End,
                 )
             }
@@ -801,8 +782,8 @@ private fun PrismSecurityFooterCard(
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (tokens.isDark) tokens.surfaceSoft.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.8f),
-        border = BorderStroke(1.dp, if (tokens.isDark) tokens.border else Color(0xFFE2E8F0).copy(alpha = 0.6f)),
+        color = if (tokens.isDark) tokens.surfaceSoft.copy(alpha = 0.5f) else tokens.surface.copy(alpha = 0.8f),
+        border = BorderStroke(1.dp, tokens.border.copy(alpha = 0.6f)),
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(
@@ -847,7 +828,7 @@ private fun PrismSecurityFooterCard(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color(0xFF94A3B8),
+                tint = tokens.textSecondary,
                 modifier = Modifier.size(16.dp),
             )
         }

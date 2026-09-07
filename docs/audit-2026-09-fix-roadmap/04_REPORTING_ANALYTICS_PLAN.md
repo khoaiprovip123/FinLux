@@ -6,25 +6,18 @@ Biến Reports thành hệ thống báo cáo tài chính có semantics nhất qu
 
 ## 2. Phase RP-1 — Unified Financial Period
 
-Một resolver duy nhất về semantics:
-- Today
-- Yesterday
-- Day
-- Week
-- Last 7 Days
-- Month
-- Salary Cycle
-- Quarter
-- Year
-- Custom
+**Trạng thái: DONE local 2026-09-07 (PR-08).**
 
-### Quy tắc
-- Query window dùng `[start, endExclusive)`.
-- Timezone lấy từ finance config.
-- Salary Cycle là period thực, không đổi label nhưng vẫn query tháng.
-- Previous period phải có semantics rõ và test được.
+Một resolver duy nhất về semantics:
+- [x] Today, Yesterday, Day, Week, Last 7 Days, Month, Salary Cycle, Quarter, Year, Custom
+- [x] Query window dùng `[start, endExclusive)`.
+- [x] Timezone lấy từ finance config.
+- [x] Salary Cycle là period thực, không đổi label nhưng vẫn query tháng.
+- [x] Previous period có semantics rõ và được test qua `ReportQueryWindowResolverTest`.
 
 ## 3. Phase RP-2 — Daily Statement
+
+**Trạng thái: DONE local 2026-09-07 (PR-08).**
 
 Cho mỗi ngày:
 ```
@@ -35,16 +28,16 @@ Opening Balance
 ```
 
 Tách semantics:
-- income;
-- expense;
-- transfer in/out;
-- goal reclassification;
-- deal principal;
-- deal gain/loss;
-- debt principal/interest.
+- [x] income;
+- [x] expense;
+- [x] transfer in/out;
+- [x] goal reclassification;
+- [x] deal principal;
+- [x] deal gain/loss;
+- [x] debt principal/interest.
 
 ### Acceptance
-Closing ngày N = Opening ngày N+1 trong cùng phạm vi ví nếu không có reconciliation adjustment.
+- [x] Closing ngày N = Opening ngày N+1 trong cùng phạm vi ví. Đã verify 100% qua `DailyStatementCalculatorTest` và `ReportsViewModelTest`.
 
 ## 4. Phase RP-3 — Wallet Statement
 

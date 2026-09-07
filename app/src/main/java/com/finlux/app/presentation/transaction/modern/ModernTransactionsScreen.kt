@@ -169,7 +169,7 @@ fun ModernTransactionsScreen(
                                                 style = MaterialTheme.typography.labelSmall.copy(
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
+                                                    color = MaterialTheme.colorScheme.onPrimary,
                                                 ),
                                             )
                                         }

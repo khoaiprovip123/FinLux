@@ -1,8 +1,114 @@
 {
-  "generated_at": "2026-08-14T09:45:47.510497+00:00",
+  "generated_at": "2026-09-07T08:32:50.838448+00:00",
   "nodes": {
+    "app_src_main_java_com_finlux_app_core_navigation_routes_debt": {
+      "code_fingerprint": "305e495f27dd2a91edc9312741be7fd5f299bd87a31579e598bdf0a1811c503b",
+      "label": "Debt",
+      "last": "2026-09-07T08:28:29.153705+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T08:28:29.153705+00:00",
+          "outcome": "useful",
+          "q": "nào chưa ổn e tạo plan mới tổng hợp để fix e"
+        }
+      ],
+      "score": 0.999930023,
+      "source_file": "app/src/main/java/com/finlux/app/core/navigation/Routes.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_finlux_app_data_local_salary_salarycyclereceiver": {
+      "code_fingerprint": "dab0f27ccf28b59c8234471ada1619388346067c0b4d5f234886bf160ff882ab",
+      "label": "SalaryCycleReceiver.kt",
+      "last": "2026-09-07T08:28:29.153705+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T08:28:29.153705+00:00",
+          "outcome": "useful",
+          "q": "nào chưa ổn e tạo plan mới tổng hợp để fix e"
+        },
+        {
+          "date": "2026-09-07T08:08:32.253885+00:00",
+          "outcome": "useful",
+          "q": "Đọc và kiểm tra lại toàn bộ 12_FINAL_AUDIT_EXECUTION_REPORT.md xem ổn hết chưa"
+        }
+      ],
+      "score": 1.999540048,
+      "source_file": "app/src/main/java/com/finlux/app/data/local/salary/SalaryCycleReceiver.kt",
+      "status": "preferred",
+      "uses": 2
+    },
+    "app_src_main_java_com_finlux_app_data_remote_firebase_firebasereceiptstoragerepository_firebasereceiptstoragerepository": {
+      "code_fingerprint": "2fca8965320d39d0b6365e29ded8bc31abd2bfc1d6e9c9dd1578d926900080d4",
+      "label": "FirebaseReceiptStorageRepository",
+      "last": "2026-09-07T08:28:29.153705+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T08:28:29.153705+00:00",
+          "outcome": "useful",
+          "q": "nào chưa ổn e tạo plan mới tổng hợp để fix e"
+        }
+      ],
+      "score": 0.999930023,
+      "source_file": "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseReceiptStorageRepository.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_finlux_app_data_remote_firebase_firebasetransactionrepository": {
+      "code_fingerprint": "636a82b7fadb1eed7ca5fde7b5bbafd81d01cc51ea179904ab98bcd5d7771a64",
+      "label": "FirebaseTransactionRepository.kt",
+      "last": "2026-09-07T08:08:32.253885+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T08:08:32.253885+00:00",
+          "outcome": "useful",
+          "q": "Đọc và kiểm tra lại toàn bộ 12_FINAL_AUDIT_EXECUTION_REPORT.md xem ổn hết chưa"
+        }
+      ],
+      "score": 0.999610024,
+      "source_file": "app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_finlux_app_domain_model_financemodels_financetransaction": {
+      "code_fingerprint": "fb3a8fa54e7d967303dde15518f30896aefb245c55421a80c1a2437b55eb891d",
+      "label": "FinanceTransaction",
+      "last": "2026-09-07T08:28:29.153705+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T08:28:29.153705+00:00",
+          "outcome": "useful",
+          "q": "nào chưa ổn e tạo plan mới tổng hợp để fix e"
+        }
+      ],
+      "score": 0.999930023,
+      "source_file": "app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_finlux_app_domain_model_financemodels_wallet": {
+      "code_fingerprint": "fb3a8fa54e7d967303dde15518f30896aefb245c55421a80c1a2437b55eb891d",
+      "label": "Wallet",
+      "last": "2026-09-07T08:28:29.153705+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T08:28:29.153705+00:00",
+          "outcome": "useful",
+          "q": "nào chưa ổn e tạo plan mới tổng hợp để fix e"
+        },
+        {
+          "date": "2026-09-07T08:08:32.253885+00:00",
+          "outcome": "useful",
+          "q": "Đọc và kiểm tra lại toàn bộ 12_FINAL_AUDIT_EXECUTION_REPORT.md xem ổn hết chưa"
+        }
+      ],
+      "score": 1.999540048,
+      "source_file": "app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt",
+      "status": "preferred",
+      "uses": 2
+    },
     "app_src_main_java_com_finlux_app_domain_repository_themepreferencerepository_themepreferencerepository": {
-      "code_fingerprint": "12cba769904d01ee0f44a211a1a052131dc15882508ceca689c9f62f41fc61d0",
+      "code_fingerprint": "646fe37d13049fa62bff61710f0d94ac15af183a14c810b703991f9cf70f4261",
       "label": "ThemePreferenceRepository",
       "last": "2026-08-12T09:43:56.745841+00:00",
       "provenance": [
@@ -12,10 +118,31 @@
           "q": "Mở rộng nút + với Thêm thu, Thêm chi, Chuyển tiền, Quét hóa đơn, Thêm mục tiêu và thích ứng theme tối"
         }
       ],
-      "score": 0.954813321,
+      "score": 0.549038465,
       "source_file": "app/src/main/java/com/finlux/app/domain/repository/ThemePreferenceRepository.kt",
       "status": "tentative",
       "uses": 1
+    },
+    "app_src_main_java_com_finlux_app_presentation_transaction_prism_prismtransactionsscreen": {
+      "code_fingerprint": "24f9c59e831198dddde294da4a68d3dafc98e3d6f8d5ea6a2a69704c0c4c274a",
+      "label": "PrismTransactionsScreen.kt",
+      "last": "2026-09-07T08:28:29.153705+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T08:28:29.153705+00:00",
+          "outcome": "useful",
+          "q": "nào chưa ổn e tạo plan mới tổng hợp để fix e"
+        },
+        {
+          "date": "2026-09-07T08:08:32.253885+00:00",
+          "outcome": "useful",
+          "q": "Đọc và kiểm tra lại toàn bộ 12_FINAL_AUDIT_EXECUTION_REPORT.md xem ổn hết chưa"
+        }
+      ],
+      "score": 1.999540048,
+      "source_file": "app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt",
+      "status": "preferred",
+      "uses": 2
     }
   },
   "version": 1
