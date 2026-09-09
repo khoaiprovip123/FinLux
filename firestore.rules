@@ -34,6 +34,7 @@ service cloud.firestore {
     function validTransaction(data) {
       return data.keys().hasOnly([
           'type', 'amount', 'categoryId', 'walletId', 'relatedWalletId',
+          'dealId', 'dealFlowType', 'correlationId',
           'note', 'receiptImageUrl', 'date', 'createdAt', 'updatedAt'
         ])
         && data.type in [
@@ -43,6 +44,12 @@ service cloud.firestore {
         && isPositiveMoney(data.amount)
         && data.walletId is string
         && data.walletId.size() > 0
+        && (!('dealId' in data) || data.dealId == null || (data.dealId is string && data.dealId.size() > 0))
+        && (!('dealFlowType' in data) || data.dealFlowType == null || data.dealFlowType in [
+          'outlay_capital', 'principal_recovery', 'capital_gain', 'capital_loss',
+          'OUTLAY_CAPITAL', 'PRINCIPAL_RECOVERY', 'CAPITAL_GAIN', 'CAPITAL_LOSS'
+        ])
+        && (!('correlationId' in data) || data.correlationId == null || (data.correlationId is string && data.correlationId.size() > 0))
         && data.date is timestamp;
     }
 
@@ -218,10 +225,15 @@ service cloud.firestore {
         allow delete: if isOwner(uid);
         allow create: if isOwner(uid)
           && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
+            'categoryId', 'month', 'periodKey', 'periodStart', 'periodEndExclusive', 'periodBasis',
+            'limitAmount', 'spentAmount', 'notified80', 'notified100'
           ])
           && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
+          && (!('month' in request.resource.data) || request.resource.data.month == null || request.resource.data.month is string)
+          && (!('periodKey' in request.resource.data) || request.resource.data.periodKey is string)
+          && (!('periodStart' in request.resource.data) || request.resource.data.periodStart == null || request.resource.data.periodStart is int)
+          && (!('periodEndExclusive' in request.resource.data) || request.resource.data.periodEndExclusive == null || request.resource.data.periodEndExclusive is int)
+          && (!('periodBasis' in request.resource.data) || request.resource.data.periodBasis == null || request.resource.data.periodBasis is string)
           && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount is int)
           && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
           && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
@@ -229,11 +241,16 @@ service cloud.firestore {
 
         allow update: if isOwner(uid)
           && request.resource.data.keys().hasOnly([
-            'categoryId', 'month', 'limitAmount', 'spentAmount', 'notified80', 'notified100'
+            'categoryId', 'month', 'periodKey', 'periodStart', 'periodEndExclusive', 'periodBasis',
+            'limitAmount', 'spentAmount', 'notified80', 'notified100'
           ])
           && (!('categoryId' in request.resource.data) || (request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0))
-          && (!('month' in request.resource.data) || request.resource.data.month is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount)
+          && (!('month' in request.resource.data) || request.resource.data.month == null || request.resource.data.month is string)
+          && (!('periodKey' in request.resource.data) || request.resource.data.periodKey is string)
+          && (!('periodStart' in request.resource.data) || request.resource.data.periodStart == null || request.resource.data.periodStart is int)
+          && (!('periodEndExclusive' in request.resource.data) || request.resource.data.periodEndExclusive == null || request.resource.data.periodEndExclusive is int)
+          && (!('periodBasis' in request.resource.data) || request.resource.data.periodBasis == null || request.resource.data.periodBasis is string)
+          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount || request.resource.data.spentAmount is int)
           && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
           && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
           && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));
@@ -341,6 +358,32 @@ service cloud.firestore {
           allow read, delete: if isOwner(uid);
           allow create, update: if isOwner(uid);
         }
+      }
+
+      // Subcollection: Deals (Thương vụ & Đầu tư)
+      match /deals/{dealId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'title', 'description', 'category', 'targetAmount',
+            'totalCapitalOutlay', 'totalRecovered', 'writtenOffCapital',
+            'netProfitLoss', 'status', 'startDate', 'endDate',
+            'createdAt', 'updatedAt'
+          ])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && (!('description' in request.resource.data) || request.resource.data.description is string)
+          && request.resource.data.category in ['investment', 'lending', 'business', 'other', 'INVESTMENT', 'LENDING', 'BUSINESS', 'OTHER']
+          && isNonNegativeMoney(request.resource.data.targetAmount)
+          && isNonNegativeMoney(request.resource.data.totalCapitalOutlay)
+          && isNonNegativeMoney(request.resource.data.totalRecovered)
+          && isNonNegativeMoney(request.resource.data.writtenOffCapital)
+          && request.resource.data.netProfitLoss is int
+          && request.resource.data.status in ['active', 'completed', 'cancelled', 'ACTIVE', 'COMPLETED', 'CANCELLED']
+          && request.resource.data.startDate is timestamp
+          && (!('endDate' in request.resource.data) || request.resource.data.endDate == null || request.resource.data.endDate is timestamp)
+          && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+          && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
       }
     }
   }

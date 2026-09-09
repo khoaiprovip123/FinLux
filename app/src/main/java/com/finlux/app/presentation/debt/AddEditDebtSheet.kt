@@ -1,5 +1,6 @@
 package com.finlux.app.presentation.debt
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -65,6 +68,8 @@ import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.model.WalletType
 import com.finlux.app.presentation.debt.components.debtTypeIcon
 import com.finlux.app.presentation.debt.components.debtTypeName
 import com.finlux.app.presentation.home.toVnd
@@ -74,6 +79,7 @@ import java.time.Instant
 @Composable
 fun AddEditDebtSheet(
     debt: DebtAccount?,
+    wallets: List<Wallet> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (DebtAccount) -> Unit,
     onDelete: ((DebtAccount) -> Unit)? = null,
@@ -89,11 +95,15 @@ fun AddEditDebtSheet(
     var remainingBalanceText by remember(debt) { mutableStateOf(debt?.remainingBalance?.value?.toString().orEmpty()) }
     var aprText by remember(debt) { mutableStateOf(debt?.interestRateApr?.toString().orEmpty()) }
     var minimumPaymentText by remember(debt) { mutableStateOf(debt?.minimumPayment?.value?.toString().orEmpty()) }
-    var dueDateText by remember(debt) { mutableStateOf((debt?.dueDate ?: 15).toString()) }
+    var dueDateText by remember(debt) { mutableStateOf(debt?.dueDate?.toString().orEmpty()) }
+    var statementDateText by remember(debt) { mutableStateOf(debt?.statementDate?.toString().orEmpty()) }
+    var gracePeriodDaysText by remember(debt) { mutableStateOf((debt?.gracePeriodDays ?: 45).toString()) }
+    var selectedLinkedWalletId by remember(debt) { mutableStateOf(debt?.linkedWalletId) }
     var selectedColor by remember(debt) { mutableStateOf(debt?.colorHex ?: FinanceAccentHexes.first()) }
     var isReminderEnabled by remember(debt) { mutableStateOf(debt?.isReminderEnabled ?: true) }
     var reminderDaysBefore by remember(debt) { mutableIntStateOf(debt?.reminderDaysBefore ?: 3) }
     var validationError by remember { mutableStateOf<String?>(null) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -247,16 +257,151 @@ fun AddEditDebtSheet(
 
             Spacer(Modifier.height(12.dp))
 
-            // Due Date
-            OutlinedTextField(
-                value = dueDateText,
-                onValueChange = { dueDateText = it.filter { ch -> ch.isDigit() } },
-                label = { Text("Ngày đến hạn hàng tháng (1 - 31)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-            )
+            // Due Date & Credit Card Specific Inputs
+            if (type == DebtType.CREDIT_CARD) {
+                // Statement Date & Due Date in a Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    OutlinedTextField(
+                        value = statementDateText,
+                        onValueChange = { statementDateText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Ngày sao kê (1 - 31)") },
+                        placeholder = { Text("vd: 20") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                    )
+
+                    OutlinedTextField(
+                        value = dueDateText,
+                        onValueChange = { dueDateText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Hạn thanh toán (1 - 31)") },
+                        placeholder = { Text("vd: 5") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = gracePeriodDaysText,
+                    onValueChange = { gracePeriodDaysText = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Thời gian miễn lãi (ngày)") },
+                    placeholder = { Text("45") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                )
+
+                // Linked Card Wallet Selector
+                val cardWallets = wallets.filter { it.type == WalletType.CARD }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = "Ví thẻ tín dụng liên kết",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = tokens.onSurface,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Khi thanh toán khoản nợ này, tiền sẽ được hoàn vào ví thẻ đã chọn để khôi phục hạn mức khả dụng (hoán đổi tài sản).",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                    color = tokens.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val isNoneSelected = selectedLinkedWalletId == null
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isNoneSelected) tokens.primary.copy(alpha = 0.15f) else tokens.surfaceSoft,
+                        border = BorderStroke(1.dp, if (isNoneSelected) tokens.primary else tokens.border),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { selectedLinkedWalletId = null },
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "Không liên kết",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isNoneSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 11.5.sp,
+                                    color = if (isNoneSelected) tokens.primary else tokens.onSurface,
+                                ),
+                            )
+                        }
+                    }
+
+                    cardWallets.forEach { cardWallet ->
+                        val isSelected = selectedLinkedWalletId == cardWallet.id
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) tokens.primary.copy(alpha = 0.15f) else tokens.surfaceSoft,
+                            border = BorderStroke(1.dp, if (isSelected) tokens.primary else tokens.border),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { selectedLinkedWalletId = cardWallet.id },
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(
+                                    text = cardWallet.name,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 11.5.sp,
+                                        color = if (isSelected) tokens.primary else tokens.onSurface,
+                                    ),
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                OutlinedTextField(
+                    value = dueDateText,
+                    onValueChange = { dueDateText = it.filter { ch -> ch.isDigit() } },
+                    label = {
+                        Text(
+                            if (type == DebtType.PERSONAL_LOAN) "Hạn trả linh hoạt (tùy chọn 1 - 31)"
+                            else "Ngày đến hạn hàng tháng (1 - 31)"
+                        )
+                    },
+                    placeholder = {
+                        Text(
+                            if (type == DebtType.PERSONAL_LOAN) "Khoản nợ linh hoạt không cố định ngày"
+                            else "Nhập ngày đến hạn hàng tháng (vd: 15)"
+                        )
+                    },
+                    trailingIcon = if (dueDateText.isNotBlank()) {
+                        {
+                            IconButton(onClick = { dueDateText = "" }) {
+                                Icon(imageVector = Icons.Default.Close, contentDescription = "Xóa ngày đến hạn", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    } else null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
@@ -382,37 +527,40 @@ fun AddEditDebtSheet(
                         }
 
                         Spacer(Modifier.height(10.dp))
-                        val dueDayInt = dueDateText.toIntOrNull()?.coerceIn(1, 31) ?: 15
-                        val remindDayInt = if (dueDayInt > reminderDaysBefore) {
-                            dueDayInt - reminderDaysBefore
-                        } else {
-                            (30 + dueDayInt - reminderDaysBefore).coerceAtLeast(1)
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = tokens.primary.copy(alpha = 0.08f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, tokens.primary.copy(alpha = 0.20f)),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        val dueDayInt = dueDateText.toIntOrNull()?.takeIf { it in 1..31 }
+                        if (dueDayInt != null) {
+                            Spacer(Modifier.height(10.dp))
+                            val remindDayInt = if (dueDayInt > reminderDaysBefore) {
+                                dueDayInt - reminderDaysBefore
+                            } else {
+                                (30 + dueDayInt - reminderDaysBefore).coerceAtLeast(1)
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = tokens.primary.copy(alpha = 0.08f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, tokens.primary.copy(alpha = 0.20f)),
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = null,
-                                    tint = tokens.primary,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Text(
-                                    text = "Thông báo sẽ gửi vào lúc 09:00 sáng ngày $remindDayInt hàng tháng (trước hạn thanh toán ngày $dueDayInt $reminderDaysBefore ngày).",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium,
-                                    ),
-                                    color = tokens.onSurface,
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = tokens.primary,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Text(
+                                        text = "Thông báo sẽ gửi vào lúc 09:00 sáng ngày $remindDayInt hàng tháng (trước hạn thanh toán ngày $dueDayInt $reminderDaysBefore ngày).",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        ),
+                                        color = tokens.onSurface,
+                                    )
+                                }
                             }
                         }
                     }
@@ -439,7 +587,7 @@ fun AddEditDebtSheet(
                     val remaining = remainingBalanceText.toLongOrNull() ?: total
                     val apr = aprText.toDoubleOrNull() ?: 0.0
                     val minPay = minimumPaymentText.toLongOrNull() ?: (remaining * 0.03).toLong()
-                    val due = dueDateText.toIntOrNull()?.coerceIn(1, 31) ?: 15
+                    val due = dueDateText.toIntOrNull()?.takeIf { it in 1..31 }
 
                     if (name.isBlank()) {
                         validationError = "Vui lòng nhập tên khoản nợ"
@@ -449,6 +597,14 @@ fun AddEditDebtSheet(
                         validationError = "Hạn mức / khoản vay gốc phải lớn hơn 0"
                         return@Button
                     }
+                    if (type != DebtType.PERSONAL_LOAN && due == null) {
+                        validationError = "Vui lòng nhập ngày đến hạn hàng tháng (1 - 31)"
+                        return@Button
+                    }
+
+                    val stmtDate = if (type == DebtType.CREDIT_CARD) statementDateText.toIntOrNull()?.coerceIn(1, 31) else null
+                    val grace = if (type == DebtType.CREDIT_CARD) gracePeriodDaysText.toIntOrNull() ?: 45 else 0
+                    val linkedId = if (type == DebtType.CREDIT_CARD) selectedLinkedWalletId else null
 
                     validationError = null
                     val newDebt = DebtAccount(
@@ -460,6 +616,9 @@ fun AddEditDebtSheet(
                         interestRateApr = apr,
                         minimumPayment = Money(minPay),
                         dueDate = due,
+                        statementDate = stmtDate,
+                        gracePeriodDays = grace,
+                        linkedWalletId = linkedId,
                         colorHex = selectedColor,
                         isReminderEnabled = isReminderEnabled,
                         reminderDaysBefore = reminderDaysBefore,
@@ -485,7 +644,7 @@ fun AddEditDebtSheet(
             if (isEditing && onDelete != null && debt != null) {
                 Spacer(Modifier.height(10.dp))
                 OutlinedButton(
-                    onClick = { onDelete(debt) },
+                    onClick = { showDeleteConfirmDialog = true },
                     enabled = !isSubmitting,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -501,5 +660,42 @@ fun AddEditDebtSheet(
 
             Spacer(Modifier.height(16.dp))
         }
+    }
+
+    if (showDeleteConfirmDialog && debt != null && onDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Xóa khoản nợ",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = tokens.onSurface,
+                )
+            },
+            text = {
+                Text(
+                    text = "Bạn có chắc chắn muốn xóa khoản nợ \"${debt.name}\" không?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = tokens.onSurfaceVariant,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDelete(debt)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text("Xóa", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Hủy", color = tokens.onSurfaceVariant)
+                }
+            },
+            containerColor = tokens.surface,
+        )
     }
 }

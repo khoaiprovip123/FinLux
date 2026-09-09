@@ -1,6 +1,7 @@
 package com.finlux.app.domain.usecase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.DealStatus
 import com.finlux.app.domain.model.FinancialDeal
@@ -26,6 +27,7 @@ class DealUseCasesTest {
     private lateinit var recordDealOutlayUseCase: RecordDealOutlayUseCase
     private lateinit var recordDealInflowUseCase: RecordDealInflowUseCase
     private lateinit var closeDealWithLossUseCase: CloseDealWithLossUseCase
+    private lateinit var closeDealUseCase: CloseDealUseCase
     private lateinit var revertDealLossUseCase: RevertDealLossUseCase
     private lateinit var reopenDealUseCase: ReopenDealUseCase
 
@@ -37,6 +39,7 @@ class DealUseCasesTest {
         recordDealOutlayUseCase = RecordDealOutlayUseCase(fakeRepository)
         recordDealInflowUseCase = RecordDealInflowUseCase(fakeRepository)
         closeDealWithLossUseCase = CloseDealWithLossUseCase(fakeRepository)
+        closeDealUseCase = CloseDealUseCase(fakeRepository)
         revertDealLossUseCase = RevertDealLossUseCase(fakeRepository)
         reopenDealUseCase = ReopenDealUseCase(fakeRepository)
     }
@@ -148,6 +151,8 @@ class DealUseCasesTest {
         assertTrue(result is AppResult.Success)
         val updated = fakeRepository.deals.value.first()
         assertEquals(-20_000_000L, updated.netProfitLoss.value)
+        assertEquals(20_000_000L, updated.writtenOffCapital.value)
+        assertEquals(0L, updated.remainingCapital.value)
         assertEquals(DealStatus.COMPLETED, updated.status)
 
         assertEquals(1, fakeRepository.recordedTransactions.size)
@@ -164,6 +169,7 @@ class DealUseCasesTest {
             title = "Deal A",
             totalCapitalOutlay = Money(100_000_000L),
             totalRecovered = Money(80_000_000L),
+            writtenOffCapital = Money(20_000_000L),
             netProfitLoss = Money(-20_000_000L),
             status = DealStatus.COMPLETED,
             endDate = Instant.now(),
@@ -175,7 +181,7 @@ class DealUseCasesTest {
                 type = TransactionType.EXPENSE,
                 amount = Money(20_000_000L),
                 categoryId = null,
-                walletId = "DEAL_SETTLEMENT",
+                walletId = "wal_cash",
                 dealId = "deal-1",
                 dealFlowType = DealFlowType.CAPITAL_LOSS,
                 note = "Chốt lỗ đóng deal",
@@ -188,13 +194,84 @@ class DealUseCasesTest {
         assertTrue(result is AppResult.Success)
         val updated = fakeRepository.deals.value.first()
         assertEquals(0L, updated.netProfitLoss.value) // Hoàn lại 20tr lỗ
+        assertEquals(0L, updated.writtenOffCapital.value) // Hoàn lại vốn xóa sổ
+        assertEquals(20_000_000L, updated.remainingCapital.value) // Dư nợ quay lại 20tr
         assertEquals(DealStatus.ACTIVE, updated.status) // Mở lại deal
         assertEquals(null, updated.endDate)
         assertTrue(fakeRepository.recordedTransactions.none { it.dealFlowType == DealFlowType.CAPITAL_LOSS })
     }
 
     @Test
-    fun `roi percentage calculated correctly for profit, loss, and breakeven`() {
+    fun `close deal with loss twice across multiple loan outlays prevents duplicate loss and resets remaining capital to zero`() = runTest {
+        // Kịch bản thực tế của người dùng:
+        // 1. Cho vay 150k
+        var deal = FinancialDeal(
+            id = "deal-lending-1",
+            title = "Khoản vay Tờ Húi",
+            category = DealCategory.LENDING,
+            totalCapitalOutlay = Money(150_000L),
+            totalRecovered = Money(0L),
+            writtenOffCapital = Money(0L),
+            netProfitLoss = Money(0L),
+            status = DealStatus.ACTIVE,
+        )
+        fakeRepository.deals.value = listOf(deal)
+
+        // 2. Chốt lỗ / Xóa nợ lần 1 (150k)
+        val res1 = closeDealWithLossUseCase(deal = deal, note = "Xóa nợ đợt 1")
+        assertTrue(res1 is AppResult.Success)
+
+        deal = fakeRepository.deals.value.first { it.id == "deal-lending-1" }
+        assertEquals(150_000L, deal.writtenOffCapital.value)
+        assertEquals(-150_000L, deal.netProfitLoss.value)
+        assertEquals(0L, deal.remainingCapital.value) // Dư nợ về 0 đ sau xóa nợ đợt 1
+        assertEquals(DealStatus.COMPLETED, deal.status)
+
+        // 3. Strict State Machine: Khi deal đã COMPLETED, muốn cho vay thêm người dùng mở lại deal
+        val reopenRes = reopenDealUseCase(deal.id)
+        assertTrue(reopenRes is AppResult.Success)
+        deal = fakeRepository.deals.value.first { it.id == "deal-lending-1" }
+        assertEquals(DealStatus.ACTIVE, deal.status)
+
+        // Cho vay thêm đợt 2 (200k)
+        val resOutlay = recordDealOutlayUseCase(
+            deal = deal,
+            walletId = "wallet-1",
+            amount = 200_000L,
+            note = "Cho vay thêm đợt 2",
+        )
+        assertTrue(resOutlay is AppResult.Success)
+
+        deal = fakeRepository.deals.value.first { it.id == "deal-lending-1" }
+        assertEquals(350_000L, deal.totalCapitalOutlay.value)
+        assertEquals(150_000L, deal.writtenOffCapital.value)
+        assertEquals(-150_000L, deal.netProfitLoss.value)
+        // Dư nợ thực tế đợt 2 phải đúng 200k (350k tổng outlay - 150k đã xóa nợ)
+        assertEquals(200_000L, deal.remainingCapital.value)
+        assertEquals(DealStatus.ACTIVE, deal.status)
+
+        // 4. Chốt lỗ / Xóa nợ lần 2 (chỉ xóa đúng 200k dư nợ mới)
+        val res2 = closeDealWithLossUseCase(deal = deal, note = "Xóa nợ đợt 2")
+        assertTrue(res2 is AppResult.Success)
+
+        deal = fakeRepository.deals.value.first { it.id == "deal-lending-1" }
+        // Kiểm tra triệt để:
+        // A. writtenOffCapital == 350k (150k đợt 1 + 200k đợt 2)
+        assertEquals(350_000L, deal.writtenOffCapital.value)
+        // B. netProfitLoss == -350k (KHÔNG BỊ LỖ KÉP -500k)
+        assertEquals(-350_000L, deal.netProfitLoss.value)
+        // C. remainingCapital == 0k (DƯ NỢ PHẢI VỀ 0đ)
+        assertEquals(0L, deal.remainingCapital.value)
+        assertEquals(DealStatus.COMPLETED, deal.status)
+
+        // D. Lịch sử giao dịch chỉ có 2 tx CAPITAL_LOSS tổng cộng là 350k
+        val lossTxs = fakeRepository.recordedTransactions.filter { it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        assertEquals(2, lossTxs.size)
+        assertEquals(350_000L, lossTxs.sumOf { it.amount.value })
+    }
+
+    @Test
+    fun `roi percentage calculated correctly for profit, loss, breakeven, and active waiting deal`() {
         val profitDeal = FinancialDeal(
             title = "Profit Deal",
             totalCapitalOutlay = Money(100_000_000L),
@@ -213,11 +290,76 @@ class DealUseCasesTest {
         )
         assertEquals(-20.0, lossDeal.roiPercentage, 0.001)
 
+        // Active deal với vốn đang lưu động ngoài thị trường và net profit = 0 không được coi là âm -90%
+        val activeWaitingDeal = FinancialDeal(
+            title = "Active Waiting Deal",
+            totalCapitalOutlay = Money(100_000_000L),
+            totalRecovered = Money(10_000_000L),
+            netProfitLoss = Money(0L),
+            status = DealStatus.ACTIVE,
+        )
+        assertEquals(0.0, activeWaitingDeal.roiPercentage, 0.001)
+
         val zeroOutlayDeal = FinancialDeal(
             title = "Zero Deal",
             totalCapitalOutlay = Money(0L),
         )
         assertEquals(0.0, zeroOutlayDeal.roiPercentage, 0.001)
+    }
+
+    @Test
+    fun `remaining capital correctly deducts writtenOffCapital`() {
+        // Mô phỏng deal "Lướt sóng nhỏ/lẻ": Outlay 3.855.900, Recovered 1.355.900, Lỗ chốt deal 2.000.000
+        val deal = FinancialDeal(
+            title = "Lướt sóng nhỏ/lẻ",
+            totalCapitalOutlay = Money(3_855_900L),
+            totalRecovered = Money(1_355_900L),
+            writtenOffCapital = Money(2_000_000L),
+            netProfitLoss = Money(-2_000_000L),
+            status = DealStatus.COMPLETED,
+        )
+        // 3.855.900 - 1.355.900 - 2.000.000 = 500.000
+        assertEquals(500_000L, deal.remainingCapital.value)
+    }
+
+    @Test
+    fun `close deal sets status to COMPLETED and sets endDate`() = runTest {
+        val deal = FinancialDeal(
+            id = "deal-to-close",
+            title = "Deal To Close",
+            totalCapitalOutlay = Money(10_000_000L),
+            totalRecovered = Money(10_000_000L),
+            status = DealStatus.ACTIVE,
+        )
+        fakeRepository.deals.value = listOf(deal)
+
+        val result = closeDealUseCase("deal-to-close")
+        assertTrue(result is AppResult.Success)
+
+        val updated = fakeRepository.deals.value.find { it.id == "deal-to-close" }!!
+        assertEquals(DealStatus.COMPLETED, updated.status)
+        assertTrue(updated.endDate != null)
+    }
+
+    @Test
+    fun `strict state machine prevents outlay and inflow when deal is COMPLETED`() = runTest {
+        val completedDeal = FinancialDeal(
+            id = "deal-completed",
+            title = "Deal Completed",
+            totalCapitalOutlay = Money(10_000_000L),
+            totalRecovered = Money(10_000_000L),
+            status = DealStatus.COMPLETED,
+        )
+        fakeRepository.deals.value = listOf(completedDeal)
+
+        val outlayResult = recordDealOutlayUseCase(completedDeal, "wallet-1", 1_000_000L)
+        assertTrue(outlayResult is AppResult.Error)
+
+        val inflowResult = recordDealInflowUseCase(completedDeal, "wallet-1", 1_000_000L)
+        assertTrue(inflowResult is AppResult.Error)
+
+        val stopLossResult = closeDealWithLossUseCase(completedDeal)
+        assertTrue(stopLossResult is AppResult.Error)
     }
 
     @Test
@@ -352,6 +494,9 @@ private class FakeDealRepository : DealRepository {
         date: Instant,
         note: String,
     ): AppResult<Unit> {
+        if (deal.status == DealStatus.COMPLETED) {
+            return AppResult.Error("Thương vụ đã hoàn tất đóng sổ, không thể xuất thêm vốn")
+        }
         val updated = deal.copy(
             totalCapitalOutlay = Money(deal.totalCapitalOutlay.value + amount),
             status = DealStatus.ACTIVE,
@@ -380,16 +525,20 @@ private class FakeDealRepository : DealRepository {
         date: Instant,
         note: String,
     ): AppResult<Unit> {
+        if (deal.status == DealStatus.COMPLETED) {
+            return AppResult.Error("Thương vụ đã hoàn tất đóng sổ, không thể thu hồi thêm")
+        }
         val totalOutlay = deal.totalCapitalOutlay.value
         val totalRecovered = deal.totalRecovered.value
         val currentProfit = deal.netProfitLoss.value
-        val remainingCapital = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+        val currentWrittenOff = deal.writtenOffCapital.value
+        val remainingCapital = (totalOutlay - totalRecovered - currentWrittenOff).coerceAtLeast(0L)
 
         if (amount <= remainingCapital) {
             val newRecovered = totalRecovered + amount
             val updated = deal.copy(
                 totalRecovered = Money(newRecovered),
-                status = if (newRecovered >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED else DealStatus.ACTIVE,
+                status = if (newRecovered + currentWrittenOff >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED else DealStatus.ACTIVE,
             )
             deals.value = listOf(updated) + deals.value.filterNot { it.id == deal.id }
             recordedTransactions.add(
@@ -409,7 +558,7 @@ private class FakeDealRepository : DealRepository {
             val principalPortion = remainingCapital
             val gainPortion = amount - remainingCapital
             val updated = deal.copy(
-                totalRecovered = Money(totalOutlay),
+                totalRecovered = Money(totalRecovered + principalPortion),
                 netProfitLoss = Money(currentProfit + gainPortion),
                 status = DealStatus.COMPLETED,
             )
@@ -452,12 +601,18 @@ private class FakeDealRepository : DealRepository {
         date: Instant,
         note: String,
     ): AppResult<Unit> {
+        if (deal.status == DealStatus.COMPLETED) {
+            return AppResult.Error("Thương vụ đã hoàn tất đóng sổ")
+        }
         val totalOutlay = deal.totalCapitalOutlay.value
         val totalRecovered = deal.totalRecovered.value
-        val lossAmount = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+        val currentProfit = deal.netProfitLoss.value
+        val currentWrittenOff = deal.writtenOffCapital.value
+        val lossAmount = (totalOutlay - totalRecovered - currentWrittenOff).coerceAtLeast(0L)
 
         val updated = deal.copy(
-            netProfitLoss = Money(deal.netProfitLoss.value - lossAmount),
+            writtenOffCapital = Money(currentWrittenOff + lossAmount),
+            netProfitLoss = Money(currentProfit - lossAmount),
             status = DealStatus.COMPLETED,
             endDate = date,
         )
@@ -470,7 +625,7 @@ private class FakeDealRepository : DealRepository {
                     type = TransactionType.EXPENSE,
                     amount = Money(lossAmount),
                     categoryId = null,
-                    walletId = "DEAL_SETTLEMENT",
+                    walletId = "wal_cash",
                     dealId = deal.id,
                     dealFlowType = DealFlowType.CAPITAL_LOSS,
                     note = note,
@@ -487,10 +642,22 @@ private class FakeDealRepository : DealRepository {
         val totalLoss = lossTxs.sumOf { it.amount.value }
 
         recordedTransactions.removeAll { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
+        val newWrittenOff = (deal.writtenOffCapital.value - totalLoss).coerceAtLeast(0L)
         val updated = deal.copy(
+            writtenOffCapital = Money(newWrittenOff),
             netProfitLoss = Money(deal.netProfitLoss.value + totalLoss),
             status = DealStatus.ACTIVE,
             endDate = null,
+        )
+        deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun closeDeal(dealId: String, date: Instant): AppResult<Unit> {
+        val deal = deals.value.find { it.id == dealId } ?: return AppResult.Error("Not found")
+        val updated = deal.copy(
+            status = DealStatus.COMPLETED,
+            endDate = date,
         )
         deals.value = listOf(updated) + deals.value.filterNot { it.id == dealId }
         return AppResult.Success(Unit)

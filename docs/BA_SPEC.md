@@ -540,3 +540,28 @@ Business rules: BR-SS-01..14 theo FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md.
    - **Tổng Chi tiêu (Expense)**: Chỉ ghi nhận Chi tiêu sinh hoạt + Khoản **`CAPITAL_LOSS`** (khoản lỗ thực tế khi chốt đóng deal thất bại). Số tiền xuất vốn `OUTLAY_CAPITAL` tuyệt đối không tính vào Chi tiêu.
    - **Dòng tiền ròng (Net Cash Flow)**: Phản ánh đúng thực chất hiệu quả tăng trưởng tài sản thực của người dùng.
 
+---
+
+## 8. Quy tắc Nghiệp vụ Quản lý Nợ & Tín dụng (Debt Hub Core Rules)
+
+### 8.1. Phân loại Nợ: Định kỳ vs Cá nhân linh hoạt (`isMonthlyRecurring`)
+- **Nợ định kỳ (`CREDIT_CARD`, `BANK_LOAN`, `INSTALLMENT`)**:
+  - `isMonthlyRecurring = true`: Bắt buộc nhập ngày đến hạn hàng tháng (`dueDate in 1..31`).
+  - Áp dụng kiểm tra cảnh báo lệch pha dòng tiền lương (`dueDate < paydayDay`).
+  - Được kích hoạt lập lịch nhắc nhở nợ tự động (`SyncDebtReminderUseCase`) khi bật `isReminderEnabled`.
+- **Nợ cá nhân linh hoạt (`PERSONAL_LOAN` - Vay mượn bạn bè, người thân)**:
+  - `isMonthlyRecurring = false`: Cho phép `dueDate = null` (linh hoạt, không có kỳ hạn cố định).
+  - Tuyệt đối không sinh cảnh báo lệch pha trước ngày lương và không hiển thị chip nhắc ảo.
+  - Tự động hủy báo thức thông báo nếu không có ngày cố định.
+
+### 8.2. Chống Bẫy Nợ Âm (Negative Amortization Trap Mitigation)
+- Khi mô phỏng chiến lược trả nợ (`CalculatePayoffStrategyUseCase`):
+  - Kiểm tra điều kiện khả thi: Nếu `minPayment <= monthlyInterest`, phát hiện bẫy nợ âm (tiền trả tối thiểu không đủ bù tiền lãi phát sinh, dư nợ phình to vô hạn).
+  - Xử lý: Dừng ngay vòng lặp mô phỏng baseline, đánh dấu cờ `isBaselineTrap = true`, kẹp trần thời gian tối đa 120 tháng (10 năm) và kẹp trần lãi tiết kiệm tối đa 200% nợ gốc ban đầu để chống tràn số Long.
+  - Giao diện `StrategySelectorCard`: Hiển thị rõ ràng trạng thái *"Chặn lãi thả nổi"* / *"Thoát bẫy nợ"* kèm thẻ Amber cảnh báo.
+
+### 8.3. Cơ Chế Tự Phục Hồi Dữ Liệu (Self-Healing Sanitization Pipeline)
+- **In-Memory Sanitization (`FirebaseDebtRepository.toDebtAccount`)**: Tự động chuẩn hóa `dueDate = 1` của `PERSONAL_LOAN` về `null` ngay trên bộ nhớ trước khi phát Flow ra UI.
+- **Silent Self-Healing (`FirebaseDebtRepository.observeDebts`)**: Tự động phát hiện document `PERSONAL_LOAN` có dính `dueDate = 1` trên Firestore và âm thầm cập nhật xóa trường `dueDate` trên cơ sở dữ liệu Cloud.
+
+

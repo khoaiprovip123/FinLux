@@ -25,8 +25,10 @@ data class DebtAccount(
     val remainingBalance: Money,      // Dư nợ hiện tại
     val interestRateApr: Double,      // Lãi suất năm (% APR, vd: 18.5)
     val minimumPayment: Money,        // Thanh toán tối thiểu hàng tháng
-    val dueDate: Int = 15,            // Ngày đến hạn hàng tháng (1..31)
+    val dueDate: Int? = null,         // Ngày đến hạn hàng tháng (1..31, null nếu không cố định)
     val statementDate: Int? = null,   // Ngày chốt sao kê hàng tháng (thẻ tín dụng)
+    val linkedWalletId: String? = null, // ID ví thẻ tín dụng liên kết (WalletType.CARD)
+    val gracePeriodDays: Int = 45,    // Thời gian miễn lãi (thẻ tín dụng, vd: 45 ngày)
     val colorHex: String = "#E11D48",
     val isReminderEnabled: Boolean = true,
     val reminderDaysBefore: Int = 3,
@@ -45,6 +47,10 @@ data class DebtAccount(
     /** Số tiền đã thanh toán */
     val paidAmount: Money
         get() = Money((totalAmount.value - remainingBalance.value).coerceAtLeast(0L))
+
+    /** Khoản nợ có kỳ hạn thanh toán định kỳ hàng tháng bắt buộc (Thẻ tín dụng, Ngân hàng, Trả góp) */
+    val isMonthlyRecurring: Boolean
+        get() = type != DebtType.PERSONAL_LOAN
 }
 
 data class DebtPaymentStep(
@@ -58,6 +64,52 @@ data class DebtPaymentStep(
     val remainingBalanceAfter: Money,
 )
 
+/**
+ * Từng khoản nợ được phân bổ trích lương trong kỳ lương tới.
+ */
+data class PaydayAllocationItem(
+    val debtId: String,
+    val debtName: String,
+    val debtType: DebtType,
+    val isTarget: Boolean,
+    val minimumPayment: Money,
+    val extraPayment: Money,
+    val totalPaydayPayment: Money,
+    val dueDate: Int? = null,
+    val isMismatchedWithPayday: Boolean, // true nếu dueDate != null && dueDate < paydayDay
+    val colorHex: String,
+) {
+    val isTargetDebt: Boolean get() = isTarget
+    val totalPayment: Money get() = totalPaydayPayment
+}
+
+/**
+ * Bảng kế hoạch trích lương trả nợ cho kỳ nhận lương tiếp theo.
+ */
+data class PaydayAllocationPlan(
+    val paydayDay: Int,
+    val salaryWalletId: String? = null,
+    val salaryWalletName: String? = null,
+    val expectedSalary: Money = Money(0L),
+    val totalDebtDeduction: Money = Money(0L),
+    val remainingIncomeAfterDebt: Money = Money(0L),
+    val items: List<PaydayAllocationItem> = emptyList(),
+    val mismatchedWarnings: List<String> = emptyList(),
+) {
+    val deductionRatioPercent: Double
+        get() = if (expectedSalary.value > 0L) (totalDebtDeduction.value.toDouble() / expectedSalary.value.toDouble()) * 100.0 else 0.0
+}
+
+/**
+ * Kết quả so sánh trực tiếp giữa hai chiến lược Snowball và Avalanche.
+ */
+data class StrategyComparison(
+    val interestSavedWithAvalanche: Money = Money(0L), // Tiền lãi Avalanche tiết kiệm được so với Snowball
+    val firstSettledMonthDifference: Int = 0,          // Số tháng Snowball tất toán chủ nợ đầu tiên nhanh hơn Avalanche
+    val isZeroAprOnly: Boolean = false,                // Toàn bộ khoản nợ đều 0% APR
+    val hasMeaningfulDifference: Boolean = true,       // Có sự khác biệt thực tế về tiền lãi hoặc thời gian
+)
+
 data class DebtPayoffPlan(
     val strategy: PayoffStrategy,
     val monthlyBudgetForDebt: Money,
@@ -66,6 +118,12 @@ data class DebtPayoffPlan(
     val totalInterestPayable: Money,
     val totalInterestSaved: Money,
     val paymentSchedule: List<DebtPaymentStep> = emptyList(),
+    val totalCycles: Int = totalMonths,
+    val timeSavedCycles: Int = 0,
+    val isZeroAprOnly: Boolean = false,
+    val isBaselineTrap: Boolean = false,
+    val paydayPlan: PaydayAllocationPlan? = null,
+    val comparison: StrategyComparison? = null,
 )
 
 data class DebtPaymentHistory(
@@ -77,6 +135,7 @@ data class DebtPaymentHistory(
     val interestPaid: Money,
     val paymentDate: Instant = Instant.now(),
     val note: String = "",
+    val isCreditCardPayment: Boolean = false,
 )
 
 data class PayoffScenario(
@@ -95,4 +154,6 @@ data class DebtCashflowAnalysis(
     val isDeficit: Boolean,
     val weightedApr: Double,
     val scenarios: List<PayoffScenario>,
+    val isSalaryCycleBased: Boolean = false,
+    val baseIncomeSource: String = "",
 )

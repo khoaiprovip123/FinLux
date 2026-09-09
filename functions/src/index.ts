@@ -34,14 +34,20 @@ type ReminderDocument = {
 
 type SalaryCycleConfig = {
   enabled?: boolean;
+  paydayRuleType?: "DAY_OF_MONTH" | "FIRST_DAY_OF_MONTH" | "LAST_DAY_OF_MONTH";
+  paydayDay?: number;
   baseDay?: number;
   budgetPeriodBasis?: "CALENDAR_MONTH" | "SALARY_CYCLE";
   financeTimeZone?: string;
 };
 
 async function getSalaryConfig(uid: string): Promise<SalaryCycleConfig> {
-  const snapshot = await db.doc(`users/${uid}/preferences/salaryCycle`).get();
-  return snapshot.exists ? (snapshot.data() as SalaryCycleConfig) : {};
+  const primaryDoc = await db.doc(`users/${uid}/financialPreferences/salaryCycle`).get();
+  if (primaryDoc.exists) {
+    return primaryDoc.data() as SalaryCycleConfig;
+  }
+  const fallbackDoc = await db.doc(`users/${uid}/preferences/salaryCycle`).get();
+  return fallbackDoc.exists ? (fallbackDoc.data() as SalaryCycleConfig) : {};
 }
 
 function resolvePeriod(date: Date, config: SalaryCycleConfig): { key: string; start: Timestamp; end: Timestamp; basis: string } {
@@ -59,19 +65,22 @@ function resolvePeriod(date: Date, config: SalaryCycleConfig): { key: string; st
       basis: "CALENDAR_MONTH"
     };
   } else {
-    const baseDay = config.baseDay || 5;
+    const ruleType = config.paydayRuleType || "DAY_OF_MONTH";
+    let targetDay = config.paydayDay || config.baseDay || 5;
+    if (ruleType === "FIRST_DAY_OF_MONTH") targetDay = 1;
     
-    // Helper to get safe day (handles 31st etc)
+    // Helper to get safe day (handles 31st, leap years, last day of month etc)
     const getSafeDay = (y: number, m: number, d: number) => {
       const maxDays = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      if (ruleType === "LAST_DAY_OF_MONTH") return maxDays;
       return Math.min(d, maxDays);
     };
 
-    let start = new Date(Date.UTC(year, month, getSafeDay(year, month, baseDay)));
+    let start = new Date(Date.UTC(year, month, getSafeDay(year, month, targetDay)));
     if (date < start) {
-      start = new Date(Date.UTC(year, month - 1, getSafeDay(year, month - 1, baseDay)));
+      start = new Date(Date.UTC(year, month - 1, getSafeDay(year, month - 1, targetDay)));
     }
-    const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, getSafeDay(start.getUTCFullYear(), start.getUTCMonth() + 1, baseDay)));
+    const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, getSafeDay(start.getUTCFullYear(), start.getUTCMonth() + 1, targetDay)));
     
     const yStr = start.getUTCFullYear();
     const mStr = String(start.getUTCMonth() + 1).padStart(2, "0");
@@ -322,7 +331,7 @@ export const sendReminderPush = onSchedule(
         reminderId: reminderSnapshot.id,
         categoryId: reminder.categoryId ?? null,
         walletId: reminder.walletId ?? null,
-        targetRoute: "reminders",
+        targetRoute: "notifications",
         timestamp: FieldValue.serverTimestamp(),
         createdAt: FieldValue.serverTimestamp(),
         isRead: false,
@@ -332,7 +341,7 @@ export const sendReminderPush = onSchedule(
       await batch.commit();
 
       await sendUserPush(uid, title, body, {
-        destination: "reminders",
+        destination: "notifications",
         reminderId: reminderSnapshot.id,
       });
     }

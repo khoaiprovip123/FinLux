@@ -183,6 +183,10 @@ fun DealsScreen(
                     val dealId = selected.id
                     viewModel.closeDealWithLoss(selected)
                 },
+                onCloseDeal = {
+                    val dealId = selected.id
+                    viewModel.closeDeal(dealId)
+                },
                 onRevertStopLoss = {
                     val dealId = selected.id
                     viewModel.revertDealLoss(dealId)
@@ -325,17 +329,22 @@ private fun HeroSummaryCard(state: DealsUiState) {
 
                 // Overall ROI Badge
                 val overallRoi = state.overallRoiPercentage
+                val isZero = state.totalAccumulatedProfit.value == 0L
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (overallRoi >= 0) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFEF4444).copy(alpha = 0.15f))
+                        .background(
+                            if (isZero) tokens.surfaceSoft
+                            else if (overallRoi >= 0) Color(0xFF10B981).copy(alpha = 0.15f)
+                            else Color(0xFFEF4444).copy(alpha = 0.15f)
+                        )
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = String.format(java.util.Locale.US, "ROI %+.1f%%", overallRoi),
+                        text = if (isZero) "ROI 0.0%" else String.format(java.util.Locale.US, "ROI %+.1f%%", overallRoi),
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = if (overallRoi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
+                            color = if (isZero) tokens.textSecondary else if (overallRoi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
                         ),
                     )
                 }
@@ -536,17 +545,22 @@ private fun DealCardItem(
                     }
                 } else {
                     val roi = deal.roiPercentage
+                    val isZero = deal.netProfitLoss.value == 0L
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (roi >= 0) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFEF4444).copy(alpha = 0.15f))
+                            .background(
+                                if (isZero) tokens.surfaceSoft
+                                else if (roi >= 0) Color(0xFF10B981).copy(alpha = 0.15f)
+                                else Color(0xFFEF4444).copy(alpha = 0.15f)
+                            )
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            text = String.format(java.util.Locale.US, "%+.1f%%", roi),
+                            text = if (isZero) "0.0%" else String.format(java.util.Locale.US, "%+.1f%%", roi),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = if (roi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
+                                color = if (isZero) tokens.textSecondary else if (roi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
                             ),
                         )
                     }

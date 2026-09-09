@@ -86,4 +86,9 @@ interface DealRepository {
      * Mở Lại Deal đã hoàn tất (Chuyển trạng thái Deal về ACTIVE).
      */
     suspend fun reopenDeal(dealId: String): AppResult<Unit>
+
+    /**
+     * Tất toán & Đóng Deal (Chuyển trạng thái Deal về COMPLETED).
+     */
+    suspend fun closeDeal(dealId: String, date: Instant = Instant.now()): AppResult<Unit>
 }

@@ -43,6 +43,7 @@ data class FinancialDeal(
     val targetAmount: Money = Money(0),
     val totalCapitalOutlay: Money = Money(0),
     val totalRecovered: Money = Money(0),
+    val writtenOffCapital: Money = Money(0),
     val netProfitLoss: Money = Money(0),
     val status: DealStatus = DealStatus.ACTIVE,
     val startDate: Instant = Instant.now(),
@@ -50,18 +51,14 @@ data class FinancialDeal(
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
 ) {
-    /** Vốn gốc còn lại chưa thu hồi */
+    /** Vốn gốc còn lại chưa thu hồi (sau khi trừ vốn đã thu hồi và vốn đã chốt lỗ / xóa sổ) */
     val remainingCapital: Money
-        get() = Money((totalCapitalOutlay.value - totalRecovered.value).coerceAtLeast(0L))
+        get() = Money((totalCapitalOutlay.value - totalRecovered.value - writtenOffCapital.value).coerceAtLeast(0L))
 
-    /** Tỷ suất sinh lời ROI (%) theo thời gian thực */
+    /** Tỷ suất sinh lời ROI (%) theo Lợi nhuận ròng thực nhận */
     val roiPercentage: Double
         get() = if (totalCapitalOutlay.value > 0) {
-            if (status == DealStatus.COMPLETED) {
-                (netProfitLoss.value.toDouble() / totalCapitalOutlay.value) * 100.0
-            } else {
-                ((totalRecovered.value + netProfitLoss.value - totalCapitalOutlay.value).toDouble() / totalCapitalOutlay.value) * 100.0
-            }
+            (netProfitLoss.value.toDouble() / totalCapitalOutlay.value.toDouble()) * 100.0
         } else 0.0
 
     /** Tiến độ thu hồi vốn gốc (0.0 .. 1.0) */

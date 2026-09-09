@@ -73,6 +73,9 @@ import java.time.ZoneId
 import java.util.Locale
 
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.finlux.app.domain.model.Category
+import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.presentation.transaction.TransactionDetailSheet
 
 private val ChartColors = listOf(FinluxBlue, FinluxPurple, FinluxCyan, IncomeGreen, Color(0xFFFFB347), ExpenseRed)
 
@@ -81,12 +84,15 @@ fun ModernReportsScreen(
     onNavigate: (String) -> Unit,
     onAdd: () -> Unit,
     onBack: (() -> Unit)? = null,
+    onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: ReportsViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val selectedPeriod = viewModel.selectedPeriod.collectAsStateWithLifecycle().value
     var showRangePicker by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var selectedWalletForDetail by remember { mutableStateOf<WalletSpendingDetail?>(null) }
+    var viewingTransaction by remember { mutableStateOf<FinanceTransaction?>(null) }
     Box(Modifier.fillMaxSize()) {
         com.finlux.app.core.designsystem.modern.FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
@@ -222,7 +228,12 @@ fun ModernReportsScreen(
                             Text("Phân bổ chi tiêu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text("Xem chi tiết", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                         }
-                        if (state.expensesByCategory.isEmpty()) EmptyChartText() else ExpenseDistribution(state.expensesByCategory)
+                        if (state.expensesByCategory.isEmpty()) EmptyChartText() else ExpenseDistribution(
+                            items = state.expensesByCategory,
+                            onCategoryClick = { cat ->
+                                viewModel.selectCategoryForDetail(cat.id, isExpense = true)
+                            }
+                        )
                     }
                 }
                 ReportPanel {
@@ -277,7 +288,7 @@ fun ModernReportsScreen(
                             spendingDetails = state.walletSpendingDetails,
                             selectedWalletId = state.selectedWalletId,
                             onWalletClick = { walletId ->
-                                viewModel.selectWallet(if (state.selectedWalletId == walletId) null else walletId)
+                                selectedWalletForDetail = state.walletSpendingDetails.find { it.wallet.id == walletId }
                             }
                         )
                     }
@@ -343,6 +354,63 @@ fun ModernReportsScreen(
                 ),
             )
         }
+    }
+
+    // Category Detail Bottom Sheet (Level 2, 3, 4)
+    state.selectedCategorySpendingDetail?.let { detail ->
+        CategoryDetailBottomSheet(
+            detail = detail,
+            selectedWalletFilterId = state.selectedCategoryDrillWalletId,
+            onSelectWalletFilter = { viewModel.setCategoryDrillWalletFilter(it) },
+            onTransactionClick = { viewingTransaction = it },
+            onDismiss = { viewModel.clearCategoryDetail() },
+        )
+    }
+
+    // Wallet Spending Detail Bottom Sheet (Level 2, 3, 4)
+    selectedWalletForDetail?.let { detail ->
+        WalletDetailBottomSheet(
+            detail = detail,
+            isFilterActive = state.selectedWalletId == detail.wallet.id,
+            selectedCategoryFilterId = state.selectedWalletDrillCategoryId,
+            onSelectCategoryFilter = { viewModel.setWalletDrillCategoryFilter(it) },
+            onTransactionClick = { viewingTransaction = it },
+            onFilterWallet = {
+                viewModel.selectWallet(detail.wallet.id)
+                selectedWalletForDetail = null
+            },
+            onClearFilter = {
+                viewModel.selectWallet(null)
+                selectedWalletForDetail = null
+            },
+            onDismiss = {
+                selectedWalletForDetail = null
+                viewModel.setWalletDrillCategoryFilter(null)
+            },
+        )
+    }
+
+    // Level 4: Transaction Detail Sheet
+    viewingTransaction?.let { tx ->
+        val category = tx.categoryId?.let { cId -> state.categories.find { it.id == cId } }
+        val wallet = state.wallets.find { it.id == tx.walletId }
+        val relatedWallet = tx.relatedWalletId?.let { rwId -> state.wallets.find { it.id == rwId } }
+
+        TransactionDetailSheet(
+            transaction = tx,
+            category = category,
+            wallet = wallet,
+            relatedWallet = relatedWallet,
+            onDismiss = { viewingTransaction = null },
+            onEdit = {
+                viewingTransaction = null
+                onEditTransaction?.invoke(it)
+            },
+            onDelete = {
+                viewingTransaction = null
+                viewModel.deleteTransaction(it)
+            },
+        )
     }
 }
 
@@ -411,19 +479,22 @@ private fun reportRangeLabel(state: ReportsUiState): String = when (state.period
 }
 
 @Composable
-private fun ExpenseDistribution(items: List<CategoryExpense>) {
+private fun ExpenseDistribution(
+    items: List<CategoryExpense>,
+    onCategoryClick: ((Category) -> Unit)? = null,
+) {
     val total = items.sumOf { it.amount }.coerceAtLeast(1L)
     val visible = items.take(6)
     Row(Modifier.fillMaxWidth().height(164.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        visible.getOrNull(0)?.let { CategoryBlock(it, total, 0, Modifier.weight(1.05f).fillMaxSize()) }
+        visible.getOrNull(0)?.let { CategoryBlock(it, total, 0, Modifier.weight(1.05f).fillMaxSize(), onCategoryClick) }
         Column(Modifier.weight(1.55f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                visible.getOrNull(1)?.let { CategoryBlock(it, total, 1, Modifier.weight(1f).fillMaxSize()) }
-                visible.getOrNull(2)?.let { CategoryBlock(it, total, 2, Modifier.weight(1f).fillMaxSize()) }
+                visible.getOrNull(1)?.let { CategoryBlock(it, total, 1, Modifier.weight(1f).fillMaxSize(), onCategoryClick) }
+                visible.getOrNull(2)?.let { CategoryBlock(it, total, 2, Modifier.weight(1f).fillMaxSize(), onCategoryClick) }
             }
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 (3..5).forEach { index ->
-                    visible.getOrNull(index)?.let { CategoryBlock(it, total, index, Modifier.weight(1f).fillMaxSize()) }
+                    visible.getOrNull(index)?.let { CategoryBlock(it, total, index, Modifier.weight(1f).fillMaxSize(), onCategoryClick) }
                         ?: Spacer(Modifier.weight(1f))
                 }
             }
@@ -432,13 +503,22 @@ private fun ExpenseDistribution(items: List<CategoryExpense>) {
 }
 
 @Composable
-private fun CategoryBlock(item: CategoryExpense, total: Long, index: Int, modifier: Modifier) {
+private fun CategoryBlock(
+    item: CategoryExpense,
+    total: Long,
+    index: Int,
+    modifier: Modifier,
+    onCategoryClick: ((Category) -> Unit)? = null,
+) {
     val accent = ChartColors[index % ChartColors.size]
     val isSmall = index >= 3
     val percent = (item.amount * 100 / total).coerceAtLeast(1)
     Column(
         modifier
             .background(accent, RoundedCornerShape(10.dp))
+            .clickable(enabled = onCategoryClick != null && item.category != null) {
+                item.category?.let { onCategoryClick?.invoke(it) }
+            }
             .padding(if (index == 0) 10.dp else if (isSmall) 6.dp else 8.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {

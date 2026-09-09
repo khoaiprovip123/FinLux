@@ -27,6 +27,10 @@ import com.finlux.app.domain.repository.UiPreferencesRepository
 import com.finlux.app.domain.repository.WalletRepository
 import com.finlux.app.domain.usecase.FinancialPeriodResolver
 import com.finlux.app.domain.usecase.SalaryCycleCalculator
+import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.TrueNetWorth
+import com.finlux.app.domain.repository.DealRepository
+import com.finlux.app.domain.usecase.GetTrueNetWorthUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +52,8 @@ data class HomeUiState(
     val grossAssets: Long = 0L,
     val totalDebt: Long = 0L,
     val netWorth: Long = 0L,
+    val activeCapitalOutlay: Long = 0L,
+    val standardNetWorth: Long = 0L,
     val transactions: List<FinanceTransaction> = emptyList(),
     val monthTransactions: List<FinanceTransaction> = emptyList(),
     val categories: List<Category> = emptyList(),
@@ -91,6 +97,8 @@ class HomeViewModel @Inject constructor(
     calculator: SalaryCycleCalculator,
     clock: FinanceClock,
     private val uiPreferencesRepository: UiPreferencesRepository,
+    dealRepository: DealRepository,
+    private val getTrueNetWorthUseCase: GetTrueNetWorthUseCase = GetTrueNetWorthUseCase(walletRepository, debtRepository, dealRepository),
 ) : ViewModel() {
 
     private val financialOverviewFlow = salaryCycleRepository.observeConfig().flatMapLatest { cycleConfig ->
@@ -170,14 +178,20 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private data class AssetsAndDebtsOverview(
+        val wallets: List<Wallet>,
+        val debts: List<DebtAccount>,
+        val deals: List<FinancialDeal>,
+        val breakdown: TrueNetWorth,
+    )
+
     private val assetsAndDebtsFlow = combine(
         walletRepository.observeWallets(),
         debtRepository.observeDebts(),
-    ) { wallets, debts ->
-        val gross = wallets.totalAssetBalance()
-        val totalDebt = debts.filterNot { it.isSettled }.sumOf { it.remainingBalance.value }
-        val netWorth = gross - totalDebt
-        Triple(wallets, debts, Triple(gross, totalDebt, netWorth))
+        dealRepository.observeDeals(),
+    ) { wallets, debts, deals ->
+        val breakdown = getTrueNetWorthUseCase.calculate(wallets, debts, deals)
+        AssetsAndDebtsOverview(wallets, debts, deals, breakdown)
     }
 
     val state = combine(
@@ -189,17 +203,18 @@ class HomeViewModel @Inject constructor(
             categories to uiPrefs
         },
     ) { user, overview, assetsAndDebts, transactions, (categories, uiPrefs) ->
-        val (wallets, debts, balances) = assetsAndDebts
-        val (gross, totalDebt, netWorth) = balances
+        val (wallets, debts, deals, breakdown) = assetsAndDebts
 
         HomeUiState(
             user = user,
             summary = overview.summary,
             wallets = wallets,
             debts = debts,
-            grossAssets = gross,
-            totalDebt = totalDebt,
-            netWorth = netWorth,
+            grossAssets = breakdown.totalWalletAssets.value,
+            totalDebt = breakdown.totalDebtRemaining.value,
+            netWorth = breakdown.trueNetWorth.value,
+            activeCapitalOutlay = breakdown.activeDealCapitalOutlay.value,
+            standardNetWorth = breakdown.standardNetWorth.value,
             transactions = transactions.collapseInternalTransferPairs(),
             monthTransactions = overview.monthTransactions,
             categories = categories,

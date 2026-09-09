@@ -38,6 +38,7 @@ class DebtViewModelTest {
     private val fakeWalletRepository = FakeWalletRepo()
     private val fakeTransactionRepository = FakeTransactionRepo()
     private val fakeCategoryRepository = FakeCategoryRepo()
+    private val fakeSalaryCycleRepository = FakeSalaryCycleRepo()
     private val fakeDebtPreferenceRepository = FakeDebtPreferenceRepo()
 
     private val fakeReminderRepository = FakeReminderRepo()
@@ -63,6 +64,8 @@ class DebtViewModelTest {
             walletRepository = fakeWalletRepository,
             transactionRepository = fakeTransactionRepository,
             categoryRepository = fakeCategoryRepository,
+            salaryCycleRepository = fakeSalaryCycleRepository,
+            syncDebtReminderUseCase = syncDebtReminderUseCase,
             analyzeDebtCashflowUseCase = analyzeDebtCashflowUseCase,
             calculatePayoffStrategyUseCase = calculatePayoffStrategyUseCase,
             saveDebtAccountUseCase = saveDebtAccountUseCase,
@@ -276,4 +279,15 @@ private class FakeReminderRepo : com.finlux.app.domain.repository.ReminderReposi
 private class FakeReminderScheduler : com.finlux.app.domain.repository.ReminderScheduler {
     override fun schedule(reminder: com.finlux.app.domain.model.Reminder) {}
     override fun cancel(reminderId: String) {}
+}
+
+private class FakeSalaryCycleRepo : com.finlux.app.domain.repository.SalaryCycleRepository {
+    private val configFlow = kotlinx.coroutines.flow.MutableStateFlow(com.finlux.app.domain.model.SalaryCycleConfig())
+    override fun observeConfig(): Flow<com.finlux.app.domain.model.SalaryCycleConfig> = configFlow
+    override suspend fun saveConfig(config: com.finlux.app.domain.model.SalaryCycleConfig): AppResult<Unit> {
+        configFlow.value = config
+        return AppResult.Success(Unit)
+    }
+    override suspend fun isRolloverProcessed(cycleKey: String): Boolean = false
+    override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> = AppResult.Success(Unit)
 }

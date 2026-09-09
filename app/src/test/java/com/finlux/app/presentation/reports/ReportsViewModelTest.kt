@@ -570,4 +570,153 @@ class ReportsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `selectCategoryForDetail computes category spending detail and sub-wallet filtering accurately`() = runTest(testDispatcher) {
+        val now = Instant.now()
+        val catFood = Category(
+            id = "cat_food",
+            name = "Ăn uống",
+            type = CategoryType.EXPENSE,
+            icon = "restaurant",
+            colorHex = "#EF4444",
+            isDefault = true,
+            createdAt = now,
+        )
+        val walletCash = Wallet(
+            id = "w_cash",
+            name = "Tiền mặt",
+            type = WalletType.CASH,
+            balance = Money(5_000_000L),
+            colorHex = "#10B981",
+            isDefault = true,
+            createdAt = now,
+        )
+        val walletBank = Wallet(
+            id = "w_bank",
+            name = "Tài khoản Techcombank",
+            type = WalletType.BANK,
+            balance = Money(15_000_000L),
+            colorHex = "#3B82F6",
+            isDefault = false,
+            createdAt = now,
+        )
+        val budgetFood = Budget(
+            id = "b_food",
+            categoryId = "cat_food",
+            periodKey = "2026-09",
+            limitAmount = Money(2_000_000L),
+        )
+        val tx1 = FinanceTransaction(
+            id = "tx1",
+            walletId = "w_cash",
+            categoryId = "cat_food",
+            type = TransactionType.EXPENSE,
+            amount = Money(300_000L),
+            date = now,
+            note = "Cơm trưa văn phòng",
+        )
+        val tx2 = FinanceTransaction(
+            id = "tx2",
+            walletId = "w_bank",
+            categoryId = "cat_food",
+            type = TransactionType.EXPENSE,
+            amount = Money(700_000L),
+            date = now,
+            note = "Lẩu tối cuối tuần",
+        )
+
+        every { categoryRepository.observeCategories() } returns flowOf(listOf(catFood))
+        every { walletRepository.observeWallets() } returns flowOf(listOf(walletCash, walletBank))
+        every { budgetRepository.observeBudgets(any()) } returns flowOf(listOf(budgetFood))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns flowOf(listOf(tx1, tx2))
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem() // initial
+            advanceUntilIdle()
+            val state = awaitItem()
+
+            // Ban đầu chưa chọn danh mục
+            assertEquals(null, state.selectedCategorySpendingDetail)
+
+            // Chọn danh mục Ăn uống
+            viewModel.selectCategoryForDetail("cat_food")
+            advanceUntilIdle()
+            val detailState = awaitItem()
+
+            val catDetail = detailState.selectedCategorySpendingDetail
+            assertTrue(catDetail != null)
+            assertEquals("cat_food", catDetail!!.category.id)
+            assertEquals(1_000_000L, catDetail.totalAmount)
+            assertEquals(2, catDetail.transactionCount)
+            assertEquals(2, catDetail.walletBreakdown.size)
+            // Ngân sách 2M, chi 1M -> spent = 1M, limit = 2M
+            assertEquals(2_000_000L, catDetail.budgetItem?.limit)
+            assertEquals(1_000_000L, catDetail.budgetItem?.spent)
+
+            // Kiểm tra phân bổ theo ví: w_bank 700k (70%), w_cash 300k (30%)
+            assertEquals("w_bank", catDetail.walletBreakdown[0].wallet.id)
+            assertEquals(700_000L, catDetail.walletBreakdown[0].amount)
+            assertEquals("w_cash", catDetail.walletBreakdown[1].wallet.id)
+            assertEquals(300_000L, catDetail.walletBreakdown[1].amount)
+
+            // Toàn bộ 2 giao dịch hiển thị khi chưa lọc ví
+            assertEquals(2, catDetail.transactions.size)
+
+            // Lọc sub-wallet theo w_cash
+            viewModel.setCategoryDrillWalletFilter("w_cash")
+            advanceUntilIdle()
+            val subWalletState = awaitItem()
+            val subWalletDetail = subWalletState.selectedCategorySpendingDetail
+            assertTrue(subWalletDetail != null)
+            assertEquals(1, subWalletDetail!!.transactions.size)
+            assertEquals("tx1", subWalletDetail.transactions[0].id)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `wallet drill-down sub-filtering by category filters transactions correctly`() = runTest(testDispatcher) {
+        val now = Instant.now()
+        val catFood = Category(id = "cat_food", name = "Ăn uống", type = CategoryType.EXPENSE, icon = "food", colorHex = "#EF4444", isDefault = true, createdAt = now)
+        val catTech = Category(id = "cat_tech", name = "Công nghệ", type = CategoryType.EXPENSE, icon = "tech", colorHex = "#3B82F6", isDefault = true, createdAt = now)
+        val wallet = Wallet(id = "w1", name = "Ví chính", type = WalletType.BANK, balance = Money(10_000_000L), colorHex = "#0EA5E9", isDefault = true, createdAt = now)
+
+        val tx1 = FinanceTransaction(id = "tx1", walletId = "w1", categoryId = "cat_food", type = TransactionType.EXPENSE, amount = Money(100_000L), date = now)
+        val tx2 = FinanceTransaction(id = "tx2", walletId = "w1", categoryId = "cat_tech", type = TransactionType.EXPENSE, amount = Money(500_000L), date = now)
+
+        every { categoryRepository.observeCategories() } returns flowOf(listOf(catFood, catTech))
+        every { walletRepository.observeWallets() } returns flowOf(listOf(wallet))
+        every { transactionRangeRepository.observeRange(any(), any()) } returns flowOf(listOf(tx1, tx2))
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem()
+            advanceUntilIdle()
+            val state = awaitItem()
+
+            // Chọn ví w1
+            viewModel.selectWallet("w1")
+            advanceUntilIdle()
+            val w1State = awaitItem()
+            val w1Detail = w1State.selectedWalletSpendingDetail
+            assertTrue(w1Detail != null)
+            assertEquals(2, w1Detail!!.transactions.size)
+
+            // Lọc theo danh mục cat_tech trong ví w1
+            viewModel.setWalletDrillCategoryFilter("cat_tech")
+            advanceUntilIdle()
+            val filteredState = awaitItem()
+            val filteredDetail = filteredState.selectedWalletSpendingDetail
+            assertTrue(filteredDetail != null)
+            assertEquals(1, filteredDetail!!.transactions.size)
+            assertEquals("tx2", filteredDetail.transactions[0].id)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

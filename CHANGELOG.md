@@ -1,5 +1,143 @@
 # Changelog
 
+## [1.24.4] - 2026-09-09
+### Added
+- **Tự Phục Hồi Dữ Liệu Nợ Cũ (Self-Healing Data Sanitization Pipeline)**:
+  * **In-Memory Sanitization (`FirebaseDebtRepository.toDebtAccount`)**: Tự động chuẩn hóa `dueDate = 1` của nợ cá nhân (`PERSONAL_LOAN`) về `null` ngay trên bộ nhớ trước khi phát Flow, làm sạch dữ liệu lập tức (0ms latency) giúp banner cảnh báo và chip nhắc ảo biến mất ngay khi mở app.
+  * **Silent Self-Healing (`FirebaseDebtRepository.observeDebts`)**: Tự động phát hiện các document nợ `PERSONAL_LOAN` có dính `dueDate = 1` trên Firestore server và âm thầm cập nhật xóa trường `dueDate` rác vĩnh viễn trên cơ sở dữ liệu Cloud.
+- **Phân Tách Rạch Ròi Nghiệp Vụ Nợ Định Kỳ vs Nợ Cá Nhân Linh Hoạt (`DebtModels`, `SaveDebtAccountUseCase`, `CalculatePayoffStrategyUseCase`, `SyncDebtReminderUseCase`)**:
+  * Bổ sung thuộc tính `isMonthlyRecurring`: chỉ `CREDIT_CARD`, `BANK_LOAN`, `INSTALLMENT` mới là nợ định kỳ cần siết ngày hạn hàng tháng và kích hoạt kiểm tra cảnh báo lệch pha lương ($dueDate < paydayDay$).
+  * `PERSONAL_LOAN` (Vay bạn bè, người thân): Cho phép lưu `dueDate = null`, hoàn toàn không áp chu kỳ thanh toán hàng tháng và tuyệt đối không sinh cảnh báo lệch pha dòng tiền lương.
+  * `SyncDebtReminderUseCase`: Chỉ lập lịch nhắc nợ khi là nợ định kỳ có `dueDate != null`, tự động hủy báo thức của các khoản nợ không định kỳ.
+
+### Fixed
+- **Khắc Phục Dứt Điểm Lỗi Cắt Xén Layout & Hiển Thị Badge trên Thẻ Nợ (`DebtCard.kt`)**:
+  * Tái cấu trúc Footer của thẻ nợ: Sử dụng `FlowRow` cho cụm huy hiệu phía bên phải, triệt tiêu hoàn toàn lỗi tràn biên ngang (clipping overflow).
+  * Ưu tiên hiển thị huy hiệu ngày đến hạn (`[Hạn ngày X]`, `[Sắp đến hạn]`, `[Quá hạn]`) lên đầu tiên.
+  * Ẩn hoàn toàn chip nhắc lùi ngày ảo (`[Nhắc ngày 30]`) và cảnh báo trước ngày lương cho các khoản nợ cá nhân linh hoạt.
+- **Chuẩn Hóa Form Thêm/Sửa Nợ (`AddEditDebtSheet.kt`)**:
+  * Hiển thị nhãn *"Hạn trả linh hoạt (tùy chọn 1 - 31)"* và placeholder *"Khoản nợ linh hoạt không cố định ngày"* khi chọn nợ cá nhân.
+  * Bắt buộc nhập ngày đến hạn đối với nợ định kỳ, cho phép để trống linh hoạt đối với nợ cá nhân.
+
+### Fixed
+- **Sửa lỗi giao diện đè chữ (Text & Card Overlap) trong `StrategySelectorCard.kt`**:
+  * Tách biệt Surface hiển thị kết quả (Dự kiến sạch nợ / Chặn lãi thả nổi) và Surface cảnh báo bẫy nợ âm (Amber Glass) thành 2 component độc lập trong `Column` với khoảng cách `Spacer(8.dp)`.
+  * Triệt tiêu hoàn toàn hiện tượng layout `Box` ngầm của Surface cha làm 2 thẻ dẫm lên cùng tọa độ.
+- **Tiện ích xóa nhanh ngày đến hạn trong `AddEditDebtSheet.kt`**:
+  * Bổ sung nút `trailingIcon` xóa nhanh (`X`) và placeholder *"Để trống nếu không có ngày cố định"*, giúp người dùng dễ dàng xóa ngày hạn về `null` chỉ với 1 chạm để xóa bỏ cảnh báo lệch pha.
+
+## [1.24.2] - 2026-09-09
+### Fixed
+- **Triệt để 3 Bug Nghiêm Trọng Quản Lý Nợ & Tín Dụng (Debt Management Fixes)**:
+  * **Bug 1: Cảnh báo lệch pha dòng tiền & Chuẩn hóa ngày đến hạn (`CalculatePayoffStrategyUseCase`, `DebtModels`, `FirebaseDebtRepository`, `DebtCard`, `AddEditDebtSheet`)**:
+    - Chuyển trường `dueDate` sang `Int?` (nullable), loại bỏ hoàn toàn các điểm gán fallback cứng về `1` hoặc `15`.
+    - Thuật toán cảnh báo lệch pha chỉ quét khi `debt.dueDate != null && debt.dueDate in 1..31 && debt.dueDate < paydayDay`.
+    - Ẩn hoàn toàn thẻ cảnh báo `PaydayMismatchWarningCard` và các huy hiệu hạn trả trên thẻ nợ nếu người dùng không thiết lập ngày đến hạn hoặc không có nợ nào bị lệch pha.
+  * **Bug 2: Chống mất dữ liệu do xóa nợ vô ý (`DebtCard`, `DebtDashboardScreen`, `AddEditDebtSheet`)**:
+    - Xóa bỏ hoàn toàn sự kiện `onDeleteClick` khi nhấn giữ lâu (Long press) trên thẻ nợ `DebtCard`.
+    - Chuyển hành động xóa nợ vào duy nhất bên trong `AddEditDebtSheet`, bắt buộc hiển thị `AlertDialog` xác nhận: *"Bạn có chắc chắn muốn xóa khoản nợ này không?"* trước khi thực thi xóa.
+  * **Bug 3: Triệt tiêu bẫy nợ âm (Negative Amortization Trap) & Lỗi tràn số Long (+20 triệu tỷ đồng) (`CalculatePayoffStrategyUseCase`, `StrategySelectorCard`)**:
+    - Bắt tính khả thi ngay khi mô phỏng: Nếu `minPayment <= monthlyInterest`, phát hiện bẫy nợ âm, dừng ngay vòng lặp mô phỏng baseline, chặn dư nợ phình to theo hàm mũ và đánh dấu cờ `isBaselineTrap = true`.
+    - Kẹp trần số kỳ mô phỏng tối đa không quá 120 kỳ lương (10 năm) và kẹp trần số tiền lãi tiết kiệm tối đa 200% nợ gốc ban đầu.
+    - Hiển thị trực quan: Khi `isBaselineTrap = true`, ô tiền lãi hiển thị *"Chặn lãi thả nổi"*, ô thời gian hiển thị *"Thoát bẫy nợ"*, kèm callout cảnh báo *"Trả tối thiểu không đủ bù tiền lãi phát sinh"*.
+    - Chuẩn hóa định dạng thời gian thân thiện: `< 12 kỳ`: *"X kỳ lương"* / *"X tháng"*; `>= 12 kỳ`: quy đổi *"X năm Y tháng"*; `> 120 kỳ`: *"> 10 năm"*.
+- **Kiểm thử tự động**: Bổ sung Unit Tests kiểm tra bắt bẫy nợ âm, chống tràn số và kiểm tra ngày đến hạn null. Đạt **100% PASS (319/319 tests)**.
+
+## [1.24.1] - 2026-09-09
+### Added
+- **P1-07: Trực Quan Hóa & Tương Tác Phân Hóa Chiến Lược Snowball vs Avalanche**:
+  * **Dual Simulation Engine (`CalculatePayoffStrategyUseCase`)**:
+    - Chạy mô phỏng song song Snowball và Avalanche trên cùng một chu kỳ ngân sách để tính toán đối chiếu tức thì: số tiền lãi tiết kiệm được (`interestSavedWithAvalanche`), chênh lệch thời gian xóa sổ chủ nợ đầu tiên (`firstSettledMonthDifference`), và phát hiện cờ `isZeroAprOnly`.
+  * **Thẻ So Sánh Trực Tiếp (`StrategyComparisonCard` / `StrategySelectorCard`)**:
+    - Hiển thị Liquid Glass Callout ngay dưới cụm chuyển đổi 2 chiến lược:
+      + **Avalanche**: Nổi bật số tiền lãi tiết kiệm hơn so với Snowball (màu xanh lá `IncomeGreen`) kèm giải thích triệt tiêu tiền lãi phát sinh.
+      + **Snowball**: Nổi bật số kỳ lương xóa sạch chủ nợ đầu tiên nhanh hơn so với Avalanche (màu xanh dương `PrimaryBlue`) kèm giải thích giải tỏa tâm lý tài chính.
+      + **Toàn bộ nợ 0% APR**: Thông báo rõ ràng hiệu quả tương đương và hướng dẫn người dùng cập nhật lãi suất thực tế (% APR) cho thẻ tín dụng/khoản vay.
+  * **Đảo Thứ Tự Động & Đánh Dấu Ưu Tiên (#1, #2, #3...) trên Danh Sách Nợ (`DebtDashboardScreen` & `DebtCard`)**:
+    - Tự động sắp xếp lại danh sách nợ đang hoạt động theo chiến lược đã chọn (Snowball: dư nợ tăng dần; Avalanche: lãi suất APR giảm dần).
+    - Khoản nợ ưu tiên `#1` (Target Debt): Gắn badge nổi bật `🎯 #1 MỤC TIÊU DỒN TIỀN`, kèm viền sáng Chroma Rim và giải thích lý do dồn tiền (nợ nhỏ nhất hoặc APR cao nhất).
+    - Các khoản nợ tiếp theo: Hiển thị tiền tố thứ tự `#2`, `#3`, `#4`... tinh tế cạnh phân loại nợ.
+    - Tích hợp hiệu ứng chuyển động mượt mà `Modifier.animateItem()` khi người dùng chuyển đổi tab.
+  * **Đồng Bộ Kế Hoạch Trích Lương (`PaydayAllocationPlan`)**:
+    - Duyệt phân bổ theo `sortedDebts` để khoản nợ mục tiêu #1 luôn nhảy lên vị trí đầu tiên của bảng trích lương.
+  * **Phân Hóa Dữ Liệu Demo (`DemoFinluxRepository`)**:
+    - Bổ sung khoản nợ nhỏ 0% lãi ("Vay bạn thân 500k", APR 0%) và khoản nợ số dư lớn lãi cao ("Thẻ tín dụng VPBank StepUp 15tr", APR 36%). Nhờ đó ở chế độ Demo, bấm Snowball nhắm ngay khoản 500k, còn Avalanche nhắm ngay thẻ 15tr lãi 36%.
+- Bổ sung Unit Tests kiểm tra Dual Simulation, Phân bổ trích lương và Cờ 0% APR (`317/317 tests PASS`).
+
+## [1.24.0] - 2026-09-09
+### Added
+- **P1-06: Hệ thống Quản lý Nợ & Tín dụng 2.0 gắn với Chu kỳ lương (Payday-Driven Debt Management 2.0)**:
+  * **Domain & Data Layer chuẩn hóa**:
+    - Bổ sung vào `DebtModels.kt`: `linkedWalletId`, `gracePeriodDays`, `PaydayAllocationItem`, `PaydayAllocationPlan`, `timeSavedCycles`, `isZeroAprOnly`.
+    - Hạch toán nguyên tử trong `FirebaseDebtRepository` & `DemoFinluxRepository`:
+      + Trả nợ thông thường: Bóc tách minh bạch `debt_principal` (hoán đổi tài sản, không tính vào chi phí sinh hoạt) và `debt_interest` (ghi nhận EXPENSE chi phí tài chính).
+      + Thẻ tín dụng: Khi thanh toán nợ thẻ, thực hiện chuyển tiền hoàn số dư vào ví thẻ liên kết (`TRANSFER_OUT` / `TRANSFER_IN`), khôi phục hạn mức khả dụng và tuyệt đối không sinh EXPENSE chi tiêu mới.
+    - Cập nhật `GetTrueNetWorthUseCase`: Quét tự động số dư âm của các ví thẻ tín dụng chưa liên kết khoản nợ vào `totalDebtRemaining`.
+  * **Payday Strategy Engine & Dòng tiền FCF**:
+    - `AnalyzeDebtCashflowUseCase`: Ưu tiên lấy trực tiếp `expectedSalary` từ cấu hình chu kỳ lương; tự động loại trừ các từ khóa nợ khỏi chi phí thiết yếu để không bị trừ trùng nghĩa vụ nợ.
+    - `CalculatePayoffStrategyUseCase`: Tính đúng tiền lãi tiết kiệm; nếu nợ 0% APR thì gán `isZeroAprOnly = true` và hiển thị "Rút ngắn X kỳ lương"; sinh bảng phân bổ trích lương `PaydayAllocationPlan` cho kỳ lương tới (Target Debt nhận Min + Extra; nợ khác chỉ nhận Min); phát hiện cảnh báo lệch pha dòng tiền (`dueDate < paydayDay`).
+    - `SyncDebtReminderUseCase`: Hỗ trợ đặt lịch nhắc trích lương trả nợ vào ngày nhận lương hàng tháng (`schedulePaydayAllocationReminder`).
+  * **Liquid Glass UI 2.0**:
+    - `StrategySelectorCard`: Hiển thị FCF theo lương dự kiến, lộ trình tính theo kỳ lương, tích hợp Bảng phân bổ trích lương kỳ tới (`PaydayAllocationCard`) và Banner cảnh báo lệch pha (`PaydayMismatchWarningCard`).
+    - `AddEditDebtSheet`: Hỗ trợ chọn Ví thẻ tín dụng liên kết và ô nhập Ngày chốt sao kê (`statementDate`), thời gian miễn lãi (`gracePeriodDays`).
+    - `DebtPaymentSheet`: Chế độ thanh toán sao kê thẻ tín dụng, hiển thị rõ luồng hoàn tiền vào ví thẻ liên kết và bóc tách gốc/lãi.
+    - `DebtCard`: Huy hiệu ngày sao kê, hạn trả và chip cảnh báo lệch pha dòng tiền ("⚠️ Trước ngày lương").
+- Bổ sung bộ Unit Test toàn diện cho Cashflow theo chu kỳ lương, Kế hoạch phân bổ trích lương, Cảnh báo lệch pha dòng tiền, và Quét số dư âm ví thẻ vào nợ ròng. Đạt 100% PASS (315/315 tests).
+
+## [1.23.0] - 2026-09-09
+### Added
+- **P1-05: Động cơ Tài sản ròng thực tế (True Net Worth Engine)**:
+  * Xây dựng model `TrueNetWorth` trong `NetWorthModels.kt` phân rã minh bạch: `totalWalletAssets`, `activeDealCapitalOutlay`, `totalDebtRemaining`, `trueNetWorth`, và `standardNetWorth`.
+  * Tạo UseCase `GetTrueNetWorthUseCase` chuẩn hóa công thức tính tài sản ròng thống nhất toàn app:
+    $\text{True Net Worth} = \sum \text{Số dư Ví} + \sum \text{Vốn Deal đang lưu động} - \sum \text{Nợ chưa tất toán}$.
+  * Đồng bộ `HomeViewModel` và `ReportsViewModel` sử dụng chung `GetTrueNetWorthUseCase`, đảm bảo con số tài sản ròng trên Hero Card Trang chủ và Báo cáo khớp nhau từng đồng.
+- **P1-05: Luồng phân tích tương tác Drill-Down 4 cấp độ (Interactive Drill-Down)**:
+  * **Cấp 1**: Các thẻ tổng quan Dòng tiền, Phân bổ danh mục chi tiêu, Báo cáo theo ví.
+  * **Cấp 2**: Bấm vào Danh mục hoặc Ví -> Bung `CategoryDetailBottomSheet` / `WalletDetailBottomSheet` phân tích chuyên sâu (tỷ trọng %, so sánh ngân sách, phân bổ ví / phân bổ danh mục).
+  * **Cấp 3**: Bấm vào mục con bên trong Sheet (chip ví hoặc chip danh mục) -> Lọc động danh sách giao dịch cấu thành trong kỳ.
+  * **Cấp 4**: Bấm vào giao dịch bất kỳ -> Mở trực tiếp `TransactionDetailSheet` để xem chi tiết / sửa nhanh (`onEditTransaction`) / xóa giao dịch (đồng bộ số dư ví qua `DeleteTransactionUseCase`).
+  * Kích hoạt tương tác drill-down đồng bộ trên cả 3 theme: **Prism**, **Modern**, và **Classic**.
+- Bổ sung bộ Unit Test mới: `GetTrueNetWorthUseCaseTest` (7 tests), cập nhật `HomeViewModelTest` và `ReportsViewModelTest` đạt 100% PASS (312/312 tests).
+
+## [1.22.2] - 2026-09-09
+### Added
+- **P0-01: Subcollection `deals/{dealId}` & Firestore Security Rules**:
+  * Định nghĩa rules bảo mật toàn diện cho subcollection `users/{uid}/deals/{dealId}` (chỉ owner `request.auth.uid == uid`, validate bắt buộc các trường `title`, `totalCapitalOutlay`, `totalRecovered`, `writtenOffCapital`, `netProfitLoss`, `status`).
+  * Mở rộng hàm `validTransaction`: hỗ trợ các trường liên kết Deal (`dealId`, `dealFlowType`, `correlationId`).
+  * Mở rộng subcollection `budgets`: hỗ trợ các trường chu kỳ lương (`periodKey`, `periodStart`, `periodEndExclusive`, `periodBasis`).
+
+### Changed
+- **P0-02: Cloud Functions Salary Cycle Alignment**:
+  * Đồng bộ Cloud Functions `getSalaryConfig` đọc cấu hình chu kỳ lương từ document `financialPreferences/salaryCycle` (kèm fallback ngược về `users/{uid}` legacy).
+  * Hỗ trợ đầy đủ trường `paydayDay` (fallback `baseDay`) và các rule type (`DAY_OF_MONTH`, `FIRST_DAY_OF_MONTH`, `LAST_DAY_OF_MONTH`) theo đúng đặc tả `SalaryCycleConfig`.
+  * TypeScript build pass 100% (`npm run build`).
+- **P0-03: Xóa sổ hoàn toàn ví ảo `"DEAL_SETTLEMENT"`**:
+  * Khi đóng deal chịu lỗ (`closeDealWithLoss`), gán `walletId` của transaction `CAPITAL_LOSS` về ví xuất vốn ban đầu của Deal (hoặc ví khả dụng đầu tiên của user), loại bỏ hoàn toàn việc tạo hay kiểm tra ví ảo `"DEAL_SETTLEMENT"`.
+  * Chuẩn hóa logic tại `FirebaseDealRepository`, `FirebaseTransactionRepository`, `DemoFinluxRepository`, và test suite `DealUseCasesTest`.
+
+### Fixed
+- **P0-04: Security Hardening (Android Broadcast & Storage Rules)**:
+  * Khóa `android:exported="false"` cho `SalaryCycleReceiver` trong `AndroidManifest.xml` (sử dụng Explicit Intent, ngăn chặn các app khác kích hoạt sự kiện trả lương trái phép).
+  * Siết chặt quyền đọc avatar người dùng trong `storage.rules` chỉ cho phép chính chủ (`request.auth.uid == uid`), tách biệt quyền `delete` khỏi `create, update` để tránh lỗi `request.resource` null khi xóa file.
+- Đạt 100% PASS (302/302 tests) trên test suite toàn dự án.
+
+## [1.22.1] - 2026-09-09
+### Added
+- Bổ sung Unit Test `schedule uses distinct requestCode for showIntent` trong `AlarmReminderSchedulerTest` đảm bảo PendingIntent không bao giờ bị trùng Request Code.
+
+### Changed
+- Phân tách Request Code riêng biệt cho các loại PendingIntent trong `AlarmReminderScheduler`:
+  * Content Intent mở ứng dụng: `("noti_" + id).hashCode()`
+  * AlarmClock showIntent: `("alarm_show_" + id).hashCode()`
+  * Action Edit Intent: `("noti_edit_" + id).hashCode()`
+- Đồng bộ hóa route đích sang `"notifications"` và truyền đủ cả 2 Extras (`pay_notification_id` và `reminder_id`).
+- Cập nhật `targetRoute = "notifications"` cho thông báo nhắc nhở trong Firestore/Room và Mock repository.
+
+### Fixed
+- Khắc phục triệt để lỗi người dùng nhấp vào thông báo nhắc nhở bị điều hướng sai vào `RemindersScreen` thay vì `NotificationsScreen` do xung đột cache PendingIntent (`FLAG_UPDATE_CURRENT`).
+- Xử lý race condition và bảo toàn điều hướng khi Cold Start trong `FinluxNavHost`: Tránh tiêu thụ non `destinationFlow` khi đang ở SplashScreen/Auth, bảo toàn `HomeScreen` bên dưới backstack để khi nhấn Back không bị thoát ứng dụng.
+- Đạt 100% PASS (302/302 tests) trên test suite toàn dự án.
+
 ## [1.22.0] - 2026-09-05
 ### Added
 - **FINLUX REPORTING 2.0 — Release A: Reporting Foundation (Phases 0–4)**:
@@ -57,6 +195,56 @@
 ### Fixed
 - Xóa bỏ triệt để việc ghi nhận giao dịch `EXPENSE` (Chi tiêu) khi tiết kiệm, bảo đảm chính xác tuyệt đối báo cáo thu chi và số dư ví.
 - Khắc phục lỗi tính sai chuỗi ngày và lỗi cập nhật cấu hình vòng quay.
+
+## [1.20.3] - 2026-09-03
+### Added
+- **Hành Động "Tất Toán & Đóng Deal" (Close Deal)**:
+  * Bổ sung `CloseDealUseCase` và method `closeDeal` trong `DealRepository`, `FirebaseDealRepository`, và `DemoFinluxRepository`.
+  * Thêm nút "Tất toán & Đóng Deal" (kèm dialog xác nhận) trực tiếp trên `DealDetailBottomSheet` giúp đóng sổ thương vụ thành công sang tab "Đã Hoàn Tất".
+- **Kiểm Thử Mở Rộng Cho State Machine & ROI Chuẩn (`DealUseCasesTest`)**:
+  * Kiểm thử chặn 100% các hành vi xuất thêm vốn, thu hồi, chốt lỗ khi Deal đang ở trạng thái `COMPLETED`.
+  * Kiểm thử tính đúng ROI khi đang chờ thu hồi vốn (không bị âm vốn lưu động) và khấu trừ chuẩn `writtenOffCapital`.
+
+### Changed
+- **Chuẩn Hóa Công Thức Tỷ Suất ROI (Tránh Âm Vô Lý)**:
+  * Công thức ROI Deal và ROI tổng hợp trên Hero Card tính chuẩn theo Lợi nhuận ròng thực nhận: $\text{ROI (\%)} = (\text{netProfitLoss} / \text{totalCapitalOutlay}) \times 100\%$.
+  * Khi `netProfitLoss == 0`: Hiển thị trung tính `0.0%`, tuyệt đối không tính âm toàn bộ vốn đang lưu động ngoài thị trường.
+- **Khắc Phục Vốn Chưa Thu Hồi & Vốn Lưu Động Bị Phình To Ảo**:
+  * Cơ chế Fallback thông minh trong `toFinancialDeal()` cho dữ liệu lịch sử chưa có trường `writtenOffCapital`: Tự động nhận diện và gán `writtenOffCapital = -netProfitLoss` khi `netProfitLoss < 0`.
+  * Đảm bảo deal "Lướt sóng nhỏ/lẻ" và các deal cũ hiển thị đúng số vốn chưa thu hồi thực tế (3.855.900đ - 1.355.900đ - 2.000.000đ = 500.000đ).
+  * Đồng bộ "Vốn Đang Lưu Động" trên Hero Card = Tổng `remainingCapital` của các deal đang `ACTIVE`.
+- **Đóng Băng Vòng Đời Khi Deal Đã Chốt Sổ (Strict State Machine)**:
+  * Ẩn/khóa toàn bộ nút "Xuất Thêm Vốn", "Thu Hồi / Lời", "Chốt Lỗ & Đóng" khi Deal đã `COMPLETED`.
+  * Chặn cấp Repository/UseCase không cho phép ghi đè giao dịch mới làm deal tự động chuyển ngược từ `COMPLETED` về `ACTIVE`.
+
+### Fixed
+- Khắc phục lỗi ROI bị âm nặng (-95.2%, -85.4%) do tính gộp vốn đang lưu động thành khoản lỗ.
+- Khắc phục lỗi ô "Vốn chưa thu hồi" và "Vốn đang lưu động" không trừ số tiền đã chốt lỗ trên các deal lịch sử.
+- Đạt 100% (282/282) Unit Tests PASS.
+
+## [1.20.2] - 2026-09-03
+### Added
+- **Bổ sung trường `writtenOffCapital: Money` vào Data Model `FinancialDeal` & Firestore DTOs**:
+  * Theo dõi độc lập số vốn gốc đã chốt lỗ / xóa nợ (nợ xấu không thu hồi được).
+  * Hỗ trợ đồng bộ đa nền tảng (Firestore Transaction & Demo Repository).
+- **Bộ Unit Test Kiểm Thử Kịch Bản Vay Đa Đợt & Xóa Nợ (`DealUseCasesTest`)**:
+  * Kiểm thử kịch bản: Cho vay 150k $\rightarrow$ Xóa nợ 150k $\rightarrow$ Cho vay thêm 200k $\rightarrow$ Xóa nợ 200k.
+  * Đảm bảo tính toán khớp 100%: `writtenOffCapital == 350k`, `netProfitLoss == -350k`, `remainingCapital == 0k`.
+
+### Changed
+- **Chuẩn Hóa Công Thức Toán Học Dư Nợ & Chốt Lỗ**:
+  * `remainingCapital = max(0, totalCapitalOutlay - totalRecovered - writtenOffCapital)`.
+  * `lossAmount = max(0, totalCapitalOutlay - totalRecovered - currentWrittenOff)`.
+  * Cập nhật cả `revertDealLoss` tự động hoàn lại số vốn đã xóa sổ khi khôi phục Deal.
+- **Tinh Chỉnh Giao Diện Thẻ Khoản Vay (`DealDetailBottomSheet.kt`)**:
+  * Tách bạch hiển thị: Nếu `netProfitLoss < 0` hiển thị nhãn `Mất vốn / Xóa nợ` với màu cảnh báo `error`.
+  * Hiển thị trạng thái nợ `Đã xóa nợ` khi khoản vay đã hoàn tất đóng sổ có xóa nợ.
+  * Ràng buộc nút bấm: Khi Deal ở trạng thái `COMPLETED`, ẩn các nút "Cho Vay Thêm" / "Thu Nợ / Lãi" và thay bằng banner thông báo "Khoản vay đã đóng sổ".
+
+### Fixed
+- Khắc phục triệt để lỗi tính lỗ kép (ví dụ bị trừ thành -500.000đ thay vì -350.000đ khi chốt lỗ nhiều đợt).
+- Khắc phục lỗi ô "Dư nợ gốc còn lại" không về 0đ sau khi đã xóa nợ / chốt lỗ toàn bộ khoản vay.
+- Đạt 100% (279/279) Unit Tests PASS.
 
 ## [1.20.1] - 2026-08-31
 ### Added

@@ -76,6 +76,7 @@ class FirebaseDealRepository(
             "targetAmount" to deal.targetAmount.value,
             "totalCapitalOutlay" to deal.totalCapitalOutlay.value,
             "totalRecovered" to deal.totalRecovered.value,
+            "writtenOffCapital" to deal.writtenOffCapital.value,
             "netProfitLoss" to deal.netProfitLoss.value,
             "status" to deal.status.name.lowercase(),
             "startDate" to Timestamp(Date.from(deal.startDate)),
@@ -105,7 +106,7 @@ class FirebaseDealRepository(
         firestore.runTransaction { atomic ->
             // Phase A: All reads first
             val walletIds = txDocs.mapNotNull { it.getString("walletId") }
-                .filter { it.isNotBlank() && it != "DEAL_SETTLEMENT" }
+                .filter { it.isNotBlank() }
                 .toSet()
             val walletRefs = walletIds.associateWith {
                 firestore.collection("users").document(uid).collection("wallets").document(it)
@@ -118,7 +119,7 @@ class FirebaseDealRepository(
                 val flowTypeStr = txDoc.getString("dealFlowType")?.uppercase()
                 val walletId = txDoc.getString("walletId").orEmpty()
                 val amount = txDoc.getLong("amount") ?: 0L
-                if (walletId.isBlank() || walletId == "DEAL_SETTLEMENT" || amount <= 0L) continue
+                if (walletId.isBlank() || amount <= 0L) continue
 
                 when (flowTypeStr) {
                     "OUTLAY_CAPITAL" -> {
@@ -170,6 +171,8 @@ class FirebaseDealRepository(
 
             val dealDoc = tx.get(dealRef)
             require(dealDoc.exists()) { "Thương vụ không tồn tại" }
+            val currentStatus = dealDoc.getString("status")?.uppercase()
+            check(currentStatus != DealStatus.COMPLETED.name) { "Thương vụ đã hoàn tất đóng sổ, không thể xuất thêm vốn" }
             val currentOutlay = dealDoc.getLong("totalCapitalOutlay") ?: 0L
 
             // 1. Trừ tiền ví
@@ -222,11 +225,14 @@ class FirebaseDealRepository(
 
             val dealDoc = tx.get(dealRef)
             require(dealDoc.exists()) { "Thương vụ không tồn tại" }
+            val currentStatus = dealDoc.getString("status")?.uppercase()
+            check(currentStatus != DealStatus.COMPLETED.name) { "Thương vụ đã hoàn tất đóng sổ, không thể thu hồi thêm" }
             val totalOutlay = dealDoc.getLong("totalCapitalOutlay") ?: 0L
             val totalRecovered = dealDoc.getLong("totalRecovered") ?: 0L
             val currentProfitLoss = dealDoc.getLong("netProfitLoss") ?: 0L
+            val currentWrittenOff = dealDoc.getLong("writtenOffCapital") ?: 0L
 
-            val remainingCapital = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+            val remainingCapital = (totalOutlay - totalRecovered - currentWrittenOff).coerceAtLeast(0L)
 
             // 1. Cộng toàn bộ tiền vào ví
             tx.update(walletRef, "balance", currentBalance + amount, "updatedAt", Timestamp.now())
@@ -235,7 +241,7 @@ class FirebaseDealRepository(
             if (amount <= remainingCapital) {
                 // Thu về <= Vốn còn lại: 100% Hoàn gốc
                 val newRecovered = totalRecovered + amount
-                val newStatus = if (newRecovered >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED.name.lowercase() else DealStatus.ACTIVE.name.lowercase()
+                val newStatus = if (newRecovered + currentWrittenOff >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED.name.lowercase() else DealStatus.ACTIVE.name.lowercase()
 
                 tx.update(
                     dealRef,
@@ -268,7 +274,7 @@ class FirebaseDealRepository(
 
                 tx.update(
                     dealRef,
-                    "totalRecovered", totalOutlay,
+                    "totalRecovered", totalRecovered + principalPortion,
                     "netProfitLoss", currentProfitLoss + gainPortion,
                     "status", DealStatus.COMPLETED.name.lowercase(),
                     "updatedAt", Timestamp.now()
@@ -323,17 +329,32 @@ class FirebaseDealRepository(
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
         val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
 
+        // Resolve outlay wallet from existing OUTLAY_CAPITAL transactions or user's first wallet
+        val outlaySnapshot = firestore.collection("users").document(uid).collection("transactions")
+            .whereEqualTo("dealId", deal.id)
+            .whereEqualTo("dealFlowType", DealFlowType.OUTLAY_CAPITAL.name.lowercase())
+            .limit(1)
+            .get()
+            .await()
+        val outlayWalletId = outlaySnapshot.documents.firstOrNull()?.getString("walletId")
+            ?: firestore.collection("users").document(uid).collection("wallets").limit(1).get().await().documents.firstOrNull()?.id
+            ?: ""
+
         firestore.runTransaction { tx ->
             val dealDoc = tx.get(dealRef)
             require(dealDoc.exists()) { "Thương vụ không tồn tại" }
+            val currentStatus = dealDoc.getString("status")?.uppercase()
+            check(currentStatus != DealStatus.COMPLETED.name) { "Thương vụ đã hoàn tất đóng sổ" }
             val totalOutlay = dealDoc.getLong("totalCapitalOutlay") ?: 0L
             val totalRecovered = dealDoc.getLong("totalRecovered") ?: 0L
             val currentProfitLoss = dealDoc.getLong("netProfitLoss") ?: 0L
+            val currentWrittenOff = dealDoc.getLong("writtenOffCapital") ?: 0L
 
-            val lossAmount = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+            val lossAmount = (totalOutlay - totalRecovered - currentWrittenOff).coerceAtLeast(0L)
 
             tx.update(
                 dealRef,
+                "writtenOffCapital", currentWrittenOff + lossAmount,
                 "netProfitLoss", currentProfitLoss - lossAmount,
                 "status", DealStatus.COMPLETED.name.lowercase(),
                 "endDate", Timestamp(Date.from(date)),
@@ -347,7 +368,7 @@ class FirebaseDealRepository(
                     "type" to TransactionType.EXPENSE.name.lowercase(),
                     "amount" to lossAmount,
                     "categoryId" to null,
-                    "walletId" to "DEAL_SETTLEMENT",
+                    "walletId" to outlayWalletId,
                     "relatedWalletId" to null,
                     "dealId" to deal.id,
                     "dealFlowType" to DealFlowType.CAPITAL_LOSS.name.lowercase(),
@@ -377,8 +398,11 @@ class FirebaseDealRepository(
             val dealDoc = tx.get(dealRef)
             if (dealDoc.exists()) {
                 val currentProfitLoss = dealDoc.getLong("netProfitLoss") ?: 0L
+                val currentWrittenOff = dealDoc.getLong("writtenOffCapital") ?: 0L
+                val newWrittenOff = (currentWrittenOff - totalLossToRevert).coerceAtLeast(0L)
                 tx.update(
                     dealRef,
+                    "writtenOffCapital", newWrittenOff,
                     "netProfitLoss", currentProfitLoss + totalLossToRevert,
                     "status", DealStatus.ACTIVE.name.lowercase(),
                     "endDate", null,
@@ -398,6 +422,18 @@ class FirebaseDealRepository(
             mapOf(
                 "status" to DealStatus.ACTIVE.name.lowercase(),
                 "endDate" to null,
+                "updatedAt" to Timestamp.now(),
+            )
+        ).await()
+    }
+
+    override suspend fun closeDeal(dealId: String, date: Instant): AppResult<Unit> = firebaseResult("Không thể tất toán thương vụ") {
+        val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
+        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        dealRef.update(
+            mapOf(
+                "status" to DealStatus.COMPLETED.name.lowercase(),
+                "endDate" to Timestamp(Date.from(date)),
                 "updatedAt" to Timestamp.now(),
             )
         ).await()
@@ -442,6 +478,14 @@ class FirebaseDealRepository(
         val rawCategory = getString("category") ?: DealCategory.INVESTMENT.name
         val category = runCatching { DealCategory.valueOf(rawCategory.uppercase()) }.getOrDefault(DealCategory.INVESTMENT)
 
+        val rawWrittenOff = getLong("writtenOffCapital")
+        val rawNetProfit = getLong("netProfitLoss") ?: 0L
+        val effectiveWrittenOff = when {
+            rawWrittenOff != null && rawWrittenOff > 0L -> rawWrittenOff
+            rawNetProfit < 0L -> -rawNetProfit
+            else -> 0L
+        }
+
         FinancialDeal(
             id = id,
             userId = auth.currentUser?.uid.orEmpty(),
@@ -451,7 +495,8 @@ class FirebaseDealRepository(
             targetAmount = Money(getLong("targetAmount") ?: 0L),
             totalCapitalOutlay = Money(getLong("totalCapitalOutlay") ?: 0L),
             totalRecovered = Money(getLong("totalRecovered") ?: 0L),
-            netProfitLoss = Money(getLong("netProfitLoss") ?: 0L),
+            writtenOffCapital = Money(effectiveWrittenOff),
+            netProfitLoss = Money(rawNetProfit),
             status = status,
             startDate = getTimestamp("startDate")?.toDate()?.toInstant() ?: Instant.now(),
             endDate = getTimestamp("endDate")?.toDate()?.toInstant(),

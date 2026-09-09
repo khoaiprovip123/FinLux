@@ -1,8 +1,311 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.22.0 (versionCode 165)
-- **Trạng thái Build:** ✅ 100% PASS (289/289 Unit Tests) — Hoàn thiện Báo cáo chi tiêu chi tiết theo từng ví & Bộ lọc ví toàn diện.
+- **Phiên bản hiện tại:** v1.24.4 (versionCode 173)
+- **Trạng thái Build:** ✅ 100% PASS (327/327 unit tests) — Triển khai thành công Self-Healing Data Sanitization, Phân tách nợ định kỳ vs linh hoạt, sửa dứt điểm lỗi nghịch lý nợ Đen.
+
+### [Task-P1-10-DEBT-ROOT-CAUSE-SELF-HEALING] — Tự Phục Hồi Dữ Liệu Nợ Cũ (Self-Healing Sanitization), Phân Tách Nợ Định Kỳ vs Linh Hoạt & Khắc Phục Nghịch Lý Thẻ Nợ
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tầng Data (FirebaseDebtRepository.kt): In-Memory Sanitization (chuyển dueDate=1 về null cho PERSONAL_LOAN) và Silent Self-Healing (tự động xóa trường dueDate=1 trên Firestore server qua update).
+  2. Tầng Domain: Bổ sung `isMonthlyRecurring` vào `DebtModels.kt`. Sửa `SaveDebtAccountUseCase.kt` cho phép PERSONAL_LOAN có `dueDate = null`. Sửa `CalculatePayoffStrategyUseCase.kt` và `SyncDebtReminderUseCase.kt` chỉ xử lý nợ định kỳ.
+  3. Tầng Presentation: Tái cấu trúc Footer `DebtCard.kt` chống clipping overflow với FlowRow, ẩn nhắc nợ ảo với nợ cá nhân; chuẩn hóa `AddEditDebtSheet.kt`.
+- **Kết quả thực thi**:
+  - `FirebaseDebtRepository.kt`: In-Memory Sanitization trong `toDebtAccount()` & `toDebtMap()`, Silent Self-Healing trong `observeDebts()` tự động xóa `dueDate` rác trên Firestore.
+  - `DebtModels.kt`: Bổ sung `val isMonthlyRecurring: Boolean get() = type != DebtType.PERSONAL_LOAN`.
+  - `SaveDebtAccountUseCase.kt`: Chỉ validate bắt buộc `dueDate in 1..31` cho nợ định kỳ, cho phép nợ cá nhân để `dueDate = null`.
+  - `CalculatePayoffStrategyUseCase.kt`: Thêm điều kiện `debt.isMonthlyRecurring` vào logic kiểm tra lệch pha dòng tiền lương.
+  - `SyncDebtReminderUseCase.kt`: Chỉ lập lịch nhắc nợ khi là nợ định kỳ có `dueDate != null`, tự hủy nhắc nợ cho nợ linh hoạt.
+  - `DebtCard.kt`: Sắp xếp huy hiệu trong `FlowRow`, ưu tiên huy hiệu hạn trả, loại bỏ chip nhắc ảo 30 và trước ngày lương cho nợ cá nhân.
+  - `AddEditDebtSheet.kt`: Cập nhật nhãn và placeholder rõ ràng cho nợ cá nhân, validate bắt buộc hạn cho nợ định kỳ.
+  - Unit Tests: Bổ sung `SaveDebtAccountUseCaseTest`, `FirebaseDebtMapperTest`, cập nhật `CalculatePayoffStrategyUseCaseTest` và `SyncDebtReminderUseCaseTest`.
+  - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS (327/327 tests)**.
+  - Tăng version: `versionCode = 173`, `versionName = "1.24.4"`.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SaveDebtAccountUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/SaveDebtAccountUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseDebtMapperTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+  - `docs/BA_SPEC.md`
+  - `docs/DATA_SPEC.md`
+  - `docs/UI_SPEC.md`
+  - `docs/BACKLOG.md`
+
+### [Task-P1-09-UI-OVERLAP-FIX] — Sửa Lỗi Giao Diện Đè Chữ (UI Overlap) & Tiện Ích Xóa Nhanh Hạn Trả
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thẻ kết quả "Dự kiến sạch nợ" và Thẻ cảnh báo bẫy nợ âm dẫm lên cùng tọa độ trong `StrategySelectorCard.kt` -> Tách biệt thành 2 component độc lập trong `Column` với `Spacer(8.dp)`.
+  2. Hỗ trợ nút xóa nhanh (`trailingIcon` 'X') trên ô ngày đến hạn trong `AddEditDebtSheet.kt` để người dùng dễ dàng xóa ngày hạn về `null`.
+- **Kết quả thực thi**:
+  - Sắp xếp chuẩn trong `StrategySelectorCard.kt`: Thẻ kết quả nằm trên, `Spacer(8.dp)`, Thẻ Amber cảnh báo bẫy nợ nằm dưới.
+  - Bổ sung `trailingIcon` xóa nhanh trên `AddEditDebtSheet.kt`.
+  - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS (319/319 tests)**.
+  - Tăng version: `versionCode = 172`, `versionName = "1.24.3"`.
+
+### [Task-P1-08-DEBT-3BUGS-FIX] — Khắc Phục Triệt Để 3 Bug Nghiêm Trọng Quản Lý Nợ (Lệch Pha, Xóa Nợ Vô Ý, Bẫy Nợ Âm)
+- **Status**: `[DONE]`
+- **Mục tiêu**: Xử lý triệt để 3 bug thực tế trên thiết bị:
+  1. Thẻ cảnh báo lệch pha hiển thị ngày 1 cố định do fallback cứng -> Chuyển sang `dueDate: Int? = null`, chỉ cảnh báo khi thực sự có `dueDate != null && dueDate < paydayDay`.
+  2. Nhấn giữ thẻ nợ bị xóa lập tức không xác nhận -> Xóa bỏ hoàn toàn long press delete trên `DebtCard`, chỉ cho phép xóa trong `AddEditDebtSheet` kèm `AlertDialog` xác nhận.
+  3. Bẫy nợ âm (Negative Amortization) làm tràn số Long (+20 triệu tỷ đồng & 356 kỳ lương) -> Bắt bẫy nợ khi `minPayment <= monthlyInterest`, dừng ngay vòng lặp baseline, kẹp trần 120 tháng, hiển thị "Chặn lãi thả nổi" và "Thoát bẫy nợ", chuẩn hóa format thời gian theo năm/tháng.
+- **Kết quả thực thi**:
+  1. `CalculatePayoffStrategyUseCase.kt`:
+     - Bắt bẫy nợ âm khi `minPayment <= monthlyInterest` ở baseline simulation.
+     - Dừng vòng lặp baseline, đánh dấu cờ `isBaselineTrap = true`.
+     - Kẹp trần `maxMonths = 120` (10 năm) và kẹp trần `maxReasonableInterestSaved = 2 * totalActiveInitialDebt`.
+     - Cảnh báo lệch pha chỉ quét các khoản nợ thực tế có `dueDate != null && dueDate in 1..31 && dueDate < paydayDay`.
+  2. `DebtModels.kt`:
+     - Chuyển `dueDate: Int? = null` cho cả `DebtAccount` và `PaydayAllocationItem`.
+     - Thêm cờ `val isBaselineTrap: Boolean = false` vào `DebtPayoffPlan`.
+  3. `FirebaseDebtRepository.kt`:
+     - Bỏ fallback `1` hoặc `15`, chuyển sang `dueDate = getLong("dueDate")?.toInt()?.takeIf { it in 1..31 }`.
+  4. `DebtCard.kt` & `DebtDashboardScreen.kt`:
+     - Xóa bỏ hoàn toàn callback `onDeleteClick` trên `DebtCard` và `DebtDashboardScreen`.
+     - Chuyển thao tác bấm sang `clickable(onClick = onEditClick)` an toàn.
+     - Các huy hiệu hạn trả và chip lệch pha chỉ hiển thị khi `validDueDate != null`.
+  5. `AddEditDebtSheet.kt`:
+     - Cho phép xóa trắng `dueDateText` và lưu `dueDate = null` khi không nhập.
+     - Thêm trạng thái `showDeleteConfirmDialog` và `AlertDialog` xác nhận xóa nợ: "Bạn có chắc chắn muốn xóa khoản nợ này không?".
+  6. `StrategySelectorCard.kt`:
+     - Khi `isBaselineTrap == true`: hiển thị "Chặn lãi thả nổi", "Thoát bẫy nợ" và banner cảnh báo "Trả tối thiểu không đủ bù tiền lãi phát sinh".
+     - Bổ sung hàm tiện ích `formatPayoffDuration`: tự động format dưới 12 kỳ ("X kỳ lương"/"X tháng"), từ 12 kỳ trở lên ("X năm Y tháng"), và trên 120 kỳ ("> 10 năm").
+  7. `SyncDebtReminderUseCase.kt`:
+     - Chỉ lập lịch nhắc nợ khi `dueDate != null && dueDate in 1..31`.
+  8. Kiểm thử & Đóng gói:
+     - Bổ sung Unit Tests kiểm tra bắt bẫy nợ âm, chống tràn số Long và kiểm tra ngày đến hạn null.
+     - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS (319/319 tests)**.
+     - Tăng version: `versionCode = 171`, `versionName = "1.24.2"`.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCaseTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-07-SNOWBALL-AVALANCHE-VISUALIZATION] — Nâng Cấp Trực Quan Hóa & Tương Tác Chiến Lược Snowball vs Avalanche
+- **Status**: `[DONE]`
+- **Kết quả thực thi**:
+  1. **Dual Simulation Engine (`CalculatePayoffStrategyUseCase.kt`)**:
+     - Chạy mô phỏng song song Snowball và Avalanche trên cùng một chu kỳ ngân sách để tính toán đối chiếu tức thì: số tiền lãi tiết kiệm được (`interestSavedWithAvalanche`), chênh lệch thời gian xóa sổ chủ nợ đầu tiên (`firstSettledMonthDifference`), và phát hiện cờ `isZeroAprOnly`.
+  2. **Thẻ So Sánh Trực Tiếp (`StrategyComparisonCard` / `StrategySelectorCard.kt`)**:
+     - Hiển thị Liquid Glass Callout ngay dưới cụm chuyển đổi 2 chiến lược:
+       + **Avalanche**: Nổi bật số tiền lãi tiết kiệm hơn so với Snowball (màu xanh lá `IncomeGreen`) kèm giải thích triệt tiêu tiền lãi phát sinh.
+       + **Snowball**: Nổi bật số kỳ lương xóa sạch chủ nợ đầu tiên nhanh hơn so với Avalanche (màu xanh dương `PrimaryBlue`) kèm giải thích giải tỏa tâm lý tài chính.
+       + **Toàn bộ nợ 0% APR**: Thông báo rõ ràng hiệu quả tương đương và hướng dẫn người dùng cập nhật lãi suất thực tế (% APR) cho thẻ tín dụng/khoản vay.
+  3. **Đảo Thứ Tự Động & Đánh Dấu Ưu Tiên (#1, #2, #3...) trên Danh Sách Nợ (`DebtDashboardScreen.kt` & `DebtCard.kt`)**:
+     - Tự động sắp xếp lại danh sách nợ đang hoạt động theo chiến lược đã chọn (Snowball: dư nợ tăng dần; Avalanche: lãi suất APR giảm dần).
+     - Khoản nợ ưu tiên `#1` (Target Debt): Gắn badge nổi bật `🎯 #1 MỤC TIÊU DỒN TIỀN`, kèm viền sáng Chroma Rim và giải thích lý do dồn tiền (nợ nhỏ nhất hoặc APR cao nhất).
+     - Các khoản nợ tiếp theo: Hiển thị tiền tố thứ tự `#2`, `#3`, `#4`... tinh tế cạnh phân loại nợ.
+     - Tích hợp hiệu ứng chuyển động mượt mà `Modifier.animateItem()` khi người dùng chuyển đổi tab.
+  4. **Đồng Bộ Kế Hoạch Trích Lương (`PaydayAllocationPlan`)**:
+     - Duyệt phân bổ theo `sortedDebts` để khoản nợ mục tiêu #1 luôn nhảy lên vị trí đầu tiên của bảng trích lương.
+  5. **Phân Hóa Dữ Liệu Demo (`DemoFinluxRepository.kt`)**:
+     - Bổ sung khoản nợ nhỏ 0% lãi ("Vay bạn thân 500k", APR 0%) và khoản nợ số dư lớn lãi cao ("Thẻ tín dụng VPBank StepUp 15tr", APR 36%). Nhờ đó ở chế độ Demo, bấm Snowball nhắm ngay khoản 500k, còn Avalanche nhắm ngay thẻ 15tr lãi 36%.
+  6. **Kiểm thử & Đóng gói**:
+     - Bổ sung Unit Tests kiểm tra Dual Simulation, Phân bổ trích lương và Cờ 0% APR.
+     - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS (317/317 tests)**.
+     - Tăng version: `versionCode = 170`, `versionName = "1.24.1"`.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCaseTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-06-PAYDAY-DRIVEN-DEBT-2.0] — Toàn Diện Hệ Thống Quản Lý Nợ & Tín Dụng 2.0 (Gắn Kết Chu Kỳ Lương)
+- **Status**: `[DONE]`
+- **Kết quả thực thi**:
+  * **Domain & Data Layer chuẩn hóa**:
+    - Bổ sung `linkedWalletId`, `gracePeriodDays`, `PaydayAllocationItem`, `PaydayAllocationPlan`, `timeSavedCycles`, `isZeroAprOnly` vào `DebtModels.kt`.
+    - Chuẩn hóa hạch toán trong `FirebaseDebtRepository.kt` & `DemoFinluxRepository.kt`: Bóc tách Gốc (`debt_principal`) và Lãi (`debt_interest`); thanh toán thẻ tín dụng chuyển ví `TRANSFER_OUT` / `TRANSFER_IN` hoàn hạn mức ví thẻ liên kết, không sinh chi phí sinh hoạt mới.
+    - Cập nhật `GetTrueNetWorthUseCase.kt` bao quát số dư âm ví thẻ chưa liên kết nợ vào `totalDebtRemaining`.
+  * **Payday Strategy Engine & Dòng Tiền FCF Chuẩn**:
+    - `AnalyzeDebtCashflowUseCase.kt`: Ưu tiên `expectedSalary` (13.000.000 đ) khi bật chu kỳ lương, loại bỏ từ khóa nợ khỏi chi phí thiết yếu để không trừ trùng.
+    - `CalculatePayoffStrategyUseCase.kt`: Sửa lỗi "+0 đ" tiền lãi tiết kiệm (tính đúng lãi tiết kiệm; nếu 0% APR thì gán `isZeroAprOnly = true` và hiển thị "Rút ngắn X kỳ lương"), sinh lộ trình theo kỳ lương, sinh bảng phân bổ trích lương `PaydayAllocationPlan`, và cảnh báo lệch pha dòng tiền (`dueDate < paydayDay`).
+    - `SyncDebtReminderUseCase.kt`: Nhắc lịch 2 cấp cho thẻ tín dụng (sao kê & hạn trả) + nhắc trích lương ngày nhận lương (`schedulePaydayAllocationReminder`).
+  * **Nâng cấp UI Liquid Glass 2.0**:
+    - `StrategySelectorCard.kt`: Hiển thị FCF theo lương dự kiến, lộ trình tính theo kỳ lương, tích hợp Bảng phân bổ trích lương (`PaydayAllocationCard`) và Banner cảnh báo lệch pha (`PaydayMismatchWarningCard`).
+    - `AddEditDebtSheet.kt`: Bổ sung chọn Ví thẻ tín dụng liên kết & ô nhập Ngày chốt sao kê (`statementDate`), thời gian miễn lãi (`gracePeriodDays`).
+    - `DebtPaymentSheet.kt`: Chế độ thanh toán sao kê thẻ tín dụng & hiển thị rõ bóc tách gốc/lãi, hoàn tiền ví thẻ liên kết.
+    - `DebtCard.kt`: Hiển thị huy hiệu sao kê, hạn trả và cảnh báo lệch pha dòng tiền ("⚠️ Trước ngày lương").
+  * **Kiểm thử tự động**:
+    - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS (315/315 tests)**.
+    - Tăng `versionCode = 169`, `versionName = "1.24.0"` trong `app/build.gradle.kts`.
+    - Cập nhật `CHANGELOG.md` mục `[1.24.0] - 2026-09-09`.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AnalyzeDebtCashflowUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/ProcessDebtPaymentUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetTrueNetWorthUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/CashflowAdvisorCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/AnalyzeDebtCashflowUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/GetTrueNetWorthUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/debt/DebtViewModelTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+---
+
+### [Task-P1-05-REPORTS-2.0-TRUE-NET-WORTH] — Triển khai Báo Cáo 2.0 & Động cơ Tài sản ròng thực tế (True Net Worth Engine)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Động cơ Tài sản ròng thực tế (True Net Worth Engine)**:
+     - Xây dựng model `TrueNetWorth` trong `NetWorthModels.kt`.
+     - Tạo `GetTrueNetWorthUseCase` thống nhất công thức tính chuẩn xác trên toàn hệ thống:
+       `True Net Worth = (Tổng số dư ví) + (Tổng vốn Deal đang lưu động) - (Tổng nợ chưa tất toán)`.
+     - Đồng bộ `HomeViewModel` và `ReportsViewModel` sử dụng chung `GetTrueNetWorthUseCase`, hiển thị số dư tài sản ròng và phân rã vốn Deal đồng bộ 100%.
+  2. ✅ **Luồng Drill-down 4 Cấp độ Tương tác (Interactive Drill-Down)**:
+     - **Cấp 1**: Các thẻ tổng quan Dòng tiền, Danh mục, Phân bổ ví.
+     - **Cấp 2**: Bấm vào Danh mục hoặc Ví -> Bung `CategoryDetailBottomSheet` / `WalletDetailBottomSheet` phân tích chi tiết (tỷ trọng %, so sánh ngân sách, phân bổ ví).
+     - **Cấp 3**: Bấm vào mục con bên trong Sheet (chip ví hoặc chip danh mục) -> Lọc động danh sách giao dịch cấu thành trong kỳ.
+     - **Cấp 4**: Bấm vào giao dịch bất kỳ -> Mở trực tiếp `TransactionDetailSheet` để xem chi tiết / sửa / xóa nhanh (hỗ trợ xóa giao dịch đồng bộ qua `DeleteTransactionUseCase`).
+     - Hỗ trợ đầy đủ tương tác trên cả 3 theme: **Prism**, **Modern**, và **Classic**.
+  3. ✅ **Kiểm thử tự động & Nạp APK**:
+     - Viết mới `GetTrueNetWorthUseCaseTest` (7/7 tests pass).
+     - Cập nhật test cases trong `HomeViewModelTest` và `ReportsViewModelTest` (toàn bộ pass 100%).
+     - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS** (312/312 tests).
+     - Build APK (`./gradlew assembleDebug`) thành công.
+     - Cài đặt APK lên thiết bị vật lý qua ADB (`adb install -r app/build/outputs/apk/debug/app-debug.apk`) -> **Streamed Install Success**.
+- **Danh sách file đã tạo và chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/NetWorthModels.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetTrueNetWorthUseCase.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/presentation/reports/CategoryDetailBottomSheet.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/presentation/reports/WalletDetailBottomSheet.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/GetTrueNetWorthUseCaseTest.kt` (Mới)
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+  - `HANDOVER_LOG.md`
+
+---
+
+### [Task-RESOLVE-P0-BLOCKERS] — Xử lý dứt điểm toàn bộ 4 mục P0 (Blockers)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **P0-01 (`firestore.rules`)**:
+     - Cập nhật và bảo vệ subcollection `users/{uid}/deals/{dealId}`: kiểm tra chính chủ `request.auth.uid == uid` và validate đầy đủ các trường `title`, `totalCapitalOutlay`, `totalRecovered`, `writtenOffCapital`, `netProfitLoss`, `status`.
+     - Mở rộng hàm `validTransaction`: cho phép các trường mở rộng `dealId`, `dealFlowType`, `correlationId`.
+     - Mở rộng subcollection `budgets`: cho phép các trường chu kỳ lương `periodKey`, `periodStart`, `periodEndExclusive`, `periodBasis`.
+  2. ✅ **P0-02 (`functions/src/index.ts`)**:
+     - Sửa `getSalaryConfig` đọc từ document `financialPreferences/salaryCycle` kèm fallback về `users/{uid}` legacy.
+     - Tương thích đầy đủ `paydayDay` (fallback `baseDay`) và các quy tắc ngày lương `DAY_OF_MONTH`, `FIRST_DAY_OF_MONTH`, `LAST_DAY_OF_MONTH`.
+     - Chạy `npm run build` kiểm tra TypeScript đạt kết quả 100% PASS không lỗi (exit code 0).
+  3. ✅ **P0-03 (Data Integrity)**:
+     - Xóa sổ hoàn toàn ví ảo `"DEAL_SETTLEMENT"`.
+     - Trong `FirebaseDealRepository`, `DemoFinluxRepository`, khi đóng deal chịu lỗ (`closeDealWithLoss`), tự động gán `walletId` của transaction `CAPITAL_LOSS` về ví xuất vốn ban đầu của Deal (hoặc ví đầu tiên của user) để bảo toàn foreign key integrity và không trừ tiền lặp lại.
+     - Loại bỏ các nhánh logic đặc biệt cho `DEAL_SETTLEMENT` trong `FirebaseTransactionRepository`.
+     - Cập nhật unit test `DealUseCasesTest.kt` tương thích 100%.
+  4. ✅ **P0-04 (Security Hardening)**:
+     - Khóa `android:exported="false"` cho `SalaryCycleReceiver` trong `AndroidManifest.xml` (sử dụng Explicit Intent nội bộ, chống bên thứ ba kích hoạt báo lương trái phép).
+     - Siết chặt quyền đọc avatar người dùng trong `storage.rules` chỉ cho phép chính chủ (`request.auth.uid == uid`).
+     - Phân tách quyền `delete` khỏi `create, update` trong `storage.rules` để tránh lỗi `request.resource` null khi xóa receipt/avatar.
+  5. ✅ **Kiểm thử & Đóng gói**:
+     - Cloud Functions: `npm run build` -> Exit code 0 (thành công 100%).
+     - Android Unit Tests: `./gradlew testDebugUnitTest` -> **302/302 tests PASS (100% success rate)**.
+     - Tự động bump version lên `v1.22.2` (versionCode 167) trong `app/build.gradle.kts`.
+- **Danh sách file đã chỉnh sửa**:
+  - `firestore.rules`
+  - `functions/src/index.ts`
+  - `storage.rules`
+  - `app/src/main/AndroidManifest.xml`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-FIX-REMINDER-NOTIFICATION-NAVIGATION] — Sửa lỗi điều hướng thông báo nhắc nhở (mở NotificationsScreen thay vì RemindersScreen)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Tách biệt Request Code trong PendingIntent**:
+     - Content Intent mở app: `("noti_" + id).hashCode()` với `destination = "notifications"`.
+     - AlarmClock showIntent: `("alarm_show_" + id).hashCode()`.
+     - Edit Action Intent: `("noti_edit_" + id).hashCode()`.
+     - Loại bỏ hoàn toàn hiện tượng hệ điều hành Android dùng `FLAG_UPDATE_CURRENT` ghi đè intent của nhau.
+  2. ✅ **Đồng bộ Route đích & Extras**:
+     - Truyền đầy đủ cả `pay_notification_id` và `reminder_id`.
+     - Cập nhật `targetRoute = "notifications"` trong đối tượng `AppNotification` lưu Firestore/Room.
+  3. ✅ **Tiếp nhận Intent toàn diện (`MainActivity.kt`)**:
+     - Trích xuất `payId = intent?.getStringExtra("pay_notification_id") ?: intent?.getStringExtra("reminder_id")`.
+     - Kích hoạt chính xác `payNotificationIdFlow` để mở modal thanh toán khi người dùng tương tác thông báo.
+  4. ✅ **Xử lý an toàn Cold Start (`FinluxNavHost.kt`)**:
+     - Thêm cờ chặn `isNavigatingInitialAuth` bảo vệ `destinationFlow` không bị tiêu thụ non khi Compose đang ở `Splash`/`Auth`.
+     - Tạo hàm `navigateHomeAndConsumePending`: Khởi tạo `Route.Home.value` làm gốc backstack (`replaceGraphStart`), sau đó điều hướng tiếp tới `Route.Notifications.value`.
+     - Khi người dùng bấm nút Quay lại (Back), màn hình Thông báo được đóng lại và đưa người dùng về Trang chủ (Home) an toàn, không bị thoát ứng dụng đột ngột.
+  5. ✅ **Kiểm thử & Nghiệm thu thực tế**:
+     - Bổ sung Unit Test `schedule uses distinct requestCode for showIntent` trong `AlarmReminderSchedulerTest.kt`.
+     - Toàn bộ test suite `./gradlew testDebugUnitTest` đạt **100% PASS (302/302 tests, 0 failure, 0 skipped)**.
+     - Đã build và nạp APK lên điện thoại qua ADB (`Performing Streamed Install - Success`).
+     - Đã kiểm tra trực tiếp trên thiết bị cả 2 trường hợp:
+       * **Warm Start**: Khi app chạy ngầm, bấm thông báo mở ngay `NotificationsScreen` ("Thông báo"); bấm Back trở về `HomeScreen` ("Trang chủ").
+       * **Cold Start**: Dùng `adb shell am force-stop com.finlux.app` rồi kích hoạt thông báo; ứng dụng khởi động qua SplashScreen, tự động xác thực và điều hướng thẳng vào `NotificationsScreen`; bấm Back bảo toàn `HomeScreen` bên dưới và trở về Trang chủ hoàn hảo.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`
+  - `app/src/main/java/com/finlux/app/MainActivity.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/test/java/com/finlux/app/data/local/reminder/AlarmReminderSchedulerTest.kt`
+  - `HANDOVER_LOG.md`
+
+---
+
+### [Task-MERGE-UPSTREAM-MAIN-V1.22.0] — Merge đồng bộ upstream/main vào local main
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ Hợp nhất nhánh `upstream/main` (Báo cáo Reporting 2.0, Thẻ Hero số dư ví, Luân chuyển tiền giữa các ví, Vòng quay tiết kiệm Saving Spin, toàn bộ tài liệu Audit Roadmap) vào nhánh `main` local (vốn có Chuẩn hóa ROI & Tất toán Deal v1.20.3).
+  2. ✅ Giải quyết xung đột trên `CHANGELOG.md`, `HANDOVER_LOG.md`, `app/build.gradle.kts`.
+  3. ✅ Kiểm thử toàn bộ `./gradlew testDebugUnitTest` đảm bảo 100% PASS (60 test classes, 290/290 tests, 0 failure).
+- **Danh sách file chỉnh sửa**:
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+---
 
 ### [Task-HERO-BALANCE-AND-WALLET-TRANSFER-REPORTING] — Hiển thị Tổng tiền hiện có/Số dư ví trên Thẻ Hero & Báo cáo Luân chuyển tiền giữa các ví (Transfer Tracking)
 - **Status**: `[DONE]`
@@ -66,7 +369,6 @@
   - `docs/UI_SPEC.md`
   - `docs/BA_SPEC.md`
   - `HANDOVER_LOG.md`
-
 
 ### [Task-FULLSCREEN-TRANSACTIONS-TRANSFER-AND-DATEPICKER-UNIFICATION] — Chuyển màn hình tạo Thu/Chi & Chuyển khoản sang Toàn màn hình (Full Screen), chống thoát mất dữ liệu & đồng bộ DateRangePicker
 - **Status**: `[DONE]`
@@ -231,6 +533,92 @@
   - `app/src/test/java/com/finlux/app/domain/usecase/GetSavingSpinReportUseCaseTest.kt`
   - `app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt`
   - `app/src/test/java/com/finlux/app/data/demo/DemoSavingSpinRepositoryTest.kt`
+
+---
+
+## [DONE] Task: Chuẩn Hóa Logic Toán Học, Vốn Lưu Động & Vòng Đời Thương Vụ (Deal Tracking - v1.20.3)
+
+**Ngày:** 2026-09-03
+
+### Mục tiêu
+1. **Sửa công thức ROI (tránh âm vô lý -95%)**:
+   - Chuẩn hóa: `ROI (%) = (netProfitLoss / totalCapitalOutlay) * 100%`.
+   - Khi `netProfitLoss == 0`: Hiển thị `0.0%`, không coi vốn đang lưu động ngoài thị trường là khoản lỗ.
+   - Cập nhật cả `roiPercentage` trong `DealModels.kt`, `overallRoiPercentage` trong `DealsUiState.kt` và UI hiển thị trên Hero Card / DealCard / Detail Sheet.
+2. **Khắc phục Vốn chưa thu hồi & Vốn lưu động bị phình to ảo**:
+   - Fallback thông minh trong `toFinancialDeal()` cho dữ liệu cũ: nếu `writtenOffCapital == 0` mà `netProfitLoss < 0`, tự động gán `writtenOffCapital = -netProfitLoss`.
+   - Đảm bảo deal "Lướt sóng nhỏ/lẻ" (3.855.900đ - 1.355.900đ - 2.000.000đ) hiển thị chính xác còn lại `500.000đ`.
+   - Đồng bộ "Vốn Đang Lưu Động" trên Hero Card = tổng `remainingCapital` của các deal đang `ACTIVE`.
+3. **Đóng băng vòng đời khi deal đã COMPLETED (Strict State Machine)**:
+   - Khóa và ẩn hoàn toàn các nút "Xuất Thêm Vốn", "Thu Hồi / Lời", "Chốt Lỗ & Đóng" khi Deal đã `COMPLETED`.
+   - Chặn trong UseCases / Repository không cho phép ghi nhận giao dịch mới làm deal tự động chuyển ngược từ `COMPLETED` về `ACTIVE`.
+4. **Bổ sung nút "Tất toán & Đóng Deal" (Close Deal)**:
+   - Thêm `CloseDealUseCase` và method `closeDeal(dealId)` trong `DealRepository`.
+   - Bổ sung nút "Tất toán & Đóng Deal" (kèm dialog xác nhận) khi thương vụ đã thu hồi xong hoặc muốn đóng sổ thành công.
+5. **Kiểm thử & Build**:
+   - Cập nhật và bổ sung Unit Tests trong `DealUseCasesTest.kt`.
+   - Kiểm thử 100% PASS, bump version `v1.20.3` (versionCode 165), build APK và nạp lên điện thoại qua ADB.
+
+### Danh sách file đã chỉnh sửa
+1. `app/src/main/java/com/finlux/app/domain/model/DealModels.kt` (công thức ROI chuẩn theo netProfitLoss)
+2. `app/src/main/java/com/finlux/app/domain/repository/DealRepository.kt` (method `closeDeal`)
+3. `app/src/main/java/com/finlux/app/domain/usecase/DealUseCases.kt` (`CloseDealUseCase` & guard chặn COMPLETED trong các UseCase)
+4. `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt` (triển khai `closeDeal`, guard COMPLETED, và fallback `writtenOffCapital`)
+5. `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (triển khai `closeDeal` và guard COMPLETED)
+6. `app/src/main/java/com/finlux/app/presentation/deal/DealsUiState.kt` (chuẩn hóa `overallRoiPercentage`)
+7. `app/src/main/java/com/finlux/app/presentation/deal/DealsViewModel.kt` (inject `CloseDealUseCase` và hàm `closeDeal`)
+8. `app/src/main/java/com/finlux/app/presentation/deal/DealsScreen.kt` (truyền `onCloseDeal`, format ROI trung tính 0.0%)
+9. `app/src/main/java/com/finlux/app/presentation/deal/DealDetailBottomSheet.kt` (nút Tất Toán & Đóng, dialog xác nhận, khóa nút khi COMPLETED)
+10. `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt` (bổ sung test case closeDeal, strict state machine, ROI chuẩn)
+11. `app/build.gradle.kts` (bump version lên v1.20.3, versionCode 165)
+12. `CHANGELOG.md`
+13. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (282/282 tests, 0 failure)**.
+- ✅ `gradlew assembleDebug`: **BUILD SUCCESSFUL in 21s**.
+- ✅ `adb install -r app-debug.apk`: **Success (Streamed Install trên thiết bị thật qua ADB)**.
+
+### Trạng thái
+`[DONE]`
+
+---
+
+## [DONE] Task: Sửa Triệt Để Logic Dòng Tiền & Dư Nợ Khoản Vay (Deal & Lending - v1.20.2)
+
+**Ngày:** 2026-09-03
+
+### Mục tiêu
+- Sửa lỗi toán học tính lỗ kép (-500.000đ thay vì -350.000đ) khi chốt lỗ nhiều lần hoặc cho vay thêm sau khi đã xóa nợ.
+- Sửa lỗi `Dư nợ gốc còn lại` (`remainingCapital`) không về 0đ sau khi chốt lỗ / xóa nợ toàn bộ.
+- Bổ sung trường `writtenOffCapital: Money` vào `FinancialDeal` và Firestore DTOs để theo dõi số vốn đã xóa sổ/chốt lỗ.
+- Chuẩn hóa công thức:
+  + `remainingCapital = max(0, totalCapitalOutlay - totalRecovered - writtenOffCapital)`.
+  + `lossAmount = max(0, totalCapitalOutlay - totalRecovered - currentWrittenOff)`.
+- Cập nhật cả `FirebaseDealRepository`, `DemoFinluxRepository`, và `FakeDealRepository` (bao gồm cả `revertDealLoss` và `recordDealInflow`).
+- Tinh chỉnh UI `DealDetailBottomSheet.kt`:
+  + Tách bạch hiển thị "Tiền lãi nhận được" (nếu âm đổi thành "Mất vốn / Xóa nợ" màu cảnh báo).
+  + Trạng thái nợ đổi thành "Đã xóa nợ" khi deal đã chốt đóng sổ kèm xóa nợ.
+  + Ẩn các nút "Cho Vay Thêm" / "Thu Nợ / Lãi" khi Deal đã `COMPLETED`, thay bằng banner thông báo "Khoản vay đã đóng sổ".
+- Bổ sung Unit Test cho kịch bản nhiều đợt vay và xóa nợ trong `DealUseCasesTest.kt`.
+
+### Danh sách file đã chỉnh sửa
+1. `app/src/main/java/com/finlux/app/domain/model/DealModels.kt` (thêm `writtenOffCapital` & cập nhật `remainingCapital`)
+2. `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt` (xử lý `writtenOffCapital` trong `upsertDeal`, `recordDealInflow`, `closeDealWithLoss`, `revertDealLoss`, `toFinancialDeal`)
+3. `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt` (xử lý `writtenOffCapital` trong `recordDealInflow`, `closeDealWithLoss`, `revertDealLoss`)
+4. `app/src/main/java/com/finlux/app/presentation/deal/DealDetailBottomSheet.kt` (giao diện dư nợ, tiền lãi/mất vốn, trạng thái nợ, và banner đóng sổ)
+5. `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt` (cập nhật Fake repo và thêm test case kịch bản vay 150k -> xóa nợ 150k -> vay thêm 200k -> xóa nợ 200k)
+6. `app/build.gradle.kts` (bump version lên v1.20.2, versionCode 164)
+7. `CHANGELOG.md`
+8. `HANDOVER_LOG.md`
+
+### Kết quả kiểm thử
+- ✅ `gradlew testDebugUnitTest`: **100% PASS (279/279 tests, 0 failure)**.
+- ✅ `gradlew assembleDebug`: **BUILD SUCCESSFUL in 34s**.
+- ✅ `adb install -r app-debug.apk`: **Success (Streamed Install trên thiết bị thật qua ADB)**.
+
+### Trạng thái
+`[DONE]`
 
 ---
 

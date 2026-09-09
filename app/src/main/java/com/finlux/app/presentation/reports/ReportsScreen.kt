@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.finlux.app.core.designsystem.LocalAppUiStyle
 import com.finlux.app.domain.model.AppUiStyle
+import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.reports.classic.ClassicReportsScreen
 import com.finlux.app.presentation.reports.modern.ModernReportsScreen
 import com.finlux.app.presentation.reports.prism.PrismReportsScreen
@@ -13,6 +14,7 @@ fun ReportsScreen(
     onNavigate: (String) -> Unit,
     onAdd: () -> Unit,
     onBack: (() -> Unit)? = null,
+    onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: ReportsViewModel = hiltViewModel(),
 ) {
     when (LocalAppUiStyle.current) {
@@ -20,18 +22,21 @@ fun ReportsScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,
+            onEditTransaction = onEditTransaction,
             viewModel = viewModel,
         )
         AppUiStyle.MODERN_LUXURY -> ModernReportsScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,
+            onEditTransaction = onEditTransaction,
             viewModel = viewModel,
         )
         AppUiStyle.PRISM -> PrismReportsScreen(
             onNavigate = onNavigate,
             onAdd = onAdd,
             onBack = onBack,
+            onEditTransaction = onEditTransaction,
             viewModel = viewModel,
         )
     }

@@ -621,6 +621,41 @@ REPORT:
 ACCESSIBILITY: touch target >=48dp, wheel/result có contentDescription, hỗ trợ font scale 1.3x,
 selected destination có check + semantic selected state; màu lấy từ tokens/Material color scheme.
 
+---
+
+### SCREEN: Debt Dashboard & Management (Debt Hub)
+```
+HEADER:
+  - Title: "Quản lý nợ & Tín dụng" (Liquid Glass Top Bar)
+  - Actions: Lịch sử trả nợ (History icon), Thêm nợ mới (Add FAB/Button)
+
+OVERVIEW CAROUSEL / SUMMARY:
+  - Tổng dư nợ hiện tại, Tổng tiền trả tối thiểu tháng, Số khoản nợ đang hoạt động.
+  - Net Worth Impact: Giá trị tài sản thực (True Net Worth = Tài sản ròng - Dữ nợ).
+
+STRATEGY SELECTOR & SIMULATION (StrategySelectorCard):
+  - Segmented Switch: [ Tuyết lăn (Snowball) | Thác lũ (Avalanche) ]
+  - Kết quả mô phỏng: Thời gian dự kiến sạch nợ / Tiết kiệm lãi suất.
+  - Chống bẫy nợ âm (Negative Amortization): Khi trả tối thiểu <= lãi phát sinh, tách biệt 2 thẻ:
+    + Thẻ kết quả: "Chặn lãi thả nổi" & "Thoát bẫy nợ".
+    + Spacer(8.dp)
+    + Thẻ Amber Glass Callout: Cảnh báo trả tối thiểu không bù kịp tiền lãi.
+
+DEBT LIST & CARD (DebtCard):
+  - Sắp xếp động theo chiến lược (Snowball: dư nợ tăng dần; Avalanche: APR giảm dần).
+  - Huy hiệu ưu tiên: #1 MỤC TIÊU DỒN TIỀN (Chroma Rim), #2, #3...
+  - Footer Thẻ nợ: Cụm badge dùng FlowRow chống tràn biên ngang (zero clipping).
+  - Ưu tiên hiển thị: [Hạn ngày X] -> [Sắp đến hạn / Quá hạn].
+  - Nợ cá nhân linh hoạt (PERSONAL_LOAN): Ẩn chip nhắc ảo 30 và cảnh báo trước ngày lương.
+  - Xóa nợ an toàn: Tuyệt đối không xóa bằng Long-press; chỉ xóa trong AddEditDebtSheet kèm AlertDialog xác nhận.
+
+ADD / EDIT DEBT SHEET (AddEditDebtSheet):
+  - Form nhập: Tên, Phân loại nợ, Số tiền gốc, Dư nợ hiện tại, Lãi suất APR, Tiền trả tối thiểu.
+  - Ngày đến hạn (dueDate):
+    + Nợ định kỳ (Thẻ/Vay ngân hàng/Trả góp): Bắt buộc nhập (1 - 31).
+    + Nợ cá nhân (PERSONAL_LOAN): Tùy chọn linh hoạt, có nút 'X' xóa nhanh về null.
+```
+
 ### Điều hướng màn hình chính
 
 - Bốn màn hình chính `Home ↔ Transactions ↔ Reports ↔ Settings` hỗ trợ vuốt ngang hai chiều và bấm bottom navigation.

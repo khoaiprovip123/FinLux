@@ -128,7 +128,7 @@ fun CashflowAdvisorCard(
                     }
 
                     Text(
-                        text = "Phân tích trung bình thu chi 3 tháng gần nhất",
+                        text = if (analysis.isSalaryCycleBased) "Dựa trên chu kỳ lương & chi phí thiết yếu" else "Phân tích trung bình thu chi 3 tháng gần nhất",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         color = tokens.onSurfaceVariant,
                         maxLines = 1,
@@ -143,9 +143,9 @@ fun CashflowAdvisorCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // Thu nhập TB
+                // Thu nhập cơ sở (Lương dự kiến hoặc Thu nhập TB)
                 MetricPill(
-                    title = "Thu nhập TB",
+                    title = if (analysis.isSalaryCycleBased) "Lương dự kiến" else "Thu nhập TB",
                     value = analysis.averageMonthlyIncome.value.toShortVnd(),
                     valueColor = FinluxColors.IncomeGreen,
                     modifier = Modifier.weight(1f),

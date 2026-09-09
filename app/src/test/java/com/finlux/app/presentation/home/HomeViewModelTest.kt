@@ -23,6 +23,10 @@ import com.finlux.app.domain.repository.DebtRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.model.FinancialDeal
+import com.finlux.app.domain.model.DealStatus
+import com.finlux.app.domain.model.DealCategory
+import com.finlux.app.domain.repository.DealRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -104,6 +108,7 @@ class HomeViewModelTest {
             calculator = calculator,
             clock = com.finlux.app.core.time.SystemFinanceClock(),
             uiPreferencesRepository = FakeUiPreferencesRepository(),
+            dealRepository = FakeHomeDealRepository(),
         )
 
         viewModel.state.test {
@@ -136,6 +141,7 @@ class HomeViewModelTest {
             calculator = calculator,
             clock = com.finlux.app.core.time.SystemFinanceClock(),
             uiPreferencesRepository = uiRepo,
+            dealRepository = FakeHomeDealRepository(),
         )
 
         viewModel.state.test {
@@ -202,6 +208,7 @@ class HomeViewModelTest {
             calculator = calculator,
             clock = com.finlux.app.core.time.SystemFinanceClock(),
             uiPreferencesRepository = FakeUiPreferencesRepository(),
+            dealRepository = FakeHomeDealRepository(),
         )
 
         viewModel.state.test {
@@ -283,6 +290,7 @@ class HomeViewModelTest {
             calculator = calculator,
             clock = com.finlux.app.core.time.SystemFinanceClock(),
             uiPreferencesRepository = FakeUiPreferencesRepository(),
+            dealRepository = FakeHomeDealRepository(),
         )
 
         viewModel.state.test {
@@ -292,6 +300,78 @@ class HomeViewModelTest {
             assertEquals(7_000_000L, state.totalBudgetLimit)
             assertEquals(4_500_000L, state.totalBudgetSpent)
             assertEquals(64, state.totalBudgetPercent) // (4.5 / 7) * 100 = 64%
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `state computes trueNetWorth including active deals accurately`() = runTest(testDispatcher) {
+        val wallets = listOf(
+            Wallet("w1", "Tiền mặt", WalletType.CASH, Money(10_000_000L), "#1F6FBF", true, Instant.now()),
+        ) // 10tr
+        val debts = listOf(
+            DebtAccount(
+                id = "d1",
+                userId = "u1",
+                name = "Nợ",
+                type = DebtType.PERSONAL_LOAN,
+                totalAmount = Money(5_000_000L),
+                remainingBalance = Money(2_000_000L),
+                interestRateApr = 10.0,
+                minimumPayment = Money(500_000L),
+                dueDate = 15,
+                isSettled = false,
+            ),
+        ) // 2tr
+        val deals = listOf(
+            FinancialDeal(
+                id = "deal1",
+                userId = "u1",
+                title = "Deal Active",
+                category = DealCategory.INVESTMENT,
+                totalCapitalOutlay = Money(30_000_000L),
+                totalRecovered = Money(10_000_000L),
+                status = DealStatus.ACTIVE,
+            ), // remaining = 20tr
+            FinancialDeal(
+                id = "deal2",
+                userId = "u1",
+                title = "Deal Closed",
+                category = DealCategory.INVESTMENT,
+                totalCapitalOutlay = Money(50_000_000L),
+                totalRecovered = Money(50_000_000L),
+                status = DealStatus.COMPLETED,
+            ), // completed, not counted
+        )
+
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(wallets),
+            transactionRepository = FakeHomeTransactionRepository(),
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = FakeHomeBudgetRepository(),
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(debts),
+            salaryCycleRepository = FakeHomeSalaryCycleRepository(),
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
+            dealRepository = FakeHomeDealRepository(deals),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            val state = if (initial.grossAssets == 0L && initial.totalDebt == 0L) awaitItem() else initial
+            assertEquals(10_000_000L, state.grossAssets)
+            assertEquals(2_000_000L, state.totalDebt)
+            assertEquals(20_000_000L, state.activeCapitalOutlay)
+            assertEquals(8_000_000L, state.standardNetWorth) // 10M - 2M
+            assertEquals(28_000_000L, state.netWorth) // 10M + 20M - 2M = 28M
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -375,4 +455,17 @@ private class FakeUiPreferencesRepository : com.finlux.app.domain.repository.UiP
     override suspend fun setPreferences(preferences: com.finlux.app.domain.model.UiPreferences) {
         state.value = preferences
     }
+}
+
+private class FakeHomeDealRepository(private val deals: List<FinancialDeal> = emptyList()) : DealRepository {
+    override fun observeDeals(): Flow<List<FinancialDeal>> = flowOf(deals)
+    override fun observeDeal(dealId: String): Flow<FinancialDeal?> = flowOf(deals.find { it.id == dealId })
+    override suspend fun upsertDeal(deal: FinancialDeal): AppResult<String> = AppResult.Success(deal.id)
+    override suspend fun deleteDeal(dealId: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun recordDealOutlay(deal: FinancialDeal, walletId: String, amount: Long, date: Instant, note: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun recordDealInflow(deal: FinancialDeal, walletId: String, amount: Long, date: Instant, note: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun closeDealWithLoss(deal: FinancialDeal, date: Instant, note: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun revertDealLoss(dealId: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun reopenDeal(dealId: String): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun closeDeal(dealId: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
 }

@@ -165,4 +165,59 @@ class AnalyzeDebtCashflowUseCaseTest {
         assertEquals(0.0, analysis.weightedApr, 0.0)
         assertTrue(analysis.scenarios.isEmpty())
     }
+
+    @Test
+    fun `prioritizes expectedSalary and excludes debt keywords when salary cycle is enabled`() {
+        val currentMonth = YearMonth.of(2026, 8)
+        val m1 = currentMonth.atDay(10).atStartOfDay(zone).toInstant()
+
+        val debtPaymentCategory = Category(
+            id = "c_debt_pay",
+            name = "Trả nợ ngân hàng",
+            type = CategoryType.EXPENSE,
+            icon = "payments",
+            colorHex = "#EF4444",
+            isDefault = false,
+            createdAt = Instant.now(),
+            isEssential = true, // Marked essential by mistake, but contains keyword "nợ"
+        )
+
+        val transactions = listOf(
+            // Historic income 6.2M (transactions only)
+            FinanceTransaction(id = "tx1", type = TransactionType.INCOME, amount = Money(6_200_000L), categoryId = salaryCategory.id, walletId = "w1", date = m1),
+            // Essential living: Food 3M
+            FinanceTransaction(id = "tx2", type = TransactionType.EXPENSE, amount = Money(3_000_000L), categoryId = foodCategory.id, walletId = "w1", date = m1),
+            // Debt repayment 2M: should be filtered out to avoid double counting
+            FinanceTransaction(id = "tx3", type = TransactionType.EXPENSE, amount = Money(2_000_000L), categoryId = debtPaymentCategory.id, walletId = "w1", date = m1),
+        )
+
+        val salaryConfig = com.finlux.app.domain.model.SalaryCycleConfig(
+            enabled = true,
+            paydayDay = 10,
+            expectedSalary = Money(13_000_000L),
+        )
+
+        val analysis = useCase(
+            transactions = transactions,
+            categories = listOf(foodCategory, salaryCategory, debtPaymentCategory),
+            debts = testDebts, // total min debt = 4M
+            salaryCycleConfig = salaryConfig,
+            referenceMonth = currentMonth,
+        )
+
+        // Income should be 13M (from expectedSalary), not 6.2M
+        assertEquals(13_000_000L, analysis.averageMonthlyIncome.value)
+        assertTrue(analysis.isSalaryCycleBased)
+        assertEquals("Lương dự kiến (Chu kỳ lương)", analysis.baseIncomeSource)
+
+        // Essential expense should only be 3M (food), excluding the 2M debt payment
+        assertEquals(3_000_000L, analysis.averageEssentialExpense.value)
+
+        // Total Min Debt = 4M (1M + 3M)
+        assertEquals(4_000_000L, analysis.totalMonthlyMinimumDebt.value)
+
+        // FCF = 13M - 3M - 4M = 6M
+        assertEquals(6_000_000L, analysis.freeCashFlow.value)
+        assertFalse(analysis.isDeficit)
+    }
 }

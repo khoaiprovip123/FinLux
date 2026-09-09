@@ -375,8 +375,64 @@ class DemoFinluxRepository @Inject constructor(
             return@withLock AppResult.Error("Số dư ví không đủ để thanh toán nợ")
         }
 
+        val isLinkedCard = targetDebt.type == DebtType.CREDIT_CARD && !targetDebt.linkedWalletId.isNullOrBlank()
+        val linkedCardWallet = targetDebt.linkedWalletId?.let { cardId -> walletState.value.find { it.id == cardId } }
+
         if (!changeWalletBalance(walletId, -amount)) {
             return@withLock AppResult.Error("Lỗi cập nhật số dư ví")
+        }
+
+        if (isLinkedCard && targetDebt.linkedWalletId != null && linkedCardWallet != null) {
+            // Hoàn lại hạn mức vào ví thẻ tín dụng liên kết
+            changeWalletBalance(targetDebt.linkedWalletId, amount)
+
+            val pairId = UUID.randomUUID().toString()
+            val transferNote = if (note.isNotBlank()) note else "Thanh toán sao kê thẻ: ${targetDebt.name}"
+            val outTx = FinanceTransaction(
+                id = "${pairId}_out",
+                type = TransactionType.TRANSFER_OUT,
+                amount = Money(amount),
+                categoryId = null,
+                walletId = walletId,
+                relatedWalletId = targetDebt.linkedWalletId,
+                note = transferNote,
+                date = paymentDate,
+                createdAt = paymentDate,
+                updatedAt = paymentDate,
+            )
+            val inTx = FinanceTransaction(
+                id = "${pairId}_in",
+                type = TransactionType.TRANSFER_IN,
+                amount = Money(amount),
+                categoryId = null,
+                walletId = targetDebt.linkedWalletId,
+                relatedWalletId = walletId,
+                note = transferNote,
+                date = paymentDate,
+                createdAt = paymentDate,
+                updatedAt = paymentDate,
+            )
+            transactionState.value = transactionState.value + listOf(outTx, inTx)
+        } else {
+            val txCat = if (principalPaid > 0 && interestPaid == 0L) {
+                "debt_principal"
+            } else if (interestPaid > 0 && principalPaid == 0L) {
+                "debt_interest"
+            } else {
+                "debt_payment"
+            }
+            val tx = FinanceTransaction(
+                id = UUID.randomUUID().toString(),
+                type = TransactionType.EXPENSE,
+                amount = Money(amount),
+                categoryId = txCat,
+                walletId = walletId,
+                note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
+                date = paymentDate,
+                createdAt = paymentDate,
+                updatedAt = paymentDate,
+            )
+            transactionState.value = transactionState.value + tx
         }
 
         val newRemaining = (targetDebt.remainingBalance.value - principalPaid).coerceAtLeast(0L)
@@ -398,21 +454,9 @@ class DemoFinluxRepository @Inject constructor(
             interestPaid = Money(interestPaid),
             paymentDate = paymentDate,
             note = note,
+            isCreditCardPayment = isLinkedCard,
         )
         paymentHistoryState.value = listOf(paymentHistory) + paymentHistoryState.value
-
-        val tx = FinanceTransaction(
-            id = UUID.randomUUID().toString(),
-            type = TransactionType.EXPENSE,
-            amount = Money(amount),
-            categoryId = "debt_payment",
-            walletId = walletId,
-            note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
-            date = paymentDate,
-            createdAt = paymentDate,
-            updatedAt = paymentDate,
-        )
-        transactionState.value = transactionState.value + tx
 
         AppResult.Success(Unit)
     }
@@ -637,7 +681,7 @@ class DemoFinluxRepository @Inject constructor(
                     it.id == current.id || (counterpartId != null && it.id == counterpartId)
                 }
             } else {
-                val isSettlement = current.walletId == "DEAL_SETTLEMENT" || current.dealFlowType == DealFlowType.CAPITAL_LOSS
+                val isSettlement = current.dealFlowType == DealFlowType.CAPITAL_LOSS
                 if (!isSettlement) {
                     if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
                         return@withLock AppResult.Error("Không tìm thấy ví")
@@ -813,6 +857,9 @@ class DemoFinluxRepository @Inject constructor(
         date: Instant,
         note: String,
     ): AppResult<Unit> = mutationMutex.withLock {
+        if (deal.status == DealStatus.COMPLETED) {
+            return@withLock AppResult.Error("Thương vụ đã hoàn tất đóng sổ, không thể xuất thêm vốn")
+        }
         if (!changeWalletBalance(walletId, -amount)) return@withLock AppResult.Error("Ví không tồn tại hoặc lỗi số dư")
 
         val updatedDeal = deal.copy(
@@ -844,18 +891,22 @@ class DemoFinluxRepository @Inject constructor(
         date: Instant,
         note: String,
     ): AppResult<Unit> = mutationMutex.withLock {
+        if (deal.status == DealStatus.COMPLETED) {
+            return@withLock AppResult.Error("Thương vụ đã hoàn tất đóng sổ, không thể thu hồi thêm")
+        }
         if (!changeWalletBalance(walletId, amount)) return@withLock AppResult.Error("Ví không tồn tại")
 
         val totalOutlay = deal.totalCapitalOutlay.value
         val totalRecovered = deal.totalRecovered.value
         val currentProfit = deal.netProfitLoss.value
-        val remainingCapital = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+        val currentWrittenOff = deal.writtenOffCapital.value
+        val remainingCapital = (totalOutlay - totalRecovered - currentWrittenOff).coerceAtLeast(0L)
 
         val newTransactions = mutableListOf<FinanceTransaction>()
 
         if (amount <= remainingCapital) {
             val newRecovered = totalRecovered + amount
-            val newStatus = if (newRecovered >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED else DealStatus.ACTIVE
+            val newStatus = if (newRecovered + currentWrittenOff >= totalOutlay && totalOutlay > 0) DealStatus.COMPLETED else DealStatus.ACTIVE
             val updatedDeal = deal.copy(
                 totalRecovered = Money(newRecovered),
                 status = newStatus,
@@ -881,7 +932,7 @@ class DemoFinluxRepository @Inject constructor(
             val gainPortion = amount - remainingCapital
 
             val updatedDeal = deal.copy(
-                totalRecovered = Money(totalOutlay),
+                totalRecovered = Money(totalRecovered + principalPortion),
                 netProfitLoss = Money(currentProfit + gainPortion),
                 status = DealStatus.COMPLETED,
                 updatedAt = Instant.now()
@@ -926,12 +977,17 @@ class DemoFinluxRepository @Inject constructor(
         date: Instant,
         note: String,
     ): AppResult<Unit> = mutationMutex.withLock {
+        if (deal.status == DealStatus.COMPLETED) {
+            return@withLock AppResult.Error("Thương vụ đã hoàn tất đóng sổ")
+        }
         val totalOutlay = deal.totalCapitalOutlay.value
         val totalRecovered = deal.totalRecovered.value
         val currentProfit = deal.netProfitLoss.value
-        val lossAmount = (totalOutlay - totalRecovered).coerceAtLeast(0L)
+        val currentWrittenOff = deal.writtenOffCapital.value
+        val lossAmount = (totalOutlay - totalRecovered - currentWrittenOff).coerceAtLeast(0L)
 
         val updatedDeal = deal.copy(
+            writtenOffCapital = Money(currentWrittenOff + lossAmount),
             netProfitLoss = Money(currentProfit - lossAmount),
             status = DealStatus.COMPLETED,
             endDate = date,
@@ -940,12 +996,17 @@ class DemoFinluxRepository @Inject constructor(
         dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
 
         if (lossAmount > 0) {
+            val outlayWalletId = transactionState.value
+                .firstOrNull { it.dealId == deal.id && it.dealFlowType == DealFlowType.OUTLAY_CAPITAL }
+                ?.walletId
+                ?: walletState.value.firstOrNull()?.id
+                ?: ""
             val tx = FinanceTransaction(
                 id = UUID.randomUUID().toString(),
                 type = TransactionType.EXPENSE,
                 amount = Money(lossAmount),
                 categoryId = null,
-                walletId = "DEAL_SETTLEMENT",
+                walletId = outlayWalletId,
                 dealId = deal.id,
                 dealFlowType = DealFlowType.CAPITAL_LOSS,
                 note = note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_LOSS) },
@@ -963,7 +1024,9 @@ class DemoFinluxRepository @Inject constructor(
         transactionState.value = transactionState.value.filterNot { it.dealId == dealId && it.dealFlowType == DealFlowType.CAPITAL_LOSS }
         dealState.value = dealState.value.map { d ->
             if (d.id == dealId) {
+                val newWrittenOff = (d.writtenOffCapital.value - totalLoss).coerceAtLeast(0L)
                 d.copy(
+                    writtenOffCapital = Money(newWrittenOff),
                     netProfitLoss = Money(d.netProfitLoss.value + totalLoss),
                     status = DealStatus.ACTIVE,
                     endDate = null,
@@ -980,6 +1043,19 @@ class DemoFinluxRepository @Inject constructor(
                 d.copy(
                     status = DealStatus.ACTIVE,
                     endDate = null,
+                    updatedAt = Instant.now(),
+                )
+            } else d
+        }
+        AppResult.Success(Unit)
+    }
+
+    override suspend fun closeDeal(dealId: String, date: Instant): AppResult<Unit> = mutationMutex.withLock {
+        dealState.value = dealState.value.map { d ->
+            if (d.id == dealId) {
+                d.copy(
+                    status = DealStatus.COMPLETED,
+                    endDate = date,
                     updatedAt = Instant.now(),
                 )
             } else d
@@ -1116,7 +1192,7 @@ class DemoFinluxRepository @Inject constructor(
                 reminderId = "rent-reminder",
                 categoryId = "bills",
                 walletId = "bank",
-                targetRoute = "reminders",
+                targetRoute = "notifications",
                 timestamp = Instant.now().minus(3, ChronoUnit.DAYS),
                 isRead = true,
                 isPaid = false,
@@ -1144,6 +1220,35 @@ class DemoFinluxRepository @Inject constructor(
 
         fun seedDebts() = listOf(
             DebtAccount(
+                id = "debt-friend-loan",
+                userId = "demo-user",
+                name = "Vay bạn thân (mua đồ gia dụng)",
+                type = DebtType.PERSONAL_LOAN,
+                totalAmount = Money(500_000L),
+                remainingBalance = Money(500_000L),
+                interestRateApr = 0.0,
+                minimumPayment = Money(50_000L),
+                dueDate = null,
+                statementDate = null,
+                colorHex = "#14B8A6",
+                isSettled = false,
+            ),
+            DebtAccount(
+                id = "debt-vpbank-credit",
+                userId = "demo-user",
+                name = "Thẻ tín dụng VPBank StepUp",
+                type = DebtType.CREDIT_CARD,
+                totalAmount = Money(20_000_000L),
+                remainingBalance = Money(15_000_000L),
+                interestRateApr = 36.0,
+                minimumPayment = Money(750_000L),
+                dueDate = 20,
+                statementDate = 5,
+                linkedWalletId = "card",
+                colorHex = "#E11D48",
+                isSettled = false,
+            ),
+            DebtAccount(
                 id = "debt-vcb-credit",
                 userId = "demo-user",
                 name = "Thẻ tín dụng VCB Signature",
@@ -1154,7 +1259,8 @@ class DemoFinluxRepository @Inject constructor(
                 minimumPayment = Money(1_200_000L),
                 dueDate = 25,
                 statementDate = 10,
-                colorHex = "#E11D48",
+                linkedWalletId = "card",
+                colorHex = "#F43F5E",
                 isSettled = false,
             ),
             DebtAccount(

@@ -147,4 +147,25 @@ class SyncDebtReminderUseCaseTest {
         val reminderId = "debt_reminder_debt-789"
         assertTrue(cancelledReminders.contains(reminderId))
     }
+
+    @Test
+    fun `syncDebt with PERSONAL_LOAN and null dueDate does not schedule reminder and cancels existing`() = runTest {
+        val personalDebt = DebtAccount(
+            id = "debt-personal",
+            name = "Đen",
+            type = DebtType.PERSONAL_LOAN,
+            totalAmount = Money(1_000_000L),
+            remainingBalance = Money(1_000_000L),
+            interestRateApr = 0.0,
+            minimumPayment = Money(30_000L),
+            dueDate = null,
+            isReminderEnabled = true,
+        )
+
+        useCase.syncDebt(personalDebt)
+
+        val reminderId = "debt_reminder_debt-personal"
+        org.junit.jupiter.api.Assertions.assertFalse(savedReminders.containsKey(reminderId))
+        assertTrue(cancelledReminders.contains(reminderId))
+    }
 }

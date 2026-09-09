@@ -4,6 +4,16 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-09-09] - [v1.24.4] Tự Phục Hồi Dữ Liệu Nợ Cũ (Self-Healing), Phân Tách Nợ Định Kỳ vs Linh Hoạt & Khắc Phục Nghịch Lý Thẻ Nợ
+
+- **Self-Healing Data Pipeline**: In-Memory Sanitization (chuyển `dueDate = 1` của `PERSONAL_LOAN` về `null` ngay khi load) và Silent Self-Healing (tự động xóa trường `dueDate` rác trên Firestore).
+- **Phân tách nợ định kỳ vs linh hoạt**: Thêm thuộc tính `isMonthlyRecurring`, nợ cá nhân cho phép `dueDate = null`, hoàn toàn không áp cảnh báo lệch pha trước ngày lương.
+- **Chống bẫy nợ âm (Negative Amortization)**: Chặn đứng mô phỏng dư nợ phình to vô hạn khi `minPayment <= monthlyInterest`, kẹp trần 120 tháng, hiển thị "Chặn lãi thả nổi" & "Thoát bẫy nợ".
+- **Khắc phục lỗi hiển thị thẻ nợ**: Tái cấu trúc Footer `DebtCard` với `FlowRow` chống clipping, xóa bỏ long press delete vô ý.
+- **Sửa lỗi chồng đè layout**: Tách biệt 2 card trong `StrategySelectorCard` vào `Column` với `Spacer(8.dp)`.
+
+---
+
 ## ✅ [DONE 2026-08-27] - Tinh chỉnh khả năng đọc Home Prism
 
 - KPI dùng Liquid Glass REGULAR và phản hồi spring dùng chung; ba vùng số tiền giữ baseline cố định.

@@ -6,6 +6,7 @@ import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.usecase.CloseDealUseCase
 import com.finlux.app.domain.usecase.CloseDealWithLossUseCase
 import com.finlux.app.domain.usecase.DeleteDealUseCase
 import com.finlux.app.domain.usecase.GetDealsUseCase
@@ -34,6 +35,7 @@ class DealsViewModel @Inject constructor(
     private val recordDealOutlayUseCase: RecordDealOutlayUseCase,
     private val recordDealInflowUseCase: RecordDealInflowUseCase,
     private val closeDealWithLossUseCase: CloseDealWithLossUseCase,
+    private val closeDealUseCase: CloseDealUseCase,
     private val revertDealLossUseCase: RevertDealLossUseCase,
     private val reopenDealUseCase: ReopenDealUseCase,
 ) : ViewModel() {
@@ -205,6 +207,22 @@ class DealsViewModel @Inject constructor(
             is AppResult.Success -> {
                 isSubmitting.value = false
                 successMessage.value = "Đã mở lại thương vụ / khoản vay"
+                onSuccess()
+            }
+            is AppResult.Error -> {
+                isSubmitting.value = false
+                errorMessage.value = result.message
+            }
+        }
+    }
+
+    fun closeDeal(dealId: String, onSuccess: () -> Unit = {}) = viewModelScope.launch {
+        isSubmitting.value = true
+        errorMessage.value = null
+        when (val result = closeDealUseCase(dealId)) {
+            is AppResult.Success -> {
+                isSubmitting.value = false
+                successMessage.value = "Đã tất toán và đóng thương vụ thành công"
                 onSuccess()
             }
             is AppResult.Error -> {

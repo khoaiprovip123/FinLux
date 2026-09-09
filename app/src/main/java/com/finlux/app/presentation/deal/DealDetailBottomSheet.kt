@@ -40,6 +40,7 @@ fun DealDetailBottomSheet(
     onAddOutlay: () -> Unit,
     onAddInflow: () -> Unit,
     onCloseWithLoss: () -> Unit,
+    onCloseDeal: () -> Unit = {},
     onRevertStopLoss: () -> Unit = {},
     onReopenDeal: () -> Unit = {},
     onDelete: () -> Unit,
@@ -48,6 +49,7 @@ fun DealDetailBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showStopLossConfirm by remember { mutableStateOf(false) }
+    var showCloseDealConfirm by remember { mutableStateOf(false) }
     var showRevertStopLossConfirm by remember { mutableStateOf(false) }
     var showReopenDealConfirm by remember { mutableStateOf(false) }
 
@@ -244,6 +246,7 @@ fun DealDetailBottomSheet(
                     // Row 2: Chỉ số chi tiết
                     if (isLending) {
                         // Cho vay: Dư nợ còn lại & Tiền lãi nhận được & Trạng thái
+                        val errorColor = MaterialTheme.colorScheme.error
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -262,16 +265,17 @@ fun DealDetailBottomSheet(
                                 )
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                val profitVal = deal.netProfitLoss.value
+                                val isLoss = profitVal < 0
                                 Text(
-                                    text = "Tiền lãi nhận được",
+                                    text = if (isLoss) "Mất vốn / Xóa nợ" else "Tiền lãi nhận được",
                                     style = MaterialTheme.typography.labelSmall.copy(color = tokens.textSecondary),
                                 )
-                                val profitVal = deal.netProfitLoss.value
                                 Text(
                                     text = if (profitVal > 0) "+${profitVal.toVnd()}" else profitVal.toVnd(),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = if (profitVal > 0) Color(0xFF8B5CF6) else tokens.textSecondary,
+                                        color = if (profitVal > 0) Color(0xFF8B5CF6) else if (isLoss) errorColor else tokens.textSecondary,
                                     ),
                                 )
                             }
@@ -281,12 +285,14 @@ fun DealDetailBottomSheet(
                                     style = MaterialTheme.typography.labelSmall.copy(color = tokens.textSecondary),
                                 )
                                 val debtStatusText = when {
-                                    deal.isFullyRecovered -> "Đã thu đủ"
+                                    deal.status == DealStatus.COMPLETED && deal.writtenOffCapital.value > 0 -> "Đã xóa nợ"
+                                    deal.status == DealStatus.COMPLETED || deal.isFullyRecovered -> "Đã thu đủ"
                                     deal.totalRecovered.value > 0 -> "Đang trả nợ"
                                     else -> "Chưa thu hồi"
                                 }
                                 val debtStatusColor = when {
-                                    deal.isFullyRecovered -> Color(0xFF10B981)
+                                    deal.status == DealStatus.COMPLETED && deal.writtenOffCapital.value > 0 -> errorColor
+                                    deal.status == DealStatus.COMPLETED || deal.isFullyRecovered -> Color(0xFF10B981)
                                     deal.totalRecovered.value > 0 -> Color(0xFF3B82F6)
                                     else -> Color(0xFFF59E0B)
                                 }
@@ -342,11 +348,12 @@ fun DealDetailBottomSheet(
                                     style = MaterialTheme.typography.labelSmall.copy(color = tokens.textSecondary),
                                 )
                                 val roi = deal.roiPercentage
+                                val isZero = deal.netProfitLoss.value == 0L
                                 Text(
-                                    text = String.format(java.util.Locale.US, "%+.1f%%", roi),
+                                    text = if (isZero) "0.0%" else String.format(java.util.Locale.US, "%+.1f%%", roi),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = if (roi >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                                        color = if (isZero) tokens.textSecondary else if (roi >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
                                     ),
                                 )
                             }
@@ -458,58 +465,45 @@ fun DealDetailBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Button(
-                        onClick = onAddOutlay,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = tokens.surfaceSoft,
-                            contentColor = tokens.textPrimary,
-                        ),
+                if (deal.status == DealStatus.COMPLETED) {
+                    Card(
                         shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = tokens.surfaceSoft),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Icon(
-                            imageVector = if (isLending) Icons.Default.Handshake else Icons.Rounded.AddCircleOutline,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (isLending) "Cho Vay Thêm" else "Xuất Thêm Vốn", fontSize = 13.sp)
-                    }
-
-                    Button(
-                        onClick = onAddInflow,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isLending) Color(0xFFD97706) else Color(0xFF10B981),
-                            contentColor = Color.White,
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (isLending) "Thu Nợ / Lãi" else "Thu Hồi / Lời", fontSize = 13.sp)
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    val hasStopLoss = transactions.any { it.dealFlowType == DealFlowType.CAPITAL_LOSS }
-                    if (deal.status == DealStatus.ACTIVE && deal.remainingCapital.value > 0L) {
-                        OutlinedButton(
-                            onClick = { showStopLossConfirm = true },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text(if (isLending) "Xóa Nợ & Đóng" else "Chốt Lỗ & Đóng", fontSize = 13.sp)
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = null,
+                                tint = if (deal.writtenOffCapital.value > 0) MaterialTheme.colorScheme.error else Color(0xFF10B981),
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = if (deal.writtenOffCapital.value > 0) {
+                                    if (isLending) "Khoản vay đã xóa nợ và đóng sổ" else "Thương vụ đã chốt lỗ và đóng sổ"
+                                } else {
+                                    if (isLending) "Khoản vay đã hoàn tất đóng sổ" else "Thương vụ đã hoàn tất đóng sổ"
+                                },
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = tokens.textSecondary,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                            )
                         }
-                    } else if (deal.status == DealStatus.COMPLETED) {
+                    }
+
+                    // Deal COMPLETED: Nút Khôi phục nợ/deal và Nút Xóa
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        val hasStopLoss = transactions.any { it.dealFlowType == DealFlowType.CAPITAL_LOSS }
                         if (hasStopLoss) {
                             OutlinedButton(
                                 onClick = { showRevertStopLossConfirm = true },
@@ -533,17 +527,96 @@ fun DealDetailBottomSheet(
                                 Text(if (isLending) "Mở Lại Khoản Vay" else "Mở Lại Deal", fontSize = 13.sp)
                             }
                         }
+
+                        OutlinedButton(
+                            onClick = { showDeleteConfirm = true },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = tokens.textSecondary),
+                        ) {
+                            Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (isLending) "Xóa Khoản Vay" else "Xóa Deal", fontSize = 13.sp)
+                        }
+                    }
+                } else {
+                    // Deal ACTIVE:
+                    // Row 1: Giao dịch dòng tiền
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Button(
+                            onClick = onAddOutlay,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = tokens.surfaceSoft,
+                                contentColor = tokens.textPrimary,
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Icon(
+                                imageVector = if (isLending) Icons.Default.Handshake else Icons.Rounded.AddCircleOutline,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(if (isLending) "Cho Vay Thêm" else "Xuất Thêm Vốn", fontSize = 13.sp)
+                        }
+
+                        Button(
+                            onClick = onAddInflow,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isLending) Color(0xFFD97706) else Color(0xFF10B981),
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(if (isLending) "Thu Nợ / Lãi" else "Thu Hồi / Lời", fontSize = 13.sp)
+                        }
                     }
 
+                    // Row 2: Các nút chốt sổ / tất toán
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        if (deal.remainingCapital.value > 0L) {
+                            OutlinedButton(
+                                onClick = { showStopLossConfirm = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                            ) {
+                                Text(if (isLending) "Xóa Nợ & Đóng" else "Chốt Lỗ & Đóng", fontSize = 13.sp)
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = { showCloseDealConfirm = true },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF10B981)),
+                        ) {
+                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (isLending) "Tất Toán & Đóng" else "Tất Toán Deal", fontSize = 13.sp)
+                        }
+                    }
+
+                    // Row 3: Xóa deal
                     OutlinedButton(
                         onClick = { showDeleteConfirm = true },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = tokens.textSecondary),
                     ) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(if (isLending) "Xóa Khoản Vay" else "Xóa Deal", fontSize = 13.sp)
+                        Text(if (isLending) "Xóa Khoản Cho Vay" else "Xóa Thương Vụ", fontSize = 13.sp)
                     }
                 }
             }
@@ -762,6 +835,54 @@ fun DealDetailBottomSheet(
             dismissButton = {
                 TextButton(
                     onClick = { showReopenDealConfirm = false },
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("Hủy", color = tokens.textPrimary)
+                }
+            },
+        )
+    }
+
+    // Dialog xác nhận Tất Toán & Đóng Deal
+    if (showCloseDealConfirm) {
+        AlertDialog(
+            onDismissRequest = { showCloseDealConfirm = false },
+            containerColor = tokens.surface,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    text = if (isLending) "Tất Toán & Đóng Khoản Vay" else "Tất Toán & Đóng Thương Vụ",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.onSurface,
+                    ),
+                )
+            },
+            text = {
+                Text(
+                    text = if (deal.remainingCapital.value > 0) {
+                        "Khoản vốn chưa thu hồi còn ${deal.remainingCapital.value.toVnd()}. Bạn có chắc chắn muốn tất toán và chuyển thương vụ này sang trạng thái Đã Hoàn Tất?"
+                    } else {
+                        "Thương vụ đã hoàn tất và thu hồi đủ vốn. Xác nhận chuyển sang danh sách Đã Hoàn Tất?"
+                    },
+                    style = MaterialTheme.typography.bodyMedium.copy(color = tokens.onSurface),
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showCloseDealConfirm = false
+                        onCloseDeal()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("Xác Nhận Đóng", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showCloseDealConfirm = false },
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text("Hủy", color = tokens.textPrimary)

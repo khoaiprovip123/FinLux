@@ -1,6 +1,7 @@
 package com.finlux.app.domain.usecase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.DealStatus
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.repository.DealRepository
 import kotlinx.coroutines.flow.Flow
@@ -67,6 +68,7 @@ class RecordDealOutlayUseCase @Inject constructor(
         note: String = "",
     ): AppResult<Unit> {
         if (deal.id.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
+        if (deal.status == DealStatus.COMPLETED) return AppResult.Error("Thương vụ đã hoàn tất đóng sổ, không thể xuất thêm vốn")
         if (walletId.isBlank()) return AppResult.Error("Vui lòng chọn ví xuất vốn")
         if (amount <= 0) return AppResult.Error("Số tiền xuất vốn phải lớn hơn 0")
         return dealRepository.recordDealOutlay(deal, walletId, amount, date, note)
@@ -87,6 +89,7 @@ class RecordDealInflowUseCase @Inject constructor(
         note: String = "",
     ): AppResult<Unit> {
         if (deal.id.isBlank()) return AppResult.Error("Vui lòng chọn thương vụ")
+        if (deal.status == DealStatus.COMPLETED) return AppResult.Error("Thương vụ đã hoàn tất đóng sổ, không thể thu hồi thêm")
         if (walletId.isBlank()) return AppResult.Error("Vui lòng chọn ví nhận tiền")
         if (amount <= 0) return AppResult.Error("Số tiền thu hồi phải lớn hơn 0")
         return dealRepository.recordDealInflow(deal, walletId, amount, date, note)
@@ -105,7 +108,23 @@ class CloseDealWithLossUseCase @Inject constructor(
         note: String = "",
     ): AppResult<Unit> {
         if (deal.id.isBlank()) return AppResult.Error("ID thương vụ không hợp lệ")
+        if (deal.status == DealStatus.COMPLETED) return AppResult.Error("Thương vụ đã hoàn tất đóng sổ")
         return dealRepository.closeDealWithLoss(deal, date, note)
+    }
+}
+
+/**
+ * UseCase Tất Toán & Đóng Thương Vụ (Close / Settle Deal).
+ */
+class CloseDealUseCase @Inject constructor(
+    private val dealRepository: DealRepository,
+) {
+    suspend operator fun invoke(
+        dealId: String,
+        date: Instant = Instant.now(),
+    ): AppResult<Unit> {
+        if (dealId.isBlank()) return AppResult.Error("ID thương vụ không hợp lệ")
+        return dealRepository.closeDeal(dealId, date)
     }
 }
 

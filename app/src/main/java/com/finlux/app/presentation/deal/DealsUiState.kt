@@ -41,13 +41,13 @@ data class DealsUiState(
     val totalAccumulatedProfit: Money
         get() = Money(deals.sumOf { it.netProfitLoss.value })
 
-    /** Tỷ suất sinh lời bình quân (%) */
+    /** Tỷ suất sinh lời bình quân (%) theo Lợi nhuận ròng thực nhận */
     val overallRoiPercentage: Double
         get() {
             val totalOutlay = deals.sumOf { it.totalCapitalOutlay.value }
+            val totalProfitLoss = deals.sumOf { it.netProfitLoss.value }
             return if (totalOutlay > 0) {
-                val totalReturn = deals.sumOf { it.totalRecovered.value + it.netProfitLoss.value }
-                ((totalReturn - totalOutlay).toDouble() / totalOutlay.toDouble()) * 100.0
+                (totalProfitLoss.toDouble() / totalOutlay.toDouble()) * 100.0
             } else 0.0
         }
 }
