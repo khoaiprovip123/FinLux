@@ -316,7 +316,7 @@ class FirebaseTransactionRepository(
                 )
             } else {
                 // Normal deletion for INCOME / EXPENSE
-                val isSettlement = stored.walletId == "DEAL_SETTLEMENT" || stored.dealFlowType == DealFlowType.CAPITAL_LOSS
+                val isSettlement = stored.dealFlowType == DealFlowType.CAPITAL_LOSS
                 val walletRef = if (!isSettlement) firestore.userWallets(uid).document(stored.walletId) else null
                 val walletDoc = if (walletRef != null) atomic.get(walletRef) else null
                 val balance = walletDoc?.getLong("balance")

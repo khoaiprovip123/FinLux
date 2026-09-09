@@ -637,7 +637,7 @@ class DemoFinluxRepository @Inject constructor(
                     it.id == current.id || (counterpartId != null && it.id == counterpartId)
                 }
             } else {
-                val isSettlement = current.walletId == "DEAL_SETTLEMENT" || current.dealFlowType == DealFlowType.CAPITAL_LOSS
+                val isSettlement = current.dealFlowType == DealFlowType.CAPITAL_LOSS
                 if (!isSettlement) {
                     if (!changeWalletBalance(current.walletId, -balanceDelta(current))) {
                         return@withLock AppResult.Error("Không tìm thấy ví")
@@ -952,12 +952,17 @@ class DemoFinluxRepository @Inject constructor(
         dealState.value = listOf(updatedDeal) + dealState.value.filterNot { it.id == deal.id }
 
         if (lossAmount > 0) {
+            val outlayWalletId = transactionState.value
+                .firstOrNull { it.dealId == deal.id && it.dealFlowType == DealFlowType.OUTLAY_CAPITAL }
+                ?.walletId
+                ?: walletState.value.firstOrNull()?.id
+                ?: ""
             val tx = FinanceTransaction(
                 id = UUID.randomUUID().toString(),
                 type = TransactionType.EXPENSE,
                 amount = Money(lossAmount),
                 categoryId = null,
-                walletId = "DEAL_SETTLEMENT",
+                walletId = outlayWalletId,
                 dealId = deal.id,
                 dealFlowType = DealFlowType.CAPITAL_LOSS,
                 note = note.ifBlank { buildDefaultNote(deal, DealFlowType.CAPITAL_LOSS) },

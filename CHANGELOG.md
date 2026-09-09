@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.22.2] - 2026-09-09
+### Added
+- **P0-01: Subcollection `deals/{dealId}` & Firestore Security Rules**:
+  * Định nghĩa rules bảo mật toàn diện cho subcollection `users/{uid}/deals/{dealId}` (chỉ owner `request.auth.uid == uid`, validate bắt buộc các trường `title`, `totalCapitalOutlay`, `totalRecovered`, `writtenOffCapital`, `netProfitLoss`, `status`).
+  * Mở rộng hàm `validTransaction`: hỗ trợ các trường liên kết Deal (`dealId`, `dealFlowType`, `correlationId`).
+  * Mở rộng subcollection `budgets`: hỗ trợ các trường chu kỳ lương (`periodKey`, `periodStart`, `periodEndExclusive`, `periodBasis`).
+
+### Changed
+- **P0-02: Cloud Functions Salary Cycle Alignment**:
+  * Đồng bộ Cloud Functions `getSalaryConfig` đọc cấu hình chu kỳ lương từ document `financialPreferences/salaryCycle` (kèm fallback ngược về `users/{uid}` legacy).
+  * Hỗ trợ đầy đủ trường `paydayDay` (fallback `baseDay`) và các rule type (`DAY_OF_MONTH`, `FIRST_DAY_OF_MONTH`, `LAST_DAY_OF_MONTH`) theo đúng đặc tả `SalaryCycleConfig`.
+  * TypeScript build pass 100% (`npm run build`).
+- **P0-03: Xóa sổ hoàn toàn ví ảo `"DEAL_SETTLEMENT"`**:
+  * Khi đóng deal chịu lỗ (`closeDealWithLoss`), gán `walletId` của transaction `CAPITAL_LOSS` về ví xuất vốn ban đầu của Deal (hoặc ví khả dụng đầu tiên của user), loại bỏ hoàn toàn việc tạo hay kiểm tra ví ảo `"DEAL_SETTLEMENT"`.
+  * Chuẩn hóa logic tại `FirebaseDealRepository`, `FirebaseTransactionRepository`, `DemoFinluxRepository`, và test suite `DealUseCasesTest`.
+
+### Fixed
+- **P0-04: Security Hardening (Android Broadcast & Storage Rules)**:
+  * Khóa `android:exported="false"` cho `SalaryCycleReceiver` trong `AndroidManifest.xml` (sử dụng Explicit Intent, ngăn chặn các app khác kích hoạt sự kiện trả lương trái phép).
+  * Siết chặt quyền đọc avatar người dùng trong `storage.rules` chỉ cho phép chính chủ (`request.auth.uid == uid`), tách biệt quyền `delete` khỏi `create, update` để tránh lỗi `request.resource` null khi xóa file.
+- Đạt 100% PASS (302/302 tests) trên test suite toàn dự án.
+
 ## [1.22.1] - 2026-09-09
 ### Added
 - Bổ sung Unit Test `schedule uses distinct requestCode for showIntent` trong `AlarmReminderSchedulerTest` đảm bảo PendingIntent không bao giờ bị trùng Request Code.

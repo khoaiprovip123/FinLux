@@ -1,8 +1,45 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.22.1 (versionCode 166)
-- **Trạng thái Build:** ✅ 100% PASS (302/302 tests) — Đã sửa và nghiệm thu lỗi điều hướng thông báo nhắc nhở trên thiết bị thật cả Cold Start & Warm Start.
+- **Phiên bản hiện tại:** v1.22.2 (versionCode 167)
+- **Trạng thái Build:** ✅ 100% PASS (302/302 unit tests, Cloud Functions TypeScript build 100% pass) — Đã xử lý và dứt điểm toàn bộ 4 mục P0 Blockers.
+
+### [Task-RESOLVE-P0-BLOCKERS] — Xử lý dứt điểm toàn bộ 4 mục P0 (Blockers)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **P0-01 (`firestore.rules`)**:
+     - Cập nhật và bảo vệ subcollection `users/{uid}/deals/{dealId}`: kiểm tra chính chủ `request.auth.uid == uid` và validate đầy đủ các trường `title`, `totalCapitalOutlay`, `totalRecovered`, `writtenOffCapital`, `netProfitLoss`, `status`.
+     - Mở rộng hàm `validTransaction`: cho phép các trường mở rộng `dealId`, `dealFlowType`, `correlationId`.
+     - Mở rộng subcollection `budgets`: cho phép các trường chu kỳ lương `periodKey`, `periodStart`, `periodEndExclusive`, `periodBasis`.
+  2. ✅ **P0-02 (`functions/src/index.ts`)**:
+     - Sửa `getSalaryConfig` đọc từ document `financialPreferences/salaryCycle` kèm fallback về `users/{uid}` legacy.
+     - Tương thích đầy đủ `paydayDay` (fallback `baseDay`) và các quy tắc ngày lương `DAY_OF_MONTH`, `FIRST_DAY_OF_MONTH`, `LAST_DAY_OF_MONTH`.
+     - Chạy `npm run build` kiểm tra TypeScript đạt kết quả 100% PASS không lỗi (exit code 0).
+  3. ✅ **P0-03 (Data Integrity)**:
+     - Xóa sổ hoàn toàn ví ảo `"DEAL_SETTLEMENT"`.
+     - Trong `FirebaseDealRepository`, `DemoFinluxRepository`, khi đóng deal chịu lỗ (`closeDealWithLoss`), tự động gán `walletId` của transaction `CAPITAL_LOSS` về ví xuất vốn ban đầu của Deal (hoặc ví đầu tiên của user) để bảo toàn foreign key integrity và không trừ tiền lặp lại.
+     - Loại bỏ các nhánh logic đặc biệt cho `DEAL_SETTLEMENT` trong `FirebaseTransactionRepository`.
+     - Cập nhật unit test `DealUseCasesTest.kt` tương thích 100%.
+  4. ✅ **P0-04 (Security Hardening)**:
+     - Khóa `android:exported="false"` cho `SalaryCycleReceiver` trong `AndroidManifest.xml` (sử dụng Explicit Intent nội bộ, chống bên thứ ba kích hoạt báo lương trái phép).
+     - Siết chặt quyền đọc avatar người dùng trong `storage.rules` chỉ cho phép chính chủ (`request.auth.uid == uid`).
+     - Phân tách quyền `delete` khỏi `create, update` trong `storage.rules` để tránh lỗi `request.resource` null khi xóa receipt/avatar.
+  5. ✅ **Kiểm thử & Đóng gói**:
+     - Cloud Functions: `npm run build` -> Exit code 0 (thành công 100%).
+     - Android Unit Tests: `./gradlew testDebugUnitTest` -> **302/302 tests PASS (100% success rate)**.
+     - Tự động bump version lên `v1.22.2` (versionCode 167) trong `app/build.gradle.kts`.
+- **Danh sách file đã chỉnh sửa**:
+  - `firestore.rules`
+  - `functions/src/index.ts`
+  - `storage.rules`
+  - `app/src/main/AndroidManifest.xml`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DealUseCasesTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
 
 ### [Task-FIX-REMINDER-NOTIFICATION-NAVIGATION] — Sửa lỗi điều hướng thông báo nhắc nhở (mở NotificationsScreen thay vì RemindersScreen)
 - **Status**: `[DONE]`

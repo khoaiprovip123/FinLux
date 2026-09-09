@@ -106,7 +106,7 @@ class FirebaseDealRepository(
         firestore.runTransaction { atomic ->
             // Phase A: All reads first
             val walletIds = txDocs.mapNotNull { it.getString("walletId") }
-                .filter { it.isNotBlank() && it != "DEAL_SETTLEMENT" }
+                .filter { it.isNotBlank() }
                 .toSet()
             val walletRefs = walletIds.associateWith {
                 firestore.collection("users").document(uid).collection("wallets").document(it)
@@ -119,7 +119,7 @@ class FirebaseDealRepository(
                 val flowTypeStr = txDoc.getString("dealFlowType")?.uppercase()
                 val walletId = txDoc.getString("walletId").orEmpty()
                 val amount = txDoc.getLong("amount") ?: 0L
-                if (walletId.isBlank() || walletId == "DEAL_SETTLEMENT" || amount <= 0L) continue
+                if (walletId.isBlank() || amount <= 0L) continue
 
                 when (flowTypeStr) {
                     "OUTLAY_CAPITAL" -> {
@@ -329,6 +329,17 @@ class FirebaseDealRepository(
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
         val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
 
+        // Resolve outlay wallet from existing OUTLAY_CAPITAL transactions or user's first wallet
+        val outlaySnapshot = firestore.collection("users").document(uid).collection("transactions")
+            .whereEqualTo("dealId", deal.id)
+            .whereEqualTo("dealFlowType", DealFlowType.OUTLAY_CAPITAL.name.lowercase())
+            .limit(1)
+            .get()
+            .await()
+        val outlayWalletId = outlaySnapshot.documents.firstOrNull()?.getString("walletId")
+            ?: firestore.collection("users").document(uid).collection("wallets").limit(1).get().await().documents.firstOrNull()?.id
+            ?: ""
+
         firestore.runTransaction { tx ->
             val dealDoc = tx.get(dealRef)
             require(dealDoc.exists()) { "Thương vụ không tồn tại" }
@@ -357,7 +368,7 @@ class FirebaseDealRepository(
                     "type" to TransactionType.EXPENSE.name.lowercase(),
                     "amount" to lossAmount,
                     "categoryId" to null,
-                    "walletId" to "DEAL_SETTLEMENT",
+                    "walletId" to outlayWalletId,
                     "relatedWalletId" to null,
                     "dealId" to deal.id,
                     "dealFlowType" to DealFlowType.CAPITAL_LOSS.name.lowercase(),
