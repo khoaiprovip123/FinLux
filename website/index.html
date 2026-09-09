@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07101f">
+  <meta name="description" content="FinLux là ứng dụng Android mã nguồn mở quản lý tài chính cá nhân: thu chi, đa ví, chu kỳ lương, ngân sách, mục tiêu, nợ, báo cáo và Saving Spin.">
+  <meta property="og:title" content="FinLux — Open-Source Android Personal Finance">
+  <meta property="og:description" content="Quản lý tiền theo đúng chu kỳ tài chính của bạn, với dữ liệu có thể truy nguyên từ giao dịch đến báo cáo.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://raw.githubusercontent.com/khoaiprovip123/FinLux/main/docs/screenshots/qa-home.png">
+  <meta property="og:url" content="https://khoaiprovip123.github.io/FinLux/">
+  <title>FinLux — Open-Source Android Personal Finance</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+
+  <header class="site-header" id="top">
+    <div class="container nav-shell">
+      <a class="brand" href="#top" aria-label="FinLux home">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span>
+          <strong>FinLux</strong>
+          <small>Personal Finance</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-label="Mở menu" aria-expanded="false" aria-controls="site-nav">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Điều hướng chính">
+        <a href="#overview">Tổng quan</a>
+        <a href="#features">Tính năng</a>
+        <a href="#flow">Quy trình</a>
+        <a href="#reports">Báo cáo</a>
+        <a href="#saving-spin">Saving Spin</a>
+        <a href="#architecture">Kiến trúc</a>
+        <a href="#roadmap">Roadmap</a>
+        <a class="nav-cta" href="https://github.com/khoaiprovip123/FinLux" target="_blank" rel="noreferrer">GitHub ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero section" id="overview">
+      <div class="hero-orb hero-orb-a"></div>
+      <div class="hero-orb hero-orb-b"></div>
+      <div class="container hero-grid">
+        <div class="hero-copy reveal">
+          <div class="eyebrow"><span class="status-dot"></span> Open-source Android • Active development</div>
+          <h1>Hiểu dòng tiền của bạn theo <span>đúng chu kỳ tài chính</span>.</h1>
+          <p class="hero-lead">
+            FinLux kết nối giao dịch, ví, ngân sách, chu kỳ lương, mục tiêu, nợ, deal tài chính và tiết kiệm
+            trong một mô hình thống nhất — từ số dư hôm nay đến báo cáo có thể truy nguyên.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button primary" href="#features">Khám phá FinLux</a>
+            <a class="button secondary" href="https://github.com/khoaiprovip123/FinLux" target="_blank" rel="noreferrer">Xem mã nguồn GitHub</a>
+          </div>
+
+          <div class="hero-meta" aria-label="Công nghệ chính">
+            <span>Kotlin</span>
+            <span>Jetpack Compose</span>
+            <span>Clean Architecture</span>
+            <span>Firebase</span>
+            <span>MIT</span>
+          </div>
+        </div>
+
+        <div class="hero-visual reveal" aria-label="Ảnh giao diện FinLux">
+          <div class="floating-card floating-card-top">
+            <small>Chu kỳ tài chính</small>
+            <strong>Salary Cycle</strong>
+            <span>Payday → Payday</span>
+          </div>
+          <div class="phone phone-back">
+            <div class="phone-screen">
+              <img src="https://raw.githubusercontent.com/khoaiprovip123/FinLux/main/docs/screenshots/qa-reports.png" alt="Màn hình báo cáo FinLux">
+            </div>
+          </div>
+          <div class="phone phone-front">
+            <div class="phone-screen">
+              <img src="https://raw.githubusercontent.com/khoaiprovip123/FinLux/main/docs/screenshots/qa-home.png" alt="Màn hình trang chủ FinLux">
+            </div>
+          </div>
+          <div class="floating-card floating-card-bottom">
+            <small>Dòng tiền ròng</small>
+            <strong>Không tính chuyển ví là Thu/Chi</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="container trust-grid reveal">
+        <article><strong>1.22.0</strong><span>Android baseline</span></article>
+        <article><strong>3</strong><span>Visual styles</span></article>
+        <article><strong>Offline-first</strong><span>Firestore persistence</span></article>
+        <article><strong>Open source</strong><span>MIT License</span></article>
+      </div>
+    </section>
+
+    <section class="section problem-section">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">WHY FINLUX</span>
+          <h2>Tài chính cá nhân không chỉ là “Thu bao nhiêu, Chi bao nhiêu”.</h2>
+          <p>FinLux được thiết kế quanh ba vấn đề thường làm báo cáo cá nhân trở nên sai lệch hoặc khó hiểu.</p>
+        </div>
+
+        <div class="problem-grid">
+          <article class="problem-card reveal">
+            <span class="number">01</span>
+            <h3>Tiền nằm ở nhiều nơi</h3>
+            <p>Tiền mặt, ngân hàng, ví điện tử, tài khoản khác nhau cần được nhìn trong một bức tranh thống nhất.</p>
+          </article>
+          <article class="problem-card reveal">
+            <span class="number">02</span>
+            <h3>Tháng lịch ≠ chu kỳ thu nhập</h3>
+            <p>Nếu nhận lương ngày 25, việc ép mọi báo cáo về ngày 01–31 có thể không phản ánh đúng cách bạn vận hành tiền.</p>
+          </article>
+          <article class="problem-card reveal">
+            <span class="number">03</span>
+            <h3>Biểu đồ chưa chắc là báo cáo</h3>
+            <p>Một KPI chỉ thật sự hữu ích khi bạn có thể drill-down đến ví, danh mục và giao dịch đã tạo ra con số đó.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-heading split-heading reveal">
+          <div>
+            <span class="kicker">CORE CAPABILITIES</span>
+            <h2>Một hệ thống tài chính cá nhân, không phải tập hợp màn hình rời rạc.</h2>
+          </div>
+          <p>Mỗi module chia sẻ cùng financial period, cùng ledger semantics và cùng nguồn dữ liệu báo cáo.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <span class="feature-icon">↕</span>
+            <h3>Thu / Chi / Chuyển tiền</h3>
+            <p>CRUD giao dịch, danh mục, ví, thời gian, ghi chú và receipt tùy chọn.</p>
+            <ul><li>Income / Expense / Transfer</li><li>Edit/Delete có hoàn tác tác động tài chính</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">◫</span>
+            <h3>Đa ví & tài khoản</h3>
+            <p>Quản lý tiền mặt, ngân hàng, ví điện tử và các loại tài khoản trong cùng bức tranh.</p>
+            <ul><li>Balance theo ví</li><li>Transfer nguyên tử giữa ví</li></ul>
+          </article>
+
+          <article class="feature-card highlight reveal">
+            <span class="feature-icon">◷</span>
+            <h3>Salary Cycle</h3>
+            <p>Báo cáo theo chu kỳ ngày nhận lương thay vì buộc mọi thứ phải theo tháng lịch.</p>
+            <ul><li>Current / Previous cycle</li><li>Dùng chung Home, History, Reports</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">◎</span>
+            <h3>Ngân sách</h3>
+            <p>Hạn mức theo danh mục, trạng thái đã dùng/còn lại và cảnh báo gần hoặc vượt ngưỡng.</p>
+            <ul><li>Period-aware</li><li>Category drill-down</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">⌁</span>
+            <h3>Báo cáo truy nguyên</h3>
+            <p>Từ opening/closing balance đến xu hướng, ví, danh mục và giao dịch cụ thể.</p>
+            <ul><li>Daily statement</li><li>Previous-period comparison</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">◉</span>
+            <h3>Mục tiêu tài chính</h3>
+            <p>Theo dõi mục tiêu, tiến độ và nguồn đóng góp mà không biến tiền chuyển sang mục tiêu thành “thu nhập mới”.</p>
+            <ul><li>Target & progress</li><li>Contribution history</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">⇣</span>
+            <h3>Quản lý nợ</h3>
+            <p>Outstanding, lịch sử trả nợ, principal/interest, chiến lược payoff và burndown.</p>
+            <ul><li>Snowball / Avalanche direction</li><li>Payment history</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">◆</span>
+            <h3>Deals / vốn cá nhân</h3>
+            <p>Theo dõi vốn bỏ ra, vốn thu hồi, principal còn lại, gain/loss và ROI.</p>
+            <ul><li>Investment / Lending semantics</li><li>Không dùng settlement giả</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">✦</span>
+            <h3>Saving Spin</h3>
+            <p>Mini game tiết kiệm opt-in với mức tiền cấu hình, kết quả persistent và streak/report riêng.</p>
+            <ul><li>Cash / bank destination</li><li>Không reroll để gian lận</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">⏱</span>
+            <h3>Nhắc nhở</h3>
+            <p>Recurring reminders, bill context, budget alerts và deep-link đến đúng luồng xử lý.</p>
+            <ul><li>Local notification</li><li>FCM where applicable</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">⇩</span>
+            <h3>Excel / PDF</h3>
+            <p>Xuất dữ liệu và báo cáo dựa trên cùng semantics với màn hình, không tính lại theo công thức khác.</p>
+            <ul><li>Transactions / Wallet / Budget</li><li>Debt / Deal report direction</li></ul>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-icon">◐</span>
+            <h3>Theme & Offline</h3>
+            <p>Classic, Modern và Prism với Light/Dark/System, kết hợp Firestore offline persistence.</p>
+            <ul><li>Same state, different skin</li><li>Realtime sync</li></ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section flow-section" id="flow">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">MONEY FLOW</span>
+          <h2>Từ một giao dịch đến một quyết định tài chính.</h2>
+          <p>FinLux tổ chức dữ liệu theo luồng rõ ràng để cùng một giao dịch tạo ra số dư, lịch sử và báo cáo nhất quán.</p>
+        </div>
+
+        <div class="flow-track reveal" role="list">
+          <div role="listitem"><span>01</span><strong>Record</strong><small>Ghi giao dịch</small></div>
+          <i>→</i>
+          <div role="listitem"><span>02</span><strong>Structure</strong><small>Danh mục + Ví</small></div>
+          <i>→</i>
+          <div role="listitem"><span>03</span><strong>Ledger</strong><small>Tác động số dư</small></div>
+          <i>→</i>
+          <div role="listitem"><span>04</span><strong>Period</strong><small>Month / Salary Cycle</small></div>
+          <i>→</i>
+          <div role="listitem"><span>05</span><strong>Understand</strong><small>Report + Drill-down</small></div>
+          <i>→</i>
+          <div role="listitem"><span>06</span><strong>Plan</strong><small>Budget / Goal / Save</small></div>
+        </div>
+
+        <div class="invariant-panel reveal">
+          <div>
+            <span class="kicker">FINANCIAL INTEGRITY</span>
+            <h3>Một công thức đơn giản, nhưng là điều kiện bắt buộc.</h3>
+          </div>
+          <code>Opening Balance + Income + Transfer In − Expense − Transfer Out = Closing Balance</code>
+          <p>Internal transfer không được làm phình tổng Thu/Chi. Goal, Debt, Deal và Saving Spin phải có semantics riêng để không làm sai Net Worth hoặc lifestyle cashflow.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section salary-section">
+      <div class="container salary-grid">
+        <div class="salary-copy reveal">
+          <span class="kicker">SALARY CYCLE</span>
+          <h2>Báo cáo theo cách bạn thực sự nhận và sử dụng tiền.</h2>
+          <p>
+            Khi bật Salary Cycle, FinLux dùng một resolver thống nhất cho Home, History, Income, Expense và Reports.
+            “Kỳ lương” không chỉ là một nhãn mới cho dữ liệu theo tháng.
+          </p>
+          <ul class="check-list">
+            <li>Payday configurable</li>
+            <li>Current & previous equivalent cycle</li>
+            <li>Query window chuẩn <code>[start, endExclusive)</code></li>
+            <li>Không drift giữa Home và Reports</li>
+          </ul>
+        </div>
+
+        <div class="period-demo reveal">
+          <div class="period-demo-head">
+            <span>Chu kỳ hiện tại</span>
+            <strong>Salary Cycle</strong>
+          </div>
+          <div class="period-range">
+            <div><small>Bắt đầu</small><strong>25 AUG</strong></div>
+            <span>→</span>
+            <div><small>Kết thúc</small><strong>24 SEP</strong></div>
+          </div>
+          <div class="period-compare">
+            <span>So với kỳ trước</span>
+            <strong>25 JUL → 24 AUG</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reports-section" id="reports">
+      <div class="container">
+        <div class="section-heading split-heading reveal">
+          <div>
+            <span class="kicker">REPORTING & ANALYTICS</span>
+            <h2>Không dồn mọi biểu đồ vào một “God Screen”.</h2>
+          </div>
+          <p>Báo cáo mở dần theo cấp độ: Executive Summary → Trend → Category → Wallet → Domain reports.</p>
+        </div>
+
+        <div class="reports-grid">
+          <div class="reports-preview reveal">
+            <img src="https://raw.githubusercontent.com/khoaiprovip123/FinLux/main/docs/screenshots/qa-reports.png" alt="Giao diện báo cáo FinLux">
+          </div>
+
+          <div class="report-content reveal">
+            <div class="kpi-grid">
+              <article><span>Opening</span><strong>12.450.000đ</strong></article>
+              <article><span>Income</span><strong class="positive">+18.000.000đ</strong></article>
+              <article><span>Expense</span><strong class="negative">−9.320.000đ</strong></article>
+              <article><span>Closing</span><strong>21.130.000đ</strong></article>
+            </div>
+
+            <div class="drill-card">
+              <span class="kicker">DRILL-DOWN</span>
+              <div class="drill-flow">
+                <strong>Tổng quan</strong><i>→</i><strong>Ví</strong><i>→</i><strong>Danh mục</strong><i>→</i><strong>Giao dịch</strong>
+              </div>
+            </div>
+
+            <ul class="check-list compact">
+              <li>Daily Statement: Opening → In/Out → Closing</li>
+              <li>Wallet statement riêng cho từng ví</li>
+              <li>Category ranking & trend</li>
+              <li>Budget / Goal / Debt / Deal / Saving Spin reports</li>
+              <li>Excel/PDF dùng cùng report DTO/use-case</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section advanced-section">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">ADVANCED PERSONAL FINANCE</span>
+          <h2>Khi quản lý tiền không dừng ở chi tiêu hằng ngày.</h2>
+        </div>
+
+        <div class="advanced-grid">
+          <article class="advanced-card reveal">
+            <div class="advanced-label">GOALS</div>
+            <h3>Mục tiêu</h3>
+            <p>Target, progress, contribution và nguồn tiền được theo dõi như một sự tái phân bổ tài sản, không phải thu nhập mới.</p>
+            <span class="metric">Target → Contribution → Progress</span>
+          </article>
+          <article class="advanced-card reveal">
+            <div class="advanced-label">DEBT</div>
+            <h3>Nợ & payoff</h3>
+            <p>Outstanding, lịch sử trả, principal/interest, payoff plan, chiến lược và burndown giúp thấy đường thoát nợ rõ ràng hơn.</p>
+            <span class="metric">Outstanding → Payment → Payoff</span>
+          </article>
+          <article class="advanced-card reveal">
+            <div class="advanced-label">DEALS</div>
+            <h3>Vốn / Deal</h3>
+            <p>Theo dõi vốn đã bỏ, principal thu hồi, phần còn lại, gain/loss và ROI mà không làm méo dòng tiền sinh hoạt.</p>
+            <span class="metric">Capital → Recovery → Gain/Loss</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section saving-section" id="saving-spin">
+      <div class="container saving-grid">
+        <div class="saving-visual reveal">
+          <div class="wheel-wrap">
+            <div class="wheel-pointer"></div>
+            <div class="wheel" aria-hidden="true">
+              <span class="wheel-center">SPIN</span>
+            </div>
+          </div>
+          <div class="saving-result">
+            <small>Kết quả mẫu</small>
+            <strong>35.000đ</strong>
+            <span>Chỉ tính là đã tiết kiệm sau khi xác nhận</span>
+          </div>
+        </div>
+
+        <div class="saving-copy reveal">
+          <span class="kicker">SAVING SPIN</span>
+          <h2>Biến một hành động tiết kiệm nhỏ thành thói quen có thể theo dõi.</h2>
+          <p>Saving Spin là mini game opt-in. Người dùng tự cấu hình phạm vi tiền, bước mệnh giá và lịch nhắc; kết quả được persist để không thể reroll tìm số đẹp hơn.</p>
+          <div class="saving-points">
+            <span>Min / Max tự đặt</span>
+            <span>Step 5K / 10K</span>
+            <span>09:00 mặc định</span>
+            <span>Cash / Bank destination</span>
+            <span>Streak & completion rate</span>
+            <span>Salary Cycle report</span>
+          </div>
+          <p class="microcopy">Saving Spin dùng ledger tiết kiệm riêng và không ghi “tiết kiệm” thành Income giả.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section themes-section">
+      <div class="container">
+        <div class="section-heading split-heading reveal">
+          <div>
+            <span class="kicker">DESIGN SYSTEM</span>
+            <h2>Ba phong cách. Một trạng thái tài chính.</h2>
+          </div>
+          <p>Theme có thể thay đổi cách FinLux trông như thế nào, nhưng không được thay đổi nghiệp vụ, navigation hay công thức.</p>
+        </div>
+
+        <div class="theme-grid">
+          <article class="theme-card classic reveal">
+            <span>CLASSIC</span>
+            <h3>Liquid Glass</h3>
+            <p>Kính mờ, depth và bề mặt mềm.</p>
+          </article>
+          <article class="theme-card modern reveal">
+            <span>MODERN</span>
+            <h3>Modern Luxury</h3>
+            <p>Tối giản, premium, hierarchy tài chính rõ.</p>
+          </article>
+          <article class="theme-card prism reveal">
+            <span>PRISM</span>
+            <h3>Prism</h3>
+            <p>Gradient semantic và visual metric mạnh hơn.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="architecture">
+      <div class="container architecture-grid">
+        <div class="architecture-copy reveal">
+          <span class="kicker">BUILT FOR DEVELOPERS</span>
+          <h2>Android native với Clean Architecture + MVVM.</h2>
+          <p>
+            FinLux tách business rules khỏi Compose UI và Firebase để tài chính có thể test, refactor và mở rộng mà không nhúng logic vào màn hình.
+          </p>
+          <div class="tech-chips">
+            <span>Kotlin 2.x</span>
+            <span>Jetpack Compose</span>
+            <span>Material 3</span>
+            <span>Hilt</span>
+            <span>Coroutines + Flow</span>
+            <span>Firebase</span>
+            <span>DataStore</span>
+            <span>JUnit / Turbine</span>
+          </div>
+        </div>
+
+        <div class="architecture-diagram reveal">
+          <div><span>01</span><strong>Compose UI</strong><small>Screen • Component • UiState</small></div>
+          <i>↓</i>
+          <div><span>02</span><strong>MVVM</strong><small>ViewModel • StateFlow</small></div>
+          <i>↓</i>
+          <div><span>03</span><strong>Domain</strong><small>Use Cases • Financial Rules</small></div>
+          <i>↓</i>
+          <div><span>04</span><strong>Repositories</strong><small>Interfaces • Contracts</small></div>
+          <i>↓</i>
+          <div><span>05</span><strong>Data</strong><small>Firestore • Auth • Storage • DataStore</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section roadmap-section" id="roadmap">
+      <div class="container">
+        <div class="section-heading split-heading reveal">
+          <div>
+            <span class="kicker">DEVELOPMENT STATUS</span>
+            <h2>Feature-rich, đang tập trung hardening để tiến gần production-ready.</h2>
+          </div>
+          <p>Baseline website hiện tại: Android <strong>v1.22.0</strong> • versionCode <strong>165</strong>.</p>
+        </div>
+
+        <div class="roadmap-list reveal">
+          <article><span>01</span><div><strong>Financial Integrity</strong><p>Ledger, wallet mutation, Goal/Debt/Deal invariants.</p></div><em>P0</em></article>
+          <article><span>02</span><div><strong>Firebase & Security</strong><p>Rules, Functions, Storage privacy, receiver hardening.</p></div><em>P0</em></article>
+          <article><span>03</span><div><strong>Business Rules</strong><p>Chuẩn hóa semantics, edge cases và transaction behavior.</p></div><em>P0/P1</em></article>
+          <article><span>04</span><div><strong>Reporting</strong><p>Unified period, daily statement, opening/closing balance.</p></div><em>P1</em></article>
+          <article><span>05</span><div><strong>UI/UX & Design System</strong><p>Theme parity, accessibility và shared components.</p></div><em>P1</em></article>
+          <article><span>06</span><div><strong>QA → CI/CD → Release Candidate</strong><p>Regression, fail-closed release, observability và UAT.</p></div><em>GATE</em></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section final-cta-section">
+      <div class="container final-cta reveal">
+        <span class="kicker">OPEN SOURCE</span>
+        <h2>Xem FinLux được xây dựng như thế nào.</h2>
+        <p>Mã nguồn, tài liệu BA/UI/UX, roadmap hardening và lịch sử phát triển đều được quản lý trực tiếp trên GitHub.</p>
+        <div class="hero-actions centered">
+          <a class="button primary" href="https://github.com/khoaiprovip123/FinLux" target="_blank" rel="noreferrer">Mở repository GitHub</a>
+          <a class="button secondary" href="#top">Quay lại đầu trang</a>
+        </div>
+        <small>FinLux là dự án phần mềm mã nguồn mở đang phát triển, không phải ngân hàng hoặc dịch vụ tư vấn tài chính.</small>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="brand footer-brand">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span><strong>FinLux</strong><small>Open-source Android personal finance</small></span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/khoaiprovip123/FinLux" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://github.com/khoaiprovip123/FinLux/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT License</a>
+        <a href="#roadmap">Development Status</a>
+      </div>
+      <p>Built with Kotlin • Jetpack Compose • Firebase</p>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
