@@ -1,8 +1,43 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.22.0 (versionCode 165)
-- **Trạng thái Build:** ✅ 100% PASS (290/290 tests) — Đã đồng bộ hoàn tất `upstream/main` vào nhánh `main` local (tổng hợp Reporting 2.0 Foundation, Thẻ Hero số dư ví & luân chuyển tiền, Deal Tracking v1.20.3, Saving Spin v1.21.0, và toàn bộ Audit Roadmap).
+- **Phiên bản hiện tại:** v1.22.1 (versionCode 166)
+- **Trạng thái Build:** ✅ 100% PASS (302/302 tests) — Đã sửa và nghiệm thu lỗi điều hướng thông báo nhắc nhở trên thiết bị thật cả Cold Start & Warm Start.
+
+### [Task-FIX-REMINDER-NOTIFICATION-NAVIGATION] — Sửa lỗi điều hướng thông báo nhắc nhở (mở NotificationsScreen thay vì RemindersScreen)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Tách biệt Request Code trong PendingIntent**:
+     - Content Intent mở app: `("noti_" + id).hashCode()` với `destination = "notifications"`.
+     - AlarmClock showIntent: `("alarm_show_" + id).hashCode()`.
+     - Edit Action Intent: `("noti_edit_" + id).hashCode()`.
+     - Loại bỏ hoàn toàn hiện tượng hệ điều hành Android dùng `FLAG_UPDATE_CURRENT` ghi đè intent của nhau.
+  2. ✅ **Đồng bộ Route đích & Extras**:
+     - Truyền đầy đủ cả `pay_notification_id` và `reminder_id`.
+     - Cập nhật `targetRoute = "notifications"` trong đối tượng `AppNotification` lưu Firestore/Room.
+  3. ✅ **Tiếp nhận Intent toàn diện (`MainActivity.kt`)**:
+     - Trích xuất `payId = intent?.getStringExtra("pay_notification_id") ?: intent?.getStringExtra("reminder_id")`.
+     - Kích hoạt chính xác `payNotificationIdFlow` để mở modal thanh toán khi người dùng tương tác thông báo.
+  4. ✅ **Xử lý an toàn Cold Start (`FinluxNavHost.kt`)**:
+     - Thêm cờ chặn `isNavigatingInitialAuth` bảo vệ `destinationFlow` không bị tiêu thụ non khi Compose đang ở `Splash`/`Auth`.
+     - Tạo hàm `navigateHomeAndConsumePending`: Khởi tạo `Route.Home.value` làm gốc backstack (`replaceGraphStart`), sau đó điều hướng tiếp tới `Route.Notifications.value`.
+     - Khi người dùng bấm nút Quay lại (Back), màn hình Thông báo được đóng lại và đưa người dùng về Trang chủ (Home) an toàn, không bị thoát ứng dụng đột ngột.
+  5. ✅ **Kiểm thử & Nghiệm thu thực tế**:
+     - Bổ sung Unit Test `schedule uses distinct requestCode for showIntent` trong `AlarmReminderSchedulerTest.kt`.
+     - Toàn bộ test suite `./gradlew testDebugUnitTest` đạt **100% PASS (302/302 tests, 0 failure, 0 skipped)**.
+     - Đã build và nạp APK lên điện thoại qua ADB (`Performing Streamed Install - Success`).
+     - Đã kiểm tra trực tiếp trên thiết bị cả 2 trường hợp:
+       * **Warm Start**: Khi app chạy ngầm, bấm thông báo mở ngay `NotificationsScreen` ("Thông báo"); bấm Back trở về `HomeScreen` ("Trang chủ").
+       * **Cold Start**: Dùng `adb shell am force-stop com.finlux.app` rồi kích hoạt thông báo; ứng dụng khởi động qua SplashScreen, tự động xác thực và điều hướng thẳng vào `NotificationsScreen`; bấm Back bảo toàn `HomeScreen` bên dưới và trở về Trang chủ hoàn hảo.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/data/local/reminder/AlarmReminderScheduler.kt`
+  - `app/src/main/java/com/finlux/app/MainActivity.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/test/java/com/finlux/app/data/local/reminder/AlarmReminderSchedulerTest.kt`
+  - `HANDOVER_LOG.md`
+
+---
 
 ### [Task-MERGE-UPSTREAM-MAIN-V1.22.0] — Merge đồng bộ upstream/main vào local main
 - **Status**: `[DONE]`

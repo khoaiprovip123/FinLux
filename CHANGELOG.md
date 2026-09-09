@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.22.1] - 2026-09-09
+### Added
+- Bổ sung Unit Test `schedule uses distinct requestCode for showIntent` trong `AlarmReminderSchedulerTest` đảm bảo PendingIntent không bao giờ bị trùng Request Code.
+
+### Changed
+- Phân tách Request Code riêng biệt cho các loại PendingIntent trong `AlarmReminderScheduler`:
+  * Content Intent mở ứng dụng: `("noti_" + id).hashCode()`
+  * AlarmClock showIntent: `("alarm_show_" + id).hashCode()`
+  * Action Edit Intent: `("noti_edit_" + id).hashCode()`
+- Đồng bộ hóa route đích sang `"notifications"` và truyền đủ cả 2 Extras (`pay_notification_id` và `reminder_id`).
+- Cập nhật `targetRoute = "notifications"` cho thông báo nhắc nhở trong Firestore/Room và Mock repository.
+
+### Fixed
+- Khắc phục triệt để lỗi người dùng nhấp vào thông báo nhắc nhở bị điều hướng sai vào `RemindersScreen` thay vì `NotificationsScreen` do xung đột cache PendingIntent (`FLAG_UPDATE_CURRENT`).
+- Xử lý race condition và bảo toàn điều hướng khi Cold Start trong `FinluxNavHost`: Tránh tiêu thụ non `destinationFlow` khi đang ở SplashScreen/Auth, bảo toàn `HomeScreen` bên dưới backstack để khi nhấn Back không bị thoát ứng dụng.
+- Đạt 100% PASS (302/302 tests) trên test suite toàn dự án.
+
 ## [1.22.0] - 2026-09-05
 ### Added
 - **FINLUX REPORTING 2.0 — Release A: Reporting Foundation (Phases 0–4)**:

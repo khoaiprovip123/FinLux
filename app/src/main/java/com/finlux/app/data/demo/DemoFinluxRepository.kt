@@ -1143,7 +1143,7 @@ class DemoFinluxRepository @Inject constructor(
                 reminderId = "rent-reminder",
                 categoryId = "bills",
                 walletId = "bank",
-                targetRoute = "reminders",
+                targetRoute = "notifications",
                 timestamp = Instant.now().minus(3, ChronoUnit.DAYS),
                 isRead = true,
                 isPaid = false,

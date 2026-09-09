@@ -134,9 +134,15 @@ fun FinluxNavHost(
         label = "main-tab-swipe-offset",
     )
 
+    val isNavigatingInitialAuth = currentRoute == null ||
+        currentRoute == Route.Splash.value ||
+        currentRoute == Route.Login.value ||
+        currentRoute == Route.Register.value ||
+        currentRoute == Route.ForgotPassword.value
+
     val destination = destinationFlow?.collectAsState()?.value
-    LaunchedEffect(destination) {
-        if (!destination.isNullOrBlank()) {
+    LaunchedEffect(destination, isNavigatingInitialAuth) {
+        if (!destination.isNullOrBlank() && !isNavigatingInitialAuth) {
             val targetRoute = when (destination) {
                 "notifications" -> Route.Notifications.value
                 else -> destination
@@ -149,6 +155,22 @@ fun FinluxNavHost(
             destinationFlow.value = null
         }
     }
+
+    val navigateHomeAndConsumePending: () -> Unit = {
+        navController.replaceGraphStart(Route.Home.value)
+        val pending = destinationFlow?.value
+        if (!pending.isNullOrBlank()) {
+            val targetRoute = when (pending) {
+                "notifications" -> Route.Notifications.value
+                else -> pending
+            }
+            navController.navigate(targetRoute) {
+                launchSingleTop = true
+            }
+            destinationFlow.value = null
+        }
+    }
+
 
     val navigateMain: (String) -> Unit = { route ->
         if (route != currentRoute) {
@@ -280,19 +302,19 @@ fun FinluxNavHost(
         ) {
             composable(Route.Splash.value) {
                 SplashScreen(
-                    onAuthenticated = { navController.replaceGraphStart(Route.Home.value) },
+                    onAuthenticated = navigateHomeAndConsumePending,
                     onGuest = { navController.replaceGraphStart(Route.Login.value) },
                 )
             }
             composable(Route.Login.value) {
                 AuthScreen(
                     mode = AuthMode.LOGIN,
-                    onCompleted = { navController.replaceGraphStart(Route.Home.value) },
+                    onCompleted = navigateHomeAndConsumePending,
                     onNavigate = { mode -> navController.navigate(mode.route) },
                 )
             }
             composable(Route.Register.value) {
-                AuthScreen(AuthMode.REGISTER, { navController.replaceGraphStart(Route.Home.value) }, { navController.navigate(it.route) })
+                AuthScreen(AuthMode.REGISTER, navigateHomeAndConsumePending, { navController.navigate(it.route) })
             }
             composable(Route.ForgotPassword.value) {
                 AuthScreen(AuthMode.FORGOT, { navController.popBackStack() }, { navController.navigate(it.route) })

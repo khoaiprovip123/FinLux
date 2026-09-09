@@ -40,6 +40,7 @@ class MainActivity : FragmentActivity() {
             destinationFlow.value = dest
         }
         val payId = intent?.getStringExtra("pay_notification_id")
+            ?: intent?.getStringExtra("reminder_id")
         if (!payId.isNullOrBlank()) {
             payNotificationIdFlow.value = payId
         }

@@ -116,4 +116,31 @@ class AlarmReminderSchedulerTest {
             alarmManager.setAlarmClock(any(), any())
         }
     }
+
+    @Test
+    fun `schedule uses distinct requestCode for showIntent`() {
+        val reminder = Reminder(
+            id = "rem_distinct_code",
+            title = "Test Distinct Request Code",
+            amount = Money(100_000L),
+            categoryId = "cat_bill",
+            walletId = "wal_cash",
+            recurrence = ReminderRecurrence.MONTHLY,
+            startDate = Instant.now(),
+            enabled = true,
+            nextTriggerDate = Instant.now().plusSeconds(3600),
+        )
+
+        scheduler.schedule(reminder)
+
+        val expectedRequestCode = ("alarm_show_" + reminder.id).hashCode()
+        verify {
+            PendingIntent.getActivity(
+                context,
+                expectedRequestCode,
+                any(),
+                any(),
+            )
+        }
+    }
 }

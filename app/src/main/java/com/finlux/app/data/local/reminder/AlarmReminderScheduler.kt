@@ -81,10 +81,10 @@ class AlarmReminderScheduler @Inject constructor(
 
         val showIntent = PendingIntent.getActivity(
             context,
-            reminder.id.hashCode(),
+            ("alarm_show_" + reminder.id).hashCode(),
             Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                putExtra("destination", "reminders")
+                putExtra("destination", "notifications")
                 putExtra("reminder_id", reminder.id)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -211,10 +211,10 @@ class ReminderReceiver : BroadcastReceiver() {
                 val manager = context.getSystemService(AlarmManager::class.java)
                 val showIntent = PendingIntent.getActivity(
                     context,
-                    id.hashCode(),
+                    ("alarm_show_" + id).hashCode(),
                     Intent(context, MainActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        putExtra("destination", "reminders")
+                        putExtra("destination", "notifications")
                         putExtra("reminder_id", id)
                     },
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -300,7 +300,7 @@ class ReminderReceiver : BroadcastReceiver() {
                                 reminderId = id,
                                 categoryId = effectiveCategoryId.ifBlank { null },
                                 walletId = effectiveWalletId.ifBlank { null },
-                                targetRoute = "reminders",
+                                targetRoute = "notifications",
                                 timestamp = Instant.now(),
                                 isRead = false,
                                 isPaid = false,
@@ -313,11 +313,12 @@ class ReminderReceiver : BroadcastReceiver() {
                         val openAppIntent = Intent(context, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                             putExtra("destination", "notifications")
+                            putExtra("pay_notification_id", deterministicNotificationId)
                             putExtra("reminder_id", id)
                         }
                         val openApp = PendingIntent.getActivity(
                             context,
-                            id.hashCode(),
+                            ("noti_" + id).hashCode(),
                             openAppIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                         )
@@ -362,7 +363,7 @@ class ReminderReceiver : BroadcastReceiver() {
                         }
                         val editPending = PendingIntent.getActivity(
                             context,
-                            (id + "_edit").hashCode(),
+                            ("noti_edit_" + id).hashCode(),
                             editIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                         )
