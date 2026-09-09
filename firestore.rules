@@ -55,15 +55,20 @@ service cloud.firestore {
 
     function validSalaryCyclePreference(data) {
       return data.keys().hasOnly([
-          'enabled', 'paydayRuleType', 'paydayDay', 'salaryWalletId',
-          'savingsWalletId', 'expectedSalary', 'rolloverRule',
+          'enabled', 'scheduleType', 'paydayRuleType', 'paydayDay', 'salaryWalletId',
+          'savingsWalletId', 'expectedSalary', 'secondPaydayDay', 'secondSalaryWalletId',
+          'secondExpectedSalary', 'rolloverRule',
           'budgetPeriodBasis', 'financeTimeZone', 'updatedAt'
         ])
         && data.enabled is bool
+        && (!('scheduleType' in data) || data.scheduleType in ['MONTHLY_ONCE', 'SEMI_MONTHLY'])
         && data.paydayRuleType in ['DAY_OF_MONTH', 'FIRST_DAY_OF_MONTH', 'LAST_DAY_OF_MONTH']
         && data.paydayDay is int
         && data.paydayDay >= 1
         && data.paydayDay <= 31
+        && (!('secondPaydayDay' in data) || data.secondPaydayDay == null || (data.secondPaydayDay is int && data.secondPaydayDay >= 1 && data.secondPaydayDay <= 31))
+        && (!('secondSalaryWalletId' in data) || data.secondSalaryWalletId == null || data.secondSalaryWalletId is string)
+        && (!('secondExpectedSalary' in data) || data.secondExpectedSalary == null || isPositiveMoney(data.secondExpectedSalary))
         && data.rolloverRule in ['KEEP_IN_WALLET', 'MOVE_TO_SAVINGS', 'ASK_EACH_CYCLE']
         && data.budgetPeriodBasis in ['CALENDAR_MONTH', 'SALARY_CYCLE']
         && data.financeTimeZone is string
@@ -250,7 +255,7 @@ service cloud.firestore {
           && (!('periodStart' in request.resource.data) || request.resource.data.periodStart == null || request.resource.data.periodStart is int)
           && (!('periodEndExclusive' in request.resource.data) || request.resource.data.periodEndExclusive == null || request.resource.data.periodEndExclusive is int)
           && (!('periodBasis' in request.resource.data) || request.resource.data.periodBasis == null || request.resource.data.periodBasis is string)
-          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount || request.resource.data.spentAmount is int)
+          && (!('spentAmount' in request.resource.data) || request.resource.data.spentAmount == resource.data.spentAmount)
           && (!('notified80' in request.resource.data) || request.resource.data.notified80 is bool)
           && (!('notified100' in request.resource.data) || request.resource.data.notified100 is bool)
           && (!('limitAmount' in request.resource.data) || isNonNegativeMoney(request.resource.data.limitAmount));

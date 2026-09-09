@@ -25,6 +25,12 @@
 ### Changed
 - Cập nhật bộ test suite toàn diện: bổ sung 12 unit tests cho `SalaryCycleCalculatorTest`, `ValidateSalaryCycleConfigUseCaseTest`, `FirebaseSalaryCycleMapperTest` và `CalculatePayoffStrategyUseCaseTest`. Toàn bộ 339 tests đều PASS 100%.
 
+### Fixed
+- **Bảo Toàn Trường Bất Biến Ngân Sách & Đồng Bộ Firestore Security Rules (`firestore.rules`, `firestore.rules.test.ts`)**:
+  * Sửa lỗi logic `allow update` của collection `budgets`: loại bỏ điều kiện lỏng lẻo `|| request.resource.data.spentAmount is int`, khôi phục trọn vẹn quy tắc bắt buộc bất biến `request.resource.data.spentAmount == resource.data.spentAmount` để ngăn client ghi đè trường ngân sách đã chi tiêu.
+  * Mở rộng `validSalaryCyclePreference` trong `firestore.rules` với các trường đợt 2 (`scheduleType`, `secondPaydayDay`, `secondSalaryWalletId`, `secondExpectedSalary`).
+  * Bổ sung unit test kiểm thử Firestore Security Rules cho cấu hình chu kỳ lương bán nguyệt trong `functions/test/firestore.rules.test.ts`.
+
 ## [1.24.4] - 2026-09-09
 ### Added
 - **Tự Phục Hồi Dữ Liệu Nợ Cũ (Self-Healing Data Sanitization Pipeline)**:

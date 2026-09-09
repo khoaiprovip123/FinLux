@@ -47,6 +47,9 @@
   - `docs/BA_SPEC.md`
   - `docs/UI_SPEC.md`
   - `docs/BACKLOG.md`
+  - `firestore.rules`
+  - `functions/test/firestore.rules.test.ts`
+  - `AGENTS.md`
   - `CHANGELOG.md`
   - `HANDOVER_LOG.md`
 

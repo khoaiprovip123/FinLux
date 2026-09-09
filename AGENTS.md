@@ -20,6 +20,13 @@ giao diện Liquid Glass. Đọc `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/UI_
    - Sau khi hoàn thành bất kỳ tính năng, fix bug hay nâng cấp kiến trúc nào: BẮT BUỘC phải rà soát và cập nhật đồng bộ các file tài liệu đặc tả liên quan (`BA_SPEC.md`, `DATA_SPEC.md`, `CONTEXT.md`, `PLAN.md`, `BACKLOG.md`, `UI_SPEC.md`).
    - BẮT BUỘC ghi log chi tiết các file đã sửa đổi, kết quả test và cập nhật trạng thái `[DONE]` trong `HANDOVER_LOG.md`.
 
+4. **ĐỒNG BỘ FIRESTORE RULES & BẢO TOÀN TRƯỜNG BẤT BIẾN (FIRESTORE SECURITY INTEGRITY):**
+   - Mỗi khi thêm/sửa trường dữ liệu trong Firestore Models/Preferences: BẮT BUỘC rà soát và cập nhật `firestore.rules` (whitelist `keys().hasOnly(...)` và logic validate tương ứng).
+   - **Quy tắc trường bất biến (Immutability Pattern):** Đối với các trường cấm client tự ý sửa khi `update` (ví dụ `spentAmount`, `balance`...):
+     * TUYỆT ĐỐI KHÔNG dùng `|| request.resource.data.<field> is <type>` vì sẽ làm hỏng ràng buộc và cho phép ghi đè tự do.
+     * BẮT BUỘC dùng đúng chuẩn: `(!('<field>' in request.resource.data) || request.resource.data.<field> == resource.data.<field>)`.
+   - **Pre-commit Gate:** Luôn chạy `npm --prefix functions run check` (TypeScript) và kiểm tra unit test của rules trong `functions/test/firestore.rules.test.ts`.
+
 ## Nguyên tắc bắt buộc kỹ thuật
 1. **Không bịa nghiệp vụ.** Nếu yêu cầu chưa có trong `docs/BA_SPEC.md`/`docs/UI_SPEC.md`, dừng lại hỏi hoặc
    ghi `// TODO: [Cần xác nhận] ...` thay vì tự suy diễn.
