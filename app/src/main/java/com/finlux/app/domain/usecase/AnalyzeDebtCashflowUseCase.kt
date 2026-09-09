@@ -6,6 +6,10 @@ import com.finlux.app.domain.model.DebtCashflowAnalysis
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.PayoffScenario
+import com.finlux.app.domain.model.DEBT_INTEREST_CATEGORY_ID
+import com.finlux.app.domain.model.DEBT_PAYMENT_CATEGORY_ID
+import com.finlux.app.domain.model.DEBT_PRINCIPAL_CATEGORY_ID
+import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.TransactionType
 import java.time.YearMonth
 import java.time.ZoneId
@@ -18,6 +22,7 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
         transactions: List<FinanceTransaction>,
         categories: List<Category>,
         debts: List<DebtAccount>,
+        salaryCycleConfig: SalaryCycleConfig? = null,
         referenceMonth: YearMonth = YearMonth.now(),
         monthsToLookBack: Int = 3,
     ): DebtCashflowAnalysis {
@@ -35,7 +40,7 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
         val byMonth = inRangeTransactions.groupBy { YearMonth.from(it.date.atZone(zone)) }
         val distinctMonthsCount = byMonth.keys.size.coerceAtLeast(1)
 
-        // Tính tổng thu nhập và chi tiêu thiết yếu
+        // Tính tổng thu nhập và chi tiêu thiết yếu từ lịch sử giao dịch
         val totalIncome = inRangeTransactions
             .filter { it.type == TransactionType.INCOME }
             .sumOf { it.amount.value }
@@ -44,12 +49,28 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
             .filter { it.type == TransactionType.EXPENSE }
             .filter { tx ->
                 val cat = tx.categoryId?.let { categoryMap[it] }
-                cat?.isEssential ?: isDefaultEssentialCategory(cat?.name.orEmpty())
+                val isDebt = isDebtRelated(cat?.name.orEmpty(), tx.categoryId)
+                if (isDebt) {
+                    false // Loại trừ các khoản liên quan nợ để tránh trừ trùng nghĩa vụ nợ
+                } else {
+                    cat?.isEssential ?: isDefaultEssentialCategory(cat?.name.orEmpty())
+                }
             }
             .sumOf { it.amount.value }
 
         val avgIncome = totalIncome / distinctMonthsCount
         val avgEssentialExpense = totalEssentialExpense / distinctMonthsCount
+
+        // ƯU TIÊN THU NHẬP TỪ CHU KỲ LƯƠNG: Nếu người dùng bật chu kỳ lương và có mức lương dự kiến
+        val hasValidSalary = salaryCycleConfig != null &&
+            salaryCycleConfig.enabled &&
+            (salaryCycleConfig.expectedSalary?.value ?: 0L) > 0L
+
+        val effectiveIncome = if (hasValidSalary) {
+            salaryCycleConfig!!.expectedSalary!!.value
+        } else {
+            avgIncome
+        }
 
         // 2. Tính tổng nghĩa vụ trả nợ tối thiểu & Dư nợ
         val activeDebts = debts.filter { !it.isSettled && it.remainingBalance.value > 0L }
@@ -58,8 +79,8 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
             else (debt.remainingBalance.value * 0.03).roundToLong().coerceAtLeast(50_000L)
         }
 
-        // 3. Tính Dòng tiền tự do (Free Cash Flow)
-        val rawFcf = avgIncome - avgEssentialExpense - totalMinDebt
+        // 3. Tính Dòng tiền tự do chuẩn (Free Cash Flow = Thu nhập cơ sở - Chi thiết yếu - Nợ tối thiểu)
+        val rawFcf = effectiveIncome - avgEssentialExpense - totalMinDebt
         val isDeficit = rawFcf <= 0L
         val freeCashFlowValue = rawFcf.coerceAtLeast(0L)
 
@@ -104,13 +125,15 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
         }
 
         return DebtCashflowAnalysis(
-            averageMonthlyIncome = Money(avgIncome),
+            averageMonthlyIncome = Money(effectiveIncome),
             averageEssentialExpense = Money(avgEssentialExpense),
             totalMonthlyMinimumDebt = Money(totalMinDebt),
             freeCashFlow = Money(rawFcf),
             isDeficit = isDeficit,
             weightedApr = (weightedApr * 10.0).roundToLong() / 10.0, // 1 decimal place
             scenarios = scenarios,
+            isSalaryCycleBased = hasValidSalary,
+            baseIncomeSource = if (hasValidSalary) "Lương dự kiến (Chu kỳ lương)" else "Thu nhập TB 3 tháng",
         )
     }
 
@@ -122,9 +145,20 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
             "di chuyển", "xăng", "transport", "xe",
             "y tế", "sức khỏe", "thuốc", "medical", "health",
             "giáo dục", "học phí", "education",
-            "trả nợ", "nợ", "debt",
         )
         return essentialKeywords.any { normalized.contains(it) }
+    }
+
+    private fun isDebtRelated(categoryName: String, categoryId: String?): Boolean {
+        if (categoryId == DEBT_PAYMENT_CATEGORY_ID ||
+            categoryId == DEBT_PRINCIPAL_CATEGORY_ID ||
+            categoryId == DEBT_INTEREST_CATEGORY_ID
+        ) {
+            return true
+        }
+        val normalized = categoryName.lowercase().trim()
+        val debtKeywords = listOf("nợ", "debt", "vay", "loan", "trả góp", "tín dụng", "credit")
+        return debtKeywords.any { normalized.contains(it) }
     }
 
     private fun roundToCleanAmount(amount: Double): Long {
@@ -137,3 +171,4 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
         }.coerceAtLeast(50_000L)
     }
 }
+

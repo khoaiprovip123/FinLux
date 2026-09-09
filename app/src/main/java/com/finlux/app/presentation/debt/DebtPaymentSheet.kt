@@ -59,6 +59,7 @@ import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.domain.model.DebtAccount
+import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.core.designsystem.component.formatVndAmount
@@ -126,7 +127,7 @@ fun DebtPaymentSheet(
             ) {
                 Column {
                     Text(
-                        text = "Thanh toán khoản nợ",
+                        text = if (debt.type == DebtType.CREDIT_CARD) "Thanh toán sao kê thẻ tín dụng" else "Thanh toán khoản nợ",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 20.sp,
@@ -199,6 +200,39 @@ fun DebtPaymentSheet(
                                 ),
                             )
                         }
+                    }
+                }
+            }
+
+            // Linked Card Wallet Banner
+            val linkedCardWallet = wallets.find { it.id == debt.linkedWalletId }
+            if (debt.type == DebtType.CREDIT_CARD && linkedCardWallet != null) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = tokens.primary.copy(alpha = 0.10f),
+                    border = BorderStroke(0.8.dp, tokens.primary.copy(alpha = 0.25f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = tokens.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = "Tiền thanh toán sẽ hoàn vào ví thẻ [${linkedCardWallet.name}] để khôi phục hạn mức khả dụng (hoán đổi tài sản, không sinh chi phí).",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = tokens.onSurface,
+                        )
                     }
                 }
             }

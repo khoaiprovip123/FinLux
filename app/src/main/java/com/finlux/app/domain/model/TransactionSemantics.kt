@@ -40,6 +40,18 @@ fun List<FinanceTransaction>.netGoalContribution(
 fun List<FinanceTransaction>.netGoalContribution(categoryId: String = SAVINGS_CATEGORY_ID): Long =
     netGoalContribution { it == categoryId }
 
+/** Kiểm tra xem giao dịch có phải là trả gốc nợ (chuyển dịch vốn, không phải chi tiêu sinh hoạt) hay không */
+fun FinanceTransaction.isDebtPrincipalSettlement(): Boolean =
+    categoryId == DEBT_PRINCIPAL_CATEGORY_ID
+
+/** Kiểm tra xem giao dịch có phải là tiền lãi vay (chi phí tài chính thực sự) hay không */
+fun FinanceTransaction.isDebtInterest(): Boolean =
+    categoryId == DEBT_INTEREST_CATEGORY_ID
+
+const val DEBT_PAYMENT_CATEGORY_ID = "debt_payment"
+const val DEBT_INTEREST_CATEGORY_ID = "debt_interest"
+const val DEBT_PRINCIPAL_CATEGORY_ID = "debt_principal"
+
 private const val TRANSFER_IN_SUFFIX = "_in"
 private const val TRANSFER_OUT_SUFFIX = "_out"
 private const val ACTIVE_WALLET_STATUS = "active"

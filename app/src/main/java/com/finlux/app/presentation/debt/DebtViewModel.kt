@@ -9,6 +9,7 @@ import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.DebtPreferenceRepository
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.usecase.AnalyzeDebtCashflowUseCase
 import com.finlux.app.domain.usecase.CalculatePayoffStrategyUseCase
 import com.finlux.app.domain.usecase.DeleteDebtAccountUseCase
@@ -16,6 +17,7 @@ import com.finlux.app.domain.usecase.GetDebtPaymentHistoryUseCase
 import com.finlux.app.domain.usecase.GetDebtsUseCase
 import com.finlux.app.domain.usecase.ProcessDebtPaymentUseCase
 import com.finlux.app.domain.usecase.SaveDebtAccountUseCase
+import com.finlux.app.domain.usecase.SyncDebtReminderUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,6 +36,8 @@ class DebtViewModel @Inject constructor(
     walletRepository: WalletRepository,
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
+    salaryCycleRepository: SalaryCycleRepository,
+    private val syncDebtReminderUseCase: SyncDebtReminderUseCase,
     private val analyzeDebtCashflowUseCase: AnalyzeDebtCashflowUseCase,
     private val calculatePayoffStrategyUseCase: CalculatePayoffStrategyUseCase,
     private val saveDebtAccountUseCase: SaveDebtAccountUseCase,
@@ -54,11 +58,16 @@ class DebtViewModel @Inject constructor(
         transactionRepository.observeRecent(5_000),
         categoryRepository.observeCategories(),
         getDebtsUseCase(),
-    ) { transactions, categories, debts ->
-        analyzeDebtCashflowUseCase(
-            transactions = transactions,
-            categories = categories,
-            debts = debts,
+        salaryCycleRepository.observeConfig(),
+    ) { transactions, categories, debts, salaryConfig ->
+        Pair(
+            analyzeDebtCashflowUseCase(
+                transactions = transactions,
+                categories = categories,
+                debts = debts,
+                salaryCycleConfig = salaryConfig,
+            ),
+            salaryConfig,
         )
     }
 
@@ -82,11 +91,13 @@ class DebtViewModel @Inject constructor(
         coreDataFlow,
         cashflowFlow,
         preferencesFlow,
-    ) { (debts, wallets, history), cashflow, (strategy, extraPayment, formState) ->
+    ) { (debts, wallets, history), (cashflow, salaryConfig), (strategy, extraPayment, formState) ->
         val plan = calculatePayoffStrategyUseCase(
             debts = debts,
             strategy = strategy,
             extraMonthlyPayment = extraPayment,
+            salaryCycleConfig = salaryConfig,
+            wallets = wallets,
         )
         DebtUiState(
             debts = debts,
@@ -96,6 +107,7 @@ class DebtViewModel @Inject constructor(
             extraMonthlyPayment = extraPayment,
             payoffPlan = plan,
             cashflowAnalysis = cashflow,
+            salaryConfig = salaryConfig,
             isLoading = false,
             isSubmitting = formState.isSubmitting,
             errorMessage = formState.errorMessage,
@@ -106,6 +118,13 @@ class DebtViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DebtUiState(isLoading = true),
     )
+
+    fun schedulePaydayAllocationReminder(paydayDay: Int, walletName: String?, totalAmount: Long) {
+        viewModelScope.launch {
+            syncDebtReminderUseCase.schedulePaydayAllocationReminder(paydayDay, walletName, totalAmount)
+            _formState.update { it.copy(successMessage = "Đã đặt nhắc trích lương ngày $paydayDay lúc 09:00 sáng") }
+        }
+    }
 
     fun setStrategy(strategy: PayoffStrategy) {
         viewModelScope.launch {

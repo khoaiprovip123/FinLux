@@ -248,6 +248,35 @@ class GetTrueNetWorthUseCaseTest {
     }
 
     @Test
+    fun `calculate captures unlinked negative card wallet balances in totalDebtRemaining`() {
+        val wallets = listOf(
+            Wallet("w1", "Tiền mặt", WalletType.CASH, Money(10_000_000L), "#FFF", true, Instant.now()),
+            // Negative card wallet balance (-4M) not linked to any debt account
+            Wallet("w-card", "Thẻ Tín Dụng VCB", WalletType.CARD, Money(-4_000_000L), "#FFF", false, Instant.now()),
+        )
+        val debts = listOf(
+            DebtAccount(
+                id = "d1",
+                name = "Vay Ngân Hàng",
+                type = DebtType.BANK_LOAN,
+                totalAmount = Money(30_000_000L),
+                remainingBalance = Money(20_000_000L),
+                interestRateApr = 10.0,
+                minimumPayment = Money(2_000_000L),
+            ),
+        )
+
+        val result = useCase.calculate(wallets, debts, emptyList())
+
+        // Assets = 10M (w1 only, negative card wallet asset is clamped to 0)
+        assertEquals(10_000_000L, result.totalWalletAssets.value)
+        // Debt = 20M (from debts) + 4M (from unlinked negative card wallet) = 24M
+        assertEquals(24_000_000L, result.totalDebtRemaining.value)
+        // True Net Worth = 10M - 24M = -14M
+        assertEquals(-14_000_000L, result.trueNetWorth.value)
+    }
+
+    @Test
     fun `observe emits Flow combining wallets, debts, and deals in real-time`() = runTest {
         val wallets = listOf(Wallet("w1", "Ví", WalletType.CASH, Money(20_000_000L), "#FFF", true, Instant.now()))
         val debts = listOf(

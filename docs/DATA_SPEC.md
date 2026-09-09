@@ -63,6 +63,20 @@ users/{uid}
   │    ├─ createdAt: timestamp
   │    └─ updatedAt: timestamp
   │
+  ├─ debts/{debtId}                 -- quản lý danh mục nợ & chiến lược trả nợ Snowball/Avalanche (UC-26)
+  │    ├─ name: string              -- "Thẻ VPBank", "Vay anh Ba", ...
+  │    ├─ type: "CREDIT_CARD" | "BANK_LOAN" | "INSTALLMENT" | "PERSONAL_LOAN"
+  │    ├─ initialAmount: number     -- số tiền nợ gốc ban đầu
+  │    ├─ remainingBalance: number  -- số dư nợ còn lại
+  │    ├─ interestRateYearly: number-- lãi suất năm (% APR)
+  │    ├─ minPaymentMonthly: number -- tiền trả tối thiểu hàng tháng
+  │    ├─ dueDate: number?          -- ngày đến hạn trong tháng (1-31, null đối với nợ cá nhân linh hoạt)
+  │    ├─ isSettled: boolean        -- đã tất toán hoàn toàn hay chưa
+  │    ├─ isReminderEnabled: boolean-- bật/tắt nhắc nợ tự động
+  │    ├─ reminderDaysBefore: number-- số ngày nhắc trước hạn (1-5)
+  │    ├─ createdAt: timestamp
+  │    └─ updatedAt: timestamp
+  │
   ├─ budgets/{budgetId}             -- id format: {categoryId}_{yyyyMM}
   │    ├─ categoryId: string
   │    ├─ month: string             -- "2026-08"

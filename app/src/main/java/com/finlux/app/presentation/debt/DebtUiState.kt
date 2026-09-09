@@ -8,6 +8,8 @@ import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.PayoffStrategy
 import com.finlux.app.domain.model.Wallet
 
+import com.finlux.app.domain.model.SalaryCycleConfig
+
 data class DebtUiState(
     val debts: List<DebtAccount> = emptyList(),
     val wallets: List<Wallet> = emptyList(),
@@ -16,6 +18,7 @@ data class DebtUiState(
     val extraMonthlyPayment: Long = 0L,
     val payoffPlan: DebtPayoffPlan? = null,
     val cashflowAnalysis: DebtCashflowAnalysis? = null,
+    val salaryConfig: SalaryCycleConfig? = null,
     val isLoading: Boolean = false,
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,

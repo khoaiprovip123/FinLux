@@ -66,6 +66,7 @@ import com.finlux.app.core.designsystem.LiquidGlassSurface
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
+import com.finlux.app.domain.model.PayoffStrategy
 import com.finlux.app.presentation.debt.components.DebtBurndownChart
 import com.finlux.app.presentation.debt.components.DebtCard
 import com.finlux.app.presentation.debt.components.DebtPaymentHistorySheet
@@ -200,6 +201,7 @@ fun DebtDashboardScreen(
                         cashflowAnalysis = uiState.cashflowAnalysis,
                         onStrategySelected = viewModel::setStrategy,
                         onExtraPaymentChanged = viewModel::setExtraMonthlyPayment,
+                        onSchedulePaydayReminder = viewModel::schedulePaydayAllocationReminder,
                     )
                 }
 
@@ -249,8 +251,22 @@ fun DebtDashboardScreen(
                     }
                 }
 
-                // Debts List Items
-                val filteredDebts = uiState.debts.filter { debt ->
+                // Debts List Items: Sắp xếp theo thứ tự ưu tiên chiến lược
+                val activeDebts = uiState.debts.filter { !it.isSettled && it.remainingBalance.value > 0L }
+                val settledDebts = uiState.debts.filter { it.isSettled || it.remainingBalance.value <= 0L }
+
+                val sortedActiveDebts = when (uiState.strategy) {
+                    PayoffStrategy.SNOWBALL -> activeDebts.sortedBy { it.remainingBalance.value }
+                    PayoffStrategy.AVALANCHE -> activeDebts.sortedWith(
+                        compareByDescending<DebtAccount> { it.interestRateApr }.thenBy { it.remainingBalance.value }
+                    )
+                    PayoffStrategy.CUSTOM -> activeDebts
+                }
+
+                val priorityMap = sortedActiveDebts.mapIndexed { index, debt -> debt.id to (index + 1) }.toMap()
+                val sortedAllDebts = sortedActiveDebts + settledDebts
+
+                val filteredDebts = sortedAllDebts.filter { debt ->
                     selectedFilterType == null || debt.type == selectedFilterType
                 }
 
@@ -266,18 +282,22 @@ fun DebtDashboardScreen(
                     }
                 } else {
                     items(filteredDebts, key = { it.id }) { debt ->
+                        val rank = priorityMap[debt.id]
                         DebtCard(
                             debt = debt,
+                            salaryConfig = uiState.salaryConfig,
+                            priorityRank = rank,
+                            strategy = uiState.strategy,
                             onPayClick = { payingDebt = debt },
                             onEditClick = {
                                 editingDebt = debt
                                 showAddEditSheet = true
                             },
-                            onDeleteClick = { viewModel.deleteDebt(debt) },
                             onHistoryClick = {
                                 historyDebtId = debt.id
                                 showPaymentHistorySheet = true
                             },
+                            modifier = Modifier.animateItem(),
                         )
                     }
                 }
@@ -300,6 +320,7 @@ fun DebtDashboardScreen(
     if (showAddEditSheet) {
         AddEditDebtSheet(
             debt = editingDebt,
+            wallets = uiState.wallets,
             onDismiss = {
                 showAddEditSheet = false
                 editingDebt = null

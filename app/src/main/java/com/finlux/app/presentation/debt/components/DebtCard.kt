@@ -10,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,7 +51,9 @@ import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtType
+import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.presentation.home.toVnd
+import com.finlux.app.domain.model.PayoffStrategy
 import java.time.LocalDate
 
 @Composable
@@ -58,16 +61,22 @@ fun DebtCard(
     debt: DebtAccount,
     onPayClick: () -> Unit,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
     onHistoryClick: (() -> Unit)? = null,
+    salaryConfig: SalaryCycleConfig? = null,
+    priorityRank: Int? = null,
+    strategy: PayoffStrategy? = null,
     modifier: Modifier = Modifier,
 ) {
     val tokens = LocalFinluxTokens.current
     val themeColor = colorFromHex(debt.colorHex, tokens.primary)
     val isSettled = debt.isSettled || debt.remainingBalance.value <= 0L
+    val isTargetDebt = priorityRank == 1 && !isSettled
     val today = LocalDate.now().dayOfMonth
-    val isDueSoon = !isSettled && (debt.dueDate - today) in 0..5
-    val isOverdue = !isSettled && today > debt.dueDate && (today - debt.dueDate) <= 15
+    val validDueDate = debt.dueDate?.takeIf { it in 1..31 }
+    val hasValidDueDate = validDueDate != null
+    val isDueSoon = !isSettled && validDueDate != null && (validDueDate - today) in 0..5
+    val isOverdue = !isSettled && validDueDate != null && today > validDueDate && (today - validDueDate) <= 15
+    val isPaydayMismatch = !isSettled && debt.isMonthlyRecurring && salaryConfig?.enabled == true && validDueDate != null && validDueDate < salaryConfig.paydayDay
 
     val animatedProgress by animateFloatAsState(
         targetValue = debt.progress,
@@ -79,9 +88,16 @@ fun DebtCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .combinedClickable(
+            .then(
+                if (isTargetDebt) {
+                    Modifier.border(
+                        BorderStroke(1.5.dp, tokens.primary.copy(alpha = 0.6f)),
+                        RoundedCornerShape(20.dp),
+                    )
+                } else Modifier
+            )
+            .clickable(
                 onClick = onEditClick,
-                onLongClick = onDeleteClick,
             ),
         shape = RoundedCornerShape(20.dp),
     ) {
@@ -90,6 +106,51 @@ fun DebtCard(
                 .fillMaxWidth()
                 .padding(16.dp),
         ) {
+            // Priority #1 Target Banner
+            if (isTargetDebt) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = tokens.primary.copy(alpha = 0.15f),
+                    border = BorderStroke(0.8.dp, tokens.primary.copy(alpha = 0.35f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                text = "🎯 #1 MỤC TIÊU DỒN TIỀN",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 11.sp,
+                                    color = tokens.primary,
+                                ),
+                            )
+                            val explanation = if (strategy == PayoffStrategy.SNOWBALL) {
+                                "Nợ nhỏ nhất (${debt.remainingBalance.value.toVnd()})"
+                            } else {
+                                "Lãi cao nhất (${debt.interestRateApr}% APR)"
+                            }
+                            Text(
+                                text = "• $explanation",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 10.5.sp,
+                                    color = tokens.onSurfaceVariant,
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+
             // Header: Icon + Name & Subtitle + Glass Action Button [Trả nợ]
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -133,11 +194,25 @@ fun DebtCard(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
+                            val rankPrefix = if (priorityRank != null && priorityRank > 1 && !isSettled) "#$priorityRank • " else ""
                             Text(
-                                text = debtTypeName(debt.type),
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                text = "$rankPrefix${debtTypeName(debt.type)}",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = if (priorityRank != null && priorityRank > 1 && !isSettled) FontWeight.SemiBold else FontWeight.Normal,
+                                ),
                                 color = tokens.onSurfaceVariant,
                             )
+                            if (debt.statementDate != null) {
+                                Text(
+                                    text = "• Sao kê ngày ${debt.statementDate}",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = tokens.primary,
+                                    ),
+                                )
+                            }
                             if (debt.interestRateApr > 0) {
                                 Text(
                                     text = "• ${debt.interestRateApr}% APR",
@@ -325,16 +400,73 @@ fun DebtCard(
                     }
                 }
 
-                // Right badges: Reminder chip + Due date badge
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                // Right badges: Wrap in FlowRow to prevent any clipping/overflow
+                FlowRow(
+                    horizontalArrangement = Arrangement.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(start = 6.dp),
                 ) {
-                    if (!isSettled && debt.isReminderEnabled) {
-                        val remindDay = if (debt.dueDate > debt.reminderDaysBefore) {
-                            debt.dueDate - debt.reminderDaysBefore
+                    // 1. Due Date Badge (Most important status indicator)
+                    if (!isSettled && validDueDate != null) {
+                        val dueDate = validDueDate
+                        val badgeColor = when {
+                            isOverdue -> FinluxColors.ExpenseRed
+                            isDueSoon -> FinluxColors.WarningAmber
+                            else -> tokens.onSurfaceVariant
+                        }
+                        val badgeBg = when {
+                            isOverdue -> FinluxColors.ExpenseRed.copy(alpha = 0.12f)
+                            isDueSoon -> FinluxColors.WarningAmber.copy(alpha = 0.12f)
+                            else -> tokens.surfaceSoft
+                        }
+                        val label = when {
+                            isOverdue -> "Quá hạn ($dueDate)"
+                            isDueSoon -> "Sắp đến hạn ($dueDate)"
+                            else -> "Hạn ngày $dueDate"
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = badgeBg,
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 10.5.sp,
+                                    color = badgeColor,
+                                ),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+
+                    // 2. Payday Mismatch Alert (Only for recurring debt before payday)
+                    if (isPaydayMismatch) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = FinluxColors.WarningAmber.copy(alpha = 0.14f),
+                            border = BorderStroke(0.7.dp, FinluxColors.WarningAmber.copy(alpha = 0.35f)),
+                        ) {
+                            Text(
+                                text = "⚠️ Trước ngày lương",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    color = FinluxColors.WarningAmber,
+                                ),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+
+                    // 3. Reminder Chip (Only for recurring debt with active reminder and valid due date)
+                    if (!isSettled && debt.isReminderEnabled && debt.isMonthlyRecurring && validDueDate != null) {
+                        val dueDate = validDueDate
+                        val remindDay = if (dueDate > debt.reminderDaysBefore) {
+                            dueDate - debt.reminderDaysBefore
                         } else {
-                            (30 + debt.dueDate - debt.reminderDaysBefore).coerceAtLeast(1)
+                            (30 + dueDate - debt.reminderDaysBefore).coerceAtLeast(1)
                         }
                         Surface(
                             shape = RoundedCornerShape(6.dp),
@@ -361,40 +493,6 @@ fun DebtCard(
                                     ),
                                 )
                             }
-                        }
-                    }
-
-                    // Due Date Badge
-                    if (!isSettled) {
-                        val badgeColor = when {
-                            isOverdue -> FinluxColors.ExpenseRed
-                            isDueSoon -> FinluxColors.WarningAmber
-                            else -> tokens.onSurfaceVariant
-                        }
-                        val badgeBg = when {
-                            isOverdue -> FinluxColors.ExpenseRed.copy(alpha = 0.12f)
-                            isDueSoon -> FinluxColors.WarningAmber.copy(alpha = 0.12f)
-                            else -> tokens.surfaceSoft
-                        }
-                        val label = when {
-                            isOverdue -> "Quá hạn (${debt.dueDate})"
-                            isDueSoon -> "Sắp đến hạn (${debt.dueDate})"
-                            else -> "Hạn ngày ${debt.dueDate}"
-                        }
-
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = badgeBg,
-                        ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 10.5.sp,
-                                    color = badgeColor,
-                                ),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
                         }
                     }
                 }

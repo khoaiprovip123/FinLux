@@ -375,8 +375,64 @@ class DemoFinluxRepository @Inject constructor(
             return@withLock AppResult.Error("Số dư ví không đủ để thanh toán nợ")
         }
 
+        val isLinkedCard = targetDebt.type == DebtType.CREDIT_CARD && !targetDebt.linkedWalletId.isNullOrBlank()
+        val linkedCardWallet = targetDebt.linkedWalletId?.let { cardId -> walletState.value.find { it.id == cardId } }
+
         if (!changeWalletBalance(walletId, -amount)) {
             return@withLock AppResult.Error("Lỗi cập nhật số dư ví")
+        }
+
+        if (isLinkedCard && targetDebt.linkedWalletId != null && linkedCardWallet != null) {
+            // Hoàn lại hạn mức vào ví thẻ tín dụng liên kết
+            changeWalletBalance(targetDebt.linkedWalletId, amount)
+
+            val pairId = UUID.randomUUID().toString()
+            val transferNote = if (note.isNotBlank()) note else "Thanh toán sao kê thẻ: ${targetDebt.name}"
+            val outTx = FinanceTransaction(
+                id = "${pairId}_out",
+                type = TransactionType.TRANSFER_OUT,
+                amount = Money(amount),
+                categoryId = null,
+                walletId = walletId,
+                relatedWalletId = targetDebt.linkedWalletId,
+                note = transferNote,
+                date = paymentDate,
+                createdAt = paymentDate,
+                updatedAt = paymentDate,
+            )
+            val inTx = FinanceTransaction(
+                id = "${pairId}_in",
+                type = TransactionType.TRANSFER_IN,
+                amount = Money(amount),
+                categoryId = null,
+                walletId = targetDebt.linkedWalletId,
+                relatedWalletId = walletId,
+                note = transferNote,
+                date = paymentDate,
+                createdAt = paymentDate,
+                updatedAt = paymentDate,
+            )
+            transactionState.value = transactionState.value + listOf(outTx, inTx)
+        } else {
+            val txCat = if (principalPaid > 0 && interestPaid == 0L) {
+                "debt_principal"
+            } else if (interestPaid > 0 && principalPaid == 0L) {
+                "debt_interest"
+            } else {
+                "debt_payment"
+            }
+            val tx = FinanceTransaction(
+                id = UUID.randomUUID().toString(),
+                type = TransactionType.EXPENSE,
+                amount = Money(amount),
+                categoryId = txCat,
+                walletId = walletId,
+                note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
+                date = paymentDate,
+                createdAt = paymentDate,
+                updatedAt = paymentDate,
+            )
+            transactionState.value = transactionState.value + tx
         }
 
         val newRemaining = (targetDebt.remainingBalance.value - principalPaid).coerceAtLeast(0L)
@@ -398,21 +454,9 @@ class DemoFinluxRepository @Inject constructor(
             interestPaid = Money(interestPaid),
             paymentDate = paymentDate,
             note = note,
+            isCreditCardPayment = isLinkedCard,
         )
         paymentHistoryState.value = listOf(paymentHistory) + paymentHistoryState.value
-
-        val tx = FinanceTransaction(
-            id = UUID.randomUUID().toString(),
-            type = TransactionType.EXPENSE,
-            amount = Money(amount),
-            categoryId = "debt_payment",
-            walletId = walletId,
-            note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
-            date = paymentDate,
-            createdAt = paymentDate,
-            updatedAt = paymentDate,
-        )
-        transactionState.value = transactionState.value + tx
 
         AppResult.Success(Unit)
     }
@@ -1176,6 +1220,35 @@ class DemoFinluxRepository @Inject constructor(
 
         fun seedDebts() = listOf(
             DebtAccount(
+                id = "debt-friend-loan",
+                userId = "demo-user",
+                name = "Vay bạn thân (mua đồ gia dụng)",
+                type = DebtType.PERSONAL_LOAN,
+                totalAmount = Money(500_000L),
+                remainingBalance = Money(500_000L),
+                interestRateApr = 0.0,
+                minimumPayment = Money(50_000L),
+                dueDate = null,
+                statementDate = null,
+                colorHex = "#14B8A6",
+                isSettled = false,
+            ),
+            DebtAccount(
+                id = "debt-vpbank-credit",
+                userId = "demo-user",
+                name = "Thẻ tín dụng VPBank StepUp",
+                type = DebtType.CREDIT_CARD,
+                totalAmount = Money(20_000_000L),
+                remainingBalance = Money(15_000_000L),
+                interestRateApr = 36.0,
+                minimumPayment = Money(750_000L),
+                dueDate = 20,
+                statementDate = 5,
+                linkedWalletId = "card",
+                colorHex = "#E11D48",
+                isSettled = false,
+            ),
+            DebtAccount(
                 id = "debt-vcb-credit",
                 userId = "demo-user",
                 name = "Thẻ tín dụng VCB Signature",
@@ -1186,7 +1259,8 @@ class DemoFinluxRepository @Inject constructor(
                 minimumPayment = Money(1_200_000L),
                 dueDate = 25,
                 statementDate = 10,
-                colorHex = "#E11D48",
+                linkedWalletId = "card",
+                colorHex = "#F43F5E",
                 isSettled = false,
             ),
             DebtAccount(

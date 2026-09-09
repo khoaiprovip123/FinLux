@@ -40,8 +40,21 @@ class FirebaseDebtRepository(
         val registration = firestore.collection("users").document(uid).collection("debts")
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) close(error)
-                else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toDebtAccount() })
+                if (error != null) {
+                    close(error)
+                } else {
+                    // Silent Self-Healing: Âm thầm xóa bỏ dueDate=1 cũ của PERSONAL_LOAN trên Firestore server
+                    snapshot?.documents.orEmpty().forEach { doc ->
+                        val debtTypeStr = doc.getString("type")
+                        val rawDue = doc.getLong("dueDate")
+                        if (debtTypeStr == DebtType.PERSONAL_LOAN.name && rawDue == 1L) {
+                            runCatching {
+                                doc.reference.update(mapOf("dueDate" to null))
+                            }
+                        }
+                    }
+                    trySend(snapshot?.documents.orEmpty().mapNotNull { it.toDebtAccount() })
+                }
             }
         awaitClose { registration.remove() }
     }
@@ -103,9 +116,6 @@ class FirebaseDebtRepository(
         val userDoc = firestore.collection("users").document(uid)
         val walletRef = userDoc.collection("wallets").document(walletId)
         val debtRef = userDoc.collection("debts").document(debtId)
-        val categoryRef = userDoc.collection("categories").document("debt_payment")
-        val transactionId = UUID.randomUUID().toString()
-        val transactionRef = userDoc.collection("transactions").document(transactionId)
         val paymentId = UUID.randomUUID().toString()
         val paymentRef = debtRef.collection("payments").document(paymentId)
 
@@ -115,39 +125,25 @@ class FirebaseDebtRepository(
 
             val currentWalletBalance = walletSnap.getLong("balance") ?: 0L
             val walletTypeStr = walletSnap.getString("type") ?: WalletType.CASH.name
-            val isCreditCard = walletTypeStr == WalletType.CARD.name
+            val isCreditCardSource = walletTypeStr == WalletType.CARD.name
 
-            if (!isCreditCard && currentWalletBalance < amount) {
+            if (!isCreditCardSource && currentWalletBalance < amount) {
                 throw IllegalArgumentException("Số dư ví không đủ để thanh toán nợ")
             }
 
             val debtSnap = tx.get(debtRef)
             if (!debtSnap.exists()) throw IllegalArgumentException("Khoản nợ không tồn tại")
 
-            val categorySnap = tx.get(categoryRef)
-            if (!categorySnap.exists()) {
-                tx.set(
-                    categoryRef,
-                    mapOf(
-                        "name" to "Trả nợ & Tín dụng",
-                        "type" to "expense",
-                        "icon" to "credit_card",
-                        "color" to "#E11D48",
-                        "isDefault" to true,
-                        "createdAt" to Timestamp(Date.from(paymentDate)),
-                    )
-                )
-            }
-
             val debtName = debtSnap.getString("name") ?: "Khoản nợ"
+            val debtTypeStr = debtSnap.getString("type") ?: DebtType.PERSONAL_LOAN.name
+            val linkedWalletId = debtSnap.getString("linkedWalletId")
+            val isLinkedCard = debtTypeStr == DebtType.CREDIT_CARD.name && !linkedWalletId.isNullOrBlank()
+
             val currentDebtRemaining = debtSnap.getLong("remainingBalance") ?: 0L
             val newDebtRemaining = (currentDebtRemaining - principalPaid).coerceAtLeast(0L)
             val isSettled = newDebtRemaining <= 0L
 
-            // 1. Trừ tiền ví nguồn
-            tx.update(walletRef, "balance", currentWalletBalance - amount)
-
-            // 2. Cập nhật dư nợ
+            // 1. Cập nhật dư nợ tài khoản nợ
             tx.update(
                 debtRef,
                 mapOf(
@@ -157,24 +153,7 @@ class FirebaseDebtRepository(
                 )
             )
 
-            // 3. Ghi transaction chi tiêu vào sổ cái
-            val txNote = if (note.isNotBlank()) note else "Thanh toán nợ: $debtName"
-            tx.set(
-                transactionRef,
-                mapOf(
-                    "type" to TransactionType.EXPENSE.name,
-                    "amount" to amount,
-                    "walletId" to walletId,
-                    "categoryId" to "debt_payment",
-                    "note" to txNote,
-                    "receiptImageUrl" to null,
-                    "date" to Timestamp(Date.from(paymentDate)),
-                    "createdAt" to Timestamp(Date.from(paymentDate)),
-                    "updatedAt" to Timestamp(Date.from(paymentDate)),
-                )
-            )
-
-            // 4. Ghi log lịch sử trả nợ
+            // 2. Ghi log lịch sử trả nợ (lưu chi tiết Gốc, Lãi & Phân loại)
             tx.set(
                 paymentRef,
                 mapOf(
@@ -185,8 +164,82 @@ class FirebaseDebtRepository(
                     "interestPaid" to interestPaid,
                     "paymentDate" to Timestamp(Date.from(paymentDate)),
                     "note" to note,
+                    "isCreditCardPayment" to isLinkedCard,
                 )
             )
+
+            if (isLinkedCard && linkedWalletId != null) {
+                // VÒNG ĐỜI THẺ TÍN DỤNG: Chuyển tiền (TRANSFER) từ ví thanh toán sang ví thẻ để hoàn hạn mức
+                val linkedWalletRef = userDoc.collection("wallets").document(linkedWalletId)
+                val linkedWalletSnap = tx.get(linkedWalletRef)
+                if (linkedWalletSnap.exists()) {
+                    val currentCardBalance = linkedWalletSnap.getLong("balance") ?: 0L
+                    tx.update(walletRef, "balance", currentWalletBalance - amount)
+                    tx.update(linkedWalletRef, "balance", currentCardBalance + amount)
+
+                    val pairId = UUID.randomUUID().toString()
+                    val outRef = userDoc.collection("transactions").document("${pairId}_out")
+                    val inRef = userDoc.collection("transactions").document("${pairId}_in")
+                    val transferNote = if (note.isNotBlank()) note else "Thanh toán sao kê thẻ: $debtName"
+
+                    tx.set(
+                        outRef,
+                        mapOf(
+                            "type" to TransactionType.TRANSFER_OUT.name,
+                            "amount" to amount,
+                            "walletId" to walletId,
+                            "relatedWalletId" to linkedWalletId,
+                            "note" to transferNote,
+                            "receiptImageUrl" to null,
+                            "date" to Timestamp(Date.from(paymentDate)),
+                            "createdAt" to Timestamp(Date.from(paymentDate)),
+                            "updatedAt" to Timestamp(Date.from(paymentDate)),
+                        )
+                    )
+                    tx.set(
+                        inRef,
+                        mapOf(
+                            "type" to TransactionType.TRANSFER_IN.name,
+                            "amount" to amount,
+                            "walletId" to linkedWalletId,
+                            "relatedWalletId" to walletId,
+                            "note" to transferNote,
+                            "receiptImageUrl" to null,
+                            "date" to Timestamp(Date.from(paymentDate)),
+                            "createdAt" to Timestamp(Date.from(paymentDate)),
+                            "updatedAt" to Timestamp(Date.from(paymentDate)),
+                        )
+                    )
+                }
+            } else {
+                // KHOẢN VAY THÔNG THƯỜNG: Trừ ví nguồn và ghi transaction sổ cái
+                tx.update(walletRef, "balance", currentWalletBalance - amount)
+
+                val txNote = if (note.isNotBlank()) note else "Thanh toán nợ: $debtName"
+                val categoryId = if (principalPaid > 0 && interestPaid == 0L) {
+                    "debt_principal"
+                } else if (interestPaid > 0 && principalPaid == 0L) {
+                    "debt_interest"
+                } else {
+                    "debt_payment"
+                }
+
+                val transactionRef = userDoc.collection("transactions").document(UUID.randomUUID().toString())
+                tx.set(
+                    transactionRef,
+                    mapOf(
+                        "type" to TransactionType.EXPENSE.name,
+                        "amount" to amount,
+                        "walletId" to walletId,
+                        "categoryId" to categoryId,
+                        "note" to txNote,
+                        "receiptImageUrl" to null,
+                        "date" to Timestamp(Date.from(paymentDate)),
+                        "createdAt" to Timestamp(Date.from(paymentDate)),
+                        "updatedAt" to Timestamp(Date.from(paymentDate)),
+                    )
+                )
+            }
         }.await()
         Unit
     }
@@ -201,8 +254,10 @@ internal fun DebtAccount.toDebtMap(): Map<String, Any?> = mapOf(
     "remainingBalance" to remainingBalance.value,
     "interestRateApr" to interestRateApr,
     "minimumPayment" to minimumPayment.value,
-    "dueDate" to dueDate,
+    "dueDate" to if (type == DebtType.PERSONAL_LOAN && dueDate == 1) null else dueDate,
     "statementDate" to statementDate,
+    "linkedWalletId" to linkedWalletId,
+    "gracePeriodDays" to gracePeriodDays,
     "colorHex" to colorHex,
     "isReminderEnabled" to isReminderEnabled,
     "reminderDaysBefore" to reminderDaysBefore,
@@ -212,17 +267,28 @@ internal fun DebtAccount.toDebtMap(): Map<String, Any?> = mapOf(
 )
 
 internal fun DocumentSnapshot.toDebtAccount(): DebtAccount? = runCatching {
+    val debtType = DebtType.valueOf(getString("type") ?: DebtType.PERSONAL_LOAN.name)
+    val rawDueDate = getLong("dueDate")?.toInt()?.takeIf { it in 1..31 }
+    // In-Memory Sanitization: Nợ cá nhân bị gán dueDate = 1 rác từ bản build cũ được tự động chuẩn hóa về null ngay trên bộ nhớ
+    val sanitizedDueDate = if (debtType == DebtType.PERSONAL_LOAN && rawDueDate == 1) {
+        null
+    } else {
+        rawDueDate
+    }
+
     DebtAccount(
         id = id,
         userId = getString("userId").orEmpty(),
         name = requireNotNull(getString("name")),
-        type = DebtType.valueOf(getString("type") ?: DebtType.PERSONAL_LOAN.name),
+        type = debtType,
         totalAmount = Money(getLong("totalAmount") ?: 0L),
         remainingBalance = Money(getLong("remainingBalance") ?: 0L),
         interestRateApr = getDouble("interestRateApr") ?: 0.0,
         minimumPayment = Money(getLong("minimumPayment") ?: 0L),
-        dueDate = (getLong("dueDate") ?: 15L).toInt().coerceIn(1, 31),
+        dueDate = sanitizedDueDate,
         statementDate = getLong("statementDate")?.toInt(),
+        linkedWalletId = getString("linkedWalletId"),
+        gracePeriodDays = (getLong("gracePeriodDays") ?: 45L).toInt(),
         colorHex = getString("colorHex") ?: "#E11D48",
         isReminderEnabled = getBoolean("isReminderEnabled") ?: true,
         reminderDaysBefore = (getLong("reminderDaysBefore") ?: 3L).toInt().coerceIn(1, 10),
@@ -242,5 +308,6 @@ internal fun DocumentSnapshot.toDebtPaymentHistory(): DebtPaymentHistory? = runC
         interestPaid = Money(getLong("interestPaid") ?: 0L),
         paymentDate = getTimestamp("paymentDate")?.toDate()?.toInstant() ?: Instant.now(),
         note = getString("note").orEmpty(),
+        isCreditCardPayment = getBoolean("isCreditCardPayment") ?: false,
     )
 }.getOrNull()
