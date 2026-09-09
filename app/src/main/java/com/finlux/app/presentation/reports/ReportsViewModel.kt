@@ -55,6 +55,23 @@ data class DailyExpense(val date: LocalDate, val amount: Long)
 data class CashFlowPoint(val date: LocalDate, val income: Long, val expense: Long)
 data class WalletActivity(val wallet: Wallet?, val income: Long, val expense: Long, val total: Long = income + expense)
 
+data class CategoryWalletShare(
+    val wallet: Wallet,
+    val amount: Long,
+    val percentage: Float,
+)
+
+data class CategorySpendingDetail(
+    val category: Category,
+    val totalAmount: Long,
+    val isExpense: Boolean,
+    val shareOfTotal: Float,
+    val transactionCount: Int,
+    val budgetItem: BudgetReportItem? = null,
+    val walletBreakdown: List<CategoryWalletShare> = emptyList(),
+    val transactions: List<FinanceTransaction> = emptyList(),
+)
+
 data class WalletSpendingDetail(
     val wallet: Wallet,
     val balance: Long,
@@ -211,6 +228,9 @@ data class ReportsUiState(
     val walletSpendingDetails: List<WalletSpendingDetail> = emptyList(),
     val selectedWalletId: String? = null,
     val selectedWalletSpendingDetail: WalletSpendingDetail? = null,
+    val selectedCategorySpendingDetail: CategorySpendingDetail? = null,
+    val selectedCategoryDrillWalletId: String? = null,
+    val selectedWalletDrillCategoryId: String? = null,
     val totalAssets: Long = 0L,
     val totalNetWorth: Long = 0L,
     /**
@@ -263,6 +283,8 @@ class ReportsViewModel @Inject constructor(
     private val dailyStatementCalculator: DailyStatementCalculator,
     private val clock: FinanceClock = SystemFinanceClock(),
     private val calculateSavingSpinStreakUseCase: CalculateSavingSpinStreakUseCase = CalculateSavingSpinStreakUseCase(financialPeriodResolver, clock),
+    private val getTrueNetWorthUseCase: com.finlux.app.domain.usecase.GetTrueNetWorthUseCase = com.finlux.app.domain.usecase.GetTrueNetWorthUseCase(walletRepository, debtRepository, dealRepository),
+    private val deleteTransactionUseCase: com.finlux.app.domain.usecase.DeleteTransactionUseCase? = null,
 ) : ViewModel() {
     private val userSelectedPeriod = MutableStateFlow<ReportPeriod?>(null)
     private val today = LocalDate.now(FinanceTime.VIETNAM_ZONE)
@@ -270,6 +292,11 @@ class ReportsViewModel @Inject constructor(
     val selectedWalletId = MutableStateFlow<String?>(null)
 
     val selectedPeriod = MutableStateFlow(ReportPeriod.MONTH)
+
+    val selectedCategoryDetailId = MutableStateFlow<String?>(null)
+    val selectedCategoryIsExpense = MutableStateFlow<Boolean>(true)
+    val selectedCategoryDrillWalletId = MutableStateFlow<String?>(null)
+    val selectedWalletDrillCategoryId = MutableStateFlow<String?>(null)
 
     init {
         viewModelScope.launch {
@@ -282,23 +309,40 @@ class ReportsViewModel @Inject constructor(
         }
     }
 
+    private data class BaseParams(
+        val period: ReportPeriod,
+        val custom: ReportRange,
+        val salaryConfig: SalaryCycleConfig,
+        val walletId: String?,
+    )
+
+    private data class DrillDownParams(
+        val categoryId: String? = null,
+        val isExpense: Boolean = true,
+        val categoryDrillWalletId: String? = null,
+        val walletDrillCategoryId: String? = null,
+    )
+
     private data class ReportWindowParams(
         val window: ReportQueryWindow,
         val salaryConfig: SalaryCycleConfig,
         val period: ReportPeriod,
         val selectedWalletId: String?,
+        val drillDown: DrillDownParams,
     )
 
     private val windowFlow = combine(
-        selectedPeriod,
-        customRange,
-        salaryCycleRepository.observeConfig(),
-        selectedWalletId,
-    ) { period, custom, salaryConfig, walletId ->
+        combine(selectedPeriod, customRange, salaryCycleRepository.observeConfig(), selectedWalletId) { period, custom, salaryConfig, walletId ->
+            BaseParams(period, custom, salaryConfig, walletId)
+        },
+        combine(selectedCategoryDetailId, selectedCategoryIsExpense, selectedCategoryDrillWalletId, selectedWalletDrillCategoryId) { catId, isExp, drillW, drillCat ->
+            DrillDownParams(catId, isExp, drillW, drillCat)
+        },
+    ) { base, drill ->
         val now = clock.now()
-        val zone = FinanceTime.zoneOf(salaryConfig.financeTimeZone)
-        val window = windowResolver.resolve(period, custom, now, salaryConfig, zone)
-        ReportWindowParams(window, salaryConfig, period, walletId)
+        val zone = FinanceTime.zoneOf(base.salaryConfig.financeTimeZone)
+        val window = windowResolver.resolve(base.period, base.custom, now, base.salaryConfig, zone)
+        ReportWindowParams(window, base.salaryConfig, base.period, base.walletId, drill)
     }
 
     val state = windowFlow.flatMapLatest { params ->
@@ -376,6 +420,7 @@ class ReportsViewModel @Inject constructor(
                 salaryConfig = salaryConfig,
                 requestedPeriod = period,
                 selectedWalletId = selectedWalletId,
+                drillDown = params.drillDown,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReportsUiState())
@@ -386,6 +431,37 @@ class ReportsViewModel @Inject constructor(
 
     fun selectWallet(walletId: String?) {
         selectedWalletId.value = walletId
+    }
+
+    fun selectCategoryForDetail(categoryId: String?, isExpense: Boolean = true) {
+        selectedCategoryDetailId.value = categoryId
+        selectedCategoryIsExpense.value = isExpense
+        selectedCategoryDrillWalletId.value = null
+    }
+
+    fun setCategoryDrillWalletFilter(walletId: String?) {
+        selectedCategoryDrillWalletId.value = walletId
+    }
+
+    fun setWalletDrillCategoryFilter(categoryId: String?) {
+        selectedWalletDrillCategoryId.value = categoryId
+    }
+
+    fun clearCategoryDetail() {
+        selectedCategoryDetailId.value = null
+        selectedCategoryDrillWalletId.value = null
+    }
+
+    fun clearDrillDown() {
+        selectedCategoryDetailId.value = null
+        selectedCategoryDrillWalletId.value = null
+        selectedWalletDrillCategoryId.value = null
+    }
+
+    fun deleteTransaction(transaction: FinanceTransaction) {
+        viewModelScope.launch {
+            deleteTransactionUseCase?.invoke(transaction)
+        }
     }
 
     fun setCustomRange(start: LocalDate, end: LocalDate) {
@@ -408,6 +484,7 @@ class ReportsViewModel @Inject constructor(
         salaryConfig: SalaryCycleConfig,
         requestedPeriod: ReportPeriod,
         selectedWalletId: String? = null,
+        drillDown: DrillDownParams = DrillDownParams(),
     ): ReportsUiState {
         val zone = FinanceTime.VIETNAM_ZONE
         val range = window.range
@@ -642,9 +719,9 @@ class ReportsViewModel @Inject constructor(
         // Tài sản & Ví (Wallets & Net Worth)
         val assetWallets = wallets.assetWallets()
         val totalAssets = assetWallets.sumOf { it.balance.value }
-        val totalNetWorth = totalAssets - totalDebtRemaining
-        // True Net Worth = (Tài sản ví) + (Vốn lưu động đầu tư & nợ cho vay đang chờ thu hồi) - (Tổng dư nợ phải trả)
-        val trueNetWorth = totalAssets + totalActiveCapitalOutlay - totalDebtRemaining
+        val netWorthData = getTrueNetWorthUseCase.calculate(wallets, debts, deals)
+        val totalNetWorth = netWorthData.standardNetWorth.value
+        val trueNetWorth = netWorthData.trueNetWorth.value
 
         val assetsByType = assetWallets.groupBy { it.type }.mapValues { (_, list) -> list.sumOf { it.balance.value } }
 
@@ -714,7 +791,61 @@ class ReportsViewModel @Inject constructor(
             WalletActivity(detail.wallet, detail.incomeInPeriod, detail.expenseInPeriod, detail.incomeInPeriod + detail.expenseInPeriod)
         }.sortedByDescending { it.total }
 
-        val selectedWalletSpendingDetail = walletSpendingDetails.find { it.wallet.id == selectedWalletId }
+        val selectedWalletSpendingDetailRaw = walletSpendingDetails.find { it.wallet.id == selectedWalletId }
+        val selectedWalletSpendingDetail = selectedWalletSpendingDetailRaw?.let { detail ->
+            if (drillDown.walletDrillCategoryId != null) {
+                detail.copy(
+                    transactions = detail.transactions.filter { it.categoryId == drillDown.walletDrillCategoryId }
+                )
+            } else {
+                detail
+            }
+        }
+
+        // Chi tiết danh mục chuyên sâu (Category Drill-down Detail - Level 2 & 3)
+        val selectedCategorySpendingDetail = drillDown.categoryId?.let { catId ->
+            val cat = categoryMap[catId]
+            if (cat != null) {
+                val isExp = drillDown.isExpense
+                val targetTxs = if (isExp) {
+                    expenseItems.filter { it.categoryId == cat.id }
+                } else {
+                    incomeItems.filter { it.categoryId == cat.id }
+                }
+                val totalCatAmt = targetTxs.sumOf { it.amount.value }
+                val catShare = if (isExp && expense > 0) {
+                    totalCatAmt.toFloat() / expense.toFloat()
+                } else if (!isExp && income > 0) {
+                    totalCatAmt.toFloat() / income.toFloat()
+                } else 0f
+
+                val walletBreakdown = targetTxs.groupBy { it.walletId }.mapNotNull { (wId, txList) ->
+                    val w = walletMap[wId] ?: return@mapNotNull null
+                    val amt = txList.sumOf { it.amount.value }
+                    val pct = if (totalCatAmt > 0) amt.toFloat() / totalCatAmt.toFloat() else 0f
+                    CategoryWalletShare(wallet = w, amount = amt, percentage = pct)
+                }.sortedByDescending { it.amount }
+
+                val catBudgetItem = budgetReportItems.find { it.category?.id == cat.id || it.budget.categoryId == cat.id }
+
+                val displayTxs = if (drillDown.categoryDrillWalletId != null) {
+                    targetTxs.filter { it.walletId == drillDown.categoryDrillWalletId }
+                } else {
+                    targetTxs
+                }.sortedByDescending { it.date }
+
+                CategorySpendingDetail(
+                    category = cat,
+                    totalAmount = totalCatAmt,
+                    isExpense = isExp,
+                    shareOfTotal = catShare,
+                    transactionCount = targetTxs.size,
+                    budgetItem = catBudgetItem,
+                    walletBreakdown = walletBreakdown,
+                    transactions = displayTxs,
+                )
+            } else null
+        }
 
         // Tính trung bình ngày dựa trên số ngày thực tế đã trôi qua trong kỳ (đến ngày hôm nay)
         val daysElapsedInPeriod = maxOf(1, ChronoUnit.DAYS.between(range.start, effectiveEndDate).toInt() + 1)
@@ -871,6 +1002,9 @@ class ReportsViewModel @Inject constructor(
             walletSpendingDetails = walletSpendingDetails,
             selectedWalletId = selectedWalletId,
             selectedWalletSpendingDetail = selectedWalletSpendingDetail,
+            selectedCategorySpendingDetail = selectedCategorySpendingDetail,
+            selectedCategoryDrillWalletId = drillDown.categoryDrillWalletId,
+            selectedWalletDrillCategoryId = drillDown.walletDrillCategoryId,
             totalAssets = totalAssets,
             totalNetWorth = totalNetWorth,
             trueNetWorth = trueNetWorth,

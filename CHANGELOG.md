@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.23.0] - 2026-09-09
+### Added
+- **P1-05: Động cơ Tài sản ròng thực tế (True Net Worth Engine)**:
+  * Xây dựng model `TrueNetWorth` trong `NetWorthModels.kt` phân rã minh bạch: `totalWalletAssets`, `activeDealCapitalOutlay`, `totalDebtRemaining`, `trueNetWorth`, và `standardNetWorth`.
+  * Tạo UseCase `GetTrueNetWorthUseCase` chuẩn hóa công thức tính tài sản ròng thống nhất toàn app:
+    $\text{True Net Worth} = \sum \text{Số dư Ví} + \sum \text{Vốn Deal đang lưu động} - \sum \text{Nợ chưa tất toán}$.
+  * Đồng bộ `HomeViewModel` và `ReportsViewModel` sử dụng chung `GetTrueNetWorthUseCase`, đảm bảo con số tài sản ròng trên Hero Card Trang chủ và Báo cáo khớp nhau từng đồng.
+- **P1-05: Luồng phân tích tương tác Drill-Down 4 cấp độ (Interactive Drill-Down)**:
+  * **Cấp 1**: Các thẻ tổng quan Dòng tiền, Phân bổ danh mục chi tiêu, Báo cáo theo ví.
+  * **Cấp 2**: Bấm vào Danh mục hoặc Ví -> Bung `CategoryDetailBottomSheet` / `WalletDetailBottomSheet` phân tích chuyên sâu (tỷ trọng %, so sánh ngân sách, phân bổ ví / phân bổ danh mục).
+  * **Cấp 3**: Bấm vào mục con bên trong Sheet (chip ví hoặc chip danh mục) -> Lọc động danh sách giao dịch cấu thành trong kỳ.
+  * **Cấp 4**: Bấm vào giao dịch bất kỳ -> Mở trực tiếp `TransactionDetailSheet` để xem chi tiết / sửa nhanh (`onEditTransaction`) / xóa giao dịch (đồng bộ số dư ví qua `DeleteTransactionUseCase`).
+  * Kích hoạt tương tác drill-down đồng bộ trên cả 3 theme: **Prism**, **Modern**, và **Classic**.
+- Bổ sung bộ Unit Test mới: `GetTrueNetWorthUseCaseTest` (7 tests), cập nhật `HomeViewModelTest` và `ReportsViewModelTest` đạt 100% PASS (312/312 tests).
+
 ## [1.22.2] - 2026-09-09
 ### Added
 - **P0-01: Subcollection `deals/{dealId}` & Firestore Security Rules**:

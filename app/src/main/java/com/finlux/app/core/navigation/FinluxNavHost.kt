@@ -338,7 +338,12 @@ fun FinluxNavHost(
                 )
             }
             composable(Route.Reports.value) {
-                ReportsScreen(onNavigate = navigateMain, onAdd = { showQuickAdd = true }, onBack = null)
+                ReportsScreen(
+                    onNavigate = navigateMain,
+                    onAdd = { showQuickAdd = true },
+                    onBack = null,
+                    onEditTransaction = { if (it.type != TransactionType.TRANSFER_OUT && it.type != TransactionType.TRANSFER_IN) editingTransaction = it },
+                )
             }
             composable(Route.Budget.value) {
                 BudgetScreen(onNavigate = navigateMain, onAdd = { showQuickAdd = true }, onBack = navController::popBackStack)

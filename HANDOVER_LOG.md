@@ -1,8 +1,47 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.22.2 (versionCode 167)
-- **Trạng thái Build:** ✅ 100% PASS (302/302 unit tests, Cloud Functions TypeScript build 100% pass) — Đã xử lý và dứt điểm toàn bộ 4 mục P0 Blockers.
+- **Phiên bản hiện tại:** v1.23.0 (versionCode 168)
+- **Trạng thái Build:** ✅ 100% PASS (312/312 unit tests) — Đã hoàn thành và nghiệm thu P1-05 (Báo Cáo 2.0 & True Net Worth Engine).
+
+### [Task-P1-05-REPORTS-2.0-TRUE-NET-WORTH] — Triển khai Báo Cáo 2.0 & Động cơ Tài sản ròng thực tế (True Net Worth Engine)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Động cơ Tài sản ròng thực tế (True Net Worth Engine)**:
+     - Xây dựng model `TrueNetWorth` trong `NetWorthModels.kt`.
+     - Tạo `GetTrueNetWorthUseCase` thống nhất công thức tính chuẩn xác trên toàn hệ thống:
+       `True Net Worth = (Tổng số dư ví) + (Tổng vốn Deal đang lưu động) - (Tổng nợ chưa tất toán)`.
+     - Đồng bộ `HomeViewModel` và `ReportsViewModel` sử dụng chung `GetTrueNetWorthUseCase`, hiển thị số dư tài sản ròng và phân rã vốn Deal đồng bộ 100%.
+  2. ✅ **Luồng Drill-down 4 Cấp độ Tương tác (Interactive Drill-Down)**:
+     - **Cấp 1**: Các thẻ tổng quan Dòng tiền, Danh mục, Phân bổ ví.
+     - **Cấp 2**: Bấm vào Danh mục hoặc Ví -> Bung `CategoryDetailBottomSheet` / `WalletDetailBottomSheet` phân tích chi tiết (tỷ trọng %, so sánh ngân sách, phân bổ ví).
+     - **Cấp 3**: Bấm vào mục con bên trong Sheet (chip ví hoặc chip danh mục) -> Lọc động danh sách giao dịch cấu thành trong kỳ.
+     - **Cấp 4**: Bấm vào giao dịch bất kỳ -> Mở trực tiếp `TransactionDetailSheet` để xem chi tiết / sửa / xóa nhanh (hỗ trợ xóa giao dịch đồng bộ qua `DeleteTransactionUseCase`).
+     - Hỗ trợ đầy đủ tương tác trên cả 3 theme: **Prism**, **Modern**, và **Classic**.
+  3. ✅ **Kiểm thử tự động & Nạp APK**:
+     - Viết mới `GetTrueNetWorthUseCaseTest` (7/7 tests pass).
+     - Cập nhật test cases trong `HomeViewModelTest` và `ReportsViewModelTest` (toàn bộ pass 100%).
+     - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS** (312/312 tests).
+     - Build APK (`./gradlew assembleDebug`) thành công.
+     - Cài đặt APK lên thiết bị vật lý qua ADB (`adb install -r app/build/outputs/apk/debug/app-debug.apk`) -> **Streamed Install Success**.
+- **Danh sách file đã tạo và chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/NetWorthModels.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetTrueNetWorthUseCase.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/presentation/reports/CategoryDetailBottomSheet.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/presentation/reports/WalletDetailBottomSheet.kt` (Mới)
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/GetTrueNetWorthUseCaseTest.kt` (Mới)
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+  - `HANDOVER_LOG.md`
+
+---
 
 ### [Task-RESOLVE-P0-BLOCKERS] — Xử lý dứt điểm toàn bộ 4 mục P0 (Blockers)
 - **Status**: `[DONE]`
