@@ -154,22 +154,30 @@ class FirebaseSavingSpinRepository(
         scheduleKey: String,
         destinationId: String,
         method: SavingMethod,
+        transactionId: String?,
     ): AppResult<Unit> = firebaseResult("Không thể xác nhận khoản tiết kiệm") {
         val uid = requireUid()
         val sessionRef = sessionRef(uid, scheduleKey)
         val now = Instant.now()
         firestore.runTransaction { transaction ->
             val current = requireNotNull(SavingSpinFirestoreMapper.sessionFromDocument(transaction.get(sessionRef)))
+            if (current.status == SavingSpinStatus.COMPLETED) {
+                return@runTransaction
+            }
             require(current.status in setOf(SavingSpinStatus.SPUN_PENDING, SavingSpinStatus.SNOOZED) && current.selectedAmount != null) {
                 "Lượt quay chưa có kết quả để hoàn tất"
             }
-            transaction.update(sessionRef, mapOf(
+            val updates = mutableMapOf<String, Any?>(
                 "status" to SavingSpinStatus.COMPLETED.name,
                 "destinationId" to destinationId,
                 "method" to method.name,
                 "completedAt" to now.toTimestamp(),
                 "updatedAt" to now.toTimestamp(),
-            ))
+            )
+            if (transactionId != null) {
+                updates["transactionId"] = transactionId
+            }
+            transaction.update(sessionRef, updates)
         }.await()
         Unit
     }
@@ -191,33 +199,6 @@ class FirebaseSavingSpinRepository(
             timestampField = "skippedAt",
             timestamp = Instant.now(),
         )
-
-    override suspend fun resetSession(scheduleKey: String): AppResult<Unit> =
-        firebaseResult("Không thể đặt lại lượt quay") {
-            val uid = requireUid()
-            val sessionRef = sessionRef(uid, scheduleKey)
-            firestore.runTransaction { tx ->
-                val snapshot = tx.get(sessionRef)
-                if (snapshot.exists()) {
-                    tx.update(
-                        sessionRef,
-                        mapOf(
-                            "selectedIndex" to null,
-                            "selectedAmount" to null,
-                            "status" to SavingSpinStatus.READY.name,
-                            "destinationId" to null,
-                            "method" to null,
-                            "spunAt" to null,
-                            "completedAt" to null,
-                            "skippedAt" to null,
-                            "snoozedUntil" to null,
-                            "updatedAt" to Instant.now().toTimestamp(),
-                        )
-                    )
-                }
-            }.await()
-            Unit
-        }
 
     override fun observeSessions(fromInclusive: Instant, toExclusive: Instant): Flow<List<SavingSpinSession>> = callbackFlow {
         val uid = auth.currentUser?.uid

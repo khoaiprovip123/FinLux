@@ -11,11 +11,11 @@ class SpinSavingWheelUseCase @Inject constructor(
     private val repository: SavingSpinRepository,
 ) {
     suspend operator fun invoke(session: SavingSpinSession): AppResult<SavingSpinSession> {
-        if (session.selectedIndex != null && session.selectedAmount != null) {
-            return AppResult.Success(session)
+        if (session.status != SavingSpinStatus.READY) {
+            return AppResult.Error("Lượt tiết kiệm này đã được quay")
         }
-        if (session.status != SavingSpinStatus.READY || session.wheelValues.isEmpty()) {
-            return AppResult.Error("Lượt quay không ở trạng thái sẵn sàng")
+        if (session.wheelValues.isEmpty()) {
+            return AppResult.Error("Vòng quay chưa có mệnh giá")
         }
         return repository.lockSpinResult(
             scheduleKey = session.scheduleKey,

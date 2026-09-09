@@ -1,12 +1,252 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.20.3 (versionCode 165) [DONE]
-- **Trạng thái Build:** ✅ 100% PASS (282/282 Unit Tests) — Chuẩn hóa ROI, khắc phục vốn lưu động & vốn chưa thu hồi, đóng băng vòng đời COMPLETED và thêm nút Tất Toán & Đóng Deal; Nạp APK thành công lên điện thoại qua ADB.
+- **Phiên bản hiện tại:** v1.22.0 (versionCode 165)
+- **Trạng thái Build:** ✅ 100% PASS (290/290 tests) — Đã đồng bộ hoàn tất `upstream/main` vào nhánh `main` local (tổng hợp Reporting 2.0 Foundation, Thẻ Hero số dư ví & luân chuyển tiền, Deal Tracking v1.20.3, Saving Spin v1.21.0, và toàn bộ Audit Roadmap).
+
+### [Task-MERGE-UPSTREAM-MAIN-V1.22.0] — Merge đồng bộ upstream/main vào local main
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ Hợp nhất nhánh `upstream/main` (Báo cáo Reporting 2.0, Thẻ Hero số dư ví, Luân chuyển tiền giữa các ví, Vòng quay tiết kiệm Saving Spin, toàn bộ tài liệu Audit Roadmap) vào nhánh `main` local (vốn có Chuẩn hóa ROI & Tất toán Deal v1.20.3).
+  2. ✅ Giải quyết xung đột trên `CHANGELOG.md`, `HANDOVER_LOG.md`, `app/build.gradle.kts`.
+  3. ✅ Kiểm thử toàn bộ `./gradlew testDebugUnitTest` đảm bảo 100% PASS (60 test classes, 290/290 tests, 0 failure).
+- **Danh sách file chỉnh sửa**:
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
 
 ---
 
-## [DONE] Task: Chuẩn Hóa Logic Toán Học, Vốn Lưu Động & Vòng Đời Thương Vụ (Deal Tracking)
+### [Task-HERO-BALANCE-AND-WALLET-TRANSFER-REPORTING] — Hiển thị Tổng tiền hiện có/Số dư ví trên Thẻ Hero & Báo cáo Luân chuyển tiền giữa các ví (Transfer Tracking)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Thẻ Hero (Màn hình Báo cáo)**:
+     - Con số to nhất nổi bật: `Tổng tiền hiện có` (khi ở chế độ Tất cả ví) hoặc `Số dư ví [Tên ví]` (khi lọc theo ví).
+     - Phía dưới con số to: Dòng tiền ròng `Dòng tiền ròng (Thu – Chi)` kèm trạng thái giải thích rõ nghĩa: `"Thặng dư tài chính trong kỳ"` hoặc `"Chi tiêu vượt thu nhập trong kỳ"` để người dùng không bao giờ bị hoang mang khi dòng tiền âm.
+     - Dải số liệu phụ: Hiển thị đầy đủ Tổng thu nhập, Tổng chi tiêu, Chuyển đi (cam), Nhận chuyển (xanh dương) và Biến động số dư ví.
+  2. ✅ **Báo cáo Chuyển tiền & Biến động số dư ví (`Wallet Transfer Tracking`)**:
+     - Khi ví phát sinh chuyển tiền (ví dụ: MB Bank thu 7 triệu nhưng chuyển 3 triệu thành tiền mặt):
+       - Ghi nhận `transferOutInPeriod = 3M` ở MB Bank (tiền ra khỏi ví) và `transferInInPeriod = 3M` ở ví Tiền mặt (tiền vào ví).
+       - Thể hiện rõ ràng `totalMoneyIn` (Thu + Nhận chuyển), `totalMoneyOut` (Chi + Chuyển đi), và `netWalletChange` (Biến động ví = Tổng vào - Tổng ra).
+     - Cập nhật BottomSheet chi tiết ví (`PrismWalletDetailBottomSheet`): Thẻ KPI thể hiện Tiền vào, Tiền ra, Biến động số dư ví, khối chi tiết chuyển tiền và hiển thị chuẩn xác giao dịch chuyển khoản trong lịch sử ví.
+     - Cập nhật danh sách thẻ ví (`PrismWalletReportCard`, `ModernReportsScreen`, `ClassicReportsScreen`): Thể hiện rõ số tiền chuyển đi và biến động ròng của từng ví.
+  3. ✅ **Kiểm thử & Đóng gói**:
+     - Bổ sung Unit Test `reports correctly tracks inter-wallet transfers and updates net wallet change` trong `ReportsViewModelTest.kt`.
+     - `./gradlew testDebugUnitTest`: **100% PASS** (290/290 tests).
+     - `./gradlew assembleDebug`: **BUILD SUCCESSFUL**. File APK mới nhất đã sẵn sàng tại `app/build/outputs/apk/debug/app-debug.apk`.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+  - `docs/BA_SPEC.md`
+  - `docs/UI_SPEC.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-DETAILED-WALLET-SPENDING-REPORTS-AND-FILTERING] — Báo cáo Chi tiêu Chi tiết Theo Từng Ví & Bộ Lọc Ví Toàn Diện
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Mở rộng `ReportsViewModel` & `ReportsUiState`**:
+     - Định nghĩa `WalletSpendingDetail`: ví, số dư, tỷ trọng tài sản, chi tiêu trong kỳ (`expenseInPeriod`), thu nhập trong kỳ (`incomeInPeriod`), dòng tiền ròng (`netCashflowInPeriod`), tỷ trọng chi của ví trên tổng chi (`expenseShareOfTotal`), cơ cấu chi theo danh mục (`expensesByCategory`), nguồn thu (`incomeByCategory`) và danh sách giao dịch (`transactions`).
+     - Thêm trạng thái lọc ví toàn diện `selectedWalletId: String?` và hàm `selectWallet(walletId: String?)`.
+     - Bộ lọc áp dụng động lên `summary` (Thu/Chi/Dòng tiền), `cashFlow` biểu đồ xu hướng, `expensesByCategory`, `incomeItems` và sao kê hàng ngày, trong khi giữ nguyên bảng so sánh toàn bộ ví để người dùng luôn có góc nhìn đối chiếu.
+  2. ✅ **Xây dựng Giao diện Xem Chi tiết Chi tiêu Ví (`PrismWalletDetailBottomSheet`)**:
+     - Thẻ Hero nhận diện ví (tên, logo, màu ví, số dư hiện tại, dòng tiền ròng).
+     - Thẻ KPI chi tiêu: số tiền chi tiêu trong kỳ kèm thanh tiến độ tỷ trọng (% tổng chi tiêu của tất cả các ví).
+     - Danh sách cơ cấu danh mục chi tiêu của riêng ví (mỗi danh mục hiển thị tiến độ và % của riêng ví đó).
+     - Danh sách nguồn thu nạp vào ví (nếu có).
+     - Lịch sử giao dịch chi tiết phát sinh từ ví trong kỳ kèm icon danh mục, loại giao dịch và ngày giờ.
+     - Nút hành động nhanh: "Lọc báo cáo theo ví này" chuyển trực tiếp sang chế độ lọc toàn bộ báo cáo.
+  3. ✅ **Bộ Lọc Ví Trên Màn Hình Báo Cáo (`Wallet Filter Selector`)**:
+     - **Prism**: Thanh chip cuộn ngang `PrismWalletFilterSelector` ("Tất cả ví", từng ví kèm màu sắc và icon) đặt ngay dưới bộ chọn kỳ báo cáo.
+     - **Modern & Classic**: Banner thông báo "Đang lọc: [Tên ví]" kèm nút "Xem tất cả", cùng với Menu dropdown capsule trực quan tại khu vực "Báo cáo theo ví".
+  4. ✅ **Thẻ Thống Kê Phân Bổ Chi Tiêu Theo Ví (`PrismWalletSpendingDistributionCard`)**:
+     - Thẻ đồ họa biểu diễn thanh tỷ trọng chi tiêu đa sắc màu giữa các ví trong tab Chuyên sâu (Tài sản / Ví).
+     - Danh sách thẻ ví `PrismWalletReportCard` hiển thị: số dư, số tiền chi trong kỳ, % đóng góp vào tổng chi, danh mục chi nhiều nhất, bấm vào để mở ngay `PrismWalletDetailBottomSheet`.
+  4.1. ✅ **Minh Bạch Hóa Ngữ Nghĩa Thẻ Hero Tổng Quan**:
+     - Bổ sung nhãn rõ ràng: `Dòng tiền ròng (Thu – Chi)` ngay trên con số tổng ròng.
+     - Khi dòng tiền bị âm (Chi > Thu), hiển thị câu giải thích trực quan: `"Chi tiêu vượt thu nhập trong kỳ"`, giúp người dùng phân biệt ngay lập tức giữa dòng tiền ròng của kỳ và số dư ví thực tế, loại bỏ 100% hiểu nhầm số dư tài khoản bị âm.
+  5. ✅ **Kiểm thử & Đóng gói**:
+     - `./gradlew testDebugUnitTest`: **BUILD SUCCESSFUL**, **289/289 Unit Tests PASS 100%** (bổ sung 2 test case kiểm tra chi tiết chi tiêu từng ví và lọc trạng thái báo cáo).
+     - `./gradlew assembleDebug`: **BUILD SUCCESSFUL** (APK đóng gói trơn tru không lỗi).
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+  - `docs/UI_SPEC.md`
+  - `docs/BA_SPEC.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-FULLSCREEN-TRANSACTIONS-TRANSFER-AND-DATEPICKER-UNIFICATION] — Chuyển màn hình tạo Thu/Chi & Chuyển khoản sang Toàn màn hình (Full Screen), chống thoát mất dữ liệu & đồng bộ DateRangePicker
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Toàn màn hình Tạo/Sửa giao dịch (`AddTransactionSheet.kt`)**: Chuyển đổi từ `ModalBottomSheet` sang toàn màn hình (`Surface` + `FinluxStyleBackdrop`), thiết lập `statusBarsPadding()`, `navigationBarsPadding()`, `imePadding()`.
+  2. ✅ **Bảo vệ chống mất dữ liệu khi vô tình Back / Thoát**: Tích hợp `BackHandler` và nút Back ở Header Bar, tự động kiểm tra nếu có số tiền hoặc ghi chú chưa lưu sẽ hiển thị `FinluxDialog` xác nhận hủy thay đổi, ngăn chặn 100% tình trạng vô tình chạm hoặc vuốt làm mất công soạn thảo.
+  3. ✅ **Nâng cấp công thái học Form**: Bổ sung nút lưu giao dịch to bản `Button` (`52dp`, bo góc `16dp`, màu động `tokens.primary`) ở cuối trang dễ bấm bằng 1 tay.
+  4. ✅ **Màn hình Chuyển khoản Toàn màn hình (`TransferMoneyScreen.kt`)**:
+     - Xây dựng màn hình chuyển tiền chuyên dụng toàn màn hình Liquid Glass.
+     - Thiết kế chọn ví nguồn, ví đích, nút hoán đổi chiều chuyển tiền (`SwapVert`).
+     - Nhập số tiền định dạng dấu chấm phân cách hàng nghìn, thanh phím tắt ("Tất cả", 50k, 100k, 200k, 500k, 1M, 2M).
+     - Kiểm tra số dư ví nguồn theo thời gian thực (hiển thị cảnh báo số dư không đủ).
+     - Chọn ngày giờ chuyển khoản thông minh (`DatePickerDialog` + `TimePickerDialog`).
+     - Tích hợp `BackHandler` chống thoát mất nội dung đang soạn.
+  5. ✅ **Kết nối toàn hệ thống (`FinluxNavHost.kt`, `PrismWalletsScreen.kt`)**:
+     - Nút "Chuyển tiền" trong QuickAddSheet mở trực tiếp `TransferMoneyScreen` toàn màn hình.
+     - Nút chuyển tiền trong màn hình Ví (`PrismWalletsScreen`) mở trực tiếp `TransferMoneyScreen`.
+  6. ✅ **Đồng bộ DateRangePicker Liquid Glass Theme**:
+     - Cập nhật `DatePickerDefaults.colors(...)` theo `LocalFinluxTokens.current` và bo góc `28dp` trên cả 3 giao diện Báo cáo: `PrismReportsScreen`, `ModernReportsScreen`, `ClassicReportsScreen`.
+- **Kiểm thử & Đóng gói**:
+  - `./gradlew.bat testDebugUnitTest`: **BUILD SUCCESSFUL**, **287/287 Unit Tests PASS 100%**.
+  - `./gradlew.bat assembleDebug`: **BUILD SUCCESSFUL** (Tạo file APK `app-debug.apk` thành công).
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-FIX-CASHFLOW-FUTURE-DATES-AND-BAR-SCALING] — Sửa lỗi hiển thị ngày tương lai, tỷ lệ cột biểu đồ thu chi & đồng bộ tab Chuyên sâu
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Loại bỏ ngày tương lai (06/09..24/09)**: Giới hạn `cashFlow` và `dailyStatements` đối với kỳ đang diễn ra bằng `effectiveEndDate = minOf(range.end, today)`. Kỳ lương hiện tại (25/08 - 24/09) hiển thị chính xác 12 ngày đã trôi qua (25/08 đến 05/09 - hôm nay).
+  2. ✅ **Sửa tỷ lệ chiều cao cột biểu đồ**:
+     - Loại bỏ việc vẽ cột giả (stub 0.04f) khi amount = 0. Khi = 0, hoàn toàn không vẽ cột.
+     - Tách thang đo cực đại độc lập `maxIncome` và `maxExpense` để các khoản chi tiêu hàng ngày không bị nén phẳng bởi khoản lương lớn.
+     - Chuyển `Row` chứa cột sang `Modifier.weight(1f)` (fill = true) cho phép các cột bung chiều cao theo toàn bộ không gian thẻ biểu đồ.
+  3. ✅ **Hiển thị trọn vẹn không cuộn lệch**: 12 ngày vừa vặn hoàn hảo trên 1 màn hình (`isScrollable = false`), người dùng nhìn thấy toàn bộ từ ngày 25/08 tới hôm nay 05/09 ngay lập tức.
+  4. ✅ **Đồng bộ tab Chuyên sâu (sub-tab Xu hướng)**: Tự động kế thừa biểu đồ thu chi chuẩn xác và bảng phân tích.
+- **Kiểm thử & Cài đặt**:
+  - `./gradlew.bat testDebugUnitTest`: **BUILD SUCCESSFUL**, **287/287 Unit Tests PASS 100%**.
+  - `./gradlew.bat assembleDebug`: **BUILD SUCCESSFUL**.
+  - `adb -s 7f4ca06a install -r -d app-debug.apk`: **Success**.
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-FIX-REPORT-SALARY-CYCLE-CHART-AND-DEEPDIVE] — Sửa lỗi hiển thị biểu đồ thu chi Kỳ lương & Đồng bộ Tab Chuyên sâu
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Loại bỏ triệt để hardcode `takeLast(14)` và `takeLast(20)`**: Biểu đồ hiển thị đầy đủ 100% tất cả các ngày trong chu kỳ lương (từ ngày bắt đầu `range.start` đến ngày kết thúc `range.end`), không còn bị cắt xén hay nhảy sang ngày 11..14 nữa.
+  2. ✅ **Nâng cấp Biểu đồ Thu Chi Prism Cuộn Ngang Thông Minh**: Tự động nhận diện chu kỳ dài (>14 ngày) để chuyển sang `horizontalScroll`, giữ độ rộng cột 32dp sắc nét, auto-scroll căn giữa ngày "Hôm nay", hiển thị indicator "Hôm nay", và pill thông tin chi tiết (Thu/Chi/Ròng) khi nhấn chọn từng cột ngày.
+  3. ✅ **Thêm thanh hiển thị kỳ báo cáo (`PrismPeriodIndicatorBanner`)**: Tích hợp cho cả Tab "Danh mục" và Tab "Chuyên sâu" (tất cả các sub-tab: Vay nợ, Tiết kiệm, Thương vụ, Ngân sách, Tài sản, Xu hướng), cho phép người dùng luôn biết rõ phạm vi ngày đang xem và bấm "Đổi kỳ" nhanh chóng.
+  4. ✅ **Đồng bộ Sub-tab Xu hướng (Trend)**: Sử dụng biểu đồ thu chi mới với dữ liệu chu kỳ trọn vẹn và phân tích xu hướng trực quan.
+- **Kiểm thử & Cài đặt**:
+  - `./gradlew.bat testDebugUnitTest`: **BUILD SUCCESSFUL**, **287/287 Unit Tests PASS 100%**.
+  - `./gradlew.bat assembleDebug`: **BUILD SUCCESSFUL**.
+  - Đã cài đặt trực tiếp bản build vào máy thiết bị qua ADB (`adb install -r -d app-debug.apk`) thành công.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-FINLUX-REPORTING-2.0-RELEASE-A] — Reporting Foundation: Period & Balance Reconciliation Engine
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Audit & Freeze Contract**: Chuẩn hóa Flow Metric, Cumulative Metric, Snapshot Metric; thống nhất Timezone sử dụng `FinanceTime.zoneOf(salaryConfig.financeTimeZone)`.
+  2. ✅ **Report Period Engine [P0]**: Mở rộng `ReportPeriod` (`TODAY`, `YESTERDAY`, `DAY`, `WEEK`, `LAST_7_DAYS`, `SALARY_CYCLE`, `MONTH`, `QUARTER`, `YEAR`, `CUSTOM`).
+  3. ✅ **Dynamic Default Period**: Tự động đặt `SALARY_CYCLE` khi `salaryConfig.enabled == true` và `MONTH` khi `false`. Thay thế toàn bộ `ReportPeriod.entries` trên cả 3 giao diện (Prism, Modern, Classic) bằng `state.availablePeriods`.
+  4. ✅ **Balance & Reconciliation Engine [P0]**: Xây dựng `DailyStatementCalculator` suy diễn số dư đầu ngày, phát sinh trong ngày và số dư cuối ngày, thỏa mãn invariant kế toán: `Closing(Day N) == Opening(Day N+1)`.
+  5. ✅ **Daily Statement & Cumulative Metrics [P0]**: Thẻ Báo cáo Ngày (Opening, Income, Expense, Operating Net, Closing), Thẻ Lũy kế (Trước hôm nay + Hôm nay = Tổng lũy kế), So sánh Hôm qua vs Hôm nay và Bảng đối chiếu từng ngày.
+  6. ✅ **Cash Movement Report**: Phân định rạch ròi Operating Cash Flow vs Wallet Ledger Movement (Transfer, Deal Outlay/Recovery, Debt Payments).
+  7. ✅ **Tích hợp DateRangePicker cho Prism**: Khi người dùng chọn "Tùy chọn", tự động kích hoạt DatePickerDialog chọn ngày bắt đầu & kết thúc.
+- **Kiểm thử tự động**:
+  - `ReportQueryWindowResolverTest` (6/6 PASS)
+  - `DailyStatementCalculatorTest` (4/4 PASS)
+  - `ReportsViewModelTest` (6/6 PASS)
+  - Toàn bộ `./gradlew.bat testDebugUnitTest` PASS 100% (60 test classes, 287/287 tests).
+- **Files đã tạo mới & chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DailyFinancialModels.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/DailyStatementCalculator.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportPeriod.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportQueryWindowResolver.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismDailyStatementComponents.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/DailyStatementCalculatorTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportQueryWindowResolverTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt`
+
+### [Task-SAVING-SPIN-SETTINGS-UI-UX-UPGRADE] — Nâng cấp UI/UX Cài đặt vòng quay (Setup Saving Spin)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Cửa sổ nhập Mức tối thiểu & Mức tối đa Liquid Glass**: Sử dụng `FinluxBottomSheet`, card nhập tiền `FinluxAmountInputCard` đồng bộ định dạng chấm phân cách hàng nghìn (`50.000 ₫`), các chip mốc chọn nhanh (10k, 20k, 50k, 100k...) và chip cộng dồn (+5k, +10k, +50k...), tự động căn chỉnh bội số theo bước giá (`step`).
+  2. ✅ **Danh sách chọn Số ô vòng quay trực quan**: Mở `FinluxBottomSheet` liệt kê rõ ràng 4 tùy chọn (6 ô, 8 ô, 10 ô, 12 ô) kèm mô tả chi tiết, người dùng chọn trực tiếp bằng 1 chạm. Đồng thời nâng cấp modal chọn **Tần suất** và **Giờ nhắc** theo danh sách/preset trực quan.
+  3. ✅ **Pop-up thông báo Lưu thành công**: Hiển thị `FinluxDialog` phong cách Liquid Glass nổi bật với icon CheckCircle, tiêu đề "Thiết lập thành công!" và nút "Đã hiểu" sau khi lưu cấu hình.
+- **Kiểm thử tự động**:
+  - `SavingSpinSettingsViewModelTest.kt` (4/4 PASS)
+  - Toàn bộ `./gradlew.bat testDebugUnitTest` PASS 100% (59 test classes).
+- **Files đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsViewModel.kt`
+
+### [Task-SAVING-SPIN-STABILIZATION-P0-P2] — Toàn diện Kế hoạch Sửa lỗi & Ổn định Vòng quay tiết kiệm (Saving Spin)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **P0 - Khóa Reroll & State Machine**: Xóa hoàn toàn `ResetGame` và `resetSession()` khỏi production. State machine chỉ cho phép quay khi ở trạng thái `READY`.
+  2. ✅ **P0 - Chuẩn hóa Semantics CASH vs BANK_TRANSFER (Không ghi EXPENSE)**:
+     - `CASH`: Chỉ ghi nhận sổ tiết kiệm (Ledger Confirmation), không can thiệp số dư ví chi tiêu và không tạo giao dịch EXPENSE.
+     - `BANK_TRANSFER`: Kiểm tra số dư ví nguồn, thực hiện chuyển tiền nguyên tử `transferBetweenWallets` sang ví đích. Chỉ hoàn tất session khi transfer thành công.
+     - Cơ chế Idempotency: `transactionId = "saving-spin:${session.id}"` ngăn chặn duplicate ghi nhận.
+  3. ✅ **P1 - Tính Streak theo lịch & chu kỳ**:
+     - Hỗ trợ đầy đủ tần suất: `DAILY`, `SELECTED_WEEKDAYS`, `WEEKLY`, `SALARY_CYCLE`.
+     - Phân định trạng thái pending hôm nay không làm đứt chuỗi trước đó; chuỗi đứt khi bỏ lỡ kỳ quay theo lịch.
+  4. ✅ **P1 - Reminder & Smart Snooze**:
+     - Snooze sheet hỗ trợ các preset thông minh (+30m, +1h, 12h hôm nay, 18h hôm nay, 9h sáng mai). Hủy nhắc nhở khi phiên hoàn thành hoặc bỏ qua.
+  5. ✅ **P2 - Tách Modular UI Game Sheet & 100% Theme Consistency**:
+     - Tách nhỏ thành: `SavingSpinHeader`, `SavingSpinReadyContent`, `SavingSpinResultContent`, `SavingSpinCompletedContent`, `SavingSpinSkippedContent`, `SavingSpinSnoozeSheet`.
+     - 100% màu sắc sử dụng dynamic token `LocalFinluxTokens.current` và `MaterialTheme.colorScheme` (không còn hardcoded static color codes).
+     - Palette vòng quay tương thích linh hoạt cho 6/8/10/12 slots kèm accessibility semantics.
+  6. ✅ **Kiểm thử tự động**:
+     - `CalculateSavingSpinStreakUseCaseTest.kt` (5/5 PASS)
+     - `CompleteSavingSpinUseCaseTest.kt` (4/4 PASS)
+     - `SpinSavingWheelUseCaseTest.kt` (3/3 PASS)
+     - `SavingSpinViewModelTest.kt` (5/5 PASS)
+     - `DemoSavingSpinRepositoryTest.kt` (2/2 PASS)
+     - `GetSavingSpinReportUseCaseTest.kt` (1/1 PASS)
+     - Toàn bộ test suite `./gradlew.bat testDebugUnitTest` PASS 100% (59 test classes).
+- **Files đã chỉnh sửa / tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/SavingSpinModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/SavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/SavingSpinFirestoreMapper.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SpinSavingWheelUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CalculateSavingSpinStreakUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetSavingSpinReportUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinUiState.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/SavingSpinViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinGameSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinHeader.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinReadyContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinResultContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinCompletedContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinSkippedContent.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinSnoozeSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinWheel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinHomeCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CalculateSavingSpinStreakUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CompleteSavingSpinUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/SpinSavingWheelUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/GetSavingSpinReportUseCaseTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/savingspin/SavingSpinViewModelTest.kt`
+  - `app/src/test/java/com/finlux/app/data/demo/DemoSavingSpinRepositoryTest.kt`
+
+---
+
+## [DONE] Task: Chuẩn Hóa Logic Toán Học, Vốn Lưu Động & Vòng Đời Thương Vụ (Deal Tracking - v1.20.3)
 
 **Ngày:** 2026-09-03
 
@@ -54,7 +294,7 @@
 
 ---
 
-## [DONE] Task: Sửa Triệt Để Logic Dòng Tiền & Dư Nợ Khoản Vay (Deal & Lending)
+## [DONE] Task: Sửa Triệt Để Logic Dòng Tiền & Dư Nợ Khoản Vay (Deal & Lending - v1.20.2)
 
 **Ngày:** 2026-09-03
 
@@ -382,8 +622,6 @@
   2. ✅ **Cơ Chế Phân Rã Dòng Tiền Nguyên Tử (Atomic Flow Decomposition)**:
      - Tự động tách phần hoàn gốc và tiền lời ròng trong 1 Firestore Transaction duy nhất.
      - Hỗ trợ chốt lỗ đóng deal (`closeDealWithLoss`) sinh giao dịch `CAPITAL_LOSS`.
-  3. ✅ **Cô Lập Ngân Sách & Báo Cáo (Isolation Engine)**:
-     - `ReportsViewModel`: Loại trừ `OUTLAY_CAPITAL` khỏi Chi phí và `PRINCIPAL_RECOVERY` khỏi Thu nhập; đưa `CAPITAL_GAIN` vào Thu nhập và `CAPITAL_LOSS` vào Chi phí.
      - `BudgetViewModel`: Vốn xuất không làm cạn kiệt ngân sách chi tiêu hàng tháng.
      - `HomeViewModel`: Tổng quan tài chính hiển thị chính xác dòng tiền sinh hoạt.
   4. ✅ **Giao Diện Liquid Glass Hiện Đại (`presentation/deal/`)**:
@@ -427,10 +665,11 @@
   - `docs/BA_SPEC.md`
   - `docs/DATA_SPEC.md`
 
-### [Task-SAVING-SPIN-TRANSFER-STREAK-SETTINGS-FIX] — Cơ chế Chuyển tiền vào Ví tiết kiệm, Chuỗi nạp động, Dialog nhập Min/Max & Lưu Cài đặt vào DB
+### [Task-SAVING-SPIN-DIRECT-TRANSFER-AND-SETTINGS-INPUT-V1.17.0] — Nạp tiền tiết kiệm dạng Transfer & Dialog nhập tiền Cài đặt
 - **Status**: `[DONE]`
 - **Mục tiêu hoàn thành**:
   1. ✅ **Chuyển tiền vào ví tiết kiệm (Transfer)**: Hỗ trợ trích tiền từ ví nguồn (mặc định Ví Tiền mặt `WalletType.CASH` hoặc ví mặc định) chuyển sang ví tiết kiệm đã chọn bằng `transactionRepository.transferBetweenWallets(...)` cập nhật số dư nguyên tử. Cho phép người dùng linh hoạt đổi ví nguồn và ví đích.
+
   2. ✅ **Chuỗi thực hiện động (Dynamic Streak)**: Tính chuỗi theo số lần nạp thành công thực tế qua `repository.observeSessions`, hiển thị sinh động `🔥 Chuỗi X lần nạp`.
   3. ✅ **Điều chỉnh Min/Max trong Cài đặt**: Bổ sung `AlertDialog` nhập số tiền trực tiếp bằng bàn phím số cho Mức tối thiểu & Mức tối đa, tự động làm tròn theo bội số bước tiền (`step`) và cập nhật cấu hình tức thì.
   4. ✅ **Lưu cấu hình vào DB Firestore**: ViewModel đồng bộ ngay giá trị min/max vào config, kiểm tra validation và lưu trực tiếp qua `repository.saveConfig(config)`, kèm banner cảnh báo lỗi nếu có.

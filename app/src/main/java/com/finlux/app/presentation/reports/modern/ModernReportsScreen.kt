@@ -2,6 +2,7 @@ package com.finlux.app.presentation.reports.modern
 
 import com.finlux.app.presentation.reports.*
 import com.finlux.app.core.designsystem.modern.*
+import com.finlux.app.core.designsystem.component.formatVndAmount
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -106,13 +107,53 @@ fun ModernReportsScreen(
                 Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                ReportPeriodSelector(selectedPeriod) { option ->
+                ReportPeriodSelector(
+                    selected = state.period,
+                    availablePeriods = state.availablePeriods,
+                ) { option ->
                     viewModel.selectPeriod(option)
                     if (option == ReportPeriod.CUSTOM) showRangePicker = true
                 }
-                if (selectedPeriod == ReportPeriod.CUSTOM) {
+                if (state.period == ReportPeriod.CUSTOM) {
                     Button(onClick = { showRangePicker = true }, modifier = Modifier.fillMaxWidth()) {
                         Text("${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}  →  ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
+                    }
+                }
+                if (state.selectedWalletId != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.FilterAlt,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Đang lọc: ${state.selectedWallet?.name ?: "Ví"}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        TextButton(
+                            onClick = { viewModel.selectWallet(null) },
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text("Xem tất cả", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
                 ReportPanel {
@@ -121,12 +162,46 @@ fun ModernReportsScreen(
                             Text("Tổng quan ${reportRangeLabel(state)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
                         }
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = if (state.selectedWallet != null) "Số dư ví ${state.selectedWallet?.name}:" else "Tổng tiền hiện có:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = formatVndAmount(state.currentDisplayBalance),
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         Row(Modifier.fillMaxWidth().height(70.dp), verticalAlignment = Alignment.CenterVertically) {
                             ReportAmount("Thu nhập", state.summary.income.value, state.previousIncome, IncomeGreen, Modifier.weight(1f))
                             VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .40f), modifier = Modifier.height(44.dp))
                             ReportAmount("Chi tiêu", state.summary.expense.value, state.previousExpense, ExpenseRed, Modifier.weight(1f))
                             VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .40f), modifier = Modifier.height(44.dp))
                             ReportAmount("Dòng tiền", state.summary.net, state.previousIncome - state.previousExpense, if (state.summary.net >= 0) IncomeGreen else ExpenseRed, Modifier.weight(1f))
+                        }
+                        if (state.selectedWallet != null && (state.totalTransferOut > 0 || state.totalTransferIn > 0)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Chuyển tiền: -${formatVndAmount(state.totalTransferOut)}" + if (state.totalTransferIn > 0) " | Nhận: +${formatVndAmount(state.totalTransferIn)}" else "",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFFF97316)
+                                )
+                                Text(
+                                    text = "Biến động ví: ${if (state.currentWalletNetChange >= 0) "+" else ""}${formatVndAmount(state.currentWalletNetChange)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (state.currentWalletNetChange >= 0) IncomeGreen else ExpenseRed
+                                )
+                            }
                         }
                     }
                 }
@@ -154,11 +229,57 @@ fun ModernReportsScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Báo cáo theo ví", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            com.finlux.app.core.designsystem.modern.LiquidGlassCapsule(selected = false) {
-                                Text("Tất cả ví", style = MaterialTheme.typography.labelSmall)
+                            Box {
+                                var showWalletDropdown by remember { mutableStateOf(false) }
+                                com.finlux.app.core.designsystem.modern.LiquidGlassCapsule(
+                                    selected = state.selectedWalletId != null,
+                                    accentColor = state.selectedWallet?.let { colorFromHex(it.colorHex) } ?: MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.clickable { showWalletDropdown = true }
+                                ) {
+                                    Text(
+                                        text = (state.selectedWallet?.name ?: "Tất cả ví") + " ▾",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                                androidx.compose.material3.DropdownMenu(
+                                    expanded = showWalletDropdown,
+                                    onDismissRequest = { showWalletDropdown = false }
+                                ) {
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text("Tất cả ví", fontWeight = if (state.selectedWalletId == null) FontWeight.Bold else FontWeight.Normal) },
+                                        onClick = {
+                                            viewModel.selectWallet(null)
+                                            showWalletDropdown = false
+                                        }
+                                    )
+                                    state.wallets.forEach { wallet ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(wallet.name, fontWeight = if (state.selectedWalletId == wallet.id) FontWeight.Bold else FontWeight.Normal) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    walletIcon(wallet.type),
+                                                    contentDescription = null,
+                                                    tint = colorFromHex(wallet.colorHex),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            },
+                                            onClick = {
+                                                viewModel.selectWallet(wallet.id)
+                                                showWalletDropdown = false
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
-                        WalletReport(state.walletActivity)
+                        WalletReport(
+                            items = state.walletActivity,
+                            spendingDetails = state.walletSpendingDetails,
+                            selectedWalletId = state.selectedWalletId,
+                            onWalletClick = { walletId ->
+                                viewModel.selectWallet(if (state.selectedWalletId == walletId) null else walletId)
+                            }
+                        )
                     }
                 }
                 Button(
@@ -174,12 +295,17 @@ fun ModernReportsScreen(
         ExportReportDialog(state = state, onDismiss = { showExportDialog = false })
     }
     if (showRangePicker) {
+        val tokens = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current
         val rangeState = rememberDateRangePickerState(
             initialSelectedStartDateMillis = state.range.start.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
             initialSelectedEndDateMillis = state.range.end.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
         )
         DatePickerDialog(
             onDismissRequest = { showRangePicker = false },
+            colors = androidx.compose.material3.DatePickerDefaults.colors(
+                containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+            ),
+            shape = RoundedCornerShape(28.dp),
             confirmButton = {
                 TextButton(onClick = {
                     val start = rangeState.selectedStartDateMillis
@@ -191,10 +317,32 @@ fun ModernReportsScreen(
                         )
                     }
                     showRangePicker = false
-                }) { Text("Áp dụng") }
+                }) { Text("Áp dụng", color = tokens.primary, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { showRangePicker = false }) { Text("Hủy") } },
-        ) { DateRangePicker(rangeState) }
+            dismissButton = { TextButton(onClick = { showRangePicker = false }) { Text("Hủy", color = tokens.onSurfaceVariant) } },
+        ) {
+            DateRangePicker(
+                state = rangeState,
+                colors = androidx.compose.material3.DatePickerDefaults.colors(
+                    containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    titleContentColor = tokens.onSurface,
+                    headlineContentColor = tokens.onSurface,
+                    weekdayContentColor = tokens.onSurfaceVariant,
+                    subheadContentColor = tokens.onSurfaceVariant,
+                    yearContentColor = tokens.onSurface,
+                    currentYearContentColor = tokens.primary,
+                    selectedYearContentColor = tokens.onHero,
+                    selectedYearContainerColor = tokens.primary,
+                    dayContentColor = tokens.onSurface,
+                    selectedDayContentColor = tokens.onHero,
+                    selectedDayContainerColor = tokens.primary,
+                    todayContentColor = tokens.primary,
+                    todayDateBorderColor = tokens.primary,
+                    dayInSelectionRangeContentColor = tokens.primary,
+                    dayInSelectionRangeContainerColor = tokens.primary.copy(alpha = 0.15f),
+                ),
+            )
+        }
     }
 }
 
@@ -209,16 +357,23 @@ private fun ReportPanel(content: @Composable androidx.compose.foundation.layout.
 }
 
 @Composable
-private fun ReportPeriodSelector(selected: ReportPeriod, onSelected: (ReportPeriod) -> Unit) {
-    Row(
+private fun ReportPeriodSelector(
+    selected: ReportPeriod,
+    availablePeriods: List<ReportPeriod>,
+    onSelected: (ReportPeriod) -> Unit,
+) {
+    androidx.compose.foundation.lazy.LazyRow(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        ReportPeriod.entries.forEach { option ->
+        items(
+            count = availablePeriods.size,
+            key = { availablePeriods[it].name },
+        ) { index ->
+            val option = availablePeriods[index]
             com.finlux.app.core.designsystem.modern.LiquidGlassCapsule(
                 selected = selected == option,
                 onClick = { onSelected(option) },
-                modifier = Modifier.weight(1f),
                 accentColor = MaterialTheme.colorScheme.primary,
             ) {
                 Text(option.label, style = MaterialTheme.typography.labelMedium, fontWeight = if (selected == option) FontWeight.Bold else FontWeight.Medium)
@@ -243,6 +398,11 @@ private fun ReportAmount(label: String, amount: Long, previous: Long, color: Col
 }
 
 private fun reportRangeLabel(state: ReportsUiState): String = when (state.period) {
+    ReportPeriod.TODAY -> "hôm nay (${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))})"
+    ReportPeriod.YESTERDAY -> "hôm qua (${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))})"
+    ReportPeriod.DAY -> "ngày ${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
+    ReportPeriod.WEEK -> "tuần ${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))}–${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
+    ReportPeriod.LAST_7_DAYS -> "7 ngày (${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))}–${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM"))})"
     ReportPeriod.SALARY_CYCLE -> "kỳ ${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))}–${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
     ReportPeriod.MONTH -> state.range.start.format(DateTimeFormatter.ofPattern("'tháng' M, yyyy", Locale.forLanguageTag("vi-VN")))
     ReportPeriod.QUARTER -> "quý ${(state.range.start.monthValue - 1) / 3 + 1}, ${state.range.start.year}"
@@ -320,7 +480,7 @@ private fun CategoryBlock(item: CategoryExpense, total: Long, index: Int, modifi
 
 @Composable
 private fun CashFlowChart(items: List<CashFlowPoint>) {
-    val visible = items.takeLast(20)
+    val visible = if (items.size <= 31) items else items.takeLast(31)
     val max = visible.maxOfOrNull { maxOf(it.income, it.expense) }?.coerceAtLeast(1) ?: 1
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .36f)
     val focusLineColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .55f)
@@ -387,7 +547,12 @@ private fun CashFlowChart(items: List<CashFlowPoint>) {
 }
 
 @Composable
-private fun WalletReport(items: List<WalletActivity>) {
+private fun WalletReport(
+    items: List<WalletActivity>,
+    spendingDetails: List<WalletSpendingDetail> = emptyList(),
+    selectedWalletId: String? = null,
+    onWalletClick: ((String) -> Unit)? = null,
+) {
     if (items.isEmpty()) {
         EmptyChartText()
         return
@@ -398,12 +563,55 @@ private fun WalletReport(items: List<WalletActivity>) {
             val wallet = item.wallet
             val accent = wallet?.let { colorFromHex(it.colorHex) } ?: FinluxBlue
             val percent = (item.total * 100 / total).toInt()
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            val isSelected = wallet != null && wallet.id == selectedWalletId
+            val spending = spendingDetails.find { it.wallet.id == wallet?.id }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (isSelected) {
+                            Modifier
+                                .background(accent.copy(alpha = .12f), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                        } else {
+                            Modifier.padding(vertical = 3.dp)
+                        }
+                    )
+                    .clickable(enabled = onWalletClick != null && wallet != null) {
+                        wallet?.let { onWalletClick?.invoke(it.id) }
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(Modifier.size(38.dp).background(accent.copy(alpha = .16f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
                     wallet?.let { Icon(walletIcon(it.type), null, Modifier.size(21.dp), tint = accent) }
                 }
                 Column(Modifier.weight(1f).padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text(wallet?.name ?: "Ví", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(wallet?.name ?: "Ví", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        if (spending != null) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (spending.expenseInPeriod > 0L) {
+                                    Text(
+                                        "Chi: ${spending.expenseInPeriod.toShortVnd()}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = ExpenseRed
+                                    )
+                                }
+                                if (spending.transferOutInPeriod > 0L) {
+                                    Text(
+                                        "Chuyển: -${spending.transferOutInPeriod.toShortVnd()}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color(0xFFF97316)
+                                    )
+                                }
+                            }
+                        }
+                    }
                     LinearProgressIndicator(
                         progress = { percent / 100f },
                         modifier = Modifier.fillMaxWidth().height(5.dp),

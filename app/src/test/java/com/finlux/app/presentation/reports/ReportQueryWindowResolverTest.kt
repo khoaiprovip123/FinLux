@@ -13,6 +13,76 @@ class ReportQueryWindowResolverTest {
     private val resolver = ReportQueryWindowResolver(DefaultSalaryCycleCalculator())
 
     @Test
+    fun `today resolves single day window`() {
+        val now = LocalDateTime.of(2026, 9, 10, 14, 30).atZone(zone).toInstant()
+        val window = resolver.resolve(
+            period = ReportPeriod.TODAY,
+            custom = ReportRange(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1)),
+            now = now,
+            salaryConfig = SalaryCycleConfig(),
+            zone = zone,
+        )
+
+        assertEquals(ReportRange(LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 10)), window.range)
+        assertEquals(LocalDate.of(2026, 9, 10), window.currentStart.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 11), window.currentEndExclusive.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 9), window.previousStart.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 10), window.previousEndExclusive.atZone(zone).toLocalDate())
+    }
+
+    @Test
+    fun `yesterday resolves single day window of previous day`() {
+        val now = LocalDateTime.of(2026, 9, 10, 14, 30).atZone(zone).toInstant()
+        val window = resolver.resolve(
+            period = ReportPeriod.YESTERDAY,
+            custom = ReportRange(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1)),
+            now = now,
+            salaryConfig = SalaryCycleConfig(),
+            zone = zone,
+        )
+
+        assertEquals(ReportRange(LocalDate.of(2026, 9, 9), LocalDate.of(2026, 9, 9)), window.range)
+        assertEquals(LocalDate.of(2026, 9, 9), window.currentStart.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 10), window.currentEndExclusive.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 8), window.previousStart.atZone(zone).toLocalDate())
+    }
+
+    @Test
+    fun `week resolves monday to sunday of current week`() {
+        // 2026-09-10 is Thursday -> Monday is 2026-09-07, Sunday is 2026-09-13
+        val now = LocalDateTime.of(2026, 9, 10, 10, 0).atZone(zone).toInstant()
+        val window = resolver.resolve(
+            period = ReportPeriod.WEEK,
+            custom = ReportRange(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1)),
+            now = now,
+            salaryConfig = SalaryCycleConfig(),
+            zone = zone,
+        )
+
+        assertEquals(ReportRange(LocalDate.of(2026, 9, 7), LocalDate.of(2026, 9, 13)), window.range)
+        assertEquals(LocalDate.of(2026, 9, 7), window.currentStart.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 14), window.currentEndExclusive.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 8, 31), window.previousStart.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 7), window.previousEndExclusive.atZone(zone).toLocalDate())
+    }
+
+    @Test
+    fun `last 7 days resolves rolling 7 days up to today`() {
+        val now = LocalDateTime.of(2026, 9, 10, 10, 0).atZone(zone).toInstant()
+        val window = resolver.resolve(
+            period = ReportPeriod.LAST_7_DAYS,
+            custom = ReportRange(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1)),
+            now = now,
+            salaryConfig = SalaryCycleConfig(),
+            zone = zone,
+        )
+
+        assertEquals(ReportRange(LocalDate.of(2026, 9, 4), LocalDate.of(2026, 9, 10)), window.range)
+        assertEquals(LocalDate.of(2026, 9, 4), window.currentStart.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 11), window.currentEndExclusive.atZone(zone).toLocalDate())
+    }
+
+    @Test
     fun `salary cycle resolves full current and immediately previous cycle`() {
         val now = LocalDateTime.of(2026, 9, 10, 12, 0).atZone(zone).toInstant()
         val config = SalaryCycleConfig(enabled = true, paydayDay = 25)

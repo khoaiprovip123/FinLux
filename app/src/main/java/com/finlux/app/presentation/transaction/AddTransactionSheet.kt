@@ -1,11 +1,13 @@
 package com.finlux.app.presentation.transaction
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.ErgonomicFormRow
 import com.finlux.app.core.designsystem.component.ErgonomicInputRow
 import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.component.FinluxDialog
 import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -212,37 +215,64 @@ fun AddTransactionSheet(
         formatNumberWithDots(state.amountInput)
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = tokens.surface,
-        dragHandle = null,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val hasUnsavedChanges = enteredAmountValue > 0L || state.note.isNotBlank()
+
+    fun handleBack() {
+        if (hasUnsavedChanges) {
+            showDiscardDialog = true
+        } else {
+            onDismiss()
+        }
+    }
+
+    BackHandler(onBack = ::handleBack)
+
+    if (showDiscardDialog) {
+        FinluxDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = "Hủy thao tác?",
+            message = "Thông tin giao dịch đang soạn sẽ không được lưu lại. Bạn có chắc muốn thoát?",
+            confirmLabel = "Thoát",
+            dismissLabel = "Tiếp tục soạn",
+            onConfirm = {
+                showDiscardDialog = false
+                onDismiss()
+            },
+        )
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = tokens.background,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 14.dp)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            // 1. Header Bar: Back Button + Title + Save Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        Box(modifier = Modifier.fillMaxSize()) {
+            com.finlux.app.core.designsystem.FinluxStyleBackdrop(modifier = Modifier.fillMaxSize())
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .size(38.dp)
-                        .background(tokens.surfaceSoft, CircleShape),
+                // 1. Header Bar: Back Button + Title + Save Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    IconButton(
+                        onClick = ::handleBack,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(tokens.surfaceSoft, CircleShape),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Quay lại",
                         tint = tokens.onSurface,
                         modifier = Modifier.size(20.dp),
@@ -444,6 +474,29 @@ fun AddTransactionSheet(
             state.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
+
+            // Primary Save Button
+            val canSave = !state.isSaving && !isInsufficientBalance && enteredAmountValue > 0L
+            androidx.compose.material3.Button(
+                onClick = viewModel::save,
+                enabled = canSave,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = tokens.primary,
+                    disabledContainerColor = tokens.primary.copy(alpha = 0.35f),
+                ),
+            ) {
+                Text(
+                    text = if (state.isSaving) "Đang lưu..." else if (state.editingTransaction != null) "Cập nhật giao dịch" else "Lưu giao dịch",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                )
+            }
+        }
         }
     }
 

@@ -1,5 +1,63 @@
 # Changelog
 
+## [1.22.0] - 2026-09-05
+### Added
+- **FINLUX REPORTING 2.0 — Release A: Reporting Foundation (Phases 0–4)**:
+  * **Balance & Reconciliation Engine**:
+    - Mô hình hóa đối chiếu tài chính hoàn chỉnh (`DailyFinancialStatement`, `WalletDailyMovement`, `CumulativeFinancialMetrics`, `DailyComparisonMetric`, `CashMovementStatement`).
+    - Suy diễn chính xác số dư đầu ngày, phát sinh và số dư cuối ngày: $\text{OpeningBalance}(T) = \text{CurrentBalance} - \sum_{\tau \ge T} \text{NetMovement}(\tau)$.
+    - Khóa chặt invariant kế toán toàn hệ thống: $\text{ClosingBalance}(\text{Day } N) == \text{OpeningBalance}(\text{Day } N+1)$.
+  * **Core Daily Financial Statement (Báo Cáo Hôm Nay / Báo Cáo Ngày)**:
+    - Thẻ `PrismDailyStatementCard`: Hiển thị số dư đầu ngày, thu, chi, dòng tiền ròng hôm nay, số dư cuối ngày kèm badge đối chiếu.
+    - Thẻ `PrismCumulativeMetricsCard`: Phân tách minh bạch thu/chi/ròng trước hôm nay + hôm nay = tổng lũy kế.
+    - Thẻ `PrismDailyStatementsTable`: Bảng kê đối chiếu từng ngày trong kỳ khảo sát.
+    - Thước đo so sánh dòng tiền ròng hôm nay so với hôm qua ($\Delta$).
+  * **Phân Tách Rạch Ròi Cash Movement**:
+    - Phân định dòng tiền hoạt động (Thu nhập - Chi tiêu) vs dòng tiền luân chuyển ví (Chuyển khoản nội bộ, Đầu tư xuất vốn, Thu hồi vốn deal).
+  * **Tích Hợp DateRangePicker Prism**:
+    - Khi chọn kỳ "Tùy chọn", tự động kích hoạt DatePickerDialog chọn ngày bắt đầu & kết thúc.
+- **Full-Screen Transaction & Transfer Experience**:
+  * **Tạo/Sửa Thu & Chi Toàn Màn Hình (`AddTransactionSheet`)**: Nâng cấp toàn diện từ BottomSheet lên Full Screen (`Surface` + `FinluxStyleBackdrop`), chống trôi bàn phím với `imePadding`.
+  * **Khóa Chống Thoát Mất Dữ Liệu (`BackHandler`)**: Ngăn chặn tình trạng vô tình vuốt hoặc ấn Back làm mất nội dung đang soạn, tự động kích hoạt hộp thoại xác nhận hủy khi có dữ liệu chưa lưu.
+  * **Màn Hình Chuyển Tiền Toàn Màn Hình Chuyên Dụng (`TransferMoneyScreen`)**: Xây dựng trải nghiệm chuyển khoản trực quan giữa các ví, hoán đổi chiều chuyển nhanh (`SwapVert`), chip nhập nhanh (50k - 2M), kiểm tra số dư ví nguồn thời gian thực.
+  * **Đồng Bộ DateRangePicker Hệ Thống**: Quy chuẩn hóa màu sắc Liquid Glass (`LocalFinluxTokens.current`) và bo góc `28dp` cho tất cả màn hình Báo cáo (`PrismReportsScreen`, `ModernReportsScreen`, `ClassicReportsScreen`).
+
+### Changed
+- Mở rộng toàn diện `ReportPeriod` enum: `TODAY`, `YESTERDAY`, `DAY`, `WEEK`, `LAST_7_DAYS`, `SALARY_CYCLE`, `MONTH`, `QUARTER`, `YEAR`, `CUSTOM`.
+- Đổi kỳ mặc định theo cấu hình: Khi cấu hình lương bật (`salaryConfig.enabled == true`), mặc định là `SALARY_CYCLE`; khi tắt, mặc định là `MONTH`.
+- Xóa bỏ việc UI tự truy xuất `ReportPeriod.entries`, chuyển sang dùng `state.availablePeriods` đồng bộ trên cả 3 giao diện Prism, Modern, Classic.
+- Thống nhất múi giờ tài chính `FinanceTime.zoneOf(salaryConfig.financeTimeZone)` thay thế hoàn toàn `ZoneId.systemDefault()`.
+- Chuyển hướng nút "Chuyển tiền" trong `QuickAddSheet` và `PrismWalletsScreen` sang `TransferMoneyScreen` toàn màn hình.
+
+### Fixed
+- Khắc phục lỗi thiếu kỳ và không đồng nhất số dư giữa màn hình Home và màn hình Báo cáo.
+- 100% (287/287) Unit Tests PASS.
+
+## [1.21.0] - 2026-09-04
+### Added
+- **Khóa Chống Reroll & Bảo Toàn State Machine Vòng Quay**:
+  * Khóa cố định kết quả quay sau khi kim dừng (`LOCKED` / `SPUN`), ngăn chặn hoàn toàn việc quay lại để đổi kết quả.
+  * Bảo toàn trạng thái phiên quay khi app bị kill hoặc khi người dùng đóng mở lại BottomSheet.
+- **Phân Tách Chuẩn Bản Chất Cash vs Bank Transfer**:
+  * `CASH` (Tiền mặt / Heo đất): Ghi nhận tăng số dư tích lũy Saving Spin (Ledger Confirmation), không can thiệp số dư ví thanh toán.
+  * `BANK_TRANSFER` (Chuyển khoản): Kiểm tra số dư ví nguồn và thực hiện chuyển tiền nguyên tử `transferBetweenWallets` sang ví tiết kiệm đích.
+- **Tính Toán Chuỗi Kỷ Lục (Streak) Đa Tần Suất**:
+  * Hỗ trợ đầy đủ các chu kỳ `DAILY`, `SELECTED_WEEKDAYS`, `WEEKLY`, `SALARY_CYCLE` theo mốc thời gian thực tế (`periodKey`).
+- **Nhắc Nhở & Hoãn Lượt (Smart Snooze)**:
+  * Hẹn giờ thông báo chính xác qua `AlarmManager` với các mốc hoãn nhanh (+30p, +1h, 12h, 18h, 9h sáng mai).
+- **Nâng Cấp Giao Diện Cài Đặt Vòng Quay Chuẩn Liquid Glass**:
+  * Cửa sổ nhập Mức tối thiểu / Mức tối đa bằng `FinluxBottomSheet` kèm `FinluxAmountInputCard`, chip chọn nhanh và cộng dồn.
+  * Danh sách chọn trực quan Số ô vòng quay (6, 8, 10, 12 ô), Tần suất và Giờ nhắc.
+  * Pop-up Dialog thông báo "Thiết lập thành công!" nổi bật sau khi lưu cấu hình.
+
+### Changed
+- Tách nhỏ modular UI `SavingSpinGameSheet` thành các component độc lập (`SavingSpinHeader`, `SavingSpinReadyContent`, `SavingSpinResultContent`, `SavingSpinCompletedContent`, `SavingSpinSkippedContent`, `SavingSpinSnoozeSheet`).
+- Đồng bộ 100% theme động từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`, loại bỏ hoàn toàn mã màu hardcode.
+
+### Fixed
+- Xóa bỏ triệt để việc ghi nhận giao dịch `EXPENSE` (Chi tiêu) khi tiết kiệm, bảo đảm chính xác tuyệt đối báo cáo thu chi và số dư ví.
+- Khắc phục lỗi tính sai chuỗi ngày và lỗi cập nhật cấu hình vòng quay.
+
 ## [1.20.3] - 2026-09-03
 ### Added
 - **Hành Động "Tất Toán & Đóng Deal" (Close Deal)**:
@@ -151,6 +209,32 @@
 ### Fixed
 - Đảm bảo 100% (235/235) Unit Test vượt qua thành công bao gồm toàn bộ kịch bản kiểm thử nghiệp vụ Deal Tracking (`DealUseCasesTest`).
 
+=======
+## [1.18.0] - 2026-09-04
+### Added
+- **Khóa Chống Reroll & Bảo Toàn State Machine Vòng Quay**:
+  * Khóa cố định kết quả quay sau khi kim dừng (`LOCKED` / `SPUN`), ngăn chặn hoàn toàn việc quay lại để đổi kết quả.
+  * Bảo toàn trạng thái phiên quay khi app bị kill hoặc khi người dùng đóng mở lại BottomSheet.
+- **Phân Tách Chuẩn Bản Chất Cash vs Bank Transfer**:
+  * `CASH` (Tiền mặt / Heo đất): Ghi nhận tăng số dư tích lũy Saving Spin (Ledger Confirmation), không can thiệp số dư ví thanh toán.
+  * `BANK_TRANSFER` (Chuyển khoản): Kiểm tra số dư ví nguồn và thực hiện chuyển tiền nguyên tử `transferBetweenWallets` sang ví tiết kiệm đích.
+- **Tính Toán Chuỗi Kỷ Lục (Streak) Đa Tần Suất**:
+  * Hỗ trợ đầy đủ các chu kỳ `DAILY`, `SELECTED_WEEKDAYS`, `WEEKLY`, `SALARY_CYCLE` theo mốc thời gian thực tế (`periodKey`).
+- **Nhắc Nhở & Hoãn Lượt (Smart Snooze)**:
+  * Hẹn giờ thông báo chính xác qua `AlarmManager` với các mốc hoãn nhanh (+30p, +1h, 12h, 18h, 9h sáng mai).
+- **Nâng Cấp Giao Diện Cài Đặt Vòng Quay Chuẩn Liquid Glass**:
+  * Cửa sổ nhập Mức tối thiểu / Mức tối đa bằng `FinluxBottomSheet` kèm `FinluxAmountInputCard`, chip chọn nhanh và cộng dồn.
+  * Danh sách chọn trực quan Số ô vòng quay (6, 8, 10, 12 ô), Tần suất và Giờ nhắc.
+  * Pop-up Dialog thông báo "Thiết lập thành công!" nổi bật sau khi lưu cấu hình.
+
+### Changed
+- Tách nhỏ modular UI `SavingSpinGameSheet` thành các component độc lập (`SavingSpinHeader`, `SavingSpinReadyContent`, `SavingSpinResultContent`, `SavingSpinCompletedContent`, `SavingSpinSkippedContent`, `SavingSpinSnoozeSheet`).
+- Đồng bộ 100% theme động từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`, loại bỏ hoàn toàn mã màu hardcode.
+
+### Fixed
+- Xóa bỏ triệt để việc ghi nhận giao dịch `EXPENSE` (Chi tiêu) khi tiết kiệm, bảo đảm chính xác tuyệt đối báo cáo thu chi và số dư ví.
+- Khắc phục lỗi tính sai chuỗi ngày và lỗi cập nhật cấu hình vòng quay.
+>>>>>>> 7aceab6 (bump(release): v1.18.0 - On dinh vong quay tiet kiem & Nang cap UI cai dat)
 
 ## [1.17.0] - 2026-08-31
 ### Added

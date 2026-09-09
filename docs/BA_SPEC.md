@@ -190,11 +190,18 @@ Business rule: BR-09: Mỗi ngưỡng (80%, 100%) chỉ gửi thông báo 1 lầ
 UC-16 — Xem báo cáo/biểu đồ
 Actor: User
 Main flow:
-  1. Vào tab Báo cáo → chọn khoảng thời gian (Tuần/Tháng/Năm/Tùy chọn)
-  2. Xem: Pie chart cơ cấu chi theo danh mục, Bar/Line chart Thu-Chi theo thời gian,
-     Tổng Thu, Tổng Chi, Số dư ròng
-Business rule: BR-10: Báo cáo tính dựa trên transaction.date (ngày giao dịch thực tế), không phải
-  ngày tạo record.
+  1. Vào tab Báo cáo → chọn khoảng thời gian (Kỳ lương/Tháng/Quý/Năm/Tùy chọn)
+  2. Chọn phạm vi hiển thị: "Tất cả ví" hoặc lọc theo từng Ví cụ thể (selectedWalletId).
+     - Khi lọc theo một ví: Toàn bộ chỉ số Tổng quan (Thu nhập, Chi tiêu, Dòng tiền), Xu hướng Thu-Chi,
+       Phân bổ danh mục chi tiêu và Bảng sao kê hàng ngày tự động thu hẹp tính toán theo ví đó.
+  3. Xem Báo cáo Chi tiêu Chi tiết Theo Từng Ví (Wallet Spending Breakdown):
+     - Tỷ trọng chi tiêu của từng ví so với tổng chi tiêu của toàn bộ tài khoản trong kỳ (expenseShareOfTotal).
+     - Bấm vào ví để mở Bảng chi tiết (PrismWalletDetailBottomSheet): xem số dư, dòng tiền ròng,
+       cơ cấu danh mục chi tiêu riêng của ví, nguồn tiền nạp vào ví và danh sách giao dịch phát sinh.
+  4. Xem: Biểu đồ phân bổ chi theo danh mục, Biểu đồ Thu-Chi theo thời gian, Tổng Thu, Tổng Chi, Dòng tiền ròng.
+Business rule:
+  BR-10: Báo cáo tính dựa trên transaction.date (ngày giao dịch thực tế), không phải ngày tạo record.
+  BR-10A: Phân tích chi tiêu theo ví tách biệt số tiền chi tiêu thực tế khỏi giao dịch chuyển khoản nội bộ (transfer_out/transfer_in) để phản ánh đúng dòng tiền ra vào thực chất của từng nguồn tiền.
 
 UC-17 — Xuất báo cáo Excel/PDF
 Actor: User

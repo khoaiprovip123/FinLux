@@ -55,6 +55,7 @@ data class SavingDestination(
     val institutionId: String? = null,
     val accountHint: String? = null,
     val enabled: Boolean = true,
+    val icon: String? = null,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
 )
@@ -72,8 +73,14 @@ data class SavingSpinSession(
     val completedAt: Instant? = null,
     val skippedAt: Instant? = null,
     val snoozedUntil: Instant? = null,
+    val transactionId: String? = null,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
+)
+
+data class SavingSpinStreakResult(
+    val currentStreak: Int = 0,
+    val longestStreak: Int = 0,
 )
 
 data class SavingSpinReportSummary(
@@ -83,6 +90,10 @@ data class SavingSpinReportSummary(
     val scheduledCount: Int = 0,
     val completionRate: Int = 0,
     val currentStreak: Int = 0,
+    val longestStreak: Int = 0,
+    val averageAmount: Money = Money(0L),
+    val highestAmount: Money = Money(0L),
+    val lowestAmount: Money = Money(0L),
 )
 
 data class SavingSpinDailyTotal(
@@ -107,3 +118,4 @@ data class SavingSpinReport(
     val destinationTotals: List<SavingSpinDestinationTotal>,
     val sessions: List<SavingSpinSession>,
 )
+

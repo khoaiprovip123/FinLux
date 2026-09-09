@@ -23,7 +23,8 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.finlux.app.core.designsystem.LocalUiPreferences
 import com.finlux.app.core.designsystem.component.formatVndAmount
@@ -31,16 +32,19 @@ import com.finlux.app.domain.model.Money
 import kotlin.math.cos
 import kotlin.math.sin
 
-// Bảng màu 8 múi rực rỡ và hài hòa như mockup
-private val MOCKUP_WHEEL_COLORS = listOf(
-    Color(0xFF0EA5E9), // Xanh cyan/sky (10K)
-    Color(0xFF3B82F6), // Xanh dương (15K)
-    Color(0xFF8B5CF6), // Tím lavender (20K)
-    Color(0xFFEC4899), // Hồng cánh sen (25K)
-    Color(0xFFF43F5E), // Đỏ tươi (30K)
-    Color(0xFFF97316), // Cam đào (35K)
-    Color(0xFF84CC16), // Xanh lá mạ (40K)
-    Color(0xFF10B981), // Xanh ngọc (50K)
+private val DISTINCT_PALETTE = listOf(
+    Color(0xFF0EA5E9), // Sky Blue
+    Color(0xFF3B82F6), // Royal Blue
+    Color(0xFF8B5CF6), // Purple
+    Color(0xFFEC4899), // Pink
+    Color(0xFFF43F5E), // Rose
+    Color(0xFFF97316), // Orange
+    Color(0xFFEAB308), // Yellow Amber
+    Color(0xFF84CC16), // Lime
+    Color(0xFF10B981), // Emerald
+    Color(0xFF06B6D4), // Cyan
+    Color(0xFF6366F1), // Indigo
+    Color(0xFFA855F7), // Fuchsia
 )
 
 @Composable
@@ -54,6 +58,13 @@ fun SavingSpinWheel(
     if (values.isEmpty()) return
     val animationsEnabled = LocalUiPreferences.current.animationsEnabled
     val labels = remember(values) { values.map { formatVndAmount(it.value, isCompact = true) } }
+    val colors = remember(values.size) {
+        if (values.size <= DISTINCT_PALETTE.size) {
+            DISTINCT_PALETTE.take(values.size)
+        } else {
+            List(values.size) { DISTINCT_PALETTE[it % DISTINCT_PALETTE.size] }
+        }
+    }
 
     val labelPaint = remember {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -83,7 +94,12 @@ fun SavingSpinWheel(
         onAnimationFinished()
     }
 
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    val accessibleDesc = "Bánh xe vòng quay tiết kiệm ${values.size} ô mệnh giá"
+
+    Box(
+        modifier = modifier.semantics { contentDescription = accessibleDesc },
+        contentAlignment = Alignment.Center,
+    ) {
         // Vòng quay Canvas (quay theo góc rotation)
         Canvas(
             modifier = Modifier
@@ -96,11 +112,16 @@ fun SavingSpinWheel(
             val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
             val arcSize = Size(diameter, diameter)
 
-            labelPaint.textSize = minDim * 0.052f
+            // Adaptive font size based on slotCount
+            labelPaint.textSize = when {
+                values.size >= 12 -> minDim * 0.038f
+                values.size >= 10 -> minDim * 0.044f
+                else -> minDim * 0.052f
+            }
 
             // 1. Vẽ các múi màu
             values.indices.forEach { index ->
-                val sliceColor = MOCKUP_WHEEL_COLORS[index % MOCKUP_WHEEL_COLORS.size]
+                val sliceColor = colors[index % colors.size]
                 val startAngle = -90f + index * sliceAngle
 
                 // Múi quạt màu chính
@@ -113,7 +134,7 @@ fun SavingSpinWheel(
                     size = arcSize,
                 )
 
-                // Đường viền trắng phân cách giữa các múi
+                // Đường viền phân cách giữa các múi
                 drawArc(
                     color = Color.White.copy(alpha = 0.65f),
                     startAngle = startAngle,
@@ -143,12 +164,12 @@ fun SavingSpinWheel(
 
             // 2. Viền ngoài bằng vàng kim (Gold rim)
             drawCircle(
-                color = Color(0xFFF59E0B), // Vàng Amber 500
+                color = Color(0xFFF59E0B),
                 radius = diameter / 2f + rimThickness / 2f,
                 style = Stroke(width = rimThickness),
             )
             drawCircle(
-                color = Color(0xFFFEF3C7), // Ánh sáng viền mỏng trong
+                color = Color(0xFFFEF3C7),
                 radius = diameter / 2f,
                 style = Stroke(width = 2f),
             )
@@ -166,16 +187,16 @@ fun SavingSpinWheel(
             // 3. Khối tròn trung tâm (Gold medallion + Star)
             val centerRadius = diameter * 0.17f
             drawCircle(
-                color = Color(0xFFFBBF24), // Vàng Gold
+                color = Color(0xFFFBBF24),
                 radius = centerRadius,
             )
             drawCircle(
-                color = Color(0xFFF59E0B), // Viền vàng đậm
+                color = Color(0xFFF59E0B),
                 radius = centerRadius,
                 style = Stroke(width = minDim * 0.016f),
             )
             drawCircle(
-                color = Color(0xFFFEF08A), // Vàng chanh nhạt bên trong
+                color = Color(0xFFFEF08A),
                 radius = centerRadius * 0.78f,
             )
 
@@ -185,7 +206,7 @@ fun SavingSpinWheel(
                 cy = center.y,
                 radius = centerRadius * 0.55f,
                 innerRadius = centerRadius * 0.25f,
-                color = Color(0xFFD97706), // Cam vàng nổi bật
+                color = Color(0xFFD97706),
             )
         }
 
@@ -197,9 +218,9 @@ fun SavingSpinWheel(
                 .offset(y = (-4).dp),
         ) {
             val path = Path().apply {
-                moveTo(size.width / 2f, size.height) // Đỉnh nhọn chúc xuống
-                lineTo(0f, 0f) // Góc trái trên
-                lineTo(size.width, 0f) // Góc phải trên
+                moveTo(size.width / 2f, size.height)
+                lineTo(0f, 0f)
+                lineTo(size.width, 0f)
                 close()
             }
             // Bóng kim
@@ -217,7 +238,7 @@ fun SavingSpinWheel(
                 },
                 color = Color(0xFFEF4444),
             )
-            // Viền kim trắng/vàng
+            // Viền kim trắng
             drawPath(
                 path = androidx.compose.ui.graphics.Path().apply {
                     moveTo(size.width / 2f, size.height)
