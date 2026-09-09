@@ -4,6 +4,17 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-09-09] - [v1.25.0] Hệ Thống Chu Kỳ Lương 2 Lần/Tháng (Semi-Monthly Payday 2.0) & Smart Debt-to-Payday Mapping
+
+- **Cấu hình chu kỳ lương 2 lần/tháng (`SalaryScheduleType.SEMI_MONTHLY`)**: Mở rộng `SalaryCycleConfig` hỗ trợ 2 mốc lương độc lập (`secondPaydayDay`, `secondSalaryWalletId`, `secondExpectedSalary`). Xác thực chặt chẽ ($\ge 5$ ngày khoảng cách, mức lương $> 0$).
+- **Macro Cycle vs Micro Sub-cycles (`SalaryCycleCalculator`)**: Tự động tính toán tháng tài chính bắt đầu từ ngày sớm hơn trong tháng và chia thành 2 chu kỳ con liên tục không chồng lấn (`[Day1..Day2)` và `[Day2..Day1)`), an toàn qua tháng ngắn và năm mới.
+- **Smart Debt-to-Payday Mapping Engine 2.0**: Tự động gán khoản nợ định kỳ vào đợt lương bảo trợ dựa trên `dueDate`. Chia đều chi phí thiết yếu 50/50 cho 2 đợt lương để tính dòng tiền khả dụng thực tế. Tự động phát hiện đợt lương sắp tới gần nhất (`Next Upcoming Payday`) và lập bảng trích lương chi tiết.
+- **Báo thức độc lập (`AlarmSalaryCycleScheduler`)**: Quản lý 2 báo thức nhắc trích lương riêng biệt (09:00 sáng ngày đợt 1 và đợt 2) với `requestCode` `9925` và `9926`.
+- **Giao diện cài đặt Liquid Glass (`SalaryCycleSettingsSheet`)**: Segmented Button chọn 1 lần/tháng vs 2 lần/tháng, 2 Card cài đặt trực quan, Live preview tổng thu nhập tháng và các sub-cycles.
+- **Tích hợp giao diện Quản lý Nợ**: Thẻ nợ gắn badge *"Lương đợt X bảo trợ"*, thẻ chiến lược trả nợ hiển thị kế hoạch trích nợ đợt lương sắp tới.
+
+---
+
 ## ✅ [DONE 2026-09-09] - [v1.24.4] Tự Phục Hồi Dữ Liệu Nợ Cũ (Self-Healing), Phân Tách Nợ Định Kỳ vs Linh Hoạt & Khắc Phục Nghịch Lý Thẻ Nợ
 
 - **Self-Healing Data Pipeline**: In-Memory Sanitization (chuyển `dueDate = 1` của `PERSONAL_LOAN` về `null` ngay khi load) và Silent Self-Healing (tự động xóa trường `dueDate` rác trên Firestore).

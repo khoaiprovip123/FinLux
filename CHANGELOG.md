@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.25.0] - 2026-09-09
+### Added
+- **Nâng Cấp Hệ Thống Chu Kỳ Lương 2 Lần/Tháng (Semi-Monthly Payday 2.0)**:
+  * **Domain & Model (`SalaryCycleModels.kt`)**: Bổ sung enum `SalaryScheduleType` (`MONTHLY_ONCE`, `SEMI_MONTHLY`), data classes `PaydayEntry` và `PaydaySubCycle`. Mở rộng `SalaryCycleConfig` hỗ trợ cấu hình đợt lương 2 (`secondPaydayDay`, `secondSalaryWalletId`, `secondExpectedSalary`) cùng helper properties `totalExpectedSalary`, `activePaydays`.
+  * **Macro Cycle & Contiguous Sub-cycles (`SalaryCycleCalculator.kt`)**: Xác định chu kỳ tài chính tổng thể bắt đầu từ ngày nhận lương sớm hơn của tháng; phân chia dải thời gian thành 2 cửa sổ bán nguyệt liên tục không chồng lấn (`[Day1 .. Day2)` và `[Day2 .. next Day1)`), bảo toàn trọn vẹn thuật toán tính toán khi bước qua tháng ngắn hoặc vắt qua Tết/Năm mới.
+  * **Validate Nghiệp Vụ Chặt Chẽ (`ValidateSalaryCycleConfigUseCase.kt`)**: Xác thực 2 ngày nhận lương phải nằm trong `1..31`, không được trùng nhau, khoảng cách vòng tròn giữa 2 ngày phải $\ge 5$ ngày, và số tiền lương cả 2 đợt đều phải $> 0$.
+  * **Tương Thích Ngược 100% Data Layer (`FirebaseSalaryCycleMapper.kt`)**: Tự động fallback về `MONTHLY_ONCE` và các trường đợt 2 là `null` khi đọc tài liệu Firestore phiên bản cũ, đảm bảo người dùng v1 không bị gián đoạn hay crash.
+  * **Smart Debt-to-Payday Mapping Engine 2.0 (`AnalyzeDebtCashflowUseCase.kt`, `CalculatePayoffStrategyUseCase.kt`)**:
+    - Phân luồng nợ thông minh: Tự động gán khoản nợ định kỳ vào đợt lương bảo trợ dựa trên ngày đến hạn (`dueDate`) và cửa sổ của từng đợt.
+    - Áp dụng nguyên tắc chia đôi (50/50) chi phí thiết yếu cho 2 đợt lương để tính dòng tiền khả dụng thực tế của từng đợt.
+    - Bảng kế hoạch trích lương (`PaydayAllocationPlan`): Tự động phát hiện đợt lương sắp tới gần nhất (`Next Upcoming Payday`), hiển thị chi tiết số tiền cần trích và các khoản nợ được đợt lương bảo trợ.
+  * **Báo Thức Trích Lương Độc Lập (`AlarmSalaryCycleScheduler.kt`, `SyncDebtReminderUseCase.kt`)**:
+    - Hỗ trợ đặt 2 mốc báo thức nhắc trích lương riêng biệt (09:00 sáng ngày đợt 1 và 09:00 sáng ngày đợt 2).
+    - Phân tách `requestCode` (`9925` cho đợt 1 và `9926` cho đợt 2) và reminder id độc lập, tránh ghi đè lịch trình.
+  * **Giao Diện Cài Đặt Trực Quan Liquid Glass (`SalaryCycleSettingsSheet.kt`, `SalaryCycleViewModel.kt`)**:
+    - Bổ sung Segmented Button chuyển đổi linh hoạt: `[🗓️ 1 lần / tháng]` | `[✌️ 2 lần / tháng]`.
+    - Khi chọn 2 lần/tháng: Hiển thị 2 Card riêng biệt (Đợt 1 & Đợt 2) với đầy đủ slider ngày nhận, quick chips, ví nhận lương và mức lương dự kiến.
+    - Thẻ Live Preview hiển thị tóm tắt trực quan: Tổng thu nhập 2 đợt (VD: 6 tr + 7,5 tr = 13,5 tr/tháng) và dải chu kỳ tài chính kèm các sub-cycles.
+  * **Hiển Thị Tag Bảo Trợ & Nhãn Đợt Lương (`StrategySelectorCard.kt`, `DebtCard.kt`)**:
+    - Khối *"Kế hoạch trích lương"*: Ghi rõ nhãn đợt lương sắp tới gần nhất đang xem (VD: *"Kế hoạch trích lương Đợt 25"*).
+    - Thẻ nợ `DebtCard`: Bổ sung badge tinh tế *"Lương đợt X bảo trợ"* cho các khoản nợ định kỳ.
+
+### Changed
+- Cập nhật bộ test suite toàn diện: bổ sung 12 unit tests cho `SalaryCycleCalculatorTest`, `ValidateSalaryCycleConfigUseCaseTest`, `FirebaseSalaryCycleMapperTest` và `CalculatePayoffStrategyUseCaseTest`. Toàn bộ 339 tests đều PASS 100%.
+
 ## [1.24.4] - 2026-09-09
 ### Added
 - **Tự Phục Hồi Dữ Liệu Nợ Cũ (Self-Healing Data Sanitization Pipeline)**:

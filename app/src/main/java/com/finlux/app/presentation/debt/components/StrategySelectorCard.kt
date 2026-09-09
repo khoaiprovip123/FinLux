@@ -429,10 +429,12 @@ fun StrategySelectorCard(
                 PaydayAllocationCard(
                     plan = paydayPlan,
                     onScheduleReminder = {
+                        val targetPayday = if (paydayPlan.isSemiMonthly) paydayPlan.upcomingPaydayDay else paydayPlan.paydayDay
+                        val targetAmount = if (paydayPlan.isSemiMonthly) paydayPlan.upcomingPaydayDeduction.value else paydayPlan.totalDebtDeduction.value
                         onSchedulePaydayReminder?.invoke(
-                            paydayPlan.paydayDay,
+                            targetPayday,
                             paydayPlan.salaryWalletName,
-                            paydayPlan.totalDebtDeduction.value,
+                            targetAmount,
                         )
                     },
                 )
@@ -541,8 +543,9 @@ private fun PaydayAllocationCard(
                         )
                     }
                     Column {
+                        val titleText = if (plan.isSemiMonthly) plan.upcomingPaydayLabel else "Kế hoạch trích lương ngày ${plan.paydayDay}"
                         Text(
-                            text = "Kế hoạch trích lương ngày ${plan.paydayDay}",
+                            text = titleText,
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.5.sp,
@@ -550,8 +553,9 @@ private fun PaydayAllocationCard(
                             color = tokens.onSurface,
                         )
                         val walletInfo = plan.salaryWalletName?.let { "Trích từ ví: $it" } ?: "Trích từ lương dự kiến"
+                        val subtitleText = if (plan.isSemiMonthly) "$walletInfo • Đợt sắp tới" else walletInfo
                         Text(
-                            text = walletInfo,
+                            text = subtitleText,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                             color = tokens.onSurfaceVariant,
                         )
@@ -562,8 +566,13 @@ private fun PaydayAllocationCard(
                     shape = RoundedCornerShape(8.dp),
                     color = tokens.primary.copy(alpha = 0.12f),
                 ) {
+                    val ratioText = if (plan.isSemiMonthly) {
+                        "${plan.upcomingDeductionRatioPercent.toInt()}% đợt này"
+                    } else {
+                        "${plan.deductionRatioPercent.toInt()}% lương"
+                    }
                     Text(
-                        text = "${plan.deductionRatioPercent.toInt()}% lương",
+                        text = ratioText,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
@@ -584,8 +593,14 @@ private fun PaydayAllocationCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                val labelText = if (plan.isSemiMonthly) "Trích nợ đợt này:" else "Tổng trích nợ kỳ tới:"
+                val totalAmountText = if (plan.isSemiMonthly) {
+                    plan.upcomingPaydayDeduction.value.toVnd()
+                } else {
+                    plan.totalDebtDeduction.value.toVnd()
+                }
                 Text(
-                    text = "Tổng trích nợ kỳ tới:",
+                    text = labelText,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Medium,
                         fontSize = 12.sp,
@@ -593,7 +608,7 @@ private fun PaydayAllocationCard(
                     color = tokens.onSurfaceVariant,
                 )
                 Text(
-                    text = plan.totalDebtDeduction.value.toVnd(),
+                    text = totalAmountText,
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                         color = FinluxColors.ExpenseRed,
@@ -602,11 +617,12 @@ private fun PaydayAllocationCard(
             }
 
             // Allocation items list
+            val displayItems = if (plan.isSemiMonthly && plan.upcomingItems.isNotEmpty()) plan.upcomingItems else plan.items
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                plan.items.forEach { item ->
+                displayItems.forEach { item ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -644,6 +660,22 @@ private fun PaydayAllocationCard(
                                         )
                                     }
                                 }
+                                if (!item.sponsorLabel.isNullOrBlank()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = Color(0xFF10B981).copy(alpha = 0.12f),
+                                    ) {
+                                        Text(
+                                            text = item.sponsorLabel,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color(0xFF10B981),
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                        )
+                                    }
+                                }
                             }
                             val minText = "Tối thiểu: ${item.minimumPayment.value.toVnd()}"
                             val extraText = if (item.extraPayment.value > 0) " + Extra: ${item.extraPayment.value.toVnd()}" else ""
@@ -667,6 +699,7 @@ private fun PaydayAllocationCard(
             }
 
             // Reminder schedule button
+            val targetReminderDay = if (plan.isSemiMonthly) plan.upcomingPaydayDay else plan.paydayDay
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = if (isReminderScheduled) FinluxColors.IncomeGreen.copy(alpha = 0.15f) else tokens.primary.copy(alpha = 0.10f),
@@ -692,7 +725,7 @@ private fun PaydayAllocationCard(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = if (isReminderScheduled) "Đã lên lịch nhắc trích nợ ngày ${plan.paydayDay}" else "🔔 Đặt lịch nhắc trích nợ ngày nhận lương (${plan.paydayDay})",
+                        text = if (isReminderScheduled) "Đã lên lịch nhắc trích nợ đợt $targetReminderDay" else "🔔 Đặt lịch nhắc trích nợ đợt $targetReminderDay",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.5.sp,

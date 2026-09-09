@@ -656,6 +656,43 @@ ADD / EDIT DEBT SHEET (AddEditDebtSheet):
     + Nợ cá nhân (PERSONAL_LOAN): Tùy chọn linh hoạt, có nút 'X' xóa nhanh về null.
 ```
 
+---
+
+### SCREEN: Cấu hình Chu kỳ Lương (Salary Cycle Settings Sheet) & Smart Debt-to-Payday Mapping
+```
+HEADER:
+  - Title: "Chu kỳ lương & Tháng tài chính" (Liquid Glass Header / Top Bar)
+  - Toggle Switch: Bật/Tắt chế độ quản lý tài chính theo chu kỳ lương
+
+SCHEDULE TYPE SELECTOR (Segmented Button):
+  - Segmented Options: [ 🗓️ 1 lần / tháng ] | [ ✌️ 2 lần / tháng (Bán nguyệt) ]
+  - Phản hồi chuyển đổi mượt mà giữa chế độ 1 đợt lương truyền thống và 2 đợt lương phân kỳ.
+
+PAYDAY CONFIGURATION CARDS:
+  - Thẻ Đợt 1 (Mặc định):
+    + Slider / Number picker ngày nhận lương 1 (1 - 31) kèm quick chips (+/- ngày).
+    + Selector chọn Ví nhận lương đợt 1 (salaryWalletId).
+    + Trường nhập Mức lương dự kiến đợt 1 (expectedSalary).
+  - Thẻ Đợt 2 (Hiển thị khi chọn chế độ 2 lần / tháng):
+    + Slider / Number picker ngày nhận lương 2 (1 - 31) kèm validation khoảng cách >= 5 ngày.
+    + Selector chọn Ví nhận lương đợt 2 (secondSalaryWalletId).
+    + Trường nhập Mức lương dự kiến đợt 2 (secondExpectedSalary).
+
+LIVE PREVIEW & CYCLE SUB-WINDOWS CARD:
+  - Hiển thị Tổng thu nhập dự kiến tháng: Tổng gộp Đợt 1 + Đợt 2 (VD: "13.500.000 ₫/tháng").
+  - Hiển thị dải Chu kỳ tài chính vĩ mô: Từ ngày sớm hơn đến trước ngày đó tháng sau.
+  - Hiển thị chi tiết 2 Chu kỳ con (Sub-cycles):
+    + Cửa sổ Đợt 1: [Ngày đợt 1 .. Ngày đợt 2) (VD: "25/08 - 09/09").
+    + Cửa sổ Đợt 2: [Ngày đợt 2 .. Ngày đợt 1 tháng sau) (VD: "10/09 - 24/09").
+
+TÍCH HỢP GIAO DIỆN QUẢN LÝ NỢ (Debt Hub Integration):
+  - StrategySelectorCard:
+    + Thẻ Kế hoạch trích lương hiển thị nhãn đợt lương sắp tới gần nhất (VD: "Kế hoạch trích lương Đợt 25").
+    + Thống kê số tiền trích lương đợt tới, phần lương khả dụng còn lại sau trích nợ.
+  - DebtCard:
+    + Badge bảo trợ dòng tiền: "Lương đợt X bảo trợ" (Payday Sponsor Badge) cho các khoản nợ định kỳ.
+```
+
 ### Điều hướng màn hình chính
 
 - Bốn màn hình chính `Home ↔ Transactions ↔ Reports ↔ Settings` hỗ trợ vuốt ngang hai chiều và bấm bottom navigation.

@@ -96,6 +96,38 @@ class SalaryCycleViewModel @Inject constructor(
         }
     }
 
+    fun setScheduleType(scheduleType: com.finlux.app.domain.model.SalaryScheduleType) {
+        _uiState.update { current ->
+            val updatedConfig = current.config.copy(
+                scheduleType = scheduleType,
+                // Default second payday day to 10 if not set
+                secondPaydayDay = if (scheduleType == com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY) {
+                    current.config.secondPaydayDay ?: 10
+                } else current.config.secondPaydayDay,
+            )
+            current.copy(config = updatedConfig).withPreviews(calculator, clock)
+        }
+    }
+
+    fun setSecondPaydayDay(day: Int) {
+        val clamped = day.coerceIn(1, 31)
+        _uiState.update { it.copy(config = it.config.copy(secondPaydayDay = clamped)).withPreviews(calculator, clock) }
+    }
+
+    fun setSecondSalaryWalletId(walletId: String?) {
+        _uiState.update { it.copy(config = it.config.copy(secondSalaryWalletId = walletId)) }
+    }
+
+    fun setSecondExpectedSalary(amount: Long?) {
+        _uiState.update {
+            it.copy(
+                config = it.config.copy(
+                    secondExpectedSalary = if (amount != null && amount > 0) Money(amount) else null,
+                ),
+            )
+        }
+    }
+
     fun setRolloverRule(rule: CycleRolloverRule) {
         _uiState.update { it.copy(config = it.config.copy(rolloverRule = rule)) }
     }
@@ -152,8 +184,21 @@ class SalaryCycleViewModel @Inject constructor(
         val nextStartStr = next.start.atZone(zone).format(formatter)
         val nextEndStr = next.endExclusive.atZone(zone).minusDays(1).format(formatter)
 
+        val currentMacro = "$currentStartStr - $currentEndStr"
+        val previewWithSubCycles = if (config.scheduleType == com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY && current.subCycles.size == 2) {
+            val s1 = current.subCycles[0]
+            val s2 = current.subCycles[1]
+            val s1Start = s1.start.atZone(zone).format(formatter)
+            val s1End = s1.endExclusive.atZone(zone).minusDays(1).format(formatter)
+            val s2Start = s2.start.atZone(zone).format(formatter)
+            val s2End = s2.endExclusive.atZone(zone).minusDays(1).format(formatter)
+            "$currentMacro\n• ${s1.label}: $s1Start - $s1End\n• ${s2.label}: $s2Start - $s2End"
+        } else {
+            currentMacro
+        }
+
         return copy(
-            currentCyclePreview = "$currentStartStr - $currentEndStr",
+            currentCyclePreview = previewWithSubCycles,
             nextCyclePreview = "$nextStartStr - $nextEndStr",
         )
     }

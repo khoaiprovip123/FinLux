@@ -1,8 +1,84 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.24.4 (versionCode 173)
-- **Trạng thái Build:** ✅ 100% PASS (327/327 unit tests) — Triển khai thành công Self-Healing Data Sanitization, Phân tách nợ định kỳ vs linh hoạt, sửa dứt điểm lỗi nghịch lý nợ Đen.
+- **Phiên bản hiện tại:** v1.25.0 (versionCode 174)
+- **Trạng thái Build:** ✅ 100% PASS (339/339 unit tests) — Triển khai hoàn tất Hệ thống Chu kỳ lương 2 lần/tháng (Semi-Monthly Payday 2.0), Smart Debt-to-Payday Mapping & Giao diện cài đặt Liquid Glass.
+
+### [Task-P1-12-SEMI-MONTHLY-PAYDAY-PHASE-3-4] — Nâng Cấp Hệ Thống Chu Kỳ Lương 2 Lần/Tháng (Giai Đoạn 3: Debt Engine & Giai Đoạn 4: UI Settings & Cards)
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Giai đoạn 3 (Debt Engine 2.0 & Schedulers):
+     - `AnalyzeDebtCashflowUseCase.kt`: Dùng `totalExpectedSalary` tính FCF; áp dụng quy tắc 50/50 chi phí thiết yếu cho 2 đợt lương trong SEMI_MONTHLY.
+     - `CalculatePayoffStrategyUseCase.kt`: Phân luồng nợ thông minh vào đợt lương bảo trợ dựa trên `dueDate` và cửa sổ của từng đợt lương. Nợ cá nhân giữ nguyên linh hoạt. Tạo kế hoạch trích lương chi tiết cho đợt sắp tới (`Next Upcoming Payday`).
+     - `SyncDebtReminderUseCase.kt` & `AlarmSalaryCycleScheduler.kt`: Hỗ trợ đặt 2 mốc báo thức nhắc trích lương riêng biệt (09:00 sáng ngày đợt 1 và đợt 2).
+  2. Giai đoạn 4 (UI Settings & Presentation):
+     - `SalaryCycleViewModel.kt` & `SalaryCycleSettingsSheet.kt`: Thêm switcher chọn 1 lần/tháng vs 2 lần/tháng; hiển thị 2 card cài đặt đợt 1 & đợt 2 (ngày nhận, lương dự kiến, ví nhận lương); live preview chi tiết 2 chu kỳ con và tổng thu nhập.
+     - `StrategySelectorCard.kt`: Khối kế hoạch trích lương hiển thị rõ nhãn đợt lương đang xem và hỗ trợ đặt nhắc trích lương theo từng đợt.
+     - `DebtCard.kt`: Hiển thị tag bảo trợ tinh tế nếu là nợ định kỳ (VD: "Lương đợt 25 bảo trợ").
+  3. Kiểm thử & Release:
+     - Viết Unit Tests cho phân luồng nợ 2 đợt trong `CalculatePayoffStrategyUseCaseTest.kt`.
+     - Chạy `./gradlew testDebugUnitTest` đạt 100% PASS (339/339 tests).
+     - Tăng version: v1.25.0 (versionCode 174) trong `app/build.gradle.kts`.
+     - Cập nhật CHANGELOG.md và HANDOVER_LOG.md.
+     - Build debug APK và cài đặt lên điện thoại qua ADB.
+- **Kết quả thực thi**:
+  - `DebtModels.kt`: Bổ sung `assignedPaydayDay`, `sponsorLabel` vào `PaydayAllocationItem`; mở rộng `PaydayAllocationPlan` với thông tin đợt sắp tới gần nhất (`upcomingPaydayDay`, `upcomingPaydayLabel`, `upcomingPaydaySalary`, `upcomingPaydayDeduction`, `upcomingPaydayRemaining`, `upcomingItems`); thêm `SubCycleCashflow` vào `DebtCashflowAnalysis`.
+  - `AnalyzeDebtCashflowUseCase.kt`: Sử dụng `totalExpectedSalary` cho FCF tổng thể; chia đôi chi phí thiết yếu 50/50 cho 2 đợt lương trong `subCycleCashflows`.
+  - `CalculatePayoffStrategyUseCase.kt`: Triển khai Smart Debt-to-Payday Mapping, phân định cửa sổ bảo trợ `[Day1..Day2)` và `[Day2..Day1)` chuẩn xác; xác định đợt lương sắp tới gần nhất dựa trên ngày hiện tại; nợ cá nhân giữ nguyên linh hoạt 0 cảnh báo lệch pha.
+  - `AlarmSalaryCycleScheduler.kt`: Quản lý 2 báo thức độc lập `9925` và `9926` cho 2 đợt lương.
+  - `SyncDebtReminderUseCase.kt`: Reminder ID phân biệt theo `paydayDay` tránh ghi đè.
+  - `SalaryCycleViewModel.kt` & `SalaryCycleSettingsSheet.kt`: Cung cấp Segmented Button chọn 1 lần/tháng vs 2 lần/tháng; giao diện 2 card cài đặt trực quan; Live preview tổng thu nhập 2 đợt và sub-cycles.
+  - `StrategySelectorCard.kt` & `DebtCard.kt`: Hiển thị kế hoạch trích nợ đợt sắp tới và tag bảo trợ `"Lương đợt X bảo trợ"`.
+  - Unit Tests: Bổ sung tests phân luồng nợ trong `CalculatePayoffStrategyUseCaseTest.kt`. Chạy `./gradlew testDebugUnitTest` đạt **100% PASS (339/339 tests)**.
+  - Release bump: `v1.25.0 (versionCode 174)`.
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/DebtModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AnalyzeDebtCashflowUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/local/salary/AlarmSalaryCycleScheduler.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/CalculatePayoffStrategyUseCaseTest.kt`
+  - `app/build.gradle.kts`
+  - `docs/DATA_SPEC.md`
+  - `docs/BA_SPEC.md`
+  - `docs/UI_SPEC.md`
+  - `docs/BACKLOG.md`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-11-SEMI-MONTHLY-PAYDAY-PHASE-1-2] — Nâng Cấp Hệ Thống Chu Kỳ Lương 2 Lần/Tháng (Giai Đoạn 1: Domain & Giai Đoạn 2: Data)
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Giai đoạn 1 (Domain Model & Calculator):
+     - Mở rộng `SalaryCycleModels.kt` với enum `SalaryScheduleType` (MONTHLY_ONCE, SEMI_MONTHLY), data class `PaydayEntry`, `PaydaySubCycle` và các trường đợt 2 (`secondPaydayDay`, `secondSalaryWalletId`, `secondExpectedSalary`) cùng helper properties (`totalExpectedSalary`, `activePaydays`).
+     - Cập nhật `SalaryCycleCalculator.kt` hỗ trợ tính toán Macro Cycle (tháng tổng bắt đầu từ ngày lương sớm hơn) và Sub-cycle (cửa sổ từng đợt lương không chồng lấn).
+     - Cập nhật `ValidateSalaryCycleConfigUseCase.kt` xác thực quy tắc 2 đợt lương (cách nhau >= 5 ngày, lương > 0).
+  2. Giai đoạn 2 (Data Layer):
+     - Cập nhật `FirebaseSalaryCycleMapper.kt` (toMap, fromMap) đảm bảo 100% tương thích ngược với dữ liệu cũ trên Firestore (tự fallback về MONTHLY_ONCE).
+     - Kiểm tra đồng bộ `FirebaseSalaryCycleRepository.kt`.
+  3. Kiểm thử tự động:
+     - Viết mới / cập nhật Unit Tests cho Calculator, Mapper và Validator.
+     - Chạy `./gradlew testDebugUnitTest` đạt 100% PASS.
+- **Kết quả thực thi**:
+  - `SalaryCycleModels.kt`: Bổ sung enum `SalaryScheduleType`, data class `PaydayEntry`, `PaydaySubCycle`, mở rộng `SalaryCycleConfig` và `FinancialCycle.subCycles`.
+  - `SalaryCycleCalculator.kt`: Thêm hàm `subCycleContaining()`, tính toán chuẩn xác cả Macro Cycle và 2 Sub-cycle cho mô hình bán nguyệt vắt tháng / vắt năm mới.
+  - `ValidateSalaryCycleConfigUseCase.kt`: Bổ sung kiểm tra hợp lệ cho `SEMI_MONTHLY` (khoảng cách vòng tròn >= 5 ngày, lương > 0 cho cả 2 đợt).
+  - `FirebaseSalaryCycleMapper.kt`: Hỗ trợ serialize/deserialize các trường mới, fallback an toàn về `MONTHLY_ONCE` khi gặp document v1 cũ.
+  - Unit Tests: Thêm 10 test case mới trong `SalaryCycleCalculatorTest`, `ValidateSalaryCycleConfigUseCaseTest`, và `FirebaseSalaryCycleMapperTest`.
+  - Chạy `./gradlew testDebugUnitTest` đạt **100% PASS** (337/337 unit tests pass).
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SalaryCycleCalculator.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/ValidateSalaryCycleConfigUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapper.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/SalaryCycleCalculatorTest.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapperTest.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/ValidateSalaryCycleConfigUseCaseTest.kt`
+  - `HANDOVER_LOG.md`
 
 ### [Task-P1-10-DEBT-ROOT-CAUSE-SELF-HEALING] — Tự Phục Hồi Dữ Liệu Nợ Cũ (Self-Healing Sanitization), Phân Tách Nợ Định Kỳ vs Linh Hoạt & Khắc Phục Nghịch Lý Thẻ Nợ
 - **Status**: `[DONE]`

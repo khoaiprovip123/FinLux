@@ -564,4 +564,41 @@ Business rules: BR-SS-01..14 theo FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md.
 - **In-Memory Sanitization (`FirebaseDebtRepository.toDebtAccount`)**: Tự động chuẩn hóa `dueDate = 1` của `PERSONAL_LOAN` về `null` ngay trên bộ nhớ trước khi phát Flow ra UI.
 - **Silent Self-Healing (`FirebaseDebtRepository.observeDebts`)**: Tự động phát hiện document `PERSONAL_LOAN` có dính `dueDate = 1` trên Firestore và âm thầm cập nhật xóa trường `dueDate` trên cơ sở dữ liệu Cloud.
 
+---
+
+## 9. Quy tắc Chu kỳ Lương 2 Lần/Tháng & Phân Luồng Nợ Thông Minh (Semi-Monthly Payday Engine 2.0 & Smart Debt-to-Payday Mapping)
+
+### 9.1. Cơ chế phân tách Macro Cycle vs Micro Sub-cycles
+- **Hình thức nhận lương (`SalaryScheduleType`)**:
+  - `MONTHLY_ONCE`: Nhận 1 lần/tháng (chu kỳ tài chính truyền thống `paydayDay` tháng này đến trước `paydayDay` tháng sau).
+  - `SEMI_MONTHLY`: Nhận 2 lần/tháng với 2 ngày nhận lương độc lập `paydayDay` (Đợt 1) và `secondPaydayDay` (Đợt 2).
+- **Macro Cycle (Chu kỳ Tài chính Vĩ mô)**:
+  - Bắt đầu từ mốc nhận lương sớm hơn trong tháng theo thứ tự dương lịch (`earlierDay = min(day1, day2)`), kéo dài đến trước ngày đó của tháng tiếp theo.
+  - Ví dụ: Đợt 1 ngày 25, Đợt 2 ngày 10 $\rightarrow$ Tháng tài chính bắt đầu từ ngày 10 tháng này đến hết ngày 09 tháng sau.
+- **Micro Sub-cycles (Chu kỳ Vi mô Bán Nguyệt)**:
+  - Chia dải thời gian của Macro Cycle thành 2 cửa sổ liên tục, khép kín và không chồng lấn (`[Day1..Day2)` và `[Day2..Day1)`).
+  - Đảm bảo tính liên tục của dòng tiền và xử lý an toàn khi vắt qua các tháng có số ngày khác nhau (tháng 28, 30, 31 ngày) hoặc vắt qua năm mới.
+- **Ràng buộc cấu hình (`ValidateSalaryCycleConfigUseCase`)**:
+  - Cả 2 ngày phải nằm trong đoạn `1..31`.
+  - Hai ngày không được trùng nhau và khoảng cách vòng tròn (circular day distance) giữa 2 ngày phải $\ge 5$ ngày để đảm bảo độ dài tối thiểu cho mỗi kỳ chi tiêu.
+  - Mức lương dự kiến của cả 2 đợt phải $> 0$.
+
+### 9.2. Thuật toán Smart Debt-to-Payday Mapping & Phân luồng Nợ
+- **Nguyên tắc bảo trợ dòng tiền trả nợ**:
+  - Khoản nợ định kỳ (`CREDIT_CARD`, `BANK_LOAN`, `INSTALLMENT`) có hạn thanh toán (`dueDate`) rơi vào cửa sổ sub-cycle của đợt lương nào thì tự động được đợt lương đó **bảo trợ** (Payday Sponsor).
+  - Đợt lương sớm hơn sẽ gánh các khoản nợ có hạn rơi vào giữa ngày nhận lương đợt 1 và đợt 2; đợt lương sau gánh các khoản nợ từ ngày đợt 2 đến ngày đợt 1 tháng sau.
+- **Nợ cá nhân linh hoạt (`PERSONAL_LOAN`)**:
+  - Không có kỳ hạn bắt buộc (`dueDate = null`), không bị gán cứng vào đợt lương nào, không kích hoạt cảnh báo lệch pha dòng tiền lương.
+- **Bảng kế hoạch trích lương (`PaydayAllocationPlan`)**:
+  - Tự động phát hiện đợt lương sắp tới gần nhất (`Next Upcoming Payday`) dựa trên ngày hiện tại.
+  - Tính toán số tiền trích trả nợ tối thiểu cho riêng đợt sắp tới (`upcomingPaydayDeduction`) và số tiền lương khả dụng còn lại của đợt đó (`upcomingPaydayRemaining`).
+  - Gắn nhãn đợt lương và tag bảo trợ `"Lương đợt X bảo trợ"` tương ứng cho từng khoản nợ.
+
+### 9.3. Quy tắc phân bổ chi phí thiết yếu (Essential Expenses 50/50 Allocation)
+- Khi ở chế độ `SEMI_MONTHLY`, chi phí sinh hoạt thiết yếu (Essential Expenses) được mặc định chia đều 50/50 cho 2 đợt lương.
+- Dòng tiền tự do (FCF - Free Cash Flow) của từng đợt được tính độc lập:
+  $$\text{Dòng tiền khả dụng đợt } i = \text{Lương đợt } i - 50\% \times \text{Chi phí thiết yếu} - \text{Nợ đến hạn đợt } i$$
+- Giúp người dùng biết chính xác đợt lương sắp tới có bị âm dòng tiền hay không để chủ động co kéo chi tiêu.
+
+
 

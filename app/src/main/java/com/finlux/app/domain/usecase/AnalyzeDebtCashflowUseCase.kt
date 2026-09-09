@@ -10,6 +10,8 @@ import com.finlux.app.domain.model.DEBT_INTEREST_CATEGORY_ID
 import com.finlux.app.domain.model.DEBT_PAYMENT_CATEGORY_ID
 import com.finlux.app.domain.model.DEBT_PRINCIPAL_CATEGORY_ID
 import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.model.SalaryScheduleType
+import com.finlux.app.domain.model.SubCycleCashflow
 import com.finlux.app.domain.model.TransactionType
 import java.time.YearMonth
 import java.time.ZoneId
@@ -64,12 +66,41 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
         // ƯU TIÊN THU NHẬP TỪ CHU KỲ LƯƠNG: Nếu người dùng bật chu kỳ lương và có mức lương dự kiến
         val hasValidSalary = salaryCycleConfig != null &&
             salaryCycleConfig.enabled &&
-            (salaryCycleConfig.expectedSalary?.value ?: 0L) > 0L
+            salaryCycleConfig.totalExpectedSalary.value > 0L
 
-        val effectiveIncome = if (hasValidSalary) {
-            salaryCycleConfig!!.expectedSalary!!.value
+        val effectiveIncome = if (hasValidSalary && salaryCycleConfig != null) {
+            salaryCycleConfig.totalExpectedSalary.value
         } else {
             avgIncome
+        }
+
+        // Với chế độ SEMI_MONTHLY: Áp dụng quy tắc chia đôi (50/50) chi phí thiết yếu cho 2 đợt
+        val isSemiMonthly = salaryCycleConfig != null &&
+            salaryCycleConfig.enabled &&
+            salaryCycleConfig.scheduleType == SalaryScheduleType.SEMI_MONTHLY
+
+        val subCycleCashflows = if (isSemiMonthly && salaryCycleConfig != null) {
+            val halfEssential = avgEssentialExpense / 2L
+            val p1Expected = salaryCycleConfig.expectedSalary?.value ?: 0L
+            val p2Expected = salaryCycleConfig.secondExpectedSalary?.value ?: 0L
+            listOf(
+                SubCycleCashflow(
+                    paydayDay = salaryCycleConfig.paydayDay,
+                    expectedSalary = Money(p1Expected),
+                    allocatedEssentialExpense = Money(halfEssential),
+                    availableCashflow = Money((p1Expected - halfEssential).coerceAtLeast(0L)),
+                    label = "Đợt ${salaryCycleConfig.paydayDay}",
+                ),
+                SubCycleCashflow(
+                    paydayDay = salaryCycleConfig.secondPaydayDay ?: salaryCycleConfig.paydayDay,
+                    expectedSalary = Money(p2Expected),
+                    allocatedEssentialExpense = Money(avgEssentialExpense - halfEssential),
+                    availableCashflow = Money((p2Expected - (avgEssentialExpense - halfEssential)).coerceAtLeast(0L)),
+                    label = "Đợt ${salaryCycleConfig.secondPaydayDay ?: salaryCycleConfig.paydayDay}",
+                ),
+            )
+        } else {
+            emptyList()
         }
 
         // 2. Tính tổng nghĩa vụ trả nợ tối thiểu & Dư nợ
@@ -134,6 +165,8 @@ class AnalyzeDebtCashflowUseCase @Inject constructor() {
             scenarios = scenarios,
             isSalaryCycleBased = hasValidSalary,
             baseIncomeSource = if (hasValidSalary) "Lương dự kiến (Chu kỳ lương)" else "Thu nhập TB 3 tháng",
+            isSemiMonthly = isSemiMonthly,
+            subCycleCashflows = subCycleCashflows,
         )
     }
 

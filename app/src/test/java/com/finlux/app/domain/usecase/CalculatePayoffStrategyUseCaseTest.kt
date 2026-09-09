@@ -386,4 +386,152 @@ class CalculatePayoffStrategyUseCaseTest {
         assertTrue(paydayPlan!!.mismatchedWarnings.isEmpty())
         assertFalse(paydayPlan.items.first().isMismatchedWithPayday)
     }
+
+    @Test
+    fun `semi-monthly payday partitions recurring debts into respective payday windows`() {
+        // Đợt 1: Ngày 25 (6 tr), Đợt 2: Ngày 10 (7.5 tr)
+        val salaryConfig = com.finlux.app.domain.model.SalaryCycleConfig(
+            enabled = true,
+            scheduleType = com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY,
+            paydayDay = 25,
+            expectedSalary = Money(6_000_000L),
+            secondPaydayDay = 10,
+            secondExpectedSalary = Money(7_500_000L),
+        )
+
+        val debtA = DebtAccount(
+            id = "d-card-28",
+            name = "Thẻ tín dụng ngày 28",
+            type = DebtType.CREDIT_CARD,
+            totalAmount = Money(10_000_000L),
+            remainingBalance = Money(5_000_000L),
+            interestRateApr = 24.0,
+            minimumPayment = Money(500_000L),
+            dueDate = 28,
+        )
+
+        val debtB = DebtAccount(
+            id = "d-bank-05",
+            name = "Vay bank ngày 5",
+            type = DebtType.BANK_LOAN,
+            totalAmount = Money(20_000_000L),
+            remainingBalance = Money(10_000_000L),
+            interestRateApr = 12.0,
+            minimumPayment = Money(1_000_000L),
+            dueDate = 5,
+        )
+
+        val debtC = DebtAccount(
+            id = "d-installment-15",
+            name = "Trả góp ngày 15",
+            type = DebtType.INSTALLMENT,
+            totalAmount = Money(15_000_000L),
+            remainingBalance = Money(6_000_000L),
+            interestRateApr = 0.0,
+            minimumPayment = Money(1_500_000L),
+            dueDate = 15,
+        )
+
+        val debtD = DebtAccount(
+            id = "d-friend",
+            name = "Vay bạn",
+            type = DebtType.PERSONAL_LOAN,
+            totalAmount = Money(2_000_000L),
+            remainingBalance = Money(2_000_000L),
+            interestRateApr = 0.0,
+            minimumPayment = Money(100_000L),
+            dueDate = null,
+        )
+
+        val plan = useCase(
+            debts = listOf(debtA, debtB, debtC, debtD),
+            strategy = PayoffStrategy.SNOWBALL,
+            salaryCycleConfig = salaryConfig,
+            startMonth = startMonth,
+        )
+
+        val paydayPlan = plan.paydayPlan
+        assertNotNull(paydayPlan)
+        assertTrue(paydayPlan!!.isSemiMonthly)
+        assertEquals(Money(13_500_000L), paydayPlan.expectedSalary)
+
+        val itemA = paydayPlan.items.first { it.debtId == "d-card-28" }
+        val itemB = paydayPlan.items.first { it.debtId == "d-bank-05" }
+        val itemC = paydayPlan.items.first { it.debtId == "d-installment-15" }
+        val itemD = paydayPlan.items.first { it.debtId == "d-friend" }
+
+        // Hạn 28 và hạn 5 rơi vào cửa sổ của đợt 25 (từ 25 đến trước 10)
+        assertEquals(25, itemA.assignedPaydayDay)
+        assertEquals("Lương đợt 25 bảo trợ", itemA.sponsorLabel)
+        assertEquals(25, itemB.assignedPaydayDay)
+        assertEquals("Lương đợt 25 bảo trợ", itemB.sponsorLabel)
+
+        // Hạn 15 rơi vào cửa sổ của đợt 10 (từ 10 đến trước 25)
+        assertEquals(10, itemC.assignedPaydayDay)
+        assertEquals("Lương đợt 10 bảo trợ", itemC.sponsorLabel)
+
+        // Nợ cá nhân không bị ép vào cửa sổ nào
+        assertEquals(null, itemD.assignedPaydayDay)
+        assertEquals(null, itemD.sponsorLabel)
+
+        // Không sinh cảnh báo lệch pha
+        assertTrue(paydayPlan.mismatchedWarnings.isEmpty())
+        assertFalse(itemA.isMismatchedWithPayday)
+        assertFalse(itemB.isMismatchedWithPayday)
+        assertFalse(itemC.isMismatchedWithPayday)
+
+        // Đợt sắp tới gần nhất phải là 10 hoặc 25
+        assertTrue(paydayPlan.upcomingPaydayDay in listOf(10, 25))
+        assertTrue(paydayPlan.upcomingPaydaySalary.value > 0L)
+        assertTrue(paydayPlan.upcomingItems.isNotEmpty())
+    }
+
+    @Test
+    fun `semi-monthly with ascending days assigns debt to correct sponsor window`() {
+        // Đợt 1: Ngày 5, Đợt 2: Ngày 20
+        val salaryConfig = com.finlux.app.domain.model.SalaryCycleConfig(
+            enabled = true,
+            scheduleType = com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY,
+            paydayDay = 5,
+            expectedSalary = Money(10_000_000L),
+            secondPaydayDay = 20,
+            secondExpectedSalary = Money(10_000_000L),
+        )
+
+        val debt1 = DebtAccount(
+            id = "d-1",
+            name = "Hạn ngày 12",
+            type = DebtType.BANK_LOAN,
+            totalAmount = Money(10_000_000L),
+            remainingBalance = Money(5_000_000L),
+            interestRateApr = 10.0,
+            minimumPayment = Money(500_000L),
+            dueDate = 12,
+        )
+
+        val debt2 = DebtAccount(
+            id = "d-2",
+            name = "Hạn ngày 25",
+            type = DebtType.BANK_LOAN,
+            totalAmount = Money(10_000_000L),
+            remainingBalance = Money(5_000_000L),
+            interestRateApr = 10.0,
+            minimumPayment = Money(500_000L),
+            dueDate = 25,
+        )
+
+        val plan = useCase(
+            debts = listOf(debt1, debt2),
+            strategy = PayoffStrategy.SNOWBALL,
+            salaryCycleConfig = salaryConfig,
+            startMonth = startMonth,
+        )
+
+        val paydayPlan = plan.paydayPlan
+        assertNotNull(paydayPlan)
+        // Ngày 12 thuộc [5..20) -> đợt 5 bảo trợ
+        assertEquals(5, paydayPlan!!.items.first { it.debtId == "d-1" }.assignedPaydayDay)
+        // Ngày 25 thuộc [20..5) -> đợt 20 bảo trợ
+        assertEquals(20, paydayPlan.items.first { it.debtId == "d-2" }.assignedPaydayDay)
+    }
 }

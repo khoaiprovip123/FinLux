@@ -82,6 +82,8 @@ import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.home.toVnd
 import kotlin.math.roundToInt
 
+import com.finlux.app.domain.model.SalaryScheduleType
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SalaryCycleSettingsSheet(
@@ -94,7 +96,10 @@ fun SalaryCycleSettingsSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var expectedSalaryText by remember(state.config.expectedSalary) {
-        mutableStateOf(state.config.expectedSalary?.toString().orEmpty())
+        mutableStateOf(state.config.expectedSalary?.value?.toString().orEmpty())
+    }
+    var secondExpectedSalaryText by remember(state.config.secondExpectedSalary) {
+        mutableStateOf(state.config.secondExpectedSalary?.value?.toString().orEmpty())
     }
 
     LaunchedEffect(state.successMessage) {
@@ -297,7 +302,54 @@ fun SalaryCycleSettingsSheet(
                                     fontWeight = FontWeight.Normal,
                                     fontSize = 13.sp,
                                     color = tokens.onSurfaceVariant,
+                                    textAlign = TextAlign.End,
                                 )
+                            }
+                        }
+
+                        // Tổng thu nhập nếu là 2 lần/tháng
+                        if (state.config.scheduleType == SalaryScheduleType.SEMI_MONTHLY) {
+                            val p1 = state.config.expectedSalary?.value ?: 0L
+                            val p2 = state.config.secondExpectedSalary?.value ?: 0L
+                            val total = p1 + p2
+                            if (total > 0L) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFF10B981).copy(alpha = 0.12f),
+                                    border = BorderStroke(0.8.dp, Color(0xFF10B981).copy(alpha = 0.35f)),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Text(
+                                                text = "Tổng thu nhập 2 đợt",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF10B981),
+                                            )
+                                            Text(
+                                                text = "${total.toVnd()}/tháng",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 13.5.sp,
+                                                color = Color(0xFF10B981),
+                                            )
+                                        }
+                                        Text(
+                                            text = "Đợt 1 (${state.config.paydayDay}): ${p1.toVnd()} + Đợt 2 (${state.config.secondPaydayDay ?: 10}): ${p2.toVnd()}",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                            color = tokens.onSurfaceVariant,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -311,155 +363,424 @@ fun SalaryCycleSettingsSheet(
                 exit = fadeOut() + shrinkVertically(),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // 2. Payday Rule Type
+                    // Segmented Button: [Nhận lương 1 lần/tháng] | [Nhận lương 2 lần/tháng]
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Quy tắc ngày nhận lương",
+                            text = "Tần suất nhận lương",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             color = tokens.onSurface,
                         )
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(tokens.surfaceSoft.copy(alpha = 0.65f))
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            PaydayRuleCard(
-                                title = "Ngày cố định",
-                                subtitle = "Ngày 1 - 31",
-                                isSelected = state.config.paydayRuleType == PaydayRuleType.DAY_OF_MONTH,
+                            val isOnce = state.config.scheduleType == SalaryScheduleType.MONTHLY_ONCE
+                            val isSemi = state.config.scheduleType == SalaryScheduleType.SEMI_MONTHLY
+
+                            ScheduleTypeTabItem(
+                                title = "🗓️ 1 lần / tháng",
+                                subtitle = "Kỳ lương tiêu chuẩn",
+                                isSelected = isOnce,
+                                onClick = { viewModel.setScheduleType(SalaryScheduleType.MONTHLY_ONCE) },
                                 modifier = Modifier.weight(1f),
-                                onClick = { viewModel.setPaydayRuleType(PaydayRuleType.DAY_OF_MONTH) },
                             )
-                            PaydayRuleCard(
-                                title = "Đầu tháng",
-                                subtitle = "Ngày 1",
-                                isSelected = state.config.paydayRuleType == PaydayRuleType.FIRST_DAY_OF_MONTH,
+                            ScheduleTypeTabItem(
+                                title = "✌️ 2 lần / tháng",
+                                subtitle = "Bán nguyệt (2 đợt)",
+                                isSelected = isSemi,
+                                onClick = { viewModel.setScheduleType(SalaryScheduleType.SEMI_MONTHLY) },
                                 modifier = Modifier.weight(1f),
-                                onClick = { viewModel.setPaydayRuleType(PaydayRuleType.FIRST_DAY_OF_MONTH) },
-                            )
-                            PaydayRuleCard(
-                                title = "Cuối tháng",
-                                subtitle = "28 - 31",
-                                isSelected = state.config.paydayRuleType == PaydayRuleType.LAST_DAY_OF_MONTH,
-                                modifier = Modifier.weight(1f),
-                                onClick = { viewModel.setPaydayRuleType(PaydayRuleType.LAST_DAY_OF_MONTH) },
                             )
                         }
                     }
 
-                    // 3. Day of Month Picker (When DAY_OF_MONTH is active)
-                    if (state.config.paydayRuleType == PaydayRuleType.DAY_OF_MONTH) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = "Ngày nhận lương hàng tháng:",
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 13.sp,
-                                    color = tokens.onSurfaceVariant,
-                                )
-                                Text(
-                                    text = "Ngày ${state.config.paydayDay}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = Color(0xFF10B981),
-                                )
-                            }
-
-                            // Quick chips
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                listOf(1, 5, 10, 15, 20, 25, 30).forEach { day ->
-                                    val isSelected = state.config.paydayDay == day
-                                    Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.18f) else tokens.surfaceSoft,
-                                        border = if (isSelected) BorderStroke(1.2.dp, Color(0xFF10B981)) else null,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .clickable { viewModel.setPaydayDay(day) },
-                                    ) {
-                                        Text(
-                                            text = "$day",
-                                            textAlign = TextAlign.Center,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
-                                            fontSize = 13.sp,
-                                            modifier = Modifier.padding(vertical = 8.dp),
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Slider
-                            Slider(
-                                value = state.config.paydayDay.toFloat(),
-                                onValueChange = { viewModel.setPaydayDay(it.roundToInt()) },
-                                valueRange = 1f..31f,
-                                steps = 29,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF10B981),
-                                    activeTrackColor = Color(0xFF10B981),
-                                ),
-                            )
-                        }
-                    }
-
-                    // 4. Salary Receiving Wallet Selector
-                    if (state.wallets.isNotEmpty()) {
+                    if (state.config.scheduleType == SalaryScheduleType.MONTHLY_ONCE) {
+                        // === CHẾ ĐỘ 1 LẦN/THÁNG ===
+                        // 2. Payday Rule Type
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                text = "Ví nhận lương chính",
+                                text = "Quy tắc ngày nhận lương",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp,
                                 color = tokens.onSurface,
                             )
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(state.wallets) { wallet ->
-                                    val isSelected = state.config.salaryWalletId == wallet.id
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = {
-                                            viewModel.setSalaryWalletId(if (isSelected) null else wallet.id)
-                                        },
-                                        label = { Text(wallet.name) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Default.AccountBalanceWallet,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp),
-                                            )
-                                        },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = Color(0xFF10B981).copy(alpha = 0.18f),
-                                            selectedLabelColor = Color(0xFF10B981),
-                                        ),
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                PaydayRuleCard(
+                                    title = "Ngày cố định",
+                                    subtitle = "Ngày 1 - 31",
+                                    isSelected = state.config.paydayRuleType == PaydayRuleType.DAY_OF_MONTH,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.setPaydayRuleType(PaydayRuleType.DAY_OF_MONTH) },
+                                )
+                                PaydayRuleCard(
+                                    title = "Đầu tháng",
+                                    subtitle = "Ngày 1",
+                                    isSelected = state.config.paydayRuleType == PaydayRuleType.FIRST_DAY_OF_MONTH,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.setPaydayRuleType(PaydayRuleType.FIRST_DAY_OF_MONTH) },
+                                )
+                                PaydayRuleCard(
+                                    title = "Cuối tháng",
+                                    subtitle = "28 - 31",
+                                    isSelected = state.config.paydayRuleType == PaydayRuleType.LAST_DAY_OF_MONTH,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.setPaydayRuleType(PaydayRuleType.LAST_DAY_OF_MONTH) },
+                                )
+                            }
+                        }
+
+                        // 3. Day of Month Picker
+                        if (state.config.paydayRuleType == PaydayRuleType.DAY_OF_MONTH) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "Ngày nhận lương hàng tháng:",
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 13.sp,
+                                        color = tokens.onSurfaceVariant,
                                     )
+                                    Text(
+                                        text = "Ngày ${state.config.paydayDay}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = Color(0xFF10B981),
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    listOf(1, 5, 10, 15, 20, 25, 30).forEach { day ->
+                                        val isSelected = state.config.paydayDay == day
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.18f) else tokens.surfaceSoft,
+                                            border = if (isSelected) BorderStroke(1.2.dp, Color(0xFF10B981)) else null,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .clickable { viewModel.setPaydayDay(day) },
+                                        ) {
+                                            Text(
+                                                text = "$day",
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
+                                                fontSize = 13.sp,
+                                                modifier = Modifier.padding(vertical = 8.dp),
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Slider(
+                                    value = state.config.paydayDay.toFloat(),
+                                    onValueChange = { viewModel.setPaydayDay(it.roundToInt()) },
+                                    valueRange = 1f..31f,
+                                    steps = 29,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF10B981),
+                                        activeTrackColor = Color(0xFF10B981),
+                                    ),
+                                )
+                            }
+                        }
+
+                        // 4. Salary Receiving Wallet Selector
+                        if (state.wallets.isNotEmpty()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "Ví nhận lương chính",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = tokens.onSurface,
+                                )
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(state.wallets) { wallet ->
+                                        val isSelected = state.config.salaryWalletId == wallet.id
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = {
+                                                viewModel.setSalaryWalletId(if (isSelected) null else wallet.id)
+                                            },
+                                            label = { Text(wallet.name) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.AccountBalanceWallet,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                )
+                                            },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = Color(0xFF10B981).copy(alpha = 0.18f),
+                                                selectedLabelColor = Color(0xFF10B981),
+                                            ),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 5. Expected Salary Input
+                        ErgonomicCompactAmountCard(
+                            label = "Mức lương dự kiến mỗi kỳ",
+                            amountText = expectedSalaryText,
+                            onAmountChange = { input ->
+                                val digitsOnly = input.filter { it.isDigit() }.take(15)
+                                expectedSalaryText = digitsOnly
+                                val parsed = digitsOnly.toLongOrNull()
+                                viewModel.setExpectedSalary(parsed)
+                            },
+                            placeholder = "20.000.000",
+                            amountColor = tokens.primary,
+                            showSuggestions = true,
+                        )
+                    } else {
+                        // === CHẾ ĐỘ 2 LẦN/THÁNG (SEMI-MONTHLY) ===
+                        // Card Đợt 1
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = tokens.surfaceSoft.copy(alpha = 0.7f),
+                            border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "1️⃣ Đợt 1 (Ngày ${state.config.paydayDay})",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.5.sp,
+                                        color = Color(0xFF10B981),
+                                    )
+                                    Text(
+                                        text = "Đợt lương mở chu kỳ",
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = tokens.onSurfaceVariant,
+                                    )
+                                }
+
+                                // Quick chips Đợt 1
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    listOf(1, 5, 10, 15, 20, 25).forEach { day ->
+                                        val isSelected = state.config.paydayDay == day
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.20f) else tokens.surface,
+                                            border = if (isSelected) BorderStroke(1.2.dp, Color(0xFF10B981)) else null,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable { viewModel.setPaydayDay(day) },
+                                        ) {
+                                            Text(
+                                                text = "$day",
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
+                                                fontSize = 12.sp,
+                                                modifier = Modifier.padding(vertical = 6.dp),
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Slider(
+                                    value = state.config.paydayDay.toFloat(),
+                                    onValueChange = { viewModel.setPaydayDay(it.roundToInt()) },
+                                    valueRange = 1f..31f,
+                                    steps = 29,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF10B981),
+                                        activeTrackColor = Color(0xFF10B981),
+                                    ),
+                                )
+
+                                // Lương dự kiến Đợt 1
+                                ErgonomicCompactAmountCard(
+                                    label = "Lương dự kiến đợt 1",
+                                    amountText = expectedSalaryText,
+                                    onAmountChange = { input ->
+                                        val digitsOnly = input.filter { it.isDigit() }.take(15)
+                                        expectedSalaryText = digitsOnly
+                                        val parsed = digitsOnly.toLongOrNull()
+                                        viewModel.setExpectedSalary(parsed)
+                                    },
+                                    placeholder = "6.000.000",
+                                    amountColor = Color(0xFF10B981),
+                                    showSuggestions = false,
+                                )
+
+                                // Ví nhận lương Đợt 1
+                                if (state.wallets.isNotEmpty()) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "Ví nhận lương đợt 1",
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp,
+                                            color = tokens.onSurfaceVariant,
+                                        )
+                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            items(state.wallets) { wallet ->
+                                                val isSelected = state.config.salaryWalletId == wallet.id
+                                                FilterChip(
+                                                    selected = isSelected,
+                                                    onClick = {
+                                                        viewModel.setSalaryWalletId(if (isSelected) null else wallet.id)
+                                                    },
+                                                    label = { Text(wallet.name) },
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = Color(0xFF10B981).copy(alpha = 0.18f),
+                                                        selectedLabelColor = Color(0xFF10B981),
+                                                    ),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Card Đợt 2
+                        val secondDay = state.config.secondPaydayDay ?: 10
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = tokens.surfaceSoft.copy(alpha = 0.7f),
+                            border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "2️⃣ Đợt 2 (Ngày $secondDay)",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.5.sp,
+                                        color = tokens.primary,
+                                    )
+                                    Text(
+                                        text = "Đợt lương giữa kỳ",
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = tokens.onSurfaceVariant,
+                                    )
+                                }
+
+                                // Quick chips Đợt 2
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    listOf(5, 10, 15, 20, 25, 30).forEach { day ->
+                                        val isSelected = secondDay == day
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isSelected) tokens.primary.copy(alpha = 0.20f) else tokens.surface,
+                                            border = if (isSelected) BorderStroke(1.2.dp, tokens.primary) else null,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable { viewModel.setSecondPaydayDay(day) },
+                                        ) {
+                                            Text(
+                                                text = "$day",
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) tokens.primary else tokens.onSurface,
+                                                fontSize = 12.sp,
+                                                modifier = Modifier.padding(vertical = 6.dp),
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Slider(
+                                    value = secondDay.toFloat(),
+                                    onValueChange = { viewModel.setSecondPaydayDay(it.roundToInt()) },
+                                    valueRange = 1f..31f,
+                                    steps = 29,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = tokens.primary,
+                                        activeTrackColor = tokens.primary,
+                                    ),
+                                )
+
+                                // Lương dự kiến Đợt 2
+                                ErgonomicCompactAmountCard(
+                                    label = "Lương dự kiến đợt 2",
+                                    amountText = secondExpectedSalaryText,
+                                    onAmountChange = { input ->
+                                        val digitsOnly = input.filter { it.isDigit() }.take(15)
+                                        secondExpectedSalaryText = digitsOnly
+                                        val parsed = digitsOnly.toLongOrNull()
+                                        viewModel.setSecondExpectedSalary(parsed)
+                                    },
+                                    placeholder = "7.500.000",
+                                    amountColor = tokens.primary,
+                                    showSuggestions = false,
+                                )
+
+                                // Ví nhận lương Đợt 2
+                                if (state.wallets.isNotEmpty()) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "Ví nhận lương đợt 2",
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp,
+                                            color = tokens.onSurfaceVariant,
+                                        )
+                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            items(state.wallets) { wallet ->
+                                                val isSelected = state.config.secondSalaryWalletId == wallet.id
+                                                FilterChip(
+                                                    selected = isSelected,
+                                                    onClick = {
+                                                        viewModel.setSecondSalaryWalletId(if (isSelected) null else wallet.id)
+                                                    },
+                                                    label = { Text(wallet.name) },
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = tokens.primary.copy(alpha = 0.18f),
+                                                        selectedLabelColor = tokens.primary,
+                                                    ),
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-
-                    // 5. Expected Salary Input
-                    ErgonomicCompactAmountCard(
-                        label = "Mức lương dự kiến mỗi kỳ",
-                        amountText = expectedSalaryText,
-                        onAmountChange = { input ->
-                            val digitsOnly = input.filter { it.isDigit() }.take(15)
-                            expectedSalaryText = digitsOnly
-                            val parsed = digitsOnly.toLongOrNull()
-                            viewModel.setExpectedSalary(parsed)
-                        },
-                        placeholder = "20.000.000",
-                        amountColor = tokens.primary,
-                        showSuggestions = true,
-                    )
 
                     // 6. End-of-Cycle Leftover Handling
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -668,5 +989,42 @@ private fun BudgetBasisCard(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
         )
+    }
+}
+
+@Composable
+private fun ScheduleTypeTabItem(
+    title: String,
+    subtitle: String,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val tokens = LocalFinluxTokens.current
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.18f) else Color.Transparent,
+        border = if (isSelected) BorderStroke(1.2.dp, Color(0xFF10B981)) else null,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = title,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                fontSize = 13.sp,
+                color = if (isSelected) Color(0xFF10B981) else tokens.onSurface,
+            )
+            Text(
+                text = subtitle,
+                fontSize = 10.5.sp,
+                color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.85f) else tokens.onSurfaceVariant,
+            )
+        }
     }
 }
