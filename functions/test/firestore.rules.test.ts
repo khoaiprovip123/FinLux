@@ -101,6 +101,42 @@ describe("Firestore Rules: Budgets", () => {
     });
 });
 
+describe("Firestore Rules: Salary Cycle Preferences", () => {
+    it("should allow valid semi-monthly configuration and reject invalid scheduleType", async () => {
+        const alice = testEnv.authenticatedContext("alice");
+        const ref = alice.firestore().doc("users/alice/financialPreferences/salaryCycle");
+
+        // Ghi cấu hình SEMI_MONTHLY hợp lệ -> THÀNH CÔNG
+        await assertSucceeds(ref.set({
+            enabled: true,
+            scheduleType: "SEMI_MONTHLY",
+            paydayRuleType: "DAY_OF_MONTH",
+            paydayDay: 25,
+            salaryWalletId: "w1",
+            expectedSalary: 6000000,
+            secondPaydayDay: 10,
+            secondSalaryWalletId: "w2",
+            secondExpectedSalary: 7500000,
+            savingsWalletId: null,
+            rolloverRule: "KEEP_IN_WALLET",
+            budgetPeriodBasis: "SALARY_CYCLE",
+            financeTimeZone: "Asia/Ho_Chi_Minh",
+            updatedAt: new Date()
+        }));
+
+        // Ghi scheduleType không hợp lệ -> TỪ CHỐI
+        await assertFails(ref.set({
+            enabled: true,
+            scheduleType: "INVALID_SCHEDULE_TYPE",
+            paydayRuleType: "DAY_OF_MONTH",
+            paydayDay: 25,
+            rolloverRule: "KEEP_IN_WALLET",
+            budgetPeriodBasis: "SALARY_CYCLE",
+            financeTimeZone: "Asia/Ho_Chi_Minh"
+        }));
+    });
+});
+
 describe("Firestore Rules: Saving Spin", () => {
     const validConfig = {
         enabled: true,

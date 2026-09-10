@@ -88,6 +88,80 @@ class SalaryCycleCalculatorTest {
         assertDates(cycle, LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1))
     }
 
+    @Test
+    fun `semi monthly 25 and 10 produces correct macro and subcycles`() {
+        val config = SalaryCycleConfig(
+            enabled = true,
+            scheduleType = com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY,
+            paydayDay = 25,
+            secondPaydayDay = 10,
+            expectedSalary = com.finlux.app.domain.model.Money(6_000_000),
+            secondExpectedSalary = com.finlux.app.domain.model.Money(7_500_000),
+        )
+        val instant = LocalDateTime.of(2026, 9, 5, 10, 0).atZone(zone).toInstant()
+        val cycle = calculator.cycleContaining(instant, config, zone)
+
+        assertDates(cycle, LocalDate.of(2026, 8, 25), LocalDate.of(2026, 9, 25))
+        assertEquals("25/08 - 24/09", cycle.label)
+
+        assertEquals(2, cycle.subCycles.size)
+        val sub1 = cycle.subCycles[0]
+        val sub2 = cycle.subCycles[1]
+
+        assertEquals(LocalDate.of(2026, 8, 25), sub1.start.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 10), sub1.endExclusive.atZone(zone).toLocalDate())
+        assertEquals("25/08 - 09/09", sub1.label)
+        assertEquals(6_000_000L, sub1.expectedIncome?.value)
+
+        assertEquals(LocalDate.of(2026, 9, 10), sub2.start.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 9, 25), sub2.endExclusive.atZone(zone).toLocalDate())
+        assertEquals("10/09 - 24/09", sub2.label)
+        assertEquals(7_500_000L, sub2.expectedIncome?.value)
+    }
+
+    @Test
+    fun `semi monthly 25 and 10 across new year transitions cleanly`() {
+        val config = SalaryCycleConfig(
+            enabled = true,
+            scheduleType = com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY,
+            paydayDay = 25,
+            secondPaydayDay = 10,
+        )
+        val instant = LocalDateTime.of(2027, 1, 5, 12, 0).atZone(zone).toInstant()
+        val cycle = calculator.cycleContaining(instant, config, zone)
+
+        assertDates(cycle, LocalDate.of(2026, 12, 25), LocalDate.of(2027, 1, 25))
+        assertEquals("25/12 - 24/01", cycle.label)
+
+        assertEquals(2, cycle.subCycles.size)
+        assertEquals(LocalDate.of(2026, 12, 25), cycle.subCycles[0].start.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2027, 1, 10), cycle.subCycles[0].endExclusive.atZone(zone).toLocalDate())
+        assertEquals("25/12 - 09/01", cycle.subCycles[0].label)
+
+        assertEquals(LocalDate.of(2027, 1, 10), cycle.subCycles[1].start.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2027, 1, 25), cycle.subCycles[1].endExclusive.atZone(zone).toLocalDate())
+        assertEquals("10/01 - 24/01", cycle.subCycles[1].label)
+    }
+
+    @Test
+    fun `semi monthly subCycleContaining resolves matching subcycle`() {
+        val config = SalaryCycleConfig(
+            enabled = true,
+            scheduleType = com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY,
+            paydayDay = 25,
+            secondPaydayDay = 10,
+        )
+        val instant1 = LocalDateTime.of(2026, 9, 5, 12, 0).atZone(zone).toInstant()
+        val sub1 = calculator.subCycleContaining(instant1, config, zone)
+        assertEquals("first", sub1?.id)
+        assertEquals("25/08 - 09/09", sub1?.label)
+
+        val instant2 = LocalDateTime.of(2026, 9, 15, 12, 0).atZone(zone).toInstant()
+        val sub2 = calculator.subCycleContaining(instant2, config, zone)
+        assertEquals("second", sub2?.id)
+        assertEquals("10/09 - 24/09", sub2?.label)
+    }
+
     private fun cycleFor(day: Int, localDateTime: LocalDateTime): FinancialCycle = calculator.cycleContaining(
         localDateTime.atZone(zone).toInstant(),
         SalaryCycleConfig(enabled = true, paydayDay = day),
@@ -99,3 +173,4 @@ class SalaryCycleCalculatorTest {
         assertEquals(expectedEndExclusive, cycle.endExclusive.atZone(zone).toLocalDate())
     }
 }
+

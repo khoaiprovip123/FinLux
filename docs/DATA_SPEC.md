@@ -130,11 +130,15 @@ users/{uid}
   │
   ├─ financialPreferences/salaryCycle -- cấu hình chu kỳ lương & tháng tài chính (UC-27, BR-SALARY-01..03)
   │    ├─ enabled: boolean
+  │    ├─ scheduleType: "MONTHLY_ONCE" | "SEMI_MONTHLY"  -- hình thức nhận lương (1 đợt hoặc 2 đợt/tháng)
   │    ├─ paydayRuleType: "DAY_OF_MONTH" | "FIRST_DAY_OF_MONTH" | "LAST_DAY_OF_MONTH"
-  │    ├─ paydayDay: number         -- 1..31 (mặc định 25)
-  │    ├─ salaryWalletId: string?
+  │    ├─ paydayDay: number         -- 1..31 (ngày nhận lương đợt 1, mặc định 25)
+  │    ├─ salaryWalletId: string?   -- ví nhận lương đợt 1
+  │    ├─ expectedSalary: number?   -- lương kỳ vọng đợt 1
+  │    ├─ secondPaydayDay: number?  -- 1..31 (ngày nhận lương đợt 2 khi scheduleType = SEMI_MONTHLY)
+  │    ├─ secondSalaryWalletId: string? -- ví nhận lương đợt 2
+  │    ├─ secondExpectedSalary: number? -- lương kỳ vọng đợt 2
   │    ├─ savingsWalletId: string?
-  │    ├─ expectedSalary: number?
   │    ├─ rolloverRule: "KEEP_IN_WALLET" | "ASK_EACH_CYCLE" | "MOVE_TO_SAVINGS"
   │    ├─ budgetPeriodBasis: "CALENDAR_MONTH" | "SALARY_CYCLE"
   │    ├─ financeTimeZone: string   -- "Asia/Ho_Chi_Minh"

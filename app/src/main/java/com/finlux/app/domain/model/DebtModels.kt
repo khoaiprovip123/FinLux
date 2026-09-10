@@ -78,6 +78,8 @@ data class PaydayAllocationItem(
     val dueDate: Int? = null,
     val isMismatchedWithPayday: Boolean, // true nếu dueDate != null && dueDate < paydayDay
     val colorHex: String,
+    val assignedPaydayDay: Int? = null,
+    val sponsorLabel: String? = null,
 ) {
     val isTargetDebt: Boolean get() = isTarget
     val totalPayment: Money get() = totalPaydayPayment
@@ -95,9 +97,19 @@ data class PaydayAllocationPlan(
     val remainingIncomeAfterDebt: Money = Money(0L),
     val items: List<PaydayAllocationItem> = emptyList(),
     val mismatchedWarnings: List<String> = emptyList(),
+    val isSemiMonthly: Boolean = false,
+    val upcomingPaydayDay: Int = paydayDay,
+    val upcomingPaydayLabel: String = "Kế hoạch trích lương Đợt $paydayDay",
+    val upcomingPaydaySalary: Money = expectedSalary,
+    val upcomingPaydayDeduction: Money = totalDebtDeduction,
+    val upcomingPaydayRemaining: Money = remainingIncomeAfterDebt,
+    val upcomingItems: List<PaydayAllocationItem> = items,
 ) {
     val deductionRatioPercent: Double
         get() = if (expectedSalary.value > 0L) (totalDebtDeduction.value.toDouble() / expectedSalary.value.toDouble()) * 100.0 else 0.0
+
+    val upcomingDeductionRatioPercent: Double
+        get() = if (upcomingPaydaySalary.value > 0L) (upcomingPaydayDeduction.value.toDouble() / upcomingPaydaySalary.value.toDouble()) * 100.0 else 0.0
 }
 
 /**
@@ -146,6 +158,14 @@ data class PayoffScenario(
     val isRecommended: Boolean = false,
 )
 
+data class SubCycleCashflow(
+    val paydayDay: Int,
+    val expectedSalary: Money,
+    val allocatedEssentialExpense: Money,
+    val availableCashflow: Money,
+    val label: String,
+)
+
 data class DebtCashflowAnalysis(
     val averageMonthlyIncome: Money,
     val averageEssentialExpense: Money,
@@ -156,4 +176,6 @@ data class DebtCashflowAnalysis(
     val scenarios: List<PayoffScenario>,
     val isSalaryCycleBased: Boolean = false,
     val baseIncomeSource: String = "",
+    val isSemiMonthly: Boolean = false,
+    val subCycleCashflows: List<SubCycleCashflow> = emptyList(),
 )

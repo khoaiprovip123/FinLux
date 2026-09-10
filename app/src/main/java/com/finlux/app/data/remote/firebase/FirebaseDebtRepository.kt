@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.DEBT_PAYMENT_CATEGORY_ID
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
@@ -215,14 +216,13 @@ class FirebaseDebtRepository(
                 // KHOẢN VAY THÔNG THƯỜNG: Trừ ví nguồn và ghi transaction sổ cái
                 tx.update(walletRef, "balance", currentWalletBalance - amount)
 
-                val txNote = if (note.isNotBlank()) note else "Thanh toán nợ: $debtName"
-                val categoryId = if (principalPaid > 0 && interestPaid == 0L) {
-                    "debt_principal"
-                } else if (interestPaid > 0 && principalPaid == 0L) {
-                    "debt_interest"
+                val defaultNote = if (interestPaid > 0 && principalPaid == 0L) {
+                    "Trả lãi khoản vay: $debtName"
                 } else {
-                    "debt_payment"
+                    "Thanh toán nợ: $debtName"
                 }
+                val txNote = if (note.isNotBlank()) note else defaultNote
+                val categoryId = DEBT_PAYMENT_CATEGORY_ID
 
                 val transactionRef = userDoc.collection("transactions").document(UUID.randomUUID().toString())
                 tx.set(

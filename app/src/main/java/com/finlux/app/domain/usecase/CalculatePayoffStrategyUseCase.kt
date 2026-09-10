@@ -154,10 +154,12 @@ class CalculatePayoffStrategyUseCase @Inject constructor() {
     ): PaydayAllocationPlan? {
         if (activeDebts.isEmpty()) return null
 
-        val isSalaryEnabled = salaryCycleConfig?.enabled == true
+        val isSalaryEnabled = salaryCycleConfig != null && salaryCycleConfig.enabled
+        val isSemiMonthly = isSalaryEnabled && salaryCycleConfig.scheduleType == com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY
         val paydayDay = if (isSalaryEnabled) salaryCycleConfig.paydayDay else 15
+        val secondPaydayDay = if (isSemiMonthly) salaryCycleConfig.secondPaydayDay else null
         val salaryWallet = salaryCycleConfig?.salaryWalletId?.let { wid -> wallets.find { it.id == wid } }
-        val expectedSalary = salaryCycleConfig?.expectedSalary ?: Money(0L)
+        val expectedSalary = if (isSalaryEnabled) salaryCycleConfig.totalExpectedSalary else Money(0L)
 
         // Sắp xếp ưu tiên theo chiến lược để xác định khoản nợ mục tiêu (Target Debt)
         val sortedDebts = when (strategy) {
@@ -180,10 +182,24 @@ class CalculatePayoffStrategyUseCase @Inject constructor() {
             val debtExtra = if (isTarget) extraMonthlyPayment.coerceAtLeast(0L) else 0L
             val totalForDebt = (debtMin + debtExtra).coerceAtMost(debt.remainingBalance.value)
 
-            // Cảnh báo lệch pha: chỉ xét khi nợ định kỳ (isMonthlyRecurring) && dueDate != null && dueDate in 1..31 && dueDate < paydayDay
-            val isMismatched = isSalaryEnabled && debt.isMonthlyRecurring && debt.dueDate != null && debt.dueDate in 1..31 && debt.dueDate < paydayDay
-            if (isMismatched) {
-                warnings.add("Khoản nợ [${debt.name}] đến hạn ngày ${debt.dueDate}, trước ngày nhận lương (ngày $paydayDay). Cần chủ động dự phòng ngân sách từ kỳ trước!")
+            // Phân luồng nợ vào đợt lương bảo trợ
+            val (assignedDay, sponsorLabel, isMismatched) = if (isSalaryEnabled && debt.isMonthlyRecurring && debt.dueDate != null && debt.dueDate in 1..31) {
+                if (isSemiMonthly && secondPaydayDay != null) {
+                    val assigned = if (isDayInWindow(debt.dueDate, paydayDay, secondPaydayDay)) {
+                        paydayDay
+                    } else {
+                        secondPaydayDay
+                    }
+                    Triple(assigned, "Lương đợt $assigned bảo trợ", false)
+                } else {
+                    val mismatched = debt.dueDate < paydayDay
+                    if (mismatched) {
+                        warnings.add("Khoản nợ [${debt.name}] đến hạn ngày ${debt.dueDate}, trước ngày nhận lương (ngày $paydayDay). Cần chủ động dự phòng ngân sách từ kỳ trước!")
+                    }
+                    Triple(paydayDay, "Lương đợt $paydayDay bảo trợ", mismatched)
+                }
+            } else {
+                Triple(null, null, false)
             }
 
             allocationItems.add(
@@ -198,6 +214,8 @@ class CalculatePayoffStrategyUseCase @Inject constructor() {
                     dueDate = debt.dueDate,
                     isMismatchedWithPayday = isMismatched,
                     colorHex = debt.colorHex,
+                    assignedPaydayDay = assignedDay,
+                    sponsorLabel = sponsorLabel,
                 )
             )
         }
@@ -206,6 +224,39 @@ class CalculatePayoffStrategyUseCase @Inject constructor() {
             (expectedSalary.value - monthlyBudget).coerceAtLeast(0L)
         } else {
             0L
+        }
+
+        // Xác định đợt lương sắp tới gần nhất (Next Upcoming Payday)
+        val today = java.time.LocalDate.now().dayOfMonth
+        val upcomingDay = if (isSemiMonthly && secondPaydayDay != null) {
+            val dist1 = if (paydayDay >= today) paydayDay - today else (31 - today + paydayDay)
+            val dist2 = if (secondPaydayDay >= today) secondPaydayDay - today else (31 - today + secondPaydayDay)
+            if (dist1 <= dist2) paydayDay else secondPaydayDay
+        } else {
+            paydayDay
+        }
+
+        val upcomingSalary = if (isSemiMonthly && secondPaydayDay != null && salaryCycleConfig != null) {
+            if (upcomingDay == paydayDay) {
+                salaryCycleConfig.expectedSalary ?: Money(0L)
+            } else {
+                salaryCycleConfig.secondExpectedSalary ?: Money(0L)
+            }
+        } else {
+            expectedSalary
+        }
+
+        val upcomingItems = if (isSemiMonthly && secondPaydayDay != null) {
+            allocationItems.filter { it.assignedPaydayDay == upcomingDay || it.assignedPaydayDay == null }
+        } else {
+            allocationItems
+        }
+
+        val upcomingDeduction = Money(upcomingItems.sumOf { it.totalPaydayPayment.value })
+        val upcomingRemaining = if (upcomingSalary.value > 0) {
+            Money((upcomingSalary.value - upcomingDeduction.value).coerceAtLeast(0L))
+        } else {
+            Money(0L)
         }
 
         return PaydayAllocationPlan(
@@ -217,7 +268,22 @@ class CalculatePayoffStrategyUseCase @Inject constructor() {
             remainingIncomeAfterDebt = Money(remainingSalary),
             items = allocationItems,
             mismatchedWarnings = warnings,
+            isSemiMonthly = isSemiMonthly,
+            upcomingPaydayDay = upcomingDay,
+            upcomingPaydayLabel = "Kế hoạch trích lương Đợt $upcomingDay",
+            upcomingPaydaySalary = upcomingSalary,
+            upcomingPaydayDeduction = upcomingDeduction,
+            upcomingPaydayRemaining = upcomingRemaining,
+            upcomingItems = upcomingItems,
         )
+    }
+
+    private fun isDayInWindow(day: Int, startDay: Int, endExclusiveDay: Int): Boolean {
+        return if (startDay < endExclusiveDay) {
+            day in startDay until endExclusiveDay
+        } else {
+            day >= startDay || day < endExclusiveDay
+        }
     }
 
     private data class SimulationResult(

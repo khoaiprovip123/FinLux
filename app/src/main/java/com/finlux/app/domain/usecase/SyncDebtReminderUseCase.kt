@@ -121,7 +121,12 @@ class SyncDebtReminderUseCase @Inject constructor(
         walletName: String?,
         totalAmount: Long,
     ) {
-        val reminderId = "payday_debt_allocation_reminder"
+        val reminderId = "payday_debt_allocation_reminder_$paydayDay"
+        val legacyReminderId = "payday_debt_allocation_reminder"
+        // Cleanup legacy reminder if present
+        scheduler.cancel(legacyReminderId)
+        reminderRepository.deleteReminder(stubReminder(legacyReminderId))
+
         val zone = ZoneId.systemDefault()
         val now = LocalDate.now(zone)
 

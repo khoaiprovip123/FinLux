@@ -76,7 +76,22 @@ fun DebtCard(
     val hasValidDueDate = validDueDate != null
     val isDueSoon = !isSettled && validDueDate != null && (validDueDate - today) in 0..5
     val isOverdue = !isSettled && validDueDate != null && today > validDueDate && (today - validDueDate) <= 15
-    val isPaydayMismatch = !isSettled && debt.isMonthlyRecurring && salaryConfig?.enabled == true && validDueDate != null && validDueDate < salaryConfig.paydayDay
+
+    val isSalaryEnabled = salaryConfig != null && salaryConfig.enabled
+    val isSemiMonthly = isSalaryEnabled && salaryConfig.scheduleType == com.finlux.app.domain.model.SalaryScheduleType.SEMI_MONTHLY
+    val sponsorTag = if (isSalaryEnabled && debt.isMonthlyRecurring && validDueDate != null) {
+        val secondDay = salaryConfig.secondPaydayDay
+        if (isSemiMonthly && secondDay != null) {
+            val d1 = salaryConfig.paydayDay
+            val isInD1 = if (d1 < secondDay) validDueDate in d1 until secondDay else (validDueDate >= d1 || validDueDate < secondDay)
+            val assignedDay = if (isInD1) d1 else secondDay
+            "Lương đợt $assignedDay bảo trợ"
+        } else {
+            "Lương đợt ${salaryConfig.paydayDay} bảo trợ"
+        }
+    } else null
+
+    val isPaydayMismatch = !isSettled && debt.isMonthlyRecurring && isSalaryEnabled && !isSemiMonthly && validDueDate != null && validDueDate < salaryConfig.paydayDay
 
     val animatedProgress by animateFloatAsState(
         targetValue = debt.progress,
@@ -435,6 +450,25 @@ fun DebtCard(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 10.5.sp,
                                     color = badgeColor,
+                                ),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+
+                    // 1b. Payday Sponsor Tag
+                    if (!isSettled && sponsorTag != null) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFF10B981).copy(alpha = 0.12f),
+                            border = BorderStroke(0.6.dp, Color(0xFF10B981).copy(alpha = 0.30f)),
+                        ) {
+                            Text(
+                                text = sponsorTag,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF10B981),
                                 ),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
