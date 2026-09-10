@@ -1,11 +1,11 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
-import com.finlux.app.domain.model.DEBT_PAYMENT_CATEGORY_ID
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.SystemCategories
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.DebtRepository
@@ -222,7 +222,7 @@ class FirebaseDebtRepository(
                     "Thanh toán nợ: $debtName"
                 }
                 val txNote = if (note.isNotBlank()) note else defaultNote
-                val categoryId = DEBT_PAYMENT_CATEGORY_ID
+                val categoryId = SystemCategories.DEBT_PAYMENT
 
                 val transactionRef = userDoc.collection("transactions").document(UUID.randomUUID().toString())
                 tx.set(

@@ -4,6 +4,7 @@ import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Reminder
 import com.finlux.app.domain.model.ReminderRecurrence
+import com.finlux.app.domain.model.SystemCategories
 import com.finlux.app.domain.repository.ReminderRepository
 import com.finlux.app.domain.repository.ReminderScheduler
 import java.time.Instant
@@ -57,7 +58,7 @@ class SyncDebtReminderUseCase @Inject constructor(
                 id = reminderId,
                 title = "Thanh toán nợ: ${debt.name}",
                 amount = expectedAmount,
-                categoryId = "debt_payment",
+                categoryId = SystemCategories.DEBT_PAYMENT,
                 walletId = "",
                 recurrence = ReminderRecurrence.MONTHLY,
                 startDate = triggerInstant,
@@ -92,7 +93,7 @@ class SyncDebtReminderUseCase @Inject constructor(
                 id = statementReminderId,
                 title = "Chốt sao kê thẻ: ${debt.name}",
                 amount = debt.remainingBalance,
-                categoryId = "debt_payment",
+                categoryId = SystemCategories.DEBT_PAYMENT,
                 walletId = "",
                 recurrence = ReminderRecurrence.MONTHLY,
                 startDate = stmtTriggerInstant,
@@ -148,7 +149,7 @@ class SyncDebtReminderUseCase @Inject constructor(
             id = reminderId,
             title = "Trích lương trả nợ: Ngày $paydayDay$sourceWalletText",
             amount = Money(totalAmount),
-            categoryId = "debt_payment",
+            categoryId = SystemCategories.DEBT_PAYMENT,
             walletId = "",
             recurrence = ReminderRecurrence.MONTHLY,
             startDate = triggerInstant,

@@ -14,6 +14,7 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.collapseInternalTransferPairs
+import com.finlux.app.domain.model.isLivingExpense
 import com.finlux.app.domain.model.totalAssetBalance
 import com.finlux.app.domain.repository.AuthRepository
 import com.finlux.app.domain.repository.BudgetRepository
@@ -147,21 +148,17 @@ class HomeViewModel @Inject constructor(
             val percent = if (limit > 0) ((spent.toDouble() / limit.toDouble()) * 100).toInt() else 0
             val unread = notifications.count { !it.isRead }
 
-            val effectiveSummary = if (isSalaryCycleActive) {
-                val inc = periodTransactions
-                    .filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }
-                    .sumOf { it.amount.value }
-                val exp = periodTransactions
-                    .filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }
-                    .sumOf { it.amount.value }
-                DashboardSummary(
-                    income = Money(inc),
-                    expense = Money(exp),
-                    net = inc - exp,
-                )
-            } else {
-                defaultSummary
-            }
+            val inc = periodTransactions
+                .filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }
+                .sumOf { it.amount.value }
+            val exp = periodTransactions
+                .filter { it.isLivingExpense() }
+                .sumOf { it.amount.value }
+            val effectiveSummary = DashboardSummary(
+                income = Money(inc),
+                expense = Money(exp),
+                net = inc - exp,
+            )
 
             FinancialOverview(
                 summary = effectiveSummary,

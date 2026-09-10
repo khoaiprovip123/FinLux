@@ -3,6 +3,7 @@ package com.finlux.app.data.remote.firebase
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.SystemCategories
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.GoalRepository
@@ -62,7 +63,7 @@ class FirebaseGoalRepository(
         val userDoc = firestore.collection("users").document(uid)
         val walletRef = userDoc.collection("wallets").document(walletId)
         val goalRef = userDoc.collection("goals").document(goalId)
-        val categoryRef = userDoc.collection("categories").document("savings")
+        val categoryRef = userDoc.collection("categories").document(SystemCategories.SAVINGS)
         val transactionId = UUID.randomUUID().toString()
         val transactionRef = userDoc.collection("transactions").document(transactionId)
 
@@ -114,7 +115,7 @@ class FirebaseGoalRepository(
                     "type" to TransactionType.EXPENSE.name,
                     "amount" to amount,
                     "walletId" to walletId,
-                    "categoryId" to "savings",
+                    "categoryId" to SystemCategories.SAVINGS,
                     "note" to txNote,
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(date)),
@@ -137,7 +138,7 @@ class FirebaseGoalRepository(
         val userDoc = firestore.collection("users").document(uid)
         val walletRef = userDoc.collection("wallets").document(walletId)
         val goalRef = userDoc.collection("goals").document(goalId)
-        val categoryRef = userDoc.collection("categories").document("savings")
+        val categoryRef = userDoc.collection("categories").document(SystemCategories.SAVINGS)
         val transactionId = UUID.randomUUID().toString()
         val transactionRef = userDoc.collection("transactions").document(transactionId)
 
@@ -186,7 +187,7 @@ class FirebaseGoalRepository(
                     "type" to TransactionType.INCOME.name,
                     "amount" to amount,
                     "walletId" to walletId,
-                    "categoryId" to "savings",
+                    "categoryId" to SystemCategories.SAVINGS,
                     "note" to txNote,
                     "receiptImageUrl" to null,
                     "date" to Timestamp(Date.from(date)),

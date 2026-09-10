@@ -3,6 +3,7 @@ package com.finlux.app.core.export
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.SystemCategories
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.reports.CategoryExpense
@@ -130,7 +131,7 @@ object XlsxReportWriter {
             val dateStr = tx.date.atZone(ZoneId.systemDefault()).format(dateTimeFormatter)
             val typeStr = when (tx.type) {
                 TransactionType.INCOME -> "Thu nhập"
-                TransactionType.EXPENSE -> if (tx.categoryId == "debt_payment") "Trả nợ" else "Chi tiêu"
+                TransactionType.EXPENSE -> if (tx.categoryId == SystemCategories.DEBT_PAYMENT) "Trả nợ" else "Chi tiêu"
                 TransactionType.TRANSFER_OUT -> "Chuyển tiền đi"
                 TransactionType.TRANSFER_IN -> "Nhận chuyển tiền"
             }

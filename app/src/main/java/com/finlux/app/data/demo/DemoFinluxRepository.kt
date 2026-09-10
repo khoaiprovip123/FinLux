@@ -18,10 +18,10 @@ import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.model.AppNotification
-import com.finlux.app.domain.model.DEBT_PAYMENT_CATEGORY_ID
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
+import com.finlux.app.domain.model.SystemCategories
 import com.finlux.app.domain.repository.DebtRepository
 import com.finlux.app.domain.repository.NotificationRepository
 import com.finlux.app.domain.repository.AuthRepository
@@ -285,7 +285,7 @@ class DemoFinluxRepository @Inject constructor(
             id = UUID.randomUUID().toString(),
             type = TransactionType.EXPENSE,
             amount = Money(amount),
-            categoryId = "savings",
+            categoryId = SystemCategories.SAVINGS,
             walletId = walletId,
             note = if (note.isNotBlank()) note else "Nạp tích lũy: ${targetGoal.name}",
             date = date,
@@ -325,7 +325,7 @@ class DemoFinluxRepository @Inject constructor(
             id = UUID.randomUUID().toString(),
             type = TransactionType.INCOME,
             amount = Money(amount),
-            categoryId = "savings",
+            categoryId = SystemCategories.SAVINGS,
             walletId = walletId,
             note = if (note.isNotBlank()) note else "Rút tích lũy: ${targetGoal.name}",
             date = date,
@@ -425,7 +425,7 @@ class DemoFinluxRepository @Inject constructor(
                 id = UUID.randomUUID().toString(),
                 type = TransactionType.EXPENSE,
                 amount = Money(amount),
-                categoryId = DEBT_PAYMENT_CATEGORY_ID,
+                categoryId = SystemCategories.DEBT_PAYMENT,
                 walletId = walletId,
                 note = txNote,
                 date = paymentDate,
@@ -563,10 +563,8 @@ class DemoFinluxRepository @Inject constructor(
             }
             transactionState.value = transactionState.value + stored
             if (stored.type == TransactionType.EXPENSE && !stored.categoryId.isNullOrBlank()) {
-                val month = YearMonth.from(stored.date.atZone(ZoneId.systemDefault()))
-                val periodKey = "month:$month"
                 budgetState.value = budgetState.value.map { b ->
-                    if (b.categoryId == stored.categoryId && (b.periodKey == periodKey || b.periodKey == "MONTHLY_$month")) {
+                    if (b.categoryId == stored.categoryId && matchesBudgetPeriod(b.periodKey, stored.date)) {
                         b.copy(spentAmount = Money(b.spentAmount.value + stored.amount.value))
                     } else b
                 }
@@ -601,19 +599,15 @@ class DemoFinluxRepository @Inject constructor(
             ) else it
         }
         if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
-            val oldMonth = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
-            val oldPeriodKey = "month:$oldMonth"
             budgetState.value = budgetState.value.map { b ->
-                if (b.categoryId == current.categoryId && (b.periodKey == oldPeriodKey || b.periodKey == "MONTHLY_$oldMonth")) {
+                if (b.categoryId == current.categoryId && matchesBudgetPeriod(b.periodKey, current.date)) {
                     b.copy(spentAmount = Money(b.spentAmount.value - current.amount.value))
                 } else b
             }
         }
         if (updated.type == TransactionType.EXPENSE && !updated.categoryId.isNullOrBlank()) {
-            val newMonth = YearMonth.from(updated.date.atZone(ZoneId.systemDefault()))
-            val newPeriodKey = "month:$newMonth"
             budgetState.value = budgetState.value.map { b ->
-                if (b.categoryId == updated.categoryId && (b.periodKey == newPeriodKey || b.periodKey == "MONTHLY_$newMonth")) {
+                if (b.categoryId == updated.categoryId && matchesBudgetPeriod(b.periodKey, updated.date)) {
                     b.copy(spentAmount = Money(b.spentAmount.value + updated.amount.value))
                 } else b
             }
@@ -689,10 +683,8 @@ class DemoFinluxRepository @Inject constructor(
                 }
                 transactionState.value = transactionState.value.filterNot { it.id == current.id }
                 if (current.type == TransactionType.EXPENSE && !current.categoryId.isNullOrBlank()) {
-                    val month = YearMonth.from(current.date.atZone(ZoneId.systemDefault()))
-                    val periodKey = "month:$month"
                     budgetState.value = budgetState.value.map { b ->
-                        if (b.categoryId == current.categoryId && (b.periodKey == periodKey || b.periodKey == "MONTHLY_$month")) {
+                        if (b.categoryId == current.categoryId && matchesBudgetPeriod(b.periodKey, current.date)) {
                             b.copy(spentAmount = Money(b.spentAmount.value - current.amount.value))
                         } else b
                     }
@@ -1101,41 +1093,41 @@ class DemoFinluxRepository @Inject constructor(
         )
 
         fun seedCategories() = listOf(
-            Category("food", "Ăn uống", CategoryType.EXPENSE, "restaurant", "#D94B5B", true, Instant.now(), isEssential = true),
-            Category("transport", "Di chuyển", CategoryType.EXPENSE, "directions_car", "#E6A23C", true, Instant.now(), isEssential = true),
-            Category("shopping", "Mua sắm", CategoryType.EXPENSE, "shopping_bag", "#7758F6", true, Instant.now(), isEssential = false),
-            Category("bills", "Hóa đơn", CategoryType.EXPENSE, "receipt_long", "#3478F6", true, Instant.now(), isEssential = true),
-            Category("home", "Nhà ở", CategoryType.EXPENSE, "home", "#14B8A6", true, Instant.now(), isEssential = true),
-            Category("health", "Sức khỏe", CategoryType.EXPENSE, "health", "#EC4899", true, Instant.now(), isEssential = true),
-            Category("travel", "Du lịch", CategoryType.EXPENSE, "flight", "#47C8FF", true, Instant.now(), isEssential = false),
-            Category("debt_payment", "Trả nợ & Tín dụng", CategoryType.EXPENSE, "credit_card", "#E11D48", true, Instant.now(), isEssential = true),
-            Category("savings", "Tích lũy & Mục tiêu", CategoryType.EXPENSE, "savings", "#8B5CF6", true, Instant.now(), isEssential = true),
-            Category("salary", "Lương", CategoryType.INCOME, "payments", "#168A62", true, Instant.now(), isEssential = true),
-            Category("bonus", "Thưởng", CategoryType.INCOME, "workspace_premium", "#47C8FF", true, Instant.now(), isEssential = true),
-            Category("freelance", "Freelance", CategoryType.INCOME, "work", "#7758F6", true, Instant.now(), isEssential = true),
-            Category("interest", "Lãi ngân hàng", CategoryType.INCOME, "account_balance", "#3478F6", true, Instant.now(), isEssential = true),
-            Category("refund", "Hoàn tiền", CategoryType.INCOME, "payments", "#E6A23C", true, Instant.now(), isEssential = true),
-            Category("investment-income", "Đầu tư", CategoryType.INCOME, "show_chart", "#14B8A6", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.FOOD, "Ăn uống", CategoryType.EXPENSE, "restaurant", "#D94B5B", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.TRANSPORT, "Di chuyển", CategoryType.EXPENSE, "directions_car", "#E6A23C", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.SHOPPING, "Mua sắm", CategoryType.EXPENSE, "shopping_bag", "#7758F6", true, Instant.now(), isEssential = false),
+            Category(SystemCategories.BILLS, "Hóa đơn", CategoryType.EXPENSE, "receipt_long", "#3478F6", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.HOME, "Nhà ở", CategoryType.EXPENSE, "home", "#14B8A6", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.HEALTH, "Sức khỏe", CategoryType.EXPENSE, "health", "#EC4899", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.TRAVEL, "Du lịch", CategoryType.EXPENSE, "flight", "#47C8FF", true, Instant.now(), isEssential = false),
+            Category(SystemCategories.DEBT_PAYMENT, "Trả nợ & Tín dụng", CategoryType.EXPENSE, "credit_card", "#E11D48", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.SAVINGS, "Tích lũy & Mục tiêu", CategoryType.EXPENSE, "savings", "#8B5CF6", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.SALARY, "Lương", CategoryType.INCOME, "payments", "#168A62", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.BONUS, "Thưởng", CategoryType.INCOME, "workspace_premium", "#47C8FF", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.FREELANCE, "Freelance", CategoryType.INCOME, "work", "#7758F6", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.INTEREST, "Lãi ngân hàng", CategoryType.INCOME, "account_balance", "#3478F6", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.REFUND, "Hoàn tiền", CategoryType.INCOME, "payments", "#E6A23C", true, Instant.now(), isEssential = true),
+            Category(SystemCategories.INVESTMENT_INCOME, "Đầu tư", CategoryType.INCOME, "show_chart", "#14B8A6", true, Instant.now(), isEssential = true),
         )
 
         fun seedTransactions() = listOf(
-            FinanceTransaction("demo-1", TransactionType.EXPENSE, Money(350_000), "food", "cash", note = "Siêu thị WinMart", date = Instant.now()),
-            FinanceTransaction("demo-2", TransactionType.INCOME, Money(15_000_000), "salary", "bank", note = "Lương công ty", date = Instant.now().minus(1, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-3", TransactionType.EXPENSE, Money(450_000), "food", "card", note = "Cafe Highlands", date = Instant.now().minus(2, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-4", TransactionType.EXPENSE, Money(2_000_000), "shopping", "bank", note = "Mua sắm", date = Instant.now().minus(3, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-5", TransactionType.INCOME, Money(3_000_000), "bonus", "bank", note = "Tiền thưởng", date = Instant.now().minus(4, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-6", TransactionType.EXPENSE, Money(820_000), "bills", "bank", note = "Điện, nước", date = Instant.now().minus(5, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-7", TransactionType.EXPENSE, Money(240_000), "transport", "cash", note = "Di chuyển", date = Instant.now().minus(6, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-8", TransactionType.EXPENSE, Money(1_200_000), "home", "bank", note = "Đồ dùng gia đình", date = Instant.now().minus(14, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-9", TransactionType.EXPENSE, Money(680_000), "health", "card", note = "Khám sức khỏe", date = Instant.now().minus(22, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-10", TransactionType.INCOME, Money(15_000_000), "salary", "bank", note = "Lương tháng trước", date = Instant.now().minus(35, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-11", TransactionType.EXPENSE, Money(3_200_000), "travel", "bank", note = "Chuyến đi Đà Nẵng", date = Instant.now().minus(40, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-12", TransactionType.EXPENSE, Money(2_450_000), "food", "cash", note = "Ăn uống tháng trước", date = Instant.now().minus(48, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-13", TransactionType.INCOME, Money(14_500_000), "salary", "bank", note = "Lương hai tháng trước", date = Instant.now().minus(70, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-14", TransactionType.INCOME, Money(5_000_000), "freelance", "vietcombank", note = "Freelance thiết kế", date = Instant.now().minus(7, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-15", TransactionType.INCOME, Money(850_000), "interest", "bank", note = "Lãi tiền gửi", date = Instant.now().minus(9, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-16", TransactionType.INCOME, Money(500_000), "refund", "momo", note = "Hoàn tiền mua sắm", date = Instant.now().minus(11, ChronoUnit.DAYS)),
-            FinanceTransaction("demo-17", TransactionType.INCOME, Money(1_200_000), "investment-income", "investment", note = "Cổ tức đầu tư", date = Instant.now().minus(13, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-1", TransactionType.EXPENSE, Money(350_000), SystemCategories.FOOD, "cash", note = "Siêu thị WinMart", date = Instant.now()),
+            FinanceTransaction("demo-2", TransactionType.INCOME, Money(15_000_000), SystemCategories.SALARY, "bank", note = "Lương công ty", date = Instant.now().minus(1, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-3", TransactionType.EXPENSE, Money(450_000), SystemCategories.FOOD, "card", note = "Cafe Highlands", date = Instant.now().minus(2, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-4", TransactionType.EXPENSE, Money(2_000_000), SystemCategories.SHOPPING, "bank", note = "Mua sắm", date = Instant.now().minus(3, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-5", TransactionType.INCOME, Money(3_000_000), SystemCategories.BONUS, "bank", note = "Tiền thưởng", date = Instant.now().minus(4, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-6", TransactionType.EXPENSE, Money(820_000), SystemCategories.BILLS, "bank", note = "Điện, nước", date = Instant.now().minus(5, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-7", TransactionType.EXPENSE, Money(240_000), SystemCategories.TRANSPORT, "cash", note = "Di chuyển", date = Instant.now().minus(6, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-8", TransactionType.EXPENSE, Money(1_200_000), SystemCategories.HOME, "bank", note = "Đồ dùng gia đình", date = Instant.now().minus(14, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-9", TransactionType.EXPENSE, Money(680_000), SystemCategories.HEALTH, "card", note = "Khám sức khỏe", date = Instant.now().minus(22, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-10", TransactionType.INCOME, Money(15_000_000), SystemCategories.SALARY, "bank", note = "Lương tháng trước", date = Instant.now().minus(35, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-11", TransactionType.EXPENSE, Money(3_200_000), SystemCategories.TRAVEL, "bank", note = "Chuyến đi Đà Nẵng", date = Instant.now().minus(40, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-12", TransactionType.EXPENSE, Money(2_450_000), SystemCategories.FOOD, "cash", note = "Ăn uống tháng trước", date = Instant.now().minus(48, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-13", TransactionType.INCOME, Money(14_500_000), SystemCategories.SALARY, "bank", note = "Lương hai tháng trước", date = Instant.now().minus(70, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-14", TransactionType.INCOME, Money(5_000_000), SystemCategories.FREELANCE, "vietcombank", note = "Freelance thiết kế", date = Instant.now().minus(7, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-15", TransactionType.INCOME, Money(850_000), SystemCategories.INTEREST, "bank", note = "Lãi tiền gửi", date = Instant.now().minus(9, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-16", TransactionType.INCOME, Money(500_000), SystemCategories.REFUND, "momo", note = "Hoàn tiền mua sắm", date = Instant.now().minus(11, ChronoUnit.DAYS)),
+            FinanceTransaction("demo-17", TransactionType.INCOME, Money(1_200_000), SystemCategories.INVESTMENT_INCOME, "investment", note = "Cổ tức đầu tư", date = Instant.now().minus(13, ChronoUnit.DAYS)),
         )
 
         fun seedBudgets() = listOf(
@@ -1376,5 +1368,20 @@ class DemoFinluxRepository @Inject constructor(
             }
         }
         return "$prefix $action: ${deal.title}"
+    }
+
+    private fun matchesBudgetPeriod(periodKey: String, date: Instant): Boolean {
+        val month = YearMonth.from(date.atZone(ZoneId.systemDefault()))
+        val monthKey = "month:$month"
+        if (periodKey == monthKey || periodKey == "MONTHLY_$month") return true
+        if (periodKey.startsWith("month:") && periodKey.removePrefix("month:") == month.toString()) return true
+        if (periodKey.startsWith("salary:")) {
+            return runCatching {
+                val startDate = java.time.LocalDate.parse(periodKey.removePrefix("salary:"))
+                val txDate = date.atZone(ZoneId.systemDefault()).toLocalDate()
+                !txDate.isBefore(startDate) && txDate.isBefore(startDate.plusMonths(1))
+            }.getOrDefault(false)
+        }
+        return false
     }
 }

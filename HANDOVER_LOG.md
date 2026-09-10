@@ -1,8 +1,39 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.1 (versionCode 175)
-- **Trạng thái Build:** ✅ 100% PASS (344/344 unit tests) — Chuẩn hóa Category ID "Trả nợ & Tín dụng", phân tách ngữ nghĩa kế toán chi phí sinh hoạt (Living Expenses), bảo toàn ngân sách và kiểm thử thành công.
+- **Phiên bản hiện tại:** v1.25.2 (versionCode 176)
+- **Trạng thái Build:** ✅ 100% PASS (347/347 unit tests) — Chuẩn hóa kiến trúc hệ thống, Central Category Registry (`SystemCategories.kt`), đồng bộ cửa sổ ngân sách theo chu kỳ tài chính (`FinancialPeriodResolver`), thống nhất KPI chi phí sinh hoạt giữa Home và Báo cáo (`isLivingExpense`).
+
+### [Task-P1-14-ARCHITECTURE-MONEY-FLOW-MATRIX-STANDARDIZATION] — Chuẩn Hóa Kiến Trúc, Single Source Category Registry & Đồng Bộ Cửa Sổ Ngân Sách
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Cập nhật 4 nguyên tắc bảo vệ vào `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (Transaction Lifecycle Rollback, Transaction-based Date Resolution, Quy ước Ngân sách 2 đợt, Central Category Registry).
+  2. Bước 1: Xây dựng Registry Trung tâm (`SystemCategories.kt`), thay thế các literal string rải rác trong `FirebaseDebtRepository.kt`, `FirebaseGoalRepository.kt`, `FirebaseAuthRepository.kt`, `DemoFinluxRepository.kt`, `SyncDebtReminderUseCase.kt`, `ReportExporter.kt`, `XlsxReportWriter.kt`.
+  3. Bước 2: Phân tách ngữ nghĩa kế toán (`TransactionSemantics.kt`): `isLivingExpense()` loại trừ nợ gốc (`DEBT_PAYMENT`), nạp mục tiêu tích lũy (`SAVINGS`), xuất vốn deal (`OUTLAY_CAPITAL`). Đồng bộ KPI Chi tiêu trong `HomeViewModel.kt` dùng `it.isLivingExpense()`.
+  4. Bước 3: Sửa điểm gãy thời gian ngân sách: Cập nhật `budgetRef` trong `FirebaseTransactionRepository.kt` và `DemoFinluxRepository.kt` để giải quyết `periodKey` động qua `FinancialPeriodResolver.resolvePeriodKey(transaction.date, salaryConfig)`.
+  5. Bổ sung Unit tests, đảm bảo 100% pass, bump `v1.25.2` (code `176`), commit và push lên `main`.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 347/347 tests passed (100% PASS).
+- **Danh sách file đã chỉnh sửa**:
+  - `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`
+  - `app/src/main/java/com/finlux/app/domain/model/SystemCategories.kt` (mới)
+  - `app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/report/ReportExporter.kt`
+  - `app/src/main/java/com/finlux/app/data/report/XlsxReportWriter.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/di/RepositoryModule.kt`
+  - `app/src/test/java/com/finlux/app/domain/model/TransactionSemanticsTest.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+  - `docs/BACKLOG.md`
 
 ### [Task-P1-13-DEBT-CATEGORY-MAPPING] — Chuẩn Hóa Mapping Danh Mục "Trả Nợ & Tín Dụng" & Phân Tách Ngữ Nghĩa Kế Toán
 - **Status**: `[DONE]`

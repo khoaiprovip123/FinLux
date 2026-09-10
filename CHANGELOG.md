@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.25.2] - 2026-09-10
+### Added
+- **Hệ Thống Danh Mục Trung Tâm (Central System Category Registry - `SystemCategories.kt`)**:
+  * Định nghĩa `object SystemCategories` làm điểm định danh duy nhất (Single Source of Truth) cho toàn bộ mã danh mục hệ thống: Chi phí thiết yếu (`FOOD`, `TRANSPORT`, `HOUSING`, `BILLS`, `HEALTH`), Tùy chọn (`ENTERTAINMENT`, `SHOPPING`), Thu nhập (`SALARY`, `BONUS`, `INTEREST`, `OTHER_INCOME`), và Danh mục quản trị hệ thống (`DEBT_PAYMENT`, `SAVINGS`, `INVESTMENT`, `OTHER_EXPENSE`).
+  * Cung cấp helper functions kiểm tra tính toàn vẹn: `isSystem()`, `isProtected()`, `isIncomeSystem()`, `isExpenseSystem()`.
+  * Thay thế toàn bộ chuỗi hardcode phân tán trong codebase (`FirebaseDebtRepository.kt`, `FirebaseGoalRepository.kt`, `FirebaseAuthRepository.kt`, `DemoFinluxRepository.kt`, `SyncDebtReminderUseCase.kt`, `ReportExporter.kt`, `XlsxReportWriter.kt`).
+- **4 Nguyên Tắc Bảo Vệ Kiến Trúc Tài Chính (`docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`)**:
+  * Ghi nhận đầy đủ 4 nguyên tắc cốt lõi: Transaction Lifecycle Rollback, Transaction-based Date Resolution, Semi-Monthly Budget Convention, Central Category Registry.
+
+### Changed
+- **Đồng Bộ Tuyệt Đối KPI Chi Phí Sinh Hoạt Giữa Màn Hình Home và Báo Cáo (`HomeViewModel.kt`, `TransactionSemantics.kt`)**:
+  * Chuẩn hóa logic tính `effectiveSummary` trên Home Dashboard sử dụng `it.isLivingExpense()`, thống nhất 100% với `ReportsViewModel`.
+  * `TransactionSemantics.isLivingExpense()` loại trừ hoàn toàn các giao dịch tích lũy mục tiêu (`SAVINGS`) bên cạnh trả nợ gốc và vốn đầu tư deal.
+
+### Fixed
+- **Liên Kết Động Cửa Sổ Ngân Sách Theo Chu Kỳ Tài Chính (`FirebaseTransactionRepository.kt`, `DemoFinluxRepository.kt`)**:
+  * Tích hợp `FinancialPeriodResolver.resolvePeriodKey(date, salaryConfig)` vào `FinanceTransaction.budgetRef()` để xác định chính xác `periodKey` (`month:YYYY-MM` hoặc `salary:YYYY-MM-DD`) dựa trên thời điểm thực tế của giao dịch (`transaction.date`), bảo vệ tính đúng đắn khi người dùng ghi bù chi tiêu quá khứ.
+  * Hỗ trợ nạp `SalaryCycleRepository` và `FinancialPeriodResolver` trong `RepositoryModule.kt` và `FirebaseTransactionRepository`.
+  * Đồng bộ cơ chế khớp kỳ ngân sách `matchesBudgetPeriod` trong `DemoFinluxRepository`.
+  * Toàn bộ 347/347 unit tests PASS 100%.
+
 ## [1.25.1] - 2026-09-10
 ### Added
 - **Phân Tách Ngữ Nghĩa Kế Toán Chuẩn Kép (Accounting Semantics & Reports)**:
