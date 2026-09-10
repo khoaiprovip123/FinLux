@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.25.1] - 2026-09-10
+### Added
+- **Phân Tách Ngữ Nghĩa Kế Toán Chuẩn Kép (Accounting Semantics & Reports)**:
+  * **Domain (`TransactionSemantics.kt`)**: Bổ sung hàm `FinanceTransaction.isLivingExpense()` loại trừ hoàn toàn các giao dịch trả nợ gốc (hoán đổi tài sản/chuyển dịch vốn) và xuất vốn đầu tư (`OUTLAY_CAPITAL`) khỏi chi phí sinh hoạt tiêu dùng, đồng thời bảo lưu tiền lãi vay (`isDebtInterest()`) như một khoản chi phí tài chính thực tế.
+  * Tái cấu trúc `isDebtPrincipalSettlement()` và `isDebtInterest()` với tính chất đối xứng hoàn hảo, tự động nhận diện từ khóa tiếng Việt (`tiền lãi`, `trả lãi`, `lãi vay`, `lãi khoản`, `lãi:`) khi người dùng thanh toán nợ.
+  * Bổ sung bộ test ngữ nghĩa toàn diện trong `TransactionSemanticsTest` và `DemoTransactionInvariantTest`. Toàn bộ 344/344 tests đều PASS 100%.
+
+### Changed
+- **Bảo Toàn Bộ Lọc Báo Cáo Tài Chính (`ReportsViewModel.kt`)**:
+  * Tích hợp `it.isLivingExpense()` đồng bộ cho toàn bộ 5 khối tính toán chi phí: Chi phí toàn kỳ (`allPeriodExpenseItems`), Chi phí theo ví được chọn (`expenseItems`), Biểu đồ dòng tiền theo ngày (`cashFlow`), Chi phí kỳ trước (`previousExpense`), và Chi tiết chi tiêu theo ví tài sản (`walletSpendingDetails`).
+  * Đảm bảo các giao dịch trả nợ gốc không làm méo mó ngân sách sinh hoạt hàng tháng và không làm lệch lạc tỷ lệ tiết kiệm ròng của người dùng.
+
+### Fixed
+- **Chuẩn Hóa Danh Mục Thanh Toán Nợ (Fix Triệt Để Category ID Mismatch)**:
+  * Trong `FirebaseDebtRepository.kt` & `DemoFinluxRepository.kt`: Loại bỏ triệt để category ID mồ côi `"debt_principal"` và `"debt_interest"`. Với các khoản vay thông thường (Ngân hàng, Cá nhân, Trả góp), giao dịch trả nợ (`EXPENSE`) bắt buộc được gán `categoryId = DEBT_PAYMENT_CATEGORY_ID` (`"debt_payment"`).
+  * Khắc phục dứt điểm tình trạng Biên lai giao dịch (#FLX-B562DB) hiển thị fallback danh mục "Chi tiêu" — hiển thị chuẩn xác danh mục hệ thống bảo vệ **"Trả nợ & Tín dụng"** kèm icon thẻ tín dụng.
+  * Khắc phục lỗi định mức ngân sách: Ngân sách "Trả nợ & Tín dụng" ghi nhận và đếm đủ 100% dòng tiền chi trả nợ của người dùng.
+  * Bảo toàn nghiệp vụ Thẻ tín dụng: Giữ nguyên cơ chế chuyển tiền nội bộ giữa các ví (`TRANSFER_OUT` / `TRANSFER_IN`), không gán danh mục chi phí để chống tính trùng chi phí 2 lần (Double Counting).
+
 ## [1.25.0] - 2026-09-09
 ### Added
 - **Nâng Cấp Hệ Thống Chu Kỳ Lương 2 Lần/Tháng (Semi-Monthly Payday 2.0)**:

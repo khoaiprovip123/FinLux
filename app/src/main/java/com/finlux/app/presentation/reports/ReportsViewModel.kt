@@ -19,6 +19,7 @@ import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.model.assetWallets
+import com.finlux.app.domain.model.isLivingExpense
 import com.finlux.app.domain.model.netGoalContribution
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
@@ -497,7 +498,7 @@ class ReportsViewModel @Inject constructor(
 
         val allPeriodTransactions = transactions.filter { inRange(it.date, window.currentStart, window.currentEndExclusive) }
         val allPeriodExpenseItems = allPeriodTransactions.filter {
-            it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
+            it.isLivingExpense()
         }
         val totalAllPeriodExpense = allPeriodExpenseItems.sumOf { it.amount.value }
 
@@ -510,7 +511,7 @@ class ReportsViewModel @Inject constructor(
             it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY
         }
         val expenseItems = filtered.filter {
-            it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
+            it.isLivingExpense()
         }
         val transferInItems = filtered.filter { it.type == TransactionType.TRANSFER_IN }
         val transferOutItems = filtered.filter { it.type == TransactionType.TRANSFER_OUT }
@@ -543,7 +544,7 @@ class ReportsViewModel @Inject constructor(
             CashFlowPoint(
                 date,
                 items.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value },
-                items.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value },
+                items.filter { it.isLivingExpense() }.sumOf { it.amount.value },
             )
         }
 
@@ -554,7 +555,7 @@ class ReportsViewModel @Inject constructor(
             allPrevious
         }
         val previousIncome = previous.filter { it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY }.sumOf { it.amount.value }
-        val previousExpense = previous.filter { it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL }.sumOf { it.amount.value }
+        val previousExpense = previous.filter { it.isLivingExpense() }.sumOf { it.amount.value }
 
         // Vay nợ (Debts & Loans)
         val totalDebtRemaining = debts.filter { !it.isSettled }.sumOf { it.remainingBalance.value }
@@ -732,7 +733,7 @@ class ReportsViewModel @Inject constructor(
                 it.type == TransactionType.INCOME && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.PRINCIPAL_RECOVERY
             }
             val wExpenseItems = wTxList.filter {
-                it.type == TransactionType.EXPENSE && it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL
+                it.isLivingExpense()
             }
             val wTransferInItems = wTxList.filter { it.type == TransactionType.TRANSFER_IN }
             val wTransferOutItems = wTxList.filter { it.type == TransactionType.TRANSFER_OUT }

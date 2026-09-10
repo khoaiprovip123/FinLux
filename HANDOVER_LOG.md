@@ -1,8 +1,37 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.0 (versionCode 174)
-- **Trạng thái Build:** ✅ 100% PASS (339/339 unit tests) — Triển khai hoàn tất Hệ thống Chu kỳ lương 2 lần/tháng (Semi-Monthly Payday 2.0), Smart Debt-to-Payday Mapping & Giao diện cài đặt Liquid Glass.
+- **Phiên bản hiện tại:** v1.25.1 (versionCode 175)
+- **Trạng thái Build:** ✅ 100% PASS (344/344 unit tests) — Chuẩn hóa Category ID "Trả nợ & Tín dụng", phân tách ngữ nghĩa kế toán chi phí sinh hoạt (Living Expenses), bảo toàn ngân sách và kiểm thử thành công.
+
+### [Task-P1-13-DEBT-CATEGORY-MAPPING] — Chuẩn Hóa Mapping Danh Mục "Trả Nợ & Tín Dụng" & Phân Tách Ngữ Nghĩa Kế Toán
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Chuẩn hóa Category ID trong Repository:
+     - Trong `FirebaseDebtRepository.kt` và `DemoFinluxRepository.kt`: Thay thế việc gán cứng `"debt_principal"` và `"debt_interest"` bằng `DEBT_PAYMENT_CATEGORY_ID` (`"debt_payment"`).
+     - Với thẻ tín dụng: Giữ nguyên nghiệp vụ chuyển tiền giữa các ví (`TRANSFER`), không gán category chi tiêu để chống double counting.
+  2. Phân tách ngữ nghĩa kế toán trong Báo cáo & Ngân sách:
+     - `TransactionSemantics.kt`: Bổ sung hàm `isLivingExpense()` loại trừ trả nợ gốc (vốn là hoán đổi tài sản), giữ lại tiền lãi vay là chi phí tài chính thực.
+     - `ReportsViewModel.kt`: Áp dụng bộ lọc `isLivingExpense()` để việc trả nợ không làm méo mó chi tiêu sinh hoạt và tỷ lệ tiết kiệm.
+     - `BudgetViewModel.kt`: Giữ nguyên đếm theo `categoryId == "debt_payment"` để ngân sách "Trả nợ & Tín dụng" đếm đủ 100% dòng tiền chi trả.
+  3. Kiểm thử & Cài đặt:
+     - Cập nhật Unit Tests trong `TransactionSemanticsTest.kt` và `DemoTransactionInvariantTest.kt`.
+     - Chạy `./gradlew.bat testDebugUnitTest` đạt 100% PASS (344/344 tests).
+     - Tăng phiên bản: v1.25.1 (versionCode 175) trong `app/build.gradle.kts`.
+     - Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md`.
+     - Đóng gói và cài đặt APK lên thiết bị qua ADB.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 344/344 tests passed (100% PASS).
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt`
+  - `app/src/test/java/com/finlux/app/domain/model/TransactionSemanticsTest.kt`
+  - `app/src/test/java/com/finlux/app/data/demo/DemoTransactionInvariantTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
 
 ### [Task-P1-12-SEMI-MONTHLY-PAYDAY-PHASE-3-4] — Nâng Cấp Hệ Thống Chu Kỳ Lương 2 Lần/Tháng (Giai Đoạn 3: Debt Engine & Giai Đoạn 4: UI Settings & Cards)
 - **Status**: `[DONE]`

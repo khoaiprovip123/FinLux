@@ -2,6 +2,9 @@ package com.finlux.app.data.demo
 
 import android.content.Context
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.DEBT_PAYMENT_CATEGORY_ID
+import com.finlux.app.domain.model.DebtAccount
+import com.finlux.app.domain.model.DebtType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.TransactionType
@@ -179,5 +182,72 @@ class DemoTransactionInvariantTest {
         val cash = wallets.first { it.id == "cash-w" }
         assertEquals(10_000L, cash.balance.value, "Final balance is 10k >= 0")
         assertTrue(cash.balance.value >= 0L, "Non-card wallet balance is never negative")
+    }
+
+    @Test
+    fun `processPayment for regular loan creates expense with standardized DEBT_PAYMENT_CATEGORY_ID`() = runTest {
+        val loan = DebtAccount(
+            id = "loan-1",
+            name = "Vay mua xe",
+            type = DebtType.BANK_LOAN,
+            totalAmount = Money(50_000_000L),
+            remainingBalance = Money(50_000_000L),
+            interestRateApr = 8.5,
+            minimumPayment = Money(2_000_000L),
+            dueDate = 20,
+        )
+        repository.upsertDebt(loan)
+
+        val result = repository.processPayment(
+            debtId = "loan-1",
+            walletId = "bank-w",
+            amount = 50_000L,
+            principalPaid = 50_000L,
+            interestPaid = 0L,
+            note = "",
+        )
+        assertInstanceOf(AppResult.Success::class.java, result)
+
+        val txs = repository.observeRecent(100).first()
+        val paymentTx = txs.firstOrNull { it.walletId == "bank-w" && it.type == TransactionType.EXPENSE }
+        assertTrue(paymentTx != null, "Payment transaction must be recorded")
+        assertEquals(DEBT_PAYMENT_CATEGORY_ID, paymentTx?.categoryId, "Category must be DEBT_PAYMENT_CATEGORY_ID")
+        assertEquals(50_000L, paymentTx?.amount?.value)
+        assertEquals("Thanh toán nợ: Vay mua xe", paymentTx?.note)
+    }
+
+    @Test
+    fun `processPayment for credit card creates transfer pair without expense category`() = runTest {
+        val cardDebt = DebtAccount(
+            id = "card-debt-1",
+            name = "Thẻ tín dụng VIB",
+            type = DebtType.CREDIT_CARD,
+            totalAmount = Money(20_000_000L),
+            remainingBalance = Money(5_000_000L),
+            interestRateApr = 24.0,
+            minimumPayment = Money(500_000L),
+            dueDate = 15,
+            linkedWalletId = "card-w",
+        )
+        repository.upsertDebt(cardDebt)
+
+        val result = repository.processPayment(
+            debtId = "card-debt-1",
+            walletId = "bank-w",
+            amount = 50_000L,
+            principalPaid = 50_000L,
+            interestPaid = 0L,
+            note = "",
+        )
+        assertInstanceOf(AppResult.Success::class.java, result)
+
+        val txs = repository.observeRecent(100).first()
+        val outTx = txs.firstOrNull { it.walletId == "bank-w" && it.type == TransactionType.TRANSFER_OUT }
+        val inTx = txs.firstOrNull { it.walletId == "card-w" && it.type == TransactionType.TRANSFER_IN }
+
+        assertTrue(outTx != null, "Transfer out must be recorded")
+        assertTrue(inTx != null, "Transfer in must be recorded")
+        assertEquals(null, outTx?.categoryId, "Transfer must not have categoryId")
+        assertEquals(null, inTx?.categoryId, "Transfer must not have categoryId")
     }
 }

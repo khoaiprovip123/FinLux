@@ -4,6 +4,15 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-09-10] - [v1.25.1] Chuẩn Hóa Mapping Danh Mục "Trả Nợ & Tín Dụng" & Phân Tách Ngữ Nghĩa Kế Toán
+
+- **Chuẩn hóa Category ID (`"debt_payment"`)**: Loại bỏ các ID mồ côi (`"debt_principal"`, `"debt_interest"`) trong `FirebaseDebtRepository` & `DemoFinluxRepository`. Mọi khoản trả nợ vay (Bank, Personal, Installment) gán chuẩn `categoryId = DEBT_PAYMENT_CATEGORY_ID` (`"debt_payment"`), khắc phục lỗi biên lai hiển thị fallback "Chi tiêu" và giúp ngân sách "Trả nợ & Tín dụng" đếm đủ 100% dòng tiền chi trả.
+- **Bảo toàn nghiệp vụ Thẻ tín dụng**: Giữ nguyên cơ chế chuyển tiền giữa các ví (`TRANSFER_OUT` / `TRANSFER_IN`), không gán category chi tiêu để chống double counting.
+- **Phân tách ngữ nghĩa kế toán chi phí sinh hoạt (`isLivingExpense`)**: Loại bỏ trả nợ gốc (hoán đổi tài sản) và xuất vốn đầu tư (`OUTLAY_CAPITAL`) khỏi báo cáo chi tiêu sinh hoạt tiêu dùng trong `ReportsViewModel`, bảo lưu tiền lãi vay như một khoản chi phí tài chính thực tế.
+- **Kiểm thử toàn diện**: 344/344 Unit tests PASS 100%.
+
+---
+
 ## ✅ [DONE 2026-09-09] - [v1.25.0] Hệ Thống Chu Kỳ Lương 2 Lần/Tháng (Semi-Monthly Payday 2.0) & Smart Debt-to-Payday Mapping
 
 - **Cấu hình chu kỳ lương 2 lần/tháng (`SalaryScheduleType.SEMI_MONTHLY`)**: Mở rộng `SalaryCycleConfig` hỗ trợ 2 mốc lương độc lập (`secondPaydayDay`, `secondSalaryWalletId`, `secondExpectedSalary`). Xác thực chặt chẽ ($\ge 5$ ngày khoảng cách, mức lương $> 0$).

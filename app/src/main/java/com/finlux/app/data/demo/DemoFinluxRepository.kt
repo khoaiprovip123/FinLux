@@ -18,6 +18,7 @@ import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.model.AppNotification
+import com.finlux.app.domain.model.DEBT_PAYMENT_CATEGORY_ID
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
@@ -414,20 +415,19 @@ class DemoFinluxRepository @Inject constructor(
             )
             transactionState.value = transactionState.value + listOf(outTx, inTx)
         } else {
-            val txCat = if (principalPaid > 0 && interestPaid == 0L) {
-                "debt_principal"
-            } else if (interestPaid > 0 && principalPaid == 0L) {
-                "debt_interest"
+            val defaultNote = if (interestPaid > 0 && principalPaid == 0L) {
+                "Trả lãi khoản vay: ${targetDebt.name}"
             } else {
-                "debt_payment"
+                "Thanh toán nợ: ${targetDebt.name}"
             }
+            val txNote = if (note.isNotBlank()) note else defaultNote
             val tx = FinanceTransaction(
                 id = UUID.randomUUID().toString(),
                 type = TransactionType.EXPENSE,
                 amount = Money(amount),
-                categoryId = txCat,
+                categoryId = DEBT_PAYMENT_CATEGORY_ID,
                 walletId = walletId,
-                note = if (note.isNotBlank()) note else "Thanh toán nợ: ${targetDebt.name}",
+                note = txNote,
                 date = paymentDate,
                 createdAt = paymentDate,
                 updatedAt = paymentDate,
