@@ -4,7 +4,7 @@
 Đây là project Android **Finlux** — quản lý thu chi cá nhân, Kotlin + Jetpack Compose + Firebase,
 giao diện Liquid Glass. Đọc `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md` trước khi code.
 
-## 🎯 3 NGUYÊN TẮC CỐT LÕI BẮT BUỘC (MANDATORY CORE DIRECTIVES)
+## 🎯 8 NGUYÊN TẮC CỐT LÕI BẮT BUỘC (MANDATORY CORE DIRECTIVES)
 
 1. **ĐỒNG BỘ THEME & MÀU ĐỘNG (THEME CONSISTENCY):**
    - TUYỆT ĐỐI KHÔNG hardcode mã màu tĩnh (Color.Black, Color.White, #000000, #FFFFFF).
@@ -26,6 +26,32 @@ giao diện Liquid Glass. Đọc `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/UI_
      * TUYỆT ĐỐI KHÔNG dùng `|| request.resource.data.<field> is <type>` vì sẽ làm hỏng ràng buộc và cho phép ghi đè tự do.
      * BẮT BUỘC dùng đúng chuẩn: `(!('<field>' in request.resource.data) || request.resource.data.<field> == resource.data.<field>)`.
    - **Pre-commit Gate:** Luôn chạy `npm --prefix functions run check` (TypeScript) và kiểm tra unit test của rules trong `functions/test/firestore.rules.test.ts`.
+
+5. **NGUYÊN TẮC CẤM TẠO CODE TRÙNG LẶP & QUY TRÌNH SÁP NHẬP (ANTI-DUPLICATION & CONSOLIDATION MANDATE):**
+   - Tuyệt đối **CẤM TẠO FILE MỚI** trong `component/` nếu chưa rà soát và so sánh đối chiếu với các component hiện có trong project.
+   - Khi chuẩn hóa hoặc tạo component dùng chung mới để thay thế component cũ, BẮT BUỘC thực hiện song hành 3 bước trong cùng 1 task:
+     * (a) Tạo/củng cố component chuẩn mới trong package quy định.
+     * (b) Di chuyển (migrate) 100% các màn hình cũ sang component mới.
+     * (c) **XÓA BỎ HOÀN TOÀN** file/component cũ, tuyệt đối không để 2 file cùng tồn tại giải quyết một bài toán trong codebase (chống Zombie Code).
+
+6. **HỢP ĐỒNG FORM CONTROLS TIÊU CHUẨN TOÀN DỰ ÁN (UNIFIED FORM CONTROLS CONTRACT):**
+   - Mọi màn hình/sheet có form nhập liệu (`AddTransaction`, `TransferMoney`, `DebtPayment`, `Goals`, `Deals`, `Wallets`, `Budget`...) **BẮT BUỘC 100%** phải kế thừa từ `com.finlux.app.core.designsystem.component.form.FinluxFormControls.kt`:
+     * *Thời gian:* Bắt buộc dùng `FinluxDateTimePicker` (chọn cả Ngày VÀ Giờ:Phút, định dạng thông minh "Hôm nay / Hôm qua, dd/MM/yyyy • HH:mm"). Tuyệt đối cấm dùng DatePicker đơn lẻ bỏ sót giờ.
+     * *Số tiền:* Bắt buộc dùng `FinluxAmountInput` (định dạng chấm phân cách hàng nghìn, auto-scaling font size chống tràn layout, inline `₫` suffix qua `VndSuffixVisualTransformation`, nút xóa nhanh `[x]`, quick suggestion chips). Cấm tự dựng `BasicTextField` riêng lẻ cho số tiền.
+     * *Ghi chú:* Bắt buộc dùng `FinluxNoteInput` (kèm icon badge, giới hạn ký tự và nút xóa nhanh).
+     * *Ví & Danh mục:* Bắt buộc dùng `FinluxWalletSelector`, `FinluxTransferWalletPair`, `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`.
+
+7. **NGUYÊN TẮC TRỊ TẬN GỐC & CẤM SỬA CHẮP VÁ (ROOT-CAUSE FIRST & ANTI-SINGLE-CASE PATCHING):**
+   - Tuyệt đối **CẤM "Single-case Patching"** (thêm padding, spacer, hoặc offset chắp vá để đối phó tạm thời với một lỗi tức thời trên một màn hình đơn lẻ).
+   - Khi phát sinh lỗi hiển thị (đè chữ, tràn số, lệch pha cảnh báo): Bắt buộc dừng lại, lập giả thuyết điều tra Root Cause và xử lý tận gốc ở Design System Token / Core Formatter hoặc Domain Invariant để toàn bộ các màn hình khác tự động được bảo vệ.
+
+8. **CHỐT CHẶN 5 ĐIỂM NGHIỆM THU MÁY THẬT QUA ADB (PHYSICAL DEVICE ACCEPTANCE GATE):**
+   - Sau khi chạy `gradlew assembleDebug` và nạp APK lên máy thật qua ADB, trước khi báo cáo và xin lệnh commit, agent bắt buộc phải tự đối chiếu qua Checklist Nghiệm Thu 5 Điểm:
+     1. [ ] **Theme check:** Màn hình hiển thị chuẩn xác ở cả Dark Mode và Light Mode, không bị chìm chữ hay gãy tương phản Liquid Glass.
+     2. [ ] **Large Number check:** Nhập số tiền lớn (từ 100 triệu đến 10 tỷ) chữ tự động thu nhỏ (auto-scaling), không bao giờ đè lên ký hiệu `₫` hay tràn viền.
+     3. [ ] **Keyboard (IME) check:** Bàn phím số bật lên không che khuất ô nhập liệu và không che khuất nút hành động (Lưu / Chuyển).
+     4. [ ] **Full Flow check:** Thực hiện 1 giao dịch thực tế từ đầu đến cuối trên máy thật, xác nhận số dư ví và sổ cái cập nhật chuẩn xác.
+     5. [ ] **Logcat check:** Không có crash ngầm, không có Unhandled Exception hay warning nghiêm trọng trên Logcat.
 
 ## Nguyên tắc bắt buộc kỹ thuật
 1. **Không bịa nghiệp vụ.** Nếu yêu cầu chưa có trong `docs/BA_SPEC.md`/`docs/UI_SPEC.md`, dừng lại hỏi hoặc

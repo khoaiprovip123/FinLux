@@ -68,27 +68,21 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.component.FinluxDialog
-import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
+import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
+import com.finlux.app.core.designsystem.component.form.FinluxNoteInput
+import com.finlux.app.core.designsystem.component.form.FinluxTransferWalletPair
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
-import java.text.DecimalFormat
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-private fun formatNumberWithDots(input: String): String {
-    val digits = input.filter { it.isDigit() }
-    if (digits.isEmpty()) return ""
-    val number = digits.toLongOrNull() ?: 0L
-    val formatter = DecimalFormat("#,###")
-    return formatter.format(number).replace(',', '.')
-}
 
 /**
  * Full-screen dedicated Transfer Screen for transferring funds between wallets.
+ * Adheres 100% to standard Finlux Form Controls (FinluxTransferWalletPair, FinluxAmountInput,
+ * FinluxDateTimePicker, FinluxNoteInput) and Design System directives.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,7 +109,6 @@ fun TransferMoneyScreen(
 
     var showSourcePicker by remember { mutableStateOf(false) }
     var showDestPicker by remember { mutableStateOf(false) }
-    var showDatePicker by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
 
     val sourceWallet = wallets.find { it.id == sourceWalletId }
@@ -165,21 +158,6 @@ fun TransferMoneyScreen(
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             viewModel.consumeMessage()
         }
-    }
-
-    // Date smart label
-    val localDate = selectedDate.atZone(ZoneId.systemDefault()).toLocalDate()
-    val today = LocalDate.now()
-    val dayPrefix = when (localDate) {
-        today -> "Hôm nay, "
-        today.minusDays(1) -> "Hôm qua, "
-        else -> ""
-    }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
-    val formattedDate = dayPrefix + selectedDate.atZone(ZoneId.systemDefault()).format(dateFormatter)
-
-    val formattedAmount = remember(transferAmount) {
-        formatNumberWithDots(transferAmount)
     }
 
     Surface(
@@ -255,346 +233,56 @@ fun TransferMoneyScreen(
                     }
                 }
 
-                // 2. Wallets Transfer Bento Box (From Wallet -> Swap -> To Wallet)
-                Surface(
-                    shape = RoundedCornerShape(22.dp),
-                    color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        // Source Wallet Row
-                        Text(
-                            text = "TỪ VÍ NGUỒN",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                            color = tokens.onSurfaceVariant,
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(tokens.surfaceSoft)
-                                .clickable { showSourcePicker = true }
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Color(0xFF3B82F6).copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalanceWallet,
-                                    contentDescription = null,
-                                    tint = Color(0xFF3B82F6),
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = sourceWallet?.name ?: "Chọn ví chuyển đi",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = tokens.onSurface,
-                                )
-                                Text(
-                                    text = "Khả dụng: ${formatVndAmount(sourceWallet?.balance?.value ?: 0L)}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                                    color = if (isInsufficientFunds) Color(0xFFEF4444) else tokens.onSurfaceVariant,
-                                )
-                            }
+                // 2. Wallets Transfer Bento Box (Standard FinluxTransferWalletPair)
+                FinluxTransferWalletPair(
+                    sourceWallet = sourceWallet,
+                    destWallet = destWallet,
+                    onSelectSource = { showSourcePicker = true },
+                    onSelectDest = { showDestPicker = true },
+                    onSwap = {
+                        if (sourceWalletId.isNotBlank() && destWalletId.isNotBlank()) {
+                            val temp = sourceWalletId
+                            sourceWalletId = destWalletId
+                            destWalletId = temp
                         }
+                    },
+                    sourceSubtitle = "Khả dụng: ${formatVndAmount(sourceWallet?.balance?.value ?: 0L)}",
+                    destSubtitle = "Hiện tại: ${formatVndAmount(destWallet?.balance?.value ?: 0L)}",
+                    isSourceError = isInsufficientFunds,
+                    errorMessage = if (isSameWallet) "⚠️ Ví gửi và ví nhận không được trùng nhau" else null,
+                )
 
-                        // Swap Button Divider
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(1.dp)
-                                    .background(tokens.border.copy(alpha = 0.4f)),
-                            )
-                            IconButton(
-                                onClick = {
-                                    if (sourceWalletId.isNotBlank() && destWalletId.isNotBlank()) {
-                                        val temp = sourceWalletId
-                                        sourceWalletId = destWalletId
-                                        destWalletId = temp
-                                    }
-                                },
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .background(tokens.primary.copy(alpha = 0.12f)),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.SwapVert,
-                                    contentDescription = "Đổi chiều",
-                                    tint = tokens.primary,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(1.dp)
-                                    .background(tokens.border.copy(alpha = 0.4f)),
-                            )
-                        }
+                // 3. Amount Input (Standard FinluxAmountInput with Quick Suggestions & "Tất cả" chip)
+                FinluxAmountInput(
+                    label = "SỐ TIỀN CHUYỂN",
+                    amountText = transferAmount,
+                    onAmountChange = { transferAmount = it },
+                    leadingActionChip = if (sourceWallet != null && sourceWallet.balance.value > 0L) {
+                        "Tất cả" to { transferAmount = sourceWallet.balance.value.toString() }
+                    } else null,
+                    warningMessage = if (isInsufficientFunds && sourceWallet != null) {
+                        "Số dư ví [${sourceWallet.name}] không đủ để chuyển (Khả dụng: ${formatVndAmount(sourceWallet.balance.value)})"
+                    } else null,
+                )
 
-                        // Destination Wallet Row
-                        Text(
-                            text = "ĐẾN VÍ NHẬN",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                            color = tokens.onSurfaceVariant,
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(tokens.surfaceSoft)
-                                .clickable { showDestPicker = true }
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Color(0xFF10B981).copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalanceWallet,
-                                    contentDescription = null,
-                                    tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = destWallet?.name ?: "Chọn ví nhận tiền",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = tokens.onSurface,
-                                )
-                                Text(
-                                    text = "Hiện tại: ${formatVndAmount(destWallet?.balance?.value ?: 0L)}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                                    color = tokens.onSurfaceVariant,
-                                )
-                            }
-                        }
+                // 4. Standard Finlux Date & Time Picker
+                FinluxDateTimePicker(
+                    label = "THỜI GIAN GIAO DỊCH",
+                    selectedDateTime = selectedDate,
+                    onDateTimeChange = { selectedDate = it },
+                )
 
-                        if (isSameWallet) {
-                            Text(
-                                text = "⚠️ Ví gửi và ví nhận không được trùng nhau",
-                                color = Color(0xFFEF4444),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                            )
-                        }
-                    }
-                }
-
-                // 3. Amount Input Card
-                Surface(
-                    shape = RoundedCornerShape(22.dp),
-                    color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text(
-                            text = "SỐ TIỀN CHUYỂN",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                            color = tokens.onSurfaceVariant,
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            BasicTextField(
-                                value = formattedAmount,
-                                onValueChange = { newText ->
-                                    val digitsOnly = newText.filter { it.isDigit() }
-                                    if (digitsOnly.length <= 13) {
-                                        transferAmount = digitsOnly
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                textStyle = MaterialTheme.typography.headlineMedium.copy(
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = if (isInsufficientFunds) Color(0xFFEF4444) else tokens.primary,
-                                ),
-                                cursorBrush = SolidColor(tokens.primary),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                                decorationBox = { innerTextField ->
-                                    if (formattedAmount.isEmpty()) {
-                                        Text(
-                                            text = "0",
-                                            style = MaterialTheme.typography.headlineMedium.copy(
-                                                fontSize = 28.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = tokens.onSurfaceVariant.copy(alpha = 0.35f),
-                                            ),
-                                        )
-                                    }
-                                    innerTextField()
-                                },
-                            )
-                            Text(
-                                text = "đ",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = tokens.onSurfaceVariant,
-                                ),
-                            )
-                        }
-
-                        if (isInsufficientFunds && sourceWallet != null) {
-                            Text(
-                                text = "Số dư ví [${sourceWallet.name}] không đủ để chuyển (Khả dụng: ${formatVndAmount(sourceWallet.balance.value)})",
-                                color = Color(0xFFEF4444),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                            )
-                        }
-
-                        // Quick Chips
-                        val quickAmounts = listOf(50_000L, 100_000L, 200_000L, 500_000L, 1_000_000L, 2_000_000L)
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(top = 4.dp),
-                        ) {
-                            if (sourceWallet != null && sourceWallet.balance.value > 0L) {
-                                item {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = tokens.primary.copy(alpha = 0.12f),
-                                        modifier = Modifier.clickable {
-                                            transferAmount = sourceWallet.balance.value.toString()
-                                        },
-                                    ) {
-                                        Text(
-                                            text = "Tất cả",
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                color = tokens.primary,
-                                                fontSize = 11.5.sp,
-                                            ),
-                                        )
-                                    }
-                                }
-                            }
-                            items(quickAmounts) { amt ->
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = tokens.surfaceSoft,
-                                    modifier = Modifier.clickable {
-                                        transferAmount = amt.toString()
-                                    },
-                                ) {
-                                    Text(
-                                        text = "+${formatNumberWithDots(amt.toString())}",
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = tokens.onSurfaceVariant,
-                                            fontSize = 11.5.sp,
-                                        ),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 4. Date & Note Cards
-                Surface(
-                    shape = RoundedCornerShape(22.dp),
-                    color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        // Date picker row
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { showDatePicker = true }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(tokens.primary.copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = tokens.primary, modifier = Modifier.size(18.dp))
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Thời gian giao dịch", style = MaterialTheme.typography.labelSmall, color = tokens.onSurfaceVariant)
-                                Text(formattedDate, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = tokens.onSurface)
-                            }
-                        }
-
-                        Box(Modifier.fillMaxWidth().height(1.dp).background(tokens.border.copy(alpha = 0.3f)))
-
-                        // Note input row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(tokens.surfaceSoft, RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(Icons.Default.EditNote, contentDescription = null, tint = tokens.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                            }
-                            BasicTextField(
-                                value = note,
-                                onValueChange = { note = it },
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(color = tokens.onSurface),
-                                cursorBrush = SolidColor(tokens.primary),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                                decorationBox = { innerTextField ->
-                                    if (note.isEmpty()) {
-                                        Text(
-                                            text = "Ghi chú chuyển tiền (tùy chọn)",
-                                            style = MaterialTheme.typography.bodyMedium.copy(color = tokens.onSurfaceVariant.copy(alpha = 0.5f)),
-                                        )
-                                    }
-                                    innerTextField()
-                                },
-                            )
-                        }
-                    }
-                }
+                // 5. Standard Finlux Note Input
+                FinluxNoteInput(
+                    label = "GHI CHÚ CHUYỂN TIỀN",
+                    placeholder = "Ghi chú chuyển tiền (tùy chọn)",
+                    note = note,
+                    onNoteChange = { note = it },
+                )
 
                 Spacer(Modifier.height(4.dp))
 
-                // 5. Submit Button
+                // 6. Submit Button
                 Button(
                     onClick = {
                         viewModel.transfer(sourceWalletId, destWalletId, parsedAmount, note, selectedDate) {
@@ -622,7 +310,7 @@ fun TransferMoneyScreen(
         }
     }
 
-    // Wallet Pickers
+    // Wallet Pickers Bottom Sheet
     if (showSourcePicker) {
         FinluxWalletPickerBottomSheet(
             wallets = wallets,
@@ -645,57 +333,5 @@ fun TransferMoneyScreen(
             },
             onDismiss = { showDestPicker = false },
         )
-    }
-
-    // Date Picker Dialog
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate.toEpochMilli(),
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            colors = DatePickerDefaults.colors(
-                containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-            ),
-            shape = RoundedCornerShape(28.dp),
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val millis = datePickerState.selectedDateMillis
-                        if (millis != null) {
-                            selectedDate = Instant.ofEpochMilli(millis)
-                        }
-                        showDatePicker = false
-                    },
-                ) {
-                    Text("Chọn", color = tokens.primary, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy", color = tokens.onSurfaceVariant)
-                }
-            },
-        ) {
-            DatePicker(
-                state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                    titleContentColor = tokens.onSurface,
-                    headlineContentColor = tokens.onSurface,
-                    weekdayContentColor = tokens.onSurfaceVariant,
-                    subheadContentColor = tokens.onSurfaceVariant,
-                    yearContentColor = tokens.onSurface,
-                    currentYearContentColor = tokens.primary,
-                    selectedYearContentColor = tokens.onHero,
-                    selectedYearContainerColor = tokens.primary,
-                    dayContentColor = tokens.onSurface,
-                    selectedDayContentColor = tokens.onHero,
-                    selectedDayContainerColor = tokens.primary,
-                    todayContentColor = tokens.primary,
-                    todayDateBorderColor = tokens.primary,
-                ),
-            )
-        }
     }
 }

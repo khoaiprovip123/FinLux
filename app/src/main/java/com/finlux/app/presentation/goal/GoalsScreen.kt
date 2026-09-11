@@ -62,6 +62,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
+import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
+import com.finlux.app.core.designsystem.component.form.FinluxNoteInput
+import com.finlux.app.core.designsystem.component.form.FinluxWalletSelector
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,9 +92,7 @@ import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.WaterGlassCard
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -357,6 +360,8 @@ private fun GoalDepositWithdrawSheet(
     val tokens = LocalFinluxTokens.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    var showWalletPicker by remember { mutableStateOf(false) }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -421,81 +426,27 @@ private fun GoalDepositWithdrawSheet(
             }
 
             // Wallet Selection
-            Text(
-                text = if (isDeposit) "Trích tiền từ ví" else "Chuyển tiền về ví",
-                style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
-                color = tokens.onSurface,
+            FinluxWalletSelector(
+                label = if (isDeposit) "Trích tiền từ ví" else "Chuyển tiền về ví",
+                selectedWallet = wallets.find { it.id == state.selectedWalletId },
+                onClick = { showWalletPicker = true },
             )
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                items(wallets, key = { it.id }) { wallet ->
-                    val isSelected = wallet.id == state.selectedWalletId
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) tokens.primary.copy(alpha = 0.16f) else tokens.surfaceSoft,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .border(
-                                width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) tokens.primary else tokens.border,
-                                shape = RoundedCornerShape(14.dp),
-                            )
-                            .clickable { onSelectWallet(wallet.id) },
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AccountBalanceWallet,
-                                contentDescription = null,
-                                tint = if (isSelected) tokens.primary else tokens.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Column {
-                                Text(
-                                    text = wallet.name,
-                                    style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
-                                    color = if (isSelected) tokens.primary else tokens.onSurface,
-                                )
-                                Text(
-                                    text = formatVndAmount(wallet.balance.value),
-                                    style = FinluxTextStyles.MicroLabel.copy(fontSize = 10.sp),
-                                    color = tokens.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Amount Input with ErgonomicCompactAmountCard
-            ErgonomicCompactAmountCard(
+            // Amount Input
+            FinluxAmountInput(
                 label = "Số tiền thực hiện",
                 amountText = state.amountInput,
                 onAmountChange = onAmountChange,
                 placeholder = "0",
                 amountColor = if (isDeposit) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
-                showSuggestions = true,
             )
 
             // Note Input
-            OutlinedTextField(
-                value = state.note,
-                onValueChange = onNoteChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ghi chú (Tùy chọn)") },
-                placeholder = { Text(if (isDeposit) "VD: Thưởng lương tháng này" else "VD: Rút tiền chi tiêu") },
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = tokens.primary,
-                    unfocusedBorderColor = tokens.border,
-                ),
+            FinluxNoteInput(
+                note = state.note,
+                onNoteChange = onNoteChange,
+                placeholder = if (isDeposit) "VD: Thưởng lương tháng này" else "VD: Rút tiền chi tiêu",
+                label = "Ghi chú",
             )
 
             state.error?.let {
@@ -529,12 +480,23 @@ private fun GoalDepositWithdrawSheet(
             Spacer(Modifier.height(8.dp))
         }
     }
+
+    if (showWalletPicker) {
+        FinluxWalletPickerBottomSheet(
+            wallets = wallets,
+            selectedWalletId = state.selectedWalletId,
+            onSelectWallet = { wallet ->
+                onSelectWallet(wallet.id)
+                showWalletPicker = false
+            },
+            onDismiss = { showWalletPicker = false },
+        )
+    }
 }
 
 @Composable
 fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel()) {
     val state by viewModel.editor.collectAsStateWithLifecycle()
-    var showDatePicker by remember { mutableStateOf(false) }
     val imagePicker = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> viewModel.setImage(uri?.toString()) }
     BackHandler(onBack = onDismiss)
     LaunchedEffect(state.saved) { if (state.saved) { viewModel.consumeSaved(); onDismiss() } }
@@ -561,7 +523,13 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
                         showSuggestions = true,
                     )
                 }
-                item { WaterGlassCard(Modifier.fillMaxWidth(), tint = MaterialTheme.colorScheme.primary, onClick = { showDatePicker = true }) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.CalendarMonth, null); Text("Hạn hoàn thành", Modifier.weight(1f).padding(horizontal = 12.dp)); Text(state.deadline.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), fontWeight = FontWeight.Bold) } } }
+                item {
+                    FinluxDateTimePicker(
+                        selectedDateTime = state.deadline,
+                        onDateTimeChange = { viewModel.setDeadline(it) },
+                        label = "Hạn hoàn thành",
+                    )
+                }
                 item { Text("Danh mục", fontWeight = FontWeight.Bold) }
                 item { LazyRow(horizontalArrangement = Arrangement.spacedBy(9.dp)) { items(goalCategories) { option -> GoalCategoryChip(option, state.category == option.label) { viewModel.setCategory(option.label) } } } }
                 item {
@@ -580,10 +548,6 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
                 item { Button(viewModel::save, Modifier.fillMaxWidth().height(54.dp), enabled = !state.saving) { Text(if (state.saving) "Đang lưu…" else "Lưu mục tiêu", fontWeight = FontWeight.Bold) } }
             }
         }
-    }
-    if (showDatePicker) {
-        val picker = rememberDatePickerState(initialSelectedDateMillis = state.deadline.toEpochMilli())
-        DatePickerDialog({ showDatePicker = false }, confirmButton = { TextButton({ picker.selectedDateMillis?.let { viewModel.setDeadline(Instant.ofEpochMilli(it)) }; showDatePicker = false }) { Text("Chọn") } }, dismissButton = { TextButton({ showDatePicker = false }) { Text("Hủy") } }) { DatePicker(picker) }
     }
 }
 

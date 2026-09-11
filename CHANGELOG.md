@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.25.3] - 2026-09-11
+### Added
+- **Đóng Gói Bộ Điều Khiển Form Tiêu Chuẩn (Standard Finlux Form Controls - `FinluxFormControls.kt`)**:
+  * `FinluxDateTimePicker`: Tích hợp 2-trong-1 DatePicker (Material 3) + TimePicker (24h native), hiển thị thông minh "Hôm nay, dd/MM/yyyy • HH:mm", "Hôm qua...", triệt tiêu hoàn toàn mã nguồn dialog chọn ngày giờ tự viết lại.
+  * `FinluxAmountInput`: Nhập số tiền realtime với dấu chấm phân cách Việt Nam (`100.000 ₫`), tự động co dãn kích cỡ font (responsive font downscaling) khi số tiền lớn (hàng trăm triệu, hàng tỷ), nút xóa nhanh `[x]`, chip hành động ("Tất cả"), cảnh báo số dư không đủ và dải chip gợi ý số tiền nhanh.
+  * `FinluxNoteInput`: Ô nhập ghi chú chuẩn mực với icon badge thương hiệu, giới hạn ký tự, bộ xóa nhanh, hỗ trợ cả dark/light mode.
+  * `FinluxWalletSelector`: Card chọn ví tài khoản đồng bộ với logo ngân hàng/tổ chức tài chính, số dư khả dụng và chevron điều hướng.
+  * `FinluxTransferWalletPair`: Bento Box đồng bộ cho cặp Ví Nguồn - Ví Đích với nút hoán đổi chiều chuyển tiền (Swap) mượt mà ở thanh phân cách.
+- **Bổ Sung 4 Điều Khoản Cốt Lõi Bắt Buộc Vào Hiến Pháp Làm Việc (`AGENTS.md`)**:
+  * *Điều 5*: Nguyên tắc cấm tạo code trùng lặp & Quy trình sáp nhập (Anti-Duplication & Consolidation Mandate).
+  * *Điều 6*: Hợp đồng Form Controls tiêu chuẩn toàn dự án (Unified Form Controls Contract - Bắt buộc dùng `FinluxFormControls.kt`).
+  * *Điều 7*: Nguyên tắc trị tận gốc & Cấm sửa chắp vá (Root-Cause First & Anti-Single-Case Patching).
+  * *Điều 8*: Chốt chặn 5 điểm nghiệm thu máy thật qua ADB (Physical Device Acceptance Gate).
+
+### Changed
+- **Gom Nhất & Kế Thừa 100% Form Controls Toàn Hệ Thống**:
+  * Chuyển toàn bộ 19 màn hình nhập liệu và dialog/bottom sheet sang import từ `com.finlux.app.core.designsystem.component.form.FinluxFormControls.kt`.
+  * Hợp nhất `ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`, `formatAmountDigitsWithDots`, `VndSuffixVisualTransformation`, `generateAmountSuggestions` vào một Single Source of Truth duy nhất.
+
+### Removed
+- **Dọn Dẹp Triệt Để Dead Code & Zombie Code**:
+  * Xóa bỏ hoàn toàn `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt`.
+  * Xóa bỏ hoàn toàn `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`.
+
+### Fixed
+- Triệt tiêu hoàn toàn tình trạng vỡ vụn Design System (UI Fragmentation) và nguy cơ code trùng lặp trên toàn bộ dự án.
+- Đảm bảo 100% unit tests PASS (347/347 tests).
+
 ## [1.25.2] - 2026-09-10
 ### Added
 - **Hệ Thống Danh Mục Trung Tâm (Central System Category Registry - `SystemCategories.kt`)**:

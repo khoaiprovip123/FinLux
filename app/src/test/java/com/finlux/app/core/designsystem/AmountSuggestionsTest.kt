@@ -1,6 +1,6 @@
 package com.finlux.app.core.designsystem
 
-import com.finlux.app.core.designsystem.component.generateAmountSuggestions
+import com.finlux.app.core.designsystem.component.form.generateAmountSuggestions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

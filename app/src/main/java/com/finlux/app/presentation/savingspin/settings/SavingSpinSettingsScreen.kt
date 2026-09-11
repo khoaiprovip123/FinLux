@@ -82,10 +82,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.FinluxTextStyles
-import com.finlux.app.core.designsystem.component.FinluxAmountInputCard
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxDialog
-import com.finlux.app.core.designsystem.component.formatAmountDigitsWithDots
+import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -842,8 +841,8 @@ private fun SavingSpinAmountInputSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Input Card đồng bộ
-            FinluxAmountInputCard(
-                amountDigits = inputDigits,
+            FinluxAmountInput(
+                amountText = inputDigits,
                 onAmountChange = { inputDigits = it },
                 label = "Số tiền (VNĐ)",
                 showQuickChips = false,

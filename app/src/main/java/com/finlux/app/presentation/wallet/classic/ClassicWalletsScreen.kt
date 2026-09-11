@@ -3,7 +3,6 @@ package com.finlux.app.presentation.wallet.classic
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,8 +50,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.ui.platform.LocalContext
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
+import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
+import com.finlux.app.core.designsystem.component.form.FinluxNoteInput
+import com.finlux.app.core.designsystem.component.form.FinluxTransferWalletPair
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -691,25 +694,15 @@ private fun TransferEditor(
     var amount by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(Instant.now()) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    var showSourcePicker by remember { mutableStateOf(false) }
+    var showDestPicker by remember { mutableStateOf(false) }
 
     val sourceWallet = wallets.find { it.id == source }
+    val destWallet = wallets.find { it.id == destination }
     val sourceBalance = sourceWallet?.balance?.value ?: 0L
     val isSourceCard = sourceWallet?.type == com.finlux.app.domain.model.WalletType.CARD
-    val parsedAmount = amount.toLongOrNull() ?: 0L
+    val parsedAmount = amount.filter { it.isDigit() }.toLongOrNull() ?: 0L
     val isInsufficientFunds = !isSourceCard && sourceWallet != null && parsedAmount > sourceBalance
-    val tokens = LocalFinluxTokens.current
-
-    val localDate = selectedDate.atZone(ZoneId.systemDefault()).toLocalDate()
-    val today = LocalDate.now()
-    val dayPrefix = when (localDate) {
-        today -> "Hôm nay, "
-        today.minusDays(1) -> "Hôm qua, "
-        else -> ""
-    }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
-    val formattedDate = dayPrefix + selectedDate.atZone(ZoneId.systemDefault()).format(dateFormatter)
 
     GlassBottomSheet(onDismiss = onDismiss) {
         Column(
@@ -732,68 +725,40 @@ private fun TransferEditor(
                 Icon(Icons.Default.SwapHoriz, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Ví nguồn (Chuyển đi)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(wallets) { wallet ->
-                        FilterChip(
-                            selected = source == wallet.id,
-                            onClick = {
-                                source = wallet.id
-                                if (destination == wallet.id) {
-                                    destination = wallets.firstOrNull { it.id != wallet.id }?.id.orEmpty()
-                                }
-                            },
-                            label = { Text("${wallet.name} (${wallet.balance.value.toShortVnd()})") },
-                        )
-                    }
-                }
-            }
+            FinluxTransferWalletPair(
+                sourceWallet = sourceWallet,
+                destWallet = destWallet,
+                onSelectSource = { showSourcePicker = true },
+                onSelectDest = { showDestPicker = true },
+                onSwap = {
+                    val temp = source
+                    source = destination
+                    destination = temp
+                },
+            )
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Ví nhận (Chuyển đến)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(wallets.filter { it.id != source }) { wallet ->
-                        FilterChip(
-                            selected = destination == wallet.id,
-                            onClick = { destination = wallet.id },
-                            label = { Text("${wallet.name} (${wallet.balance.value.toShortVnd()})") },
-                        )
-                    }
-                }
-            }
-
-            // Số tiền chuyển
-            ErgonomicCompactAmountCard(
-                label = "Số tiền chuyển",
+            FinluxAmountInput(
+                label = "SỐ TIỀN CHUYỂN",
                 amountText = amount,
                 onAmountChange = { amount = it },
-                placeholder = "0",
-                amountColor = tokens.primary,
-                showSuggestions = true,
+                warningMessage = if (isInsufficientFunds) "Số dư ví nguồn không đủ để thực hiện chuyển tiền" else null,
             )
 
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it.take(120) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ghi chú chuyển tiền (Tùy chọn)") },
-                shape = RoundedCornerShape(16.dp),
+            FinluxDateTimePicker(
+                selectedDateTime = selectedDate,
+                onDateTimeChange = { selectedDate = it },
+                label = "Thời gian giao dịch",
             )
 
-            // Ergonomic Date/Time Row
-            ErgonomicFormRow(
-                label = "THỜI GIAN CHUYỂN TIỀN",
-                primaryValue = formattedDate,
-                secondaryValue = null,
-                icon = Icons.Default.CalendarMonth,
-                iconTintColor = tokens.primary,
-                iconBgColor = tokens.primary.copy(alpha = 0.12f),
-                onClick = { showDatePicker = true },
+            FinluxNoteInput(
+                note = note,
+                onNoteChange = { note = it },
+                placeholder = "Ghi chú chuyển tiền (tùy chọn)",
+                label = "Ghi chú",
             )
 
             Button(
-                onClick = { onTransfer(source, destination, amount.toLongOrNull() ?: 0, note.trim(), selectedDate) },
+                onClick = { onTransfer(source, destination, parsedAmount, note.trim(), selectedDate) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = parsedAmount > 0L && source.isNotBlank() && destination.isNotBlank() && source != destination && !isInsufficientFunds && !busy,
                 shape = RoundedCornerShape(16.dp),
@@ -807,55 +772,31 @@ private fun TransferEditor(
         }
     }
 
-    // Dialog chọn ngày & giờ
-    if (showDatePicker) {
-        val currentZoned = selectedDate.atZone(ZoneId.systemDefault())
-        val initialDateUtcMillis = currentZoned.toLocalDate()
-            .atStartOfDay(ZoneOffset.UTC)
-            .toInstant()
-            .toEpochMilli()
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initialDateUtcMillis,
+    if (showSourcePicker) {
+        FinluxWalletPickerBottomSheet(
+            wallets = wallets,
+            selectedWalletId = source,
+            onSelectWallet = { w ->
+                source = w.id
+                if (destination == w.id) {
+                    destination = wallets.firstOrNull { it.id != w.id }?.id.orEmpty()
+                }
+                showSourcePicker = false
+            },
+            onDismiss = { showSourcePicker = false },
         )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val selectedMillis = datePickerState.selectedDateMillis
-                    showDatePicker = false
-                    if (selectedMillis != null) {
-                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
-                            .atZone(ZoneOffset.UTC)
-                            .toLocalDate()
+    }
 
-                        val timePickerDialog = android.app.TimePickerDialog(
-                            context,
-                            { _, hourOfDay, minute ->
-                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
-                                selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                            },
-                            currentZoned.hour,
-                            currentZoned.minute,
-                            true,
-                        )
-                        timePickerDialog.setOnCancelListener {
-                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
-                            selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                        }
-                        timePickerDialog.show()
-                    }
-                }) {
-                    Text("Tiếp tục (Chọn giờ)")
-                }
+    if (showDestPicker) {
+        FinluxWalletPickerBottomSheet(
+            wallets = wallets.filter { it.id != source },
+            selectedWalletId = destination,
+            onSelectWallet = { w ->
+                destination = w.id
+                showDestPicker = false
             },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy")
-                }
-            },
-        ) {
-            DatePicker(state = datePickerState)
-        }
+            onDismiss = { showDestPicker = false },
+        )
     }
 }
 

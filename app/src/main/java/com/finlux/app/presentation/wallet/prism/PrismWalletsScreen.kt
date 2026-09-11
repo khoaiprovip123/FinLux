@@ -93,9 +93,7 @@ import com.finlux.app.core.designsystem.InstitutionSelectorSection
 import com.finlux.app.core.designsystem.findInstitutionForWallet
 import com.finlux.app.core.designsystem.GlassBottomSheet
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxDialog
 import com.finlux.app.core.designsystem.component.FinluxEmptyState

@@ -25,22 +25,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
+import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
+import com.finlux.app.core.designsystem.component.form.FinluxNoteInput
+import com.finlux.app.core.designsystem.component.form.FinluxWalletSelector
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
-import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.FinancialDeal
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.home.toVnd
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +48,6 @@ fun RecordDealInflowSheet(
     isSubmitting: Boolean = false,
 ) {
     val tokens = LocalFinluxTokens.current
-    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val isLending = deal.category == DealCategory.LENDING
 
@@ -64,7 +59,6 @@ fun RecordDealInflowSheet(
     var amountDigits by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(Instant.now()) }
-    var showDatePicker by remember { mutableStateOf(false) }
 
     val cleanDigits = amountDigits.filter { it.isDigit() }.trimStart('0')
     val amount = cleanDigits.toLongOrNull() ?: 0L
@@ -73,17 +67,6 @@ fun RecordDealInflowSheet(
     val gainPortion = if (amount > remainingCapital) amount - remainingCapital else 0L
 
     val selectedWallet = wallets.find { it.id == selectedWalletId }
-
-    // Date formatting with "Hôm nay" / "Hôm qua" smart labels
-    val localDate = selectedDate.atZone(ZoneId.systemDefault()).toLocalDate()
-    val today = LocalDate.now()
-    val dayPrefix = when (localDate) {
-        today -> "Hôm nay, "
-        today.minusDays(1) -> "Hôm qua, "
-        else -> ""
-    }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
-    val formattedDate = dayPrefix + selectedDate.atZone(ZoneId.systemDefault()).format(dateFormatter)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -109,7 +92,7 @@ fun RecordDealInflowSheet(
             ) {
                 Column {
                     Text(
-                        text = if (isLending) "Thu Hồi Nợ / Tiền Lãi" else "Thu Hồi Vốn & Lợi Nhuận",
+                        text = if (isLending) "Thu Hồi Nợ Gốc / Thu Lãi" else "Ghi Nhận Thu Tiền Về",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -120,7 +103,6 @@ fun RecordDealInflowSheet(
                         text = deal.title,
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = tokens.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
                         ),
                     )
                 }
@@ -139,19 +121,16 @@ fun RecordDealInflowSheet(
                 }
             }
 
-            // 1. Chọn ví nhận tiền (ErgonomicFormRow)
-            ErgonomicFormRow(
+            // 1. Chọn ví nhận tiền (Standard FinluxWalletSelector)
+            FinluxWalletSelector(
                 label = "VÍ NHẬN TIỀN",
-                primaryValue = selectedWallet?.name ?: "Chưa chọn ví",
-                secondaryValue = selectedWallet?.let { "Số dư hiện tại: ${formatVndAmount(it.balance.value)}" },
-                icon = walletIcon(selectedWallet?.type ?: com.finlux.app.domain.model.WalletType.CASH),
-                iconBgColor = colorFromHex(selectedWallet?.colorHex.orEmpty(), tokens.primary).copy(alpha = 0.15f),
-                iconTintColor = colorFromHex(selectedWallet?.colorHex.orEmpty(), tokens.primary),
+                selectedWallet = selectedWallet,
+                subtitle = selectedWallet?.let { "Số dư hiện tại: ${formatVndAmount(it.balance.value)}" },
                 onClick = { showWalletPicker = true },
             )
 
-            // 2. Nhập số tiền thu về (ErgonomicCompactAmountCard)
-            ErgonomicCompactAmountCard(
+            // 2. Nhập số tiền thu về (Standard FinluxAmountInput)
+            FinluxAmountInput(
                 label = "SỐ TIỀN THỰC NHẬN VỀ",
                 amountText = amountDigits,
                 onAmountChange = { amountDigits = it },
@@ -229,10 +208,9 @@ fun RecordDealInflowSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
-                                text = if (isLending) "• Tiền lãi nhận thêm (ghi vào Báo cáo):" else "• Lợi nhuận ròng (ghi vào Báo cáo):",
+                                text = if (isLending) "• Tiền lãi phát sinh (Ghi nhận Thu nhập):" else "• Lợi nhuận ròng (Ghi nhận Thu nhập):",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = if (gainPortion > 0) (if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)) else tokens.onSurfaceVariant,
-                                    fontWeight = if (gainPortion > 0) FontWeight.Bold else FontWeight.Normal,
+                                    color = tokens.onSurface,
                                 ),
                             )
                             Text(
@@ -247,27 +225,24 @@ fun RecordDealInflowSheet(
                 }
             }
 
-            // 4. Ghi chú (ErgonomicInputRow)
-            ErgonomicInputRow(
+            // 4. Ghi chú (Standard FinluxNoteInput)
+            FinluxNoteInput(
                 label = "GHI CHÚ (TÙY CHỌN)",
-                value = note,
-                onValueChange = { note = it },
+                note = note,
+                onNoteChange = { note = it },
                 placeholder = if (isLending) "Ví dụ: Trả đợt 1, Tiền lãi tháng 8..." else "Ví dụ: Thu đợt 1, Tiền lời bán xe...",
                 icon = Icons.Default.Description,
                 iconBgColor = Color(0xFF10B981).copy(alpha = 0.12f),
                 iconTintColor = Color(0xFF10B981),
-                onClear = { note = "" },
             )
 
-            // 5. Thời gian giao dịch (ErgonomicFormRow)
-            ErgonomicFormRow(
+            // 5. Thời gian giao dịch (Standard FinluxDateTimePicker)
+            FinluxDateTimePicker(
                 label = if (isLending) "THỜI GIAN THU NỢ" else "THỜI GIAN THU TIỀN",
-                primaryValue = formattedDate,
-                secondaryValue = null,
-                icon = Icons.Default.CalendarMonth,
+                selectedDateTime = selectedDate,
+                onDateTimeChange = { selectedDate = it },
                 iconBgColor = Color(0xFF10B981).copy(alpha = 0.14f),
                 iconTintColor = Color(0xFF10B981),
-                onClick = { showDatePicker = true },
             )
 
             Spacer(Modifier.height(8.dp))
@@ -314,56 +289,5 @@ fun RecordDealInflowSheet(
             },
             onDismiss = { showWalletPicker = false },
         )
-    }
-
-    // Dialog chọn ngày & giờ
-    if (showDatePicker) {
-        val currentZoned = selectedDate.atZone(ZoneId.systemDefault())
-        val initialDateUtcMillis = currentZoned.toLocalDate()
-            .atStartOfDay(ZoneOffset.UTC)
-            .toInstant()
-            .toEpochMilli()
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initialDateUtcMillis,
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val selectedMillis = datePickerState.selectedDateMillis
-                    showDatePicker = false
-                    if (selectedMillis != null) {
-                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
-                            .atZone(ZoneOffset.UTC)
-                            .toLocalDate()
-
-                        val timePickerDialog = android.app.TimePickerDialog(
-                            context,
-                            { _, hourOfDay, minute ->
-                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
-                                selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                            },
-                            currentZoned.hour,
-                            currentZoned.minute,
-                            true,
-                        )
-                        timePickerDialog.setOnCancelListener {
-                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
-                            selectedDate = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                        }
-                        timePickerDialog.show()
-                    }
-                }) {
-                    Text("Tiếp tục (Chọn giờ)")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy")
-                }
-            },
-        ) {
-            DatePicker(state = datePickerState)
-        }
     }
 }

@@ -1,8 +1,73 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.2 (versionCode 176)
-- **Trạng thái Build:** ✅ 100% PASS (347/347 unit tests) — Chuẩn hóa kiến trúc hệ thống, Central Category Registry (`SystemCategories.kt`), đồng bộ cửa sổ ngân sách theo chu kỳ tài chính (`FinancialPeriodResolver`), thống nhất KPI chi phí sinh hoạt giữa Home và Báo cáo (`isLivingExpense`).
+- **Phiên bản hiện tại:** v1.25.3 (versionCode 177)
+- **Trạng thái Build:** ✅ 100% PASS (347/347 unit tests)
+
+### [Task-P1-16-DEAD-CODE-FORM-CONTROLS-CLEANUP] — Dọn Dẹp Code Thừa, Zombie Code & Gom Nhất Form Controls Vào FinluxFormControls.kt
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Rà soát tổng thể dependencies của các file cũ (`FinluxFormComponents.kt` và `FinluxAmountInputCard.kt`).
+  2. Di chuyển/hợp nhất toàn bộ các component và tiện ích dùng chung (`ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxWalletPickerBottomSheet`, `SimpleWalletPickerSheet`, `FinluxCategoryPickerBottomSheet`, `SimpleCategoryPickerSheet`, `formatAmountDigitsWithDots`, `VndSuffixVisualTransformation`, `generateAmountSuggestions`, `ErgonomicCompactAmountCard`, `FinluxAmountInputCard`) vào `core/designsystem/component/form/FinluxFormControls.kt`.
+  3. Cập nhật `SavingSpinSettingsScreen.kt` kế thừa `FinluxAmountInput` chuẩn từ `form.FinluxFormControls.kt`.
+  4. Cập nhật các màn hình liên quan (`SalaryCycleSettingsSheet`, `RemindersScreen`, `NotificationsScreen`, `DebtPaymentSheet`, `AddEditDebtSheet`, `CreateDealSheet`, `ModernBudgetScreen`, `PrismBudgetScreen`, `ClassicBudgetScreen`, `PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`, `AddTransactionSheet`, `GoalsScreen`, `RecordDealOutlaySheet`, `RecordDealInflowSheet`, `TransferMoneyScreen`) sang import từ `com.finlux.app.core.designsystem.component.form.*`.
+  5. Xóa bỏ hoàn toàn 2 file trùng lặp/dead code:
+     - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt`
+     - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`
+  6. Kiểm thử xác nhận bằng `.\gradlew.bat testDebugUnitTest` đảm bảo 100% tests PASS và 0 Unresolved References.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 347/347 tests passed (100% PASS, 0 failures, 0 skipped).
+- **Danh sách file đã dọn dẹp & chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt` (ĐÃ XÓA HOÀN TOÀN)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (ĐÃ XÓA HOÀN TOÀN)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt` (Hợp nhất toàn bộ Form Controls, pickers, split cards & formatters)
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt` (Chuyển sang dùng FinluxAmountInput)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/deal/CreateDealSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlaySheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt` (Chuyển import sang package form)
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountSuggestionsTest.kt` (Cập nhật import generateAmountSuggestions sang package form)
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-15-FORM-CONTROLS-STANDARDIZATION] — Kiểm Toán Design System & Chuẩn Hóa Finlux Form Controls Dùng Chung
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Kiểm toán Form Controls toàn bộ các màn hình/sheet nhập liệu (`AddTransactionSheet`, `TransferMoneyScreen`, `AddEditDebtSheet`, `ProcessDebtPaymentSheet`, `DepositToGoalSheet`, `WithdrawGoalSheet`, `CreateDealScreen`, `DealOutlaySheet`, `DealSettlementSheet`, `AdjustWalletBalanceSheet`).
+  2. Đóng gói bộ component chuẩn tại `core/designsystem/component/form/FinluxFormControls.kt`:
+     - `FinluxDateTimePicker`: DatePicker + TimePicker (hỗ trợ chọn ngày, giờ:phút, nhãn chuẩn "Hôm nay, dd/MM/yyyy • HH:mm").
+     - `FinluxAmountInput`: Ô nhập tiền tệ chuẩn (format VND realtime, tự động căn chỉnh font size, tích hợp quick suggestion chips, hỗ trợ chip hành động "Tất cả" và cảnh báo số dư).
+     - `FinluxNoteInput`: Ô nhập ghi chú chuẩn kèm icon badge, giới hạn ký tự và nút xóa nhanh.
+     - `FinluxWalletSelector`: Card chọn ví nguồn / ví đích chuẩn mực.
+     - `FinluxTransferWalletPair`: Bento Box đồng bộ cho chuyển tiền giữa 2 ví kèm nút hoán đổi Swap.
+  3. Refactor và ép kế thừa 100% trên các màn hình nhập liệu.
+  4. Chạy Unit test, nâng version `v1.25.3` (`versionCode = 177`), đóng gói APK và cài đặt qua ADB lên thiết bị để nghiệm thu.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 347/347 tests passed (100% PASS).
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt` (mới)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlaySheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
 
 ### [Task-P1-14-ARCHITECTURE-MONEY-FLOW-MATRIX-STANDARDIZATION] — Chuẩn Hóa Kiến Trúc, Single Source Category Registry & Đồng Bộ Cửa Sổ Ngân Sách
 - **Status**: `[DONE]`
