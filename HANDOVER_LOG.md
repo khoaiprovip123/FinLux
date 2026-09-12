@@ -18,6 +18,45 @@
 - [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
 
+### [Task-REMINDER-BADGE-TIERS-STATUS-DOT] — Đại tu toàn diện Pill Badge đếm ngược: Phân tầng 4 màu sắc & Status Dot
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Phân tầng 4 cấp màu sắc ngữ nghĩa (Semantic Color Tiers)**:
+     - **Cấp 1 (Trong hôm nay - TODAY)**: Cam cháy đậm `Color(0xFFD97706)` (Light) / `Color(0xFFFBBF24)` (Dark), nền cam pastel `Color(0xFFF59E0B).copy(alpha = 0.20f)`, viền `BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.45f))`.
+     - **Cấp 2 (Ngày mai - TOMORROW)**: Xanh dương đậm `Color(0xFF1D4ED8)` (Light) / `Color(0xFF60A5FA)` (Dark), nền xanh pastel `tokens.primary.copy(alpha = 0.18f)`, viền `BorderStroke(1.dp, tokens.primary.copy(alpha = 0.40f))`.
+     - **Cấp 3 (Từ 2 ngày trở lên - FUTURE)**: Xám xanh trung tính `tokens.onSurfaceVariant`, nền `tokens.surfaceSoft`, viền `BorderStroke(0.8.dp, tokens.border.copy(alpha = 0.35f))`.
+     - **Cấp 4 (Quá hạn - OVERDUE)**: Cảnh báo đỏ `FinluxColors.ExpenseRed`, viền và nền đỏ pastel.
+  2. ✅ **Bổ sung chấm tròn trạng thái (Status Dot)**:
+     - `Box(modifier = Modifier.size(6.dp).background(badgeDotColor, CircleShape))` sắc nét 100% trên mọi mật độ pixel, thay thế hoàn toàn icon đồng hồ nhòe/trùng lặp.
+  3. ✅ **Xóa hoàn toàn shadow elevation**: Triệt tiêu hiện tượng lem nhem viền xám bẩn trên Light Theme.
+  4. ✅ **Core Model & Formatter**: Cập nhật `enum class ReminderCountdownTier` và `ReminderCountdownInfo` trong `ReminderTimeFormatter.kt`, kèm bộ unit test cập nhật 12 test cases.
+  5. ✅ **Kiểm thử & Đóng gói**:
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS** (389/389 tests passed).
+     - `.\gradlew.bat assembleDebug`: **BUILD SUCCESSFUL**.
+     - Cài đè qua ADB: **Success** và đã khởi chạy app trên thiết bị thật.
+- **Files thực tế đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/time/ReminderTimeFormatter.kt`
+  - `app/src/test/java/com/finlux/app/core/time/ReminderTimeFormatterTest.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-REMINDER-COUNTDOWN-BADGE] — Bổ sung chỉ số đếm ngược (Remaining Time Badge) trên màn hình Nhắc nhở định kỳ
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Core Time Formatter**: Tạo `ReminderTimeFormatter.kt` trong `core/time/`: hàm thuần túy `formatReminderCountdown` tính toán thời gian tương đối so với `Instant.now()`.
+  2. ✅ **Phân loại ca biên toàn diện**: Dưới 1 phút ("sắp diễn ra"), dưới 1 giờ ("còn X phút"), cùng ngày ("còn X giờ"), ngày mai ("ngày mai"), trên 1 ngày ("còn X ngày"), quá hạn ("quá hạn X ngày/giờ/phút").
+  3. ✅ **Unit Test tự động**: Tạo `ReminderTimeFormatterTest.kt` kiểm thử 12 ca biên đạt 100% PASS. Toàn bộ unit tests của project đạt 100% PASS.
+  4. ✅ **UI Liquid Glass Pill Badge**: Cập nhật `RemindersScreen.kt`, căn phải trong banner thời gian (`Arrangement.SpaceBetween`), đổi màu ngữ nghĩa theo trạng thái (Xanh dương cho bình thường, Cam ấm cho <1h, Đỏ cho quá hạn), tự động ẩn khi Switch tắt, memoize tối ưu bằng `remember(reminder.nextTriggerDate, reminder.enabled)`.
+  5. ✅ **Đóng gói & Nạp máy thật**: Build APK thành công và nạp đè lên thiết bị thật qua ADB (`adb install -r`), khởi chạy mượt mà không crash.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS** (389/389 unit tests passed).
+  - Đã nạp APK thành công lên thiết bị `adb-BM6HKBHEHQKFEMLR-prj23i._adb-tls-connect._tcp`.
+- **Files thực tế đã tạo mới & sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/time/ReminderTimeFormatter.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/core/time/ReminderTimeFormatterTest.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt`
+  - `HANDOVER_LOG.md`
+
 ### [Task-P1-22-SALARY-CYCLE-BUDGET-PHASE-4] — UI Self-Healing & Cross-Module Sync
 - **Status**: `[DONE]`
 - **Mục tiêu**:

@@ -17,10 +17,12 @@
   * `FinluxAdvisoryBanner`: Component banner Liquid Glass chuẩn Dynamic Tokens (`tokens.surfaceSoft`, `tokens.primary`, `tokens.onSurface`), hiển thị cảnh báo chuyển tiếp tinh tế trên cả 3 giao diện: `ClassicBudgetScreen`, `ModernBudgetScreen`, `PrismBudgetScreen`.
   * `HomeViewModel`: Fallback Guard bảo vệ KPI ngân sách và `DailySafeToSpend` trên Trang chủ không bị sập về 0đ / 0% khi vừa chuyển kỳ.
   * `ReportsViewModel` & `ReportQueryWindowResolver`: Nhận và truyền `timeline` để phân giải dải ngày và periodKey lịch sử chuẩn xác cho các báo cáo đa chu kỳ.
+- **Nhắc Nhở Định Kỳ (Recurring Reminders - Countdown Pill Badge)**:
+  * Reminders: Thêm huy hiệu đếm ngược thời gian (Countdown Pill Badge) phân tầng 4 cấp màu sắc ngữ nghĩa kèm chấm tròn trạng thái (Status Dot), hỗ trợ nhận diện trực quan mốc đến hạn.
 
 ### Changed
 - Cập nhật `versionCode = 179` và `versionName = "1.25.5"`.
-- Đảm bảo 100% kiểm thử tự động với 377/377 unit tests PASS.
+- Đảm bảo 100% kiểm thử tự động với 389/389 unit tests PASS.
 
 ## [1.25.4] - 2026-09-11
 ### Changed
