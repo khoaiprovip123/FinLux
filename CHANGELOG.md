@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.25.5] - 2026-09-12
+### Added
+- **Hệ Thống Lịch Sử Chu Kỳ Lương & Ngân Sách Đa Kỳ (Salary Cycle Timeline & Versioning - Phase 1)**:
+  * Thêm `SalaryCycleConfigRecord` và subcollection Firestore `users/{uid}/salaryCycleConfig/timeline` lưu vết lịch sử cấu hình chu kỳ lương theo thời gian thực tế (`effectiveFromDate`, `effectiveToDate`).
+  * Mở rộng `FinancialPeriodResolver` hỗ trợ đa chu kỳ: phân giải chính xác kỳ lương cho bất kỳ mốc thời gian nào trong quá khứ hoặc tương lai dựa trên `timeline`.
+- **Động Cơ Điều Hòa & Phân Bổ Ngân Sách (Reconciliation & Proration Engine - Phase 2)**:
+  * `BudgetProrationCalculator`: Thuật toán phân bổ hạn mức tỷ lệ ngày chính xác theo lịch thiên văn (`Calendar.getActualMaximum(DAY_OF_MONTH)`), làm tròn theo bước tiền chuẩn 1.000 ₫ và bảo toàn phần dư.
+  * `ReconcileBudgetOnCycleChangeUseCase`: Xử lý chuyển tiếp chu kỳ an toàn nguyên tử, tính toán và chuyển đổi ngân sách giữa kỳ cũ và kỳ mới, chống thất thoát hoặc sai lệch ngân sách khi người dùng đổi ngày nhận lương.
+- **Quy Trình Chuyển Tiếp Trải Nghiệm Người Dùng (UX Transition Flow - Phase 3)**:
+  * Tích hợp `SalaryCycleTransitionDialog` trong Cài đặt chu kỳ lương với 2 tùy chọn minh bạch:
+    * Lựa chọn A (Khuyến nghị): Áp dụng từ kỳ tiếp theo (kỳ hiện tại giữ nguyên vẹn, ngày mới bắt đầu từ chu kỳ kế tiếp).
+    * Lựa chọn B: Áp dụng ngay hôm nay (chốt sổ sớm) kèm switch bật/tắt phân bổ lại hạn mức theo tỷ lệ ngày (Proration).
+- **Cơ Chế Tự Phục Hồi Giao Diện & Đồng Bộ Liên Module (UI Self-Healing & Cross-Module Sync - Phase 4)**:
+  * `BudgetViewModel`: Tự phục hồi hạn mức ngân sách từ kỳ trước (`prevBudgets`) khi kỳ mới chưa tạo ngân sách (`currentBudgets.isEmpty() && prevBudgets.isNotEmpty()`), tính `spentAmount` động từ giao dịch thực tế trong kỳ; bảo vệ người dùng mới không bị kích hoạt fallback nhầm.
+  * `FinluxAdvisoryBanner`: Component banner Liquid Glass chuẩn Dynamic Tokens (`tokens.surfaceSoft`, `tokens.primary`, `tokens.onSurface`), hiển thị cảnh báo chuyển tiếp tinh tế trên cả 3 giao diện: `ClassicBudgetScreen`, `ModernBudgetScreen`, `PrismBudgetScreen`.
+  * `HomeViewModel`: Fallback Guard bảo vệ KPI ngân sách và `DailySafeToSpend` trên Trang chủ không bị sập về 0đ / 0% khi vừa chuyển kỳ.
+  * `ReportsViewModel` & `ReportQueryWindowResolver`: Nhận và truyền `timeline` để phân giải dải ngày và periodKey lịch sử chuẩn xác cho các báo cáo đa chu kỳ.
+
+### Changed
+- Cập nhật `versionCode = 179` và `versionName = "1.25.5"`.
+- Đảm bảo 100% kiểm thử tự động với 377/377 unit tests PASS.
+
 ## [1.25.4] - 2026-09-11
 ### Changed
 - Đóng gói và chuẩn hóa bản build release v1.25.4 (versionCode 178) sau khi hoàn tất kiểm toán, dọn dẹp dead code và kích hoạt 8 Nguyên tắc cốt lõi trong `AGENTS.md`.

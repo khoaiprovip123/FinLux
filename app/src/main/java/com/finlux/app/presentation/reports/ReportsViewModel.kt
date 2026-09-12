@@ -14,6 +14,7 @@ import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.model.SalaryCycleConfigRecord
 import com.finlux.app.domain.model.SavingSpinConfig
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
@@ -315,6 +316,7 @@ class ReportsViewModel @Inject constructor(
         val custom: ReportRange,
         val salaryConfig: SalaryCycleConfig,
         val walletId: String?,
+        val timeline: List<SalaryCycleConfigRecord> = emptyList(),
     )
 
     private data class DrillDownParams(
@@ -327,14 +329,21 @@ class ReportsViewModel @Inject constructor(
     private data class ReportWindowParams(
         val window: ReportQueryWindow,
         val salaryConfig: SalaryCycleConfig,
+        val timeline: List<SalaryCycleConfigRecord>,
         val period: ReportPeriod,
         val selectedWalletId: String?,
         val drillDown: DrillDownParams,
     )
 
     private val windowFlow = combine(
-        combine(selectedPeriod, customRange, salaryCycleRepository.observeConfig(), selectedWalletId) { period, custom, salaryConfig, walletId ->
-            BaseParams(period, custom, salaryConfig, walletId)
+        combine(
+            selectedPeriod,
+            customRange,
+            salaryCycleRepository.observeConfig(),
+            salaryCycleRepository.observeTimeline(),
+            selectedWalletId,
+        ) { period, custom, salaryConfig, timeline, walletId ->
+            BaseParams(period, custom, salaryConfig, walletId, timeline)
         },
         combine(selectedCategoryDetailId, selectedCategoryIsExpense, selectedCategoryDrillWalletId, selectedWalletDrillCategoryId) { catId, isExp, drillW, drillCat ->
             DrillDownParams(catId, isExp, drillW, drillCat)
@@ -342,8 +351,15 @@ class ReportsViewModel @Inject constructor(
     ) { base, drill ->
         val now = clock.now()
         val zone = FinanceTime.zoneOf(base.salaryConfig.financeTimeZone)
-        val window = windowResolver.resolve(base.period, base.custom, now, base.salaryConfig, zone)
-        ReportWindowParams(window, base.salaryConfig, base.period, base.walletId, drill)
+        val window = windowResolver.resolve(
+            period = base.period,
+            custom = base.custom,
+            now = now,
+            salaryConfig = base.salaryConfig,
+            zone = zone,
+            timeline = base.timeline,
+        )
+        ReportWindowParams(window, base.salaryConfig, base.timeline, base.period, base.walletId, drill)
     }
 
     val state = windowFlow.flatMapLatest { params ->
@@ -360,8 +376,8 @@ class ReportsViewModel @Inject constructor(
             flowOf(emptyList())
         }
 
-        val startPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, salaryConfig)
-        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(Instant.now(), salaryConfig)
+        val startPeriod = financialPeriodResolver.resolvePeriodContaining(window.currentStart, params.timeline, salaryConfig)
+        val nowPeriod = financialPeriodResolver.resolvePeriodContaining(Instant.now(), params.timeline, salaryConfig)
         val budgetsFlow = if (startPeriod.key == nowPeriod.key) {
             budgetRepository.observeBudgets(startPeriod.key)
         } else {

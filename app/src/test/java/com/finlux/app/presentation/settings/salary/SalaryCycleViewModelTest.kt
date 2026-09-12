@@ -3,16 +3,23 @@ package com.finlux.app.presentation.settings.salary
 import app.cash.turbine.test
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.time.FinanceClock
+import com.finlux.app.domain.model.BudgetPeriodBasis
 import com.finlux.app.domain.model.CycleRolloverRule
+import com.finlux.app.domain.model.FinancialPeriod
 import com.finlux.app.domain.model.Money
-import com.finlux.app.domain.model.PaydayRuleType
 import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.model.SalaryCycleConfigRecord
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.WalletRepository
+import com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver
 import com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator
+import com.finlux.app.domain.usecase.ReconcileBudgetOnCycleChangeUseCase
 import com.finlux.app.domain.usecase.ValidateSalaryCycleConfigUseCase
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -44,9 +51,14 @@ class SalaryCycleViewModelTest {
         override fun now(): Instant = fixedNow
     }
 
+    private val mockReconcileBudgetUseCase = mockk<ReconcileBudgetOnCycleChangeUseCase>(relaxed = true)
+
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        coEvery {
+            mockReconcileBudgetUseCase(any(), any(), any())
+        } returns AppResult.Success(emptyList())
     }
 
     @AfterEach
@@ -69,6 +81,8 @@ class SalaryCycleViewModelTest {
             calculator = DefaultSalaryCycleCalculator(),
             validator = ValidateSalaryCycleConfigUseCase(),
             clock = fixedClock,
+            reconcileBudgetUseCase = mockReconcileBudgetUseCase,
+            periodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
         )
 
         testScheduler.advanceUntilIdle()
@@ -92,6 +106,8 @@ class SalaryCycleViewModelTest {
             calculator = DefaultSalaryCycleCalculator(),
             validator = ValidateSalaryCycleConfigUseCase(),
             clock = fixedClock,
+            reconcileBudgetUseCase = mockReconcileBudgetUseCase,
+            periodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
         )
 
         testScheduler.advanceUntilIdle()
@@ -115,6 +131,8 @@ class SalaryCycleViewModelTest {
             calculator = DefaultSalaryCycleCalculator(),
             validator = ValidateSalaryCycleConfigUseCase(),
             clock = fixedClock,
+            reconcileBudgetUseCase = mockReconcileBudgetUseCase,
+            periodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
         )
 
         testScheduler.advanceUntilIdle()
@@ -131,10 +149,166 @@ class SalaryCycleViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `saveConfig triggers transition dialog when payday changed on active cycle`() = runTest(testDispatcher) {
+        val repo = FakeSalaryCycleRepo(SalaryCycleConfig(enabled = true, paydayDay = 25))
+        val walletRepo = FakeWalletRepo(emptyList())
+
+        val vm = SalaryCycleViewModel(
+            salaryCycleRepository = repo,
+            walletRepository = walletRepo,
+            calculator = DefaultSalaryCycleCalculator(),
+            validator = ValidateSalaryCycleConfigUseCase(),
+            clock = fixedClock,
+            reconcileBudgetUseCase = mockReconcileBudgetUseCase,
+            periodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
+        )
+
+        testScheduler.advanceUntilIdle()
+        vm.setPaydayDay(10) // Changed from 25 to 10
+        vm.saveConfig()
+        testScheduler.advanceUntilIdle()
+
+        vm.uiState.test {
+            val state = awaitItem()
+            assertTrue(state.showTransitionDialog)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `applyTransitionNextCycle schedules transition record for next cycle start and keeps current cycle intact`() = runTest(testDispatcher) {
+        val initialConfig = SalaryCycleConfig(enabled = true, paydayDay = 25)
+        val repo = FakeSalaryCycleRepo(initialConfig)
+        val walletRepo = FakeWalletRepo(emptyList())
+
+        val vm = SalaryCycleViewModel(
+            salaryCycleRepository = repo,
+            walletRepository = walletRepo,
+            calculator = DefaultSalaryCycleCalculator(),
+            validator = ValidateSalaryCycleConfigUseCase(),
+            clock = fixedClock,
+            reconcileBudgetUseCase = mockReconcileBudgetUseCase,
+            periodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
+        )
+
+        testScheduler.advanceUntilIdle()
+        vm.setPaydayDay(10) // Next payday day
+        vm.saveConfig() // Opens dialog
+        testScheduler.advanceUntilIdle()
+
+        vm.applyTransitionNextCycle()
+        testScheduler.advanceUntilIdle()
+
+        vm.uiState.test {
+            val state = awaitItem()
+            assertFalse(state.showTransitionDialog)
+            assertNotNull(state.successMessage)
+            assertTrue(state.successMessage!!.contains("25/08/2026"))
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Check timeline in repo
+        val timeline = repo.getTimeline()
+        assertEquals(2, timeline.size)
+        val oldRec = timeline.first { it.effectiveToDate != null }
+        val newRec = timeline.first { it.effectiveToDate == null }
+        assertEquals("2026-08-25", oldRec.effectiveToDate)
+        assertEquals("2026-08-25", newRec.effectiveFromDate)
+        assertEquals(10, newRec.config.paydayDay)
+    }
+
+    @Test
+    fun `applyTransitionImmediate truncates current cycle today, saves new record, and reconciles budget with proration`() = runTest(testDispatcher) {
+        val initialConfig = SalaryCycleConfig(enabled = true, paydayDay = 25)
+        val repo = FakeSalaryCycleRepo(initialConfig)
+        val walletRepo = FakeWalletRepo(emptyList())
+
+        val vm = SalaryCycleViewModel(
+            salaryCycleRepository = repo,
+            walletRepository = walletRepo,
+            calculator = DefaultSalaryCycleCalculator(),
+            validator = ValidateSalaryCycleConfigUseCase(),
+            clock = fixedClock,
+            reconcileBudgetUseCase = mockReconcileBudgetUseCase,
+            periodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
+        )
+
+        testScheduler.advanceUntilIdle()
+        vm.setPaydayDay(10) // Changed from 25 to 10
+        vm.saveConfig() // Opens dialog
+        testScheduler.advanceUntilIdle()
+
+        vm.applyTransitionImmediate(applyProration = true)
+        testScheduler.advanceUntilIdle()
+
+        vm.uiState.test {
+            val state = awaitItem()
+            assertFalse(state.showTransitionDialog)
+            assertEquals("Đã áp dụng chu kỳ mới từ hôm nay", state.successMessage)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Verify budget reconciliation was called with applyProration = true
+        coVerify(exactly = 1) {
+            mockReconcileBudgetUseCase(
+                newPeriod = any(),
+                sourcePeriod = any(),
+                applyProration = true,
+            )
+        }
+
+        // Check timeline in repo
+        val timeline = repo.getTimeline()
+        assertEquals(2, timeline.size)
+        val oldRec = timeline.first { it.effectiveToDate != null }
+        val newRec = timeline.first { it.effectiveToDate == null }
+        assertEquals("2026-08-24", oldRec.effectiveToDate)
+        assertEquals("2026-08-24", newRec.effectiveFromDate)
+        assertEquals(10, newRec.config.paydayDay)
+    }
+
+    @Test
+    fun `saveDirectly saves immediately without dialog when enabled toggled on fresh setup`() = runTest(testDispatcher) {
+        val initialConfig = SalaryCycleConfig(enabled = false, paydayDay = 25)
+        val repo = FakeSalaryCycleRepo(initialConfig)
+        val walletRepo = FakeWalletRepo(emptyList())
+
+        val vm = SalaryCycleViewModel(
+            salaryCycleRepository = repo,
+            walletRepository = walletRepo,
+            calculator = DefaultSalaryCycleCalculator(),
+            validator = ValidateSalaryCycleConfigUseCase(),
+            clock = fixedClock,
+            reconcileBudgetUseCase = mockReconcileBudgetUseCase,
+            periodResolver = DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()),
+        )
+
+        testScheduler.advanceUntilIdle()
+        vm.setEnabled(true)
+        vm.saveConfig() // Initial setup, initialConfig.enabled was false -> saves directly
+        testScheduler.advanceUntilIdle()
+
+        vm.uiState.test {
+            val state = awaitItem()
+            assertFalse(state.showTransitionDialog)
+            assertEquals("Đã lưu cấu hình chu kỳ tài chính", state.successMessage)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val timeline = repo.getTimeline()
+        assertEquals(1, timeline.size)
+        assertEquals("2026-08-24", timeline.first().effectiveFromDate)
+        assertFalse(timeline.first().effectiveToDate != null)
+    }
 }
 
 private class FakeSalaryCycleRepo(initial: SalaryCycleConfig) : SalaryCycleRepository {
     private val flow = MutableStateFlow(initial)
+    private val timelineFlow = MutableStateFlow<List<SalaryCycleConfigRecord>>(emptyList())
+    fun getTimeline(): List<SalaryCycleConfigRecord> = timelineFlow.value
+
     override fun observeConfig(): Flow<SalaryCycleConfig> = flow
     override suspend fun saveConfig(config: SalaryCycleConfig): AppResult<Unit> {
         flow.value = config
@@ -142,6 +316,18 @@ private class FakeSalaryCycleRepo(initial: SalaryCycleConfig) : SalaryCycleRepos
     }
     override suspend fun isRolloverProcessed(cycleKey: String): Boolean = false
     override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> = AppResult.Success(Unit)
+
+    override fun observeTimeline(): Flow<List<SalaryCycleConfigRecord>> = timelineFlow
+    override suspend fun getConfigAt(instant: Instant): SalaryCycleConfig = flow.value
+    override suspend fun saveConfigRecord(record: SalaryCycleConfigRecord): AppResult<Unit> {
+        val current = timelineFlow.value.filterNot { it.id == record.id }.toMutableList()
+        current.add(record)
+        timelineFlow.value = current
+        if (record.effectiveToDate == null) {
+            flow.value = record.config
+        }
+        return AppResult.Success(Unit)
+    }
 }
 
 private class FakeWalletRepo(private val list: List<Wallet>) : WalletRepository {

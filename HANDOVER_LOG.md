@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.4 (versionCode 178)
-- **Trạng thái Build:** ✅ 100% PASS (347/347 unit tests)
+- **Phiên bản hiện tại:** v1.25.5 (versionCode 179)
+- **Trạng thái Build:** ✅ 100% PASS (377/377 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
 ### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
@@ -17,6 +17,117 @@
 - [ ] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+
+### [Task-P1-22-SALARY-CYCLE-BUDGET-PHASE-4] — UI Self-Healing & Cross-Module Sync
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tự phục hồi tại `BudgetViewModel.kt` & các màn hình ngân sách:
+     - Kích hoạt fallback khi `currentBudgets.isEmpty() && prevBudgets.isNotEmpty()`, lấy hạn mức từ kỳ trước (`prevBudgets`) kết hợp tính `spentAmount` động từ giao dịch thực tế trong kỳ hiện tại. Người dùng mới chưa từng tạo ngân sách không bị kích hoạt fallback nhầm.
+     - Bổ sung `transitionAdvisoryBanner: String?` trong `BudgetUiState`.
+     - Tạo component chuẩn `FinluxAdvisoryBanner` trong `FinluxFeedbackComponents.kt` dùng dynamic tokens (`tokens.surfaceSoft`, `tokens.primary`, `tokens.onSurface`).
+     - Hiển thị Advisory Banner trên cả 3 màn hình theme: `ClassicBudgetScreen.kt`, `ModernBudgetScreen.kt`, `PrismBudgetScreen.kt`.
+  2. Chống sập chỉ số tại `HomeViewModel.kt`:
+     - Fallback Guard khi danh sách `budgets` kỳ mới tạm rỗng do độ trễ ghi CSDL (`budgets.isEmpty() && prevBudgets.isNotEmpty()`), bảo vệ KPI ngân sách và `DailySafeToSpend` không bị rơi về 0đ / 0%.
+  3. Bảo vệ màn hình báo cáo tại `ReportsViewModel.kt` & `ReportQueryWindowResolver.kt`:
+     - Nhận và truyền `timeline` để giải mã chính xác dải ngày và periodKey lịch sử đa chu kỳ lương.
+  4. Viết Unit Tests toàn diện cho cả 3 ViewModel & Resolver:
+     - `BudgetViewModelTest.kt`: Test fallback khi current rỗng và prev có dữ liệu; test người dùng mới cả 2 kỳ đều rỗng không kích hoạt; test khi kỳ hiện tại đã có ngân sách.
+     - `HomeViewModelTest.kt`: Test fallback guard cho KPI ngân sách và Safe-To-Spend; test khi cả 2 kỳ rỗng.
+     - `ReportQueryWindowResolverTest.kt` & `ReportsViewModelTest.kt`: Test giải mã lịch sử dải ngày theo versioning timeline.
+  5. Đảm bảo `.\gradlew.bat testDebugUnitTest` đạt 100% PASS và `npm --prefix functions run check` đạt 0 lỗi.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS (377/377 tests passed, 0 failures, 0 skipped)**.
+  - `npm --prefix functions run check`: **0 errors (TypeScript clean)**.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt` [MODIFIED - thêm `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt` [MODIFIED - thêm `transitionAdvisoryBanner`, timeline & fallback self-healing]
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt` [MODIFIED - tích hợp `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt` [MODIFIED - tích hợp `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` [MODIFIED - tích hợp `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt` [MODIFIED - thêm fallback guard bảo vệ KPI ngân sách & Safe-To-Spend]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportQueryWindowResolver.kt` [MODIFIED - nhận và phân giải dải ngày theo `timeline`]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt` [MODIFIED - quan sát và truyền `timeline` cho windowResolver và periodResolver]
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt` [MODIFIED - chuẩn hóa default `observeTimeline(): Flow<List<SalaryCycleConfigRecord>> = flowOf(emptyList())`]
+  - `app/src/test/java/com/finlux/app/presentation/budget/BudgetViewModelTest.kt` [MODIFIED - bổ sung 3 test cases cho Self-Healing fallback & banner]
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt` [MODIFIED - bổ sung test cases fallback guard và cập nhật fake repo]
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportQueryWindowResolverTest.kt` [MODIFIED - test case phân giải timeline cho salary cycle window]
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt` [MODIFIED - test case phân giải kỳ lịch sử với timeline records]
+  - `HANDOVER_LOG.md` [MODIFIED]
+
+### [Task-P1-21-SALARY-CYCLE-BUDGET-PHASE-3] — UX Flow Trên Settings & Tích Hợp ViewModel
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thiết kế Transition Selection Dialog (`SalaryCycleTransitionDialog`) trong `SalaryCycleSettingsSheet.kt`: Khi bấm "Lưu thay đổi" và phát hiện thay đổi ngày lương hoặc chu kỳ, hiển thị lựa chọn thời điểm áp dụng:
+     - Lựa chọn A (Khuyến nghị): Áp dụng từ kỳ lương tiếp theo (kỳ hiện tại giữ nguyên vẹn, ngày mới bắt đầu từ chu kỳ kế tiếp).
+     - Lựa chọn B: Áp dụng ngay hôm nay (chốt sổ sớm) kèm switch "Phân bổ lại hạn mức ngân sách theo tỷ lệ ngày (Proration)".
+  2. Tích hợp logic vào `SalaryCycleViewModel.kt`:
+     - Inject `ReconcileBudgetOnCycleChangeUseCase`, `FinancialPeriodResolver`, và `SalaryCycleRepository`.
+     - Lựa chọn A (`applyTransitionNextCycle`): Cập nhật `effectiveToDate` của bản ghi hiện hành và tạo `SalaryCycleConfigRecord` mới với `effectiveFromDate` là ngày bắt đầu kỳ kế tiếp (`nextCycleStart`).
+     - Lựa chọn B (`applyTransitionImmediate`): Cập nhật `effectiveToDate` của bản ghi cũ = hôm nay, tạo bản ghi mới `effectiveFromDate` = hôm nay, kích hoạt `ReconcileBudgetOnCycleChangeUseCase` với cờ `applyProration`.
+     - Giữ nguyên fallback lưu trực tiếp (`saveDirectly`) khi người dùng chỉ bật/tắt tính năng hoặc đổi ví tiết kiệm mà không đổi ngày/chu kỳ.
+  3. Viết Unit Tests toàn diện trong `SalaryCycleViewModelTest.kt`:
+     - Test phân nhánh hiển thị dialog chuyển tiếp khi đổi ngày lương.
+     - Test nhánh A (`applyTransitionNextCycle`): Kiểm tra timeline record được lên lịch đúng ngày bắt đầu kỳ mới.
+     - Test nhánh B (`applyTransitionImmediate`): Kiểm tra bản ghi cũ bị đóng hôm nay, bản ghi mới mở hôm nay và `reconcileBudgetUseCase` được gọi với cờ `applyProration = true`.
+     - Test lưu trực tiếp khi thiết lập ban đầu (`saveDirectly`).
+  4. Đảm bảo `.\gradlew.bat testDebugUnitTest` 100% PASS và `npm --prefix functions run check` đạt 0 lỗi.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS (371/371 tests passed, 0 failures, 0 skipped)**.
+  - `npm --prefix functions run check`: **0 errors (TypeScript clean)**.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt` [MODIFIED - thêm `SalaryCycleTransitionDialog`, tích hợp state `showTransitionDialog`]
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModel.kt` [MODIFIED - thêm `applyTransitionNextCycle`, `applyTransitionImmediate`, `dismissTransitionDialog`, phát hiện thay đổi ngày/chu kỳ]
+  - `app/src/test/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModelTest.kt` [MODIFIED - bổ sung test suites cho transition dialog, next cycle, immediate transition với proration]
+  - `HANDOVER_LOG.md` [MODIFIED]
+
+### [Task-P1-20-SALARY-CYCLE-BUDGET-PHASE-2] — Domain UseCases & Historical Period Resolver
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Nâng cấp `FinancialPeriodResolver.kt`: hỗ trợ timeline-aware resolution (`resolvePeriodContaining`, `resolvePeriodKey`, `resolvePreviousPeriod`, `resolveNextPeriod`), phân giải chính xác `periodKey` lịch sử theo cấu hình tại thời điểm đó.
+  2. Xây dựng công thức phân bổ tỷ lệ hạn mức (`BudgetProrationCalculator.kt`): `ProratedLimit = StandardLimit * (ActualDays / StandardDays)`.
+  3. Tạo mới `ReconcileBudgetOnCycleChangeUseCase.kt`: kế thừa định mức `limitAmount` sang kỳ mới, hỗ trợ phân bổ tỷ lệ (proration), quét giao dịch thực tế trong `[start, endExclusive)` để tính `spentAmount` chuẩn xác (chỉ tính `isLivingExpense`), cập nhật atomic qua `BudgetRepository.upsertBudgets` (sử dụng Firestore WriteBatch), đồng bộ cờ cảnh báo `notified80`, `notified100`.
+  4. Mở rộng `BudgetRepository` với default method `upsertBudgets` và cài đặt `WriteBatch` tối ưu trong `FirebaseBudgetRepository`.
+  5. Viết Unit Tests đầy đủ cho Period Resolver lịch sử, Reconcile UseCase và Proration Calculator.
+  6. Đảm bảo `.\gradlew.bat testDebugUnitTest` đạt 100% PASS.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS (367/367 tests passed, 0 failures, 0 skipped)**.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/BudgetProrationCalculator.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/ReconcileBudgetOnCycleChangeUseCase.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt` [MODIFIED - thêm extension `configAt`]
+  - `app/src/main/java/com/finlux/app/domain/usecase/FinancialPeriodResolver.kt` [MODIFIED - timeline-aware methods]
+  - `app/src/main/java/com/finlux/app/domain/repository/FinanceRepositories.kt` [MODIFIED - thêm `upsertBudgets`]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt` [MODIFIED - batch `upsertBudgets`]
+  - `app/src/test/java/com/finlux/app/domain/model/BudgetProrationCalculatorTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/ReconcileBudgetOnCycleChangeUseCaseTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/FinancialPeriodResolverTest.kt` [MODIFIED - timeline tests]
+  - `app/src/test/java/com/finlux/app/domain/usecase/ExecuteSalaryRolloverUseCaseTest.kt` [MODIFIED - mockk disambiguation]
+  - `app/src/test/java/com/finlux/app/presentation/budget/BudgetViewModelTest.kt` [MODIFIED - mockk disambiguation]
+  - `HANDOVER_LOG.md` [MODIFIED]
+
+### [Task-P1-19-SALARY-CYCLE-BUDGET-PHASE-1] — Model Hóa Dòng Thời Gian Cấu Hình (Salary Cycle Versioning) & Data Layer
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Khai báo model `SalaryCycleConfigRecord` trong `SalaryCycleModels.kt` với `effectiveFromDate`, `effectiveToDate`, `config`, `createdAt` và logic `isEffectiveAt(date/instant)`.
+  2. Mở rộng `SalaryCycleRepository` với `observeTimeline()`, `getConfigAt(instant)`, `saveConfigRecord(record)` đảm bảo 100% backward compatibility và cung cấp default interface methods.
+  3. Cập nhật `SalaryCycleFirestoreMapper.kt` để serialize/deserialize `SalaryCycleConfigRecord` (`recordToMap`, `recordFromMap`).
+  4. Cập nhật `FirebaseSalaryCycleRepository.kt` và `DemoSalaryCycleRepository.kt` hỗ trợ đọc/ghi timeline và fallback tự động về cấu hình hiện hành nếu chưa có lịch sử.
+  5. Cập nhật `firestore.rules` whitelist collection `salaryCycleTimeline` chuẩn bảo mật.
+  6. Viết Unit tests mới (`SalaryCycleTimelineTest`, `FirebaseSalaryCycleMapperTest`) và cập nhật các Test Fakes để `.\gradlew.bat testDebugUnitTest` đạt 100% PASS.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 100% PASS (BUILD SUCCESSFUL, 350+ tests bao gồm toàn bộ test cases mới cho timeline, versioning và fallback).
+  - `npm --prefix functions run check`: 100% PASS (TypeScript check exit code 0).
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt` (thêm `SalaryCycleConfigRecord` và `isEffectiveAt`)
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt` (mở rộng interface kèm default methods)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapper.kt` (`recordToMap`, `recordFromMap`)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleRepository.kt` (triển khai timeline và fallback)
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSalaryCycleRepository.kt` (triển khai timeline memory và fallback)
+  - `firestore.rules` (bổ sung match `/salaryCycleTimeline/{docId}`)
+  - `app/src/test/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModelTest.kt` (cập nhật FakeSalaryCycleRepo)
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapperTest.kt` (thêm test mapper cho record)
+  - `app/src/test/java/com/finlux/app/domain/model/SalaryCycleTimelineTest.kt` (tạo mới test case timeline & versioning)
+  - `HANDOVER_LOG.md`
 
 ### [Task-P1-18-AUTO-CHECK-UPDATES-TOGGLE] — Thêm Tính Năng Bật/Tắt Tự Động Nhận Bản Cập Nhật
 - **Status**: `[DONE]`

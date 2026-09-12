@@ -65,6 +65,7 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.FinluxAdvisoryBanner
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
 import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
@@ -144,6 +145,11 @@ fun ClassicBudgetScreen(
             val isPast = state.period?.let { it.endExclusive <= java.time.Instant.now() } == true
             if (isPast) item {
                 Button(onClick = viewModel::currentMonth, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.CalendarMonth, null); Text("Về kỳ hiện tại", Modifier.padding(start = 8.dp)) }
+            }
+            state.transitionAdvisoryBanner?.let { banner ->
+                item {
+                    FinluxAdvisoryBanner(message = banner)
+                }
             }
             item {
                 GradientHeroCard(Modifier.fillMaxWidth()) {

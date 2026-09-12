@@ -59,7 +59,7 @@ class ExecuteSalaryRolloverUseCaseTest {
             financialPeriodResolver,
             transactionRepository,
         )
-        coEvery { financialPeriodResolver.resolvePreviousPeriod(any(), any()) } returns dummyPeriod
+        coEvery { financialPeriodResolver.resolvePreviousPeriod(any<SalaryCycleConfig>(), any()) } returns dummyPeriod
     }
 
     @Test

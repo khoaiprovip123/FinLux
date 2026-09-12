@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,6 +74,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.modern.GlassDialog
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.BudgetPeriodBasis
@@ -119,6 +121,15 @@ fun SalaryCycleSettingsSheet(
             android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
             viewModel.clearMessages()
         }
+    }
+
+    if (state.showTransitionDialog) {
+        SalaryCycleTransitionDialog(
+            onDismiss = { viewModel.dismissTransitionDialog() },
+            onConfirmNextCycle = { viewModel.applyTransitionNextCycle() },
+            onConfirmImmediate = { applyProration -> viewModel.applyTransitionImmediate(applyProration) },
+            isSaving = state.isSaving,
+        )
     }
 
     ModalBottomSheet(
@@ -1025,6 +1036,301 @@ private fun ScheduleTypeTabItem(
                 fontSize = 10.5.sp,
                 color = if (isSelected) Color(0xFF10B981).copy(alpha = 0.85f) else tokens.onSurfaceVariant,
             )
+        }
+    }
+}
+
+private enum class CycleTransitionOption {
+    NEXT_CYCLE,
+    IMMEDIATE,
+}
+
+@Composable
+private fun SalaryCycleTransitionDialog(
+    onDismiss: () -> Unit,
+    onConfirmNextCycle: () -> Unit,
+    onConfirmImmediate: (applyProration: Boolean) -> Unit,
+    isSaving: Boolean,
+) {
+    val tokens = LocalFinluxTokens.current
+    var selectedOption by remember { mutableStateOf(CycleTransitionOption.NEXT_CYCLE) }
+    var applyProration by remember { mutableStateOf(true) }
+
+    GlassDialog(onDismissRequest = { if (!isSaving) onDismiss() }) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(tokens.primary.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = tokens.primary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+                Column {
+                    Text(
+                        text = "Thay đổi chu kỳ lương",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                        ),
+                        color = tokens.onSurface,
+                    )
+                    Text(
+                        text = "Chọn thời điểm áp dụng thiết lập mới",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = tokens.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Text(
+                text = "FinLux phát hiện bạn vừa thay đổi ngày nhận lương hoặc chu kỳ tính toán. Vui lòng lựa chọn phương án chuyển tiếp:",
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                color = tokens.onSurface,
+            )
+
+            // Option A: NEXT_CYCLE
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = if (selectedOption == CycleTransitionOption.NEXT_CYCLE) {
+                    tokens.primary.copy(alpha = 0.14f)
+                } else tokens.surfaceSoft,
+                border = BorderStroke(
+                    1.2.dp,
+                    if (selectedOption == CycleTransitionOption.NEXT_CYCLE) tokens.primary else tokens.border.copy(alpha = 0.4f),
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .clickable(enabled = !isSaving) { selectedOption = CycleTransitionOption.NEXT_CYCLE },
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (selectedOption == CycleTransitionOption.NEXT_CYCLE) tokens.primary else Color.Transparent
+                            )
+                            .border(
+                                1.5.dp,
+                                if (selectedOption == CycleTransitionOption.NEXT_CYCLE) tokens.primary else tokens.onSurfaceVariant.copy(alpha = 0.5f),
+                                CircleShape,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (selectedOption == CycleTransitionOption.NEXT_CYCLE) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(12.dp),
+                            )
+                        }
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                text = "Áp dụng từ kỳ tiếp theo",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = if (selectedOption == CycleTransitionOption.NEXT_CYCLE) tokens.primary else tokens.onSurface,
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = tokens.primary.copy(alpha = 0.2f),
+                            ) {
+                                Text(
+                                    text = "Khuyến nghị",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = tokens.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Kỳ hiện tại giữ nguyên vẹn, ngày lương mới sẽ bắt đầu từ chu kỳ kế tiếp.",
+                            fontSize = 12.sp,
+                            color = tokens.onSurfaceVariant,
+                            lineHeight = 16.sp,
+                        )
+                    }
+                }
+            }
+
+            // Option B: IMMEDIATE
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = if (selectedOption == CycleTransitionOption.IMMEDIATE) {
+                    tokens.primary.copy(alpha = 0.14f)
+                } else tokens.surfaceSoft,
+                border = BorderStroke(
+                    1.2.dp,
+                    if (selectedOption == CycleTransitionOption.IMMEDIATE) tokens.primary else tokens.border.copy(alpha = 0.4f),
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .clickable(enabled = !isSaving) { selectedOption = CycleTransitionOption.IMMEDIATE },
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (selectedOption == CycleTransitionOption.IMMEDIATE) tokens.primary else Color.Transparent
+                                )
+                                .border(
+                                    1.5.dp,
+                                    if (selectedOption == CycleTransitionOption.IMMEDIATE) tokens.primary else tokens.onSurfaceVariant.copy(alpha = 0.5f),
+                                    CircleShape,
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (selectedOption == CycleTransitionOption.IMMEDIATE) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp),
+                                )
+                            }
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = "Áp dụng ngay hôm nay (Chốt sổ sớm)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = if (selectedOption == CycleTransitionOption.IMMEDIATE) tokens.primary else tokens.onSurface,
+                            )
+                            Text(
+                                text = "Kết thúc kỳ hiện tại ngay hôm nay và bắt đầu chu kỳ mới với thiết lập này.",
+                                fontSize = 12.sp,
+                                color = tokens.onSurfaceVariant,
+                                lineHeight = 16.sp,
+                            )
+                        }
+                    }
+
+                    // Sub-switch: Proration
+                    AnimatedVisibility(
+                        visible = selectedOption == CycleTransitionOption.IMMEDIATE,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically(),
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = tokens.surface.copy(alpha = 0.6f),
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                    Text(
+                                        text = "Phân bổ lại hạn mức ngân sách (Proration)",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = tokens.onSurface,
+                                    )
+                                    Text(
+                                        text = "Tự động co giãn hạn mức chi tiêu theo số ngày thực tế của kỳ chuyển tiếp.",
+                                        fontSize = 11.sp,
+                                        color = tokens.onSurfaceVariant,
+                                    )
+                                }
+                                Switch(
+                                    checked = applyProration,
+                                    onCheckedChange = { applyProration = it },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = tokens.primary,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    enabled = !isSaving,
+                    modifier = Modifier.weight(1f).height(46.dp),
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                    Text("Hủy")
+                }
+                Button(
+                    onClick = {
+                        if (selectedOption == CycleTransitionOption.NEXT_CYCLE) {
+                            onConfirmNextCycle()
+                        } else {
+                            onConfirmImmediate(applyProration)
+                        }
+                    },
+                    enabled = !isSaving,
+                    modifier = Modifier.weight(1.3f).height(46.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = tokens.primary,
+                    ),
+                ) {
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text("Xác nhận", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            }
         }
     }
 }

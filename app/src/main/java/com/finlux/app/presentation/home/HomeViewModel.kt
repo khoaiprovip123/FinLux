@@ -102,12 +102,18 @@ class HomeViewModel @Inject constructor(
     private val getTrueNetWorthUseCase: GetTrueNetWorthUseCase = GetTrueNetWorthUseCase(walletRepository, debtRepository, dealRepository),
 ) : ViewModel() {
 
-    private val financialOverviewFlow = salaryCycleRepository.observeConfig().flatMapLatest { cycleConfig ->
+    private val financialOverviewFlow = combine(
+        salaryCycleRepository.observeConfig(),
+        salaryCycleRepository.observeTimeline(),
+    ) { cycleConfig, timeline ->
+        cycleConfig to timeline
+    }.flatMapLatest { (cycleConfig, timeline) ->
         val now = clock.now()
         val zone = FinanceTime.zoneOf(cycleConfig.financeTimeZone)
 
         val transactionsFlow: Flow<List<FinanceTransaction>>
         val budgetsFlow: Flow<List<Budget>>
+        val prevBudgetsFlow: Flow<List<Budget>>
         val cycleLabel: String?
         val isSalaryCycleActive: Boolean
 
@@ -115,15 +121,35 @@ class HomeViewModel @Inject constructor(
             val cycle = calculator.cycleContaining(now, cycleConfig, zone)
             val fmt = DateTimeFormatter.ofPattern("dd/MM")
             cycleLabel = "${cycle.start.atZone(zone).format(fmt)} - ${cycle.endExclusive.atZone(zone).minusDays(1).format(fmt)}"
-            val period = financialPeriodResolver.resolvePeriodContaining(now, cycleConfig)
+            val period = if (timeline.isNotEmpty()) {
+                financialPeriodResolver.resolvePeriodContaining(now, timeline, cycleConfig)
+            } else {
+                financialPeriodResolver.resolvePeriodContaining(now, cycleConfig)
+            }
+            val prevPeriod = if (timeline.isNotEmpty()) {
+                financialPeriodResolver.resolvePreviousPeriodOf(period, timeline, cycleConfig)
+            } else {
+                financialPeriodResolver.resolvePreviousPeriodOf(period, cycleConfig)
+            }
             transactionsFlow = transactionRepository.observePeriod(cycle.start, cycle.endExclusive)
             budgetsFlow = budgetRepository.observeBudgets(period.key)
+            prevBudgetsFlow = budgetRepository.observeBudgets(prevPeriod.key)
             isSalaryCycleActive = true
         } else {
             val month = YearMonth.from(now.atZone(zone))
-            val period = financialPeriodResolver.resolvePeriodContaining(now, cycleConfig)
+            val period = if (timeline.isNotEmpty()) {
+                financialPeriodResolver.resolvePeriodContaining(now, timeline, cycleConfig)
+            } else {
+                financialPeriodResolver.resolvePeriodContaining(now, cycleConfig)
+            }
+            val prevPeriod = if (timeline.isNotEmpty()) {
+                financialPeriodResolver.resolvePreviousPeriodOf(period, timeline, cycleConfig)
+            } else {
+                financialPeriodResolver.resolvePreviousPeriodOf(period, cycleConfig)
+            }
             transactionsFlow = transactionRepository.observeMonth(month)
             budgetsFlow = budgetRepository.observeBudgets(period.key)
+            prevBudgetsFlow = budgetRepository.observeBudgets(prevPeriod.key)
             cycleLabel = null
             isSalaryCycleActive = false
         }
@@ -131,9 +157,10 @@ class HomeViewModel @Inject constructor(
         combine(
             dashboardRepository.observeCurrentMonthSummary(),
             budgetsFlow,
+            prevBudgetsFlow,
             transactionsFlow,
             notificationRepository.observeNotifications(),
-        ) { defaultSummary, budgets, periodTransactions, notifications ->
+        ) { defaultSummary, budgets, prevBudgets, periodTransactions, notifications ->
             val spentByCategory = periodTransactions
                 .filter {
                     it.type == TransactionType.EXPENSE &&
@@ -142,8 +169,16 @@ class HomeViewModel @Inject constructor(
                 }
                 .groupBy { it.categoryId!! }
                 .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
-            val limit = budgets.sumOf { it.limitAmount.value }
-            val spent = budgets.sumOf { spentByCategory[it.categoryId] ?: 0L }
+
+            val isFallbackActive = budgets.isEmpty() && prevBudgets.isNotEmpty()
+            val effectiveBudgets = if (isFallbackActive) {
+                prevBudgets
+            } else {
+                budgets
+            }
+
+            val limit = effectiveBudgets.sumOf { it.limitAmount.value }
+            val spent = effectiveBudgets.sumOf { spentByCategory[it.categoryId] ?: 0L }
             val remaining = (limit - spent).coerceAtLeast(0L)
             val percent = if (limit > 0) ((spent.toDouble() / limit.toDouble()) * 100).toInt() else 0
             val unread = notifications.count { !it.isRead }
@@ -162,7 +197,7 @@ class HomeViewModel @Inject constructor(
 
             FinancialOverview(
                 summary = effectiveSummary,
-                budgets = budgets,
+                budgets = effectiveBudgets,
                 totalBudgetLimit = limit,
                 totalBudgetSpent = spent,
                 totalBudgetPercent = percent,

@@ -63,8 +63,28 @@ class BudgetViewModelTest {
     )
 
     private val budgetFlow = MutableStateFlow<List<Budget>>(emptyList())
+    private val prevBudgetFlow = MutableStateFlow<List<Budget>>(emptyList())
+    private val prevMonth = currentMonth.minusMonths(1)
+    private val dummyPeriod = com.finlux.app.domain.model.FinancialPeriod(
+        key = "MONTHLY_$currentMonth",
+        start = currentMonth.atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
+        endExclusive = currentMonth.plusMonths(1).atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
+        displayLabel = "Tháng",
+        basis = com.finlux.app.domain.model.BudgetPeriodBasis.CALENDAR_MONTH
+    )
+    private val dummyPrevPeriod = com.finlux.app.domain.model.FinancialPeriod(
+        key = "MONTHLY_$prevMonth",
+        start = prevMonth.atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
+        endExclusive = currentMonth.atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
+        displayLabel = "Tháng trước",
+        basis = com.finlux.app.domain.model.BudgetPeriodBasis.CALENDAR_MONTH
+    )
+
     private val fakeBudgetRepo: BudgetRepository = object : BudgetRepository {
-        override fun observeBudgets(periodKey: String) = budgetFlow.asStateFlow()
+        override fun observeBudgets(periodKey: String) = when (periodKey) {
+            dummyPrevPeriod.key -> prevBudgetFlow.asStateFlow()
+            else -> budgetFlow.asStateFlow()
+        }
         override suspend fun upsertBudget(b: Budget): AppResult<String> = AppResult.Success(b.id)
         override suspend fun deleteBudget(b: Budget): AppResult<Unit> = AppResult.Success(Unit)
     }
@@ -112,13 +132,6 @@ class BudgetViewModelTest {
     private lateinit var viewModel: BudgetViewModel
 
     private val dummyConfig = com.finlux.app.domain.model.SalaryCycleConfig()
-    private val dummyPeriod = com.finlux.app.domain.model.FinancialPeriod(
-        key = "MONTHLY_$currentMonth",
-        start = currentMonth.atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
-        endExclusive = currentMonth.plusMonths(1).atDay(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant(),
-        displayLabel = "Tháng",
-        basis = com.finlux.app.domain.model.BudgetPeriodBasis.CALENDAR_MONTH
-    )
     private val salaryCycleRepository: com.finlux.app.domain.repository.SalaryCycleRepository = mockk(relaxed = true)
     private val financialPeriodResolver: com.finlux.app.domain.usecase.FinancialPeriodResolver = mockk(relaxed = true)
 
@@ -126,10 +139,13 @@ class BudgetViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { salaryCycleRepository.observeConfig() } returns kotlinx.coroutines.flow.flowOf(dummyConfig)
-        every { financialPeriodResolver.resolvePeriodContaining(any(), any()) } returns dummyPeriod
-        every { financialPeriodResolver.resolvePreviousPeriod(any(), any()) } returns dummyPeriod
+        every { salaryCycleRepository.observeTimeline() } returns kotlinx.coroutines.flow.flowOf(emptyList())
+        every { financialPeriodResolver.resolvePeriodContaining(any(), any<com.finlux.app.domain.model.SalaryCycleConfig>()) } returns dummyPeriod
+        every { financialPeriodResolver.resolvePreviousPeriod(any<com.finlux.app.domain.model.SalaryCycleConfig>(), any()) } returns dummyPrevPeriod
+        every { financialPeriodResolver.resolvePreviousPeriodOf(any(), any<com.finlux.app.domain.model.SalaryCycleConfig>()) } returns dummyPrevPeriod
         transactionFlow.value = emptyList()
         budgetFlow.value = emptyList()
+        prevBudgetFlow.value = emptyList()
         viewModel = BudgetViewModel(
             budgetRepository = fakeBudgetRepo,
             categoryRepository = fakeCategoryRepo,
@@ -359,6 +375,65 @@ class BudgetViewModelTest {
             assertTrue(item != null)
             assertEquals(5_000_000L, item!!.budget.spentAmount.value)
             assertEquals(BudgetLevel.EXCEEDED, item.status.level)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Phase 4: Self-Healing Fallback & Advisory Banner Tests
+    // ────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `selfHealingFallbackActivatesWhenCurrentBudgetsEmptyAndPreviousBudgetsExist`() = runTest {
+        viewModel.state.test {
+            awaitItem() // initial
+
+            // Current budgets empty, but previous period has 10M budget
+            budgetFlow.value = emptyList()
+            prevBudgetFlow.value = listOf(buildBudget(10_000_000L).copy(id = "${categoryId}_${prevMonth}", periodKey = dummyPrevPeriod.key))
+            // Current period has 2.5M expense transaction
+            transactionFlow.value = listOf(buildExpenseTx(2_500_000L))
+            advanceUntilIdle()
+
+            val state = awaitItem()
+            val item = state.items.firstOrNull()
+            assertTrue(item != null, "Phải có budget item kế thừa từ kỳ trước")
+            assertEquals(10_000_000L, item!!.budget.limitAmount.value, "Hạn mức phải kế thừa từ kỳ trước")
+            assertEquals(2_500_000L, item.budget.spentAmount.value, "Chi tiêu phải tính động từ giao dịch kỳ này")
+            assertTrue(state.transitionAdvisoryBanner != null, "Phải hiển thị transition banner")
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `selfHealingFallbackDoesNotActivateWhenBothCurrentAndPreviousBudgetsEmpty`() = runTest {
+        viewModel.state.test {
+            val initial = awaitItem()
+            budgetFlow.value = emptyList()
+            prevBudgetFlow.value = emptyList()
+            transactionFlow.value = listOf(buildExpenseTx(1_000_000L))
+            advanceUntilIdle()
+
+            val state = if (initial.items.isEmpty() && initial.transitionAdvisoryBanner == null) initial else awaitItem()
+            assertTrue(state.items.isEmpty(), "Người dùng mới chưa từng tạo ngân sách không kích hoạt fallback")
+            assertTrue(state.transitionAdvisoryBanner == null, "Không hiển thị banner khi không có fallback")
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `selfHealingFallbackDoesNotActivateWhenCurrentBudgetsExist`() = runTest {
+        viewModel.state.test {
+            awaitItem()
+            budgetFlow.value = listOf(buildBudget(5_000_000L))
+            prevBudgetFlow.value = listOf(buildBudget(10_000_000L).copy(id = "${categoryId}_${prevMonth}", periodKey = dummyPrevPeriod.key))
+            advanceUntilIdle()
+
+            val state = awaitItem()
+            val item = state.items.firstOrNull()
+            assertTrue(item != null)
+            assertEquals(5_000_000L, item!!.budget.limitAmount.value, "Phải dùng ngân sách kỳ hiện tại")
+            assertTrue(state.transitionAdvisoryBanner == null, "Không hiển thị banner khi kỳ hiện tại đã có ngân sách")
             cancelAndIgnoreRemainingEvents()
         }
     }

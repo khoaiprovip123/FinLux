@@ -1,6 +1,8 @@
 package com.finlux.app.presentation.reports
 
 import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.model.SalaryCycleConfigRecord
+import com.finlux.app.domain.model.configAt
 import com.finlux.app.domain.usecase.SalaryCycleCalculator
 import java.time.DayOfWeek
 import java.time.Instant
@@ -27,8 +29,15 @@ class ReportQueryWindowResolver @Inject constructor(
         now: Instant,
         salaryConfig: SalaryCycleConfig,
         zone: ZoneId,
+        timeline: List<SalaryCycleConfigRecord> = emptyList(),
     ): ReportQueryWindow {
-        val effectivePeriod = if (period == ReportPeriod.SALARY_CYCLE && !salaryConfig.enabled) {
+        val effectiveConfig = if (timeline.isNotEmpty()) {
+            timeline.configAt(now, salaryConfig)
+        } else {
+            salaryConfig
+        }
+
+        val effectivePeriod = if (period == ReportPeriod.SALARY_CYCLE && !effectiveConfig.enabled) {
             ReportPeriod.MONTH
         } else {
             period
@@ -63,8 +72,10 @@ class ReportQueryWindowResolver @Inject constructor(
                 createWindowFromRange(range, zone)
             }
             ReportPeriod.SALARY_CYCLE -> {
-                val currentCycle = salaryCycleCalculator.cycleContaining(now, salaryConfig, zone)
-                val previousCycle = salaryCycleCalculator.previousCycle(currentCycle, salaryConfig, zone)
+                val currentCycle = salaryCycleCalculator.cycleContaining(now, effectiveConfig, zone)
+                val prevInstant = currentCycle.start.minusMillis(1)
+                val prevConfig = if (timeline.isNotEmpty()) timeline.configAt(prevInstant, effectiveConfig) else effectiveConfig
+                val previousCycle = salaryCycleCalculator.previousCycle(currentCycle, prevConfig, zone)
                 val rangeStart = currentCycle.start.atZone(zone).toLocalDate()
                 val rangeEnd = currentCycle.endExclusive.atZone(zone).minusDays(1).toLocalDate()
                 ReportQueryWindow(

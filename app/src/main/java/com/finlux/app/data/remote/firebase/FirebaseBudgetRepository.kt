@@ -48,6 +48,19 @@ class FirebaseBudgetRepository(
         id
     }
 
+    override suspend fun upsertBudgets(budgets: List<Budget>): AppResult<Unit> = firebaseResult("Không thể lưu danh sách ngân sách") {
+        if (budgets.isEmpty()) return@firebaseResult Unit
+        val uid = requireUid()
+        val batch = firestore.batch()
+        for (budget in budgets) {
+            val id = budget.id.ifBlank { "${budget.categoryId}_${budget.periodKey}" }
+            val docRef = firestore.collection("users").document(uid).collection("budgets").document(id)
+            batch.set(docRef, budget.copy(id = id).toBudgetMap())
+        }
+        batch.commit().await()
+        Unit
+    }
+
     override suspend fun deleteBudget(budget: Budget): AppResult<Unit> = firebaseResult("Không thể xóa ngân sách") {
         val uid = requireUid()
         firestore.collection("users").document(uid).collection("budgets").document(budget.id).delete().await()
