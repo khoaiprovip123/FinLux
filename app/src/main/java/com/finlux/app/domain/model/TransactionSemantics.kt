@@ -37,7 +37,7 @@ fun List<FinanceTransaction>.netGoalContribution(
     return (deposits - withdrawals).coerceAtLeast(0L)
 }
 
-fun List<FinanceTransaction>.netGoalContribution(categoryId: String = SAVINGS_CATEGORY_ID): Long =
+fun List<FinanceTransaction>.netGoalContribution(categoryId: String = SystemCategories.SAVINGS): Long =
     netGoalContribution { it == categoryId }
 
 /** Kiểm tra xem giao dịch có phải là trả gốc nợ (chuyển dịch vốn, không phải chi tiêu sinh hoạt) hay không */
@@ -70,6 +70,7 @@ fun FinanceTransaction.isDebtInterest(): Boolean {
  * - Giao dịch không phải EXPENSE
  * - Xuất vốn đầu tư (OUTLAY_CAPITAL)
  * - Thanh toán nợ gốc (hoán đổi tài sản, không phải tiêu dùng mất đi)
+ * - Nạp tiền vào mục tiêu tích lũy (SAVINGS - tích lũy tài sản, không phải tiêu dùng mất đi)
  *
  * Giữ lại:
  * - Các khoản chi tiêu sinh hoạt thông thường
@@ -79,14 +80,15 @@ fun FinanceTransaction.isLivingExpense(): Boolean {
     if (type != TransactionType.EXPENSE) return false
     if (dealFlowType == DealFlowType.OUTLAY_CAPITAL) return false
     if (isDebtPrincipalSettlement()) return false
+    if (categoryId == SystemCategories.SAVINGS) return false
     return true
 }
 
-const val DEBT_PAYMENT_CATEGORY_ID = "debt_payment"
-const val DEBT_INTEREST_CATEGORY_ID = "debt_interest"
-const val DEBT_PRINCIPAL_CATEGORY_ID = "debt_principal"
+const val DEBT_PAYMENT_CATEGORY_ID = SystemCategories.DEBT_PAYMENT
+const val DEBT_INTEREST_CATEGORY_ID = SystemCategories.LEGACY_DEBT_INTEREST
+const val DEBT_PRINCIPAL_CATEGORY_ID = SystemCategories.LEGACY_DEBT_PRINCIPAL
+const val SAVINGS_CATEGORY_ID = SystemCategories.SAVINGS
 
 private const val TRANSFER_IN_SUFFIX = "_in"
 private const val TRANSFER_OUT_SUFFIX = "_out"
 private const val ACTIVE_WALLET_STATUS = "active"
-private const val SAVINGS_CATEGORY_ID = "savings"

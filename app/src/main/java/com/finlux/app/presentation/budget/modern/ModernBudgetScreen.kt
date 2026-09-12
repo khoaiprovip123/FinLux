@@ -67,10 +67,11 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.FinluxAdvisoryBanner
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
-import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.FinluxCategoryPickerBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxTransactionRow
 import com.finlux.app.core.navigation.Route
@@ -148,6 +149,11 @@ fun ModernBudgetScreen(
                 val isPast = state.period?.let { it.endExclusive <= java.time.Instant.now() } == true
                 if (isPast) item {
                     Button(onClick = viewModel::currentMonth, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.CalendarMonth, null); Text("Về kỳ hiện tại", Modifier.padding(start = 8.dp)) }
+                }
+                state.transitionAdvisoryBanner?.let { banner ->
+                    item {
+                        FinluxAdvisoryBanner(message = banner)
+                    }
                 }
                 item {
                     GlassCard(

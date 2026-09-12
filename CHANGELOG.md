@@ -1,5 +1,82 @@
 # Changelog
 
+## [1.25.5] - 2026-09-12
+### Added
+- **Hệ Thống Lịch Sử Chu Kỳ Lương & Ngân Sách Đa Kỳ (Salary Cycle Timeline & Versioning - Phase 1)**:
+  * Thêm `SalaryCycleConfigRecord` và subcollection Firestore `users/{uid}/salaryCycleConfig/timeline` lưu vết lịch sử cấu hình chu kỳ lương theo thời gian thực tế (`effectiveFromDate`, `effectiveToDate`).
+  * Mở rộng `FinancialPeriodResolver` hỗ trợ đa chu kỳ: phân giải chính xác kỳ lương cho bất kỳ mốc thời gian nào trong quá khứ hoặc tương lai dựa trên `timeline`.
+- **Động Cơ Điều Hòa & Phân Bổ Ngân Sách (Reconciliation & Proration Engine - Phase 2)**:
+  * `BudgetProrationCalculator`: Thuật toán phân bổ hạn mức tỷ lệ ngày chính xác theo lịch thiên văn (`Calendar.getActualMaximum(DAY_OF_MONTH)`), làm tròn theo bước tiền chuẩn 1.000 ₫ và bảo toàn phần dư.
+  * `ReconcileBudgetOnCycleChangeUseCase`: Xử lý chuyển tiếp chu kỳ an toàn nguyên tử, tính toán và chuyển đổi ngân sách giữa kỳ cũ và kỳ mới, chống thất thoát hoặc sai lệch ngân sách khi người dùng đổi ngày nhận lương.
+- **Quy Trình Chuyển Tiếp Trải Nghiệm Người Dùng (UX Transition Flow - Phase 3)**:
+  * Tích hợp `SalaryCycleTransitionDialog` trong Cài đặt chu kỳ lương với 2 tùy chọn minh bạch:
+    * Lựa chọn A (Khuyến nghị): Áp dụng từ kỳ tiếp theo (kỳ hiện tại giữ nguyên vẹn, ngày mới bắt đầu từ chu kỳ kế tiếp).
+    * Lựa chọn B: Áp dụng ngay hôm nay (chốt sổ sớm) kèm switch bật/tắt phân bổ lại hạn mức theo tỷ lệ ngày (Proration).
+- **Cơ Chế Tự Phục Hồi Giao Diện & Đồng Bộ Liên Module (UI Self-Healing & Cross-Module Sync - Phase 4)**:
+  * `BudgetViewModel`: Tự phục hồi hạn mức ngân sách từ kỳ trước (`prevBudgets`) khi kỳ mới chưa tạo ngân sách (`currentBudgets.isEmpty() && prevBudgets.isNotEmpty()`), tính `spentAmount` động từ giao dịch thực tế trong kỳ; bảo vệ người dùng mới không bị kích hoạt fallback nhầm.
+  * `FinluxAdvisoryBanner`: Component banner Liquid Glass chuẩn Dynamic Tokens (`tokens.surfaceSoft`, `tokens.primary`, `tokens.onSurface`), hiển thị cảnh báo chuyển tiếp tinh tế trên cả 3 giao diện: `ClassicBudgetScreen`, `ModernBudgetScreen`, `PrismBudgetScreen`.
+  * `HomeViewModel`: Fallback Guard bảo vệ KPI ngân sách và `DailySafeToSpend` trên Trang chủ không bị sập về 0đ / 0% khi vừa chuyển kỳ.
+  * `ReportsViewModel` & `ReportQueryWindowResolver`: Nhận và truyền `timeline` để phân giải dải ngày và periodKey lịch sử chuẩn xác cho các báo cáo đa chu kỳ.
+- **Nhắc Nhở Định Kỳ (Recurring Reminders - Countdown Pill Badge)**:
+  * Reminders: Thêm huy hiệu đếm ngược thời gian (Countdown Pill Badge) phân tầng 4 cấp màu sắc ngữ nghĩa kèm chấm tròn trạng thái (Status Dot), hỗ trợ nhận diện trực quan mốc đến hạn.
+
+### Changed
+- Cập nhật `versionCode = 179` và `versionName = "1.25.5"`.
+- Đảm bảo 100% kiểm thử tự động với 389/389 unit tests PASS.
+
+## [1.25.4] - 2026-09-11
+### Changed
+- Đóng gói và chuẩn hóa bản build release v1.25.4 (versionCode 178) sau khi hoàn tất kiểm toán, dọn dẹp dead code và kích hoạt 8 Nguyên tắc cốt lõi trong `AGENTS.md`.
+
+## [1.25.3] - 2026-09-11
+### Added
+- **Đóng Gói Bộ Điều Khiển Form Tiêu Chuẩn (Standard Finlux Form Controls - `FinluxFormControls.kt`)**:
+  * `FinluxDateTimePicker`: Tích hợp 2-trong-1 DatePicker (Material 3) + TimePicker (24h native), hiển thị thông minh "Hôm nay, dd/MM/yyyy • HH:mm", "Hôm qua...", triệt tiêu hoàn toàn mã nguồn dialog chọn ngày giờ tự viết lại.
+  * `FinluxAmountInput`: Nhập số tiền realtime với dấu chấm phân cách Việt Nam (`100.000 ₫`), tự động co dãn kích cỡ font (responsive font downscaling) khi số tiền lớn (hàng trăm triệu, hàng tỷ), nút xóa nhanh `[x]`, chip hành động ("Tất cả"), cảnh báo số dư không đủ và dải chip gợi ý số tiền nhanh.
+  * `FinluxNoteInput`: Ô nhập ghi chú chuẩn mực với icon badge thương hiệu, giới hạn ký tự, bộ xóa nhanh, hỗ trợ cả dark/light mode.
+  * `FinluxWalletSelector`: Card chọn ví tài khoản đồng bộ với logo ngân hàng/tổ chức tài chính, số dư khả dụng và chevron điều hướng.
+  * `FinluxTransferWalletPair`: Bento Box đồng bộ cho cặp Ví Nguồn - Ví Đích với nút hoán đổi chiều chuyển tiền (Swap) mượt mà ở thanh phân cách.
+- **Bổ Sung 4 Điều Khoản Cốt Lõi Bắt Buộc Vào Hiến Pháp Làm Việc (`AGENTS.md`)**:
+  * *Điều 5*: Nguyên tắc cấm tạo code trùng lặp & Quy trình sáp nhập (Anti-Duplication & Consolidation Mandate).
+  * *Điều 6*: Hợp đồng Form Controls tiêu chuẩn toàn dự án (Unified Form Controls Contract - Bắt buộc dùng `FinluxFormControls.kt`).
+  * *Điều 7*: Nguyên tắc trị tận gốc & Cấm sửa chắp vá (Root-Cause First & Anti-Single-Case Patching).
+  * *Điều 8*: Chốt chặn 5 điểm nghiệm thu máy thật qua ADB (Physical Device Acceptance Gate).
+
+### Changed
+- **Gom Nhất & Kế Thừa 100% Form Controls Toàn Hệ Thống**:
+  * Chuyển toàn bộ 19 màn hình nhập liệu và dialog/bottom sheet sang import từ `com.finlux.app.core.designsystem.component.form.FinluxFormControls.kt`.
+  * Hợp nhất `ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`, `formatAmountDigitsWithDots`, `VndSuffixVisualTransformation`, `generateAmountSuggestions` vào một Single Source of Truth duy nhất.
+
+### Removed
+- **Dọn Dẹp Triệt Để Dead Code & Zombie Code**:
+  * Xóa bỏ hoàn toàn `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt`.
+  * Xóa bỏ hoàn toàn `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`.
+
+### Fixed
+- Triệt tiêu hoàn toàn tình trạng vỡ vụn Design System (UI Fragmentation) và nguy cơ code trùng lặp trên toàn bộ dự án.
+- Đảm bảo 100% unit tests PASS (347/347 tests).
+
+## [1.25.2] - 2026-09-10
+### Added
+- **Hệ Thống Danh Mục Trung Tâm (Central System Category Registry - `SystemCategories.kt`)**:
+  * Định nghĩa `object SystemCategories` làm điểm định danh duy nhất (Single Source of Truth) cho toàn bộ mã danh mục hệ thống: Chi phí thiết yếu (`FOOD`, `TRANSPORT`, `HOUSING`, `BILLS`, `HEALTH`), Tùy chọn (`ENTERTAINMENT`, `SHOPPING`), Thu nhập (`SALARY`, `BONUS`, `INTEREST`, `OTHER_INCOME`), và Danh mục quản trị hệ thống (`DEBT_PAYMENT`, `SAVINGS`, `INVESTMENT`, `OTHER_EXPENSE`).
+  * Cung cấp helper functions kiểm tra tính toàn vẹn: `isSystem()`, `isProtected()`, `isIncomeSystem()`, `isExpenseSystem()`.
+  * Thay thế toàn bộ chuỗi hardcode phân tán trong codebase (`FirebaseDebtRepository.kt`, `FirebaseGoalRepository.kt`, `FirebaseAuthRepository.kt`, `DemoFinluxRepository.kt`, `SyncDebtReminderUseCase.kt`, `ReportExporter.kt`, `XlsxReportWriter.kt`).
+- **4 Nguyên Tắc Bảo Vệ Kiến Trúc Tài Chính (`docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`)**:
+  * Ghi nhận đầy đủ 4 nguyên tắc cốt lõi: Transaction Lifecycle Rollback, Transaction-based Date Resolution, Semi-Monthly Budget Convention, Central Category Registry.
+
+### Changed
+- **Đồng Bộ Tuyệt Đối KPI Chi Phí Sinh Hoạt Giữa Màn Hình Home và Báo Cáo (`HomeViewModel.kt`, `TransactionSemantics.kt`)**:
+  * Chuẩn hóa logic tính `effectiveSummary` trên Home Dashboard sử dụng `it.isLivingExpense()`, thống nhất 100% với `ReportsViewModel`.
+  * `TransactionSemantics.isLivingExpense()` loại trừ hoàn toàn các giao dịch tích lũy mục tiêu (`SAVINGS`) bên cạnh trả nợ gốc và vốn đầu tư deal.
+
+### Fixed
+- **Liên Kết Động Cửa Sổ Ngân Sách Theo Chu Kỳ Tài Chính (`FirebaseTransactionRepository.kt`, `DemoFinluxRepository.kt`)**:
+  * Tích hợp `FinancialPeriodResolver.resolvePeriodKey(date, salaryConfig)` vào `FinanceTransaction.budgetRef()` để xác định chính xác `periodKey` (`month:YYYY-MM` hoặc `salary:YYYY-MM-DD`) dựa trên thời điểm thực tế của giao dịch (`transaction.date`), bảo vệ tính đúng đắn khi người dùng ghi bù chi tiêu quá khứ.
+  * Hỗ trợ nạp `SalaryCycleRepository` và `FinancialPeriodResolver` trong `RepositoryModule.kt` và `FirebaseTransactionRepository`.
+  * Đồng bộ cơ chế khớp kỳ ngân sách `matchesBudgetPeriod` trong `DemoFinluxRepository`.
+  * Toàn bộ 347/347 unit tests PASS 100%.
+
 ## [1.25.1] - 2026-09-10
 ### Added
 - **Phân Tách Ngữ Nghĩa Kế Toán Chuẩn Kép (Accounting Semantics & Reports)**:

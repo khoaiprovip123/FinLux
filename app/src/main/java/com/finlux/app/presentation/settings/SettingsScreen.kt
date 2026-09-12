@@ -66,6 +66,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -517,7 +518,15 @@ fun SettingsScreen(
                         }
                     }
                 }
-                item { AboutFinluxCard(onCheckUpdate = onCheckUpdate) }
+                item {
+                    AboutFinluxCard(
+                        autoCheckUpdates = uiPreferences.autoCheckUpdates,
+                        onAutoCheckUpdatesChanged = { isChecked ->
+                            onUiPreferencesChanged(uiPreferences.copy(autoCheckUpdates = isChecked))
+                        },
+                        onCheckUpdate = onCheckUpdate,
+                    )
+                }
                 item {
                     Button(
                         onClick = { viewModel.signOut(onSignedOut) },
@@ -856,7 +865,11 @@ private fun ProfileMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector
 }
 
 @Composable
-private fun AboutFinluxCard(onCheckUpdate: () -> Unit) {
+private fun AboutFinluxCard(
+    autoCheckUpdates: Boolean,
+    onAutoCheckUpdatesChanged: (Boolean) -> Unit,
+    onCheckUpdate: () -> Unit,
+) {
     GlassCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -873,6 +886,40 @@ private fun AboutFinluxCard(onCheckUpdate: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                thickness = 0.5.dp,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Tự động nhận bản cập nhật",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        "Tự động kiểm tra và nhắc nhở khi có bản cập nhật mới lúc mở ứng dụng",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = autoCheckUpdates,
+                    onCheckedChange = onAutoCheckUpdatesChanged,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                    ),
+                )
+            }
 
             OutlinedButton(
                 onClick = onCheckUpdate,

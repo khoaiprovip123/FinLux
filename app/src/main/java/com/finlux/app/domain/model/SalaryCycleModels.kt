@@ -1,6 +1,8 @@
 package com.finlux.app.domain.model
 
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 enum class PaydayRuleType {
     DAY_OF_MONTH,
@@ -120,4 +122,81 @@ data class FinancialPeriod(
     val displayLabel: String,
     val basis: BudgetPeriodBasis,
 )
+
+/**
+ * Bản ghi dòng thời gian cấu hình chu kỳ lương (Time-Versioned Salary Cycle Record).
+ * Đảm bảo tính bất biến của dữ liệu quá khứ khi người dùng thay đổi ngày nhận lương hoặc chu kỳ lương.
+ */
+data class SalaryCycleConfigRecord(
+    val id: String = "",
+    val effectiveFromDate: String, // YYYY-MM-DD
+    val effectiveToDate: String? = null, // YYYY-MM-DD (null nếu đang là cấu hình hiện hành)
+    val config: SalaryCycleConfig = SalaryCycleConfig(),
+    val createdAt: Instant = Instant.now(),
+) {
+    fun isEffectiveAt(date: LocalDate): Boolean {
+        val from = runCatching { LocalDate.parse(effectiveFromDate) }.getOrDefault(LocalDate.MIN)
+        val to = effectiveToDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: LocalDate.MAX
+        return !date.isBefore(from) && date.isBefore(to)
+    }
+
+    fun isEffectiveAt(instant: Instant, zone: ZoneId = ZoneId.of(config.financeTimeZone)): Boolean {
+        val date = instant.atZone(zone).toLocalDate()
+        return isEffectiveAt(date)
+    }
+}
+
+/**
+ * Tìm cấu hình chu kỳ lương có hiệu lực tại mốc thời gian [instant] từ dòng thời gian [List<SalaryCycleConfigRecord>].
+ */
+fun List<SalaryCycleConfigRecord>.configAt(
+    instant: Instant,
+    fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+): SalaryCycleConfig {
+    if (isEmpty()) return fallbackConfig
+    val matching = firstOrNull { it.isEffectiveAt(instant) }
+    if (matching != null) return matching.config
+
+    val sorted = sortedBy { it.effectiveFromDate }
+    val earliest = sorted.first()
+    val earliestFrom = runCatching { LocalDate.parse(earliest.effectiveFromDate) }.getOrNull()
+    val zone = runCatching { ZoneId.of(fallbackConfig.financeTimeZone) }.getOrDefault(ZoneId.of("Asia/Ho_Chi_Minh"))
+    val instantDate = instant.atZone(zone).toLocalDate()
+
+    if (earliestFrom != null && instantDate.isBefore(earliestFrom)) {
+        return earliest.config
+    }
+
+    val active = firstOrNull { it.effectiveToDate == null }
+    if (active != null) return active.config
+
+    return sorted.last().config
+}
+
+/**
+ * Tìm cấu hình chu kỳ lương có hiệu lực tại ngày [date] từ dòng thời gian [List<SalaryCycleConfigRecord>].
+ */
+fun List<SalaryCycleConfigRecord>.configAt(
+    date: LocalDate,
+    fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+): SalaryCycleConfig {
+    if (isEmpty()) return fallbackConfig
+    val matching = firstOrNull { it.isEffectiveAt(date) }
+    if (matching != null) return matching.config
+
+    val sorted = sortedBy { it.effectiveFromDate }
+    val earliest = sorted.first()
+    val earliestFrom = runCatching { LocalDate.parse(earliest.effectiveFromDate) }.getOrNull()
+
+    if (earliestFrom != null && date.isBefore(earliestFrom)) {
+        return earliest.config
+    }
+
+    val active = firstOrNull { it.effectiveToDate == null }
+    if (active != null) return active.config
+
+    return sorted.last().config
+}
+
+
 

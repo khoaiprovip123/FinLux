@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReportsViewModelTest {
@@ -71,6 +72,7 @@ class ReportsViewModelTest {
         every { categoryRepository.observeCategories() } returns flowOf(emptyList())
         every { walletRepository.observeWallets() } returns flowOf(emptyList())
         every { salaryCycleRepository.observeConfig() } returns flowOf(SalaryCycleConfig())
+        every { salaryCycleRepository.observeTimeline() } returns flowOf(emptyList())
         every { debtRepository.observeDebts() } returns flowOf(emptyList())
         every { debtRepository.observeAllPaymentHistory() } returns flowOf(emptyList())
         every { goalRepository.observeGoals() } returns flowOf(emptyList())
@@ -716,6 +718,32 @@ class ReportsViewModelTest {
             assertEquals(1, filteredDetail!!.transactions.size)
             assertEquals("tx2", filteredDetail.transactions[0].id)
 
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `reports state correctly resolves historical period with timeline records`() = runTest(testDispatcher) {
+        val now = Instant.parse("2026-09-12T10:00:00Z")
+        val newConfig = SalaryCycleConfig(enabled = true, paydayDay = 10)
+        val record = com.finlux.app.domain.model.SalaryCycleConfigRecord(
+            id = "rec1",
+            effectiveFromDate = "2026-09-10",
+            effectiveToDate = null,
+            config = newConfig,
+            createdAt = now,
+        )
+
+        every { salaryCycleRepository.observeConfig() } returns flowOf(newConfig)
+        every { salaryCycleRepository.observeTimeline() } returns flowOf(listOf(record))
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            awaitItem()
+            advanceUntilIdle()
+            val state = awaitItem()
+            assertEquals(LocalDate.of(2026, 9, 10), state.range.start)
             cancelAndIgnoreRemainingEvents()
         }
     }

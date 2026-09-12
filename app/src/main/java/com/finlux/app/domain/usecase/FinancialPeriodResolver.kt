@@ -3,6 +3,8 @@ package com.finlux.app.domain.usecase
 import com.finlux.app.domain.model.BudgetPeriodBasis
 import com.finlux.app.domain.model.FinancialPeriod
 import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.model.SalaryCycleConfigRecord
+import com.finlux.app.domain.model.configAt
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
@@ -45,6 +47,60 @@ interface FinancialPeriodResolver {
         instant: Instant,
         config: SalaryCycleConfig,
     ): String
+
+    // --- Timeline-aware overloads ---
+
+    fun resolvePeriodContaining(
+        instant: Instant,
+        timeline: List<SalaryCycleConfigRecord>,
+        fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    ): FinancialPeriod = resolvePeriodContaining(instant, timeline.configAt(instant, fallbackConfig))
+
+    fun resolvePeriodKey(
+        instant: Instant,
+        timeline: List<SalaryCycleConfigRecord>,
+        fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    ): String = resolvePeriodContaining(instant, timeline, fallbackConfig).key
+
+    fun resolveCurrentPeriod(
+        timeline: List<SalaryCycleConfigRecord>,
+        now: Instant = Instant.now(),
+        fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    ): FinancialPeriod = resolvePeriodContaining(now, timeline, fallbackConfig)
+
+    fun resolvePreviousPeriod(
+        timeline: List<SalaryCycleConfigRecord>,
+        now: Instant = Instant.now(),
+        fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    ): FinancialPeriod {
+        val currentPeriod = resolveCurrentPeriod(timeline, now, fallbackConfig)
+        return resolvePreviousPeriodOf(currentPeriod, timeline, fallbackConfig)
+    }
+
+    fun resolveNextPeriod(
+        timeline: List<SalaryCycleConfigRecord>,
+        now: Instant = Instant.now(),
+        fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    ): FinancialPeriod {
+        val currentPeriod = resolveCurrentPeriod(timeline, now, fallbackConfig)
+        return resolveNextPeriodOf(currentPeriod, timeline, fallbackConfig)
+    }
+
+    fun resolveNextPeriodOf(
+        period: FinancialPeriod,
+        timeline: List<SalaryCycleConfigRecord>,
+        fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    ): FinancialPeriod {
+        return resolvePeriodContaining(period.endExclusive.plusMillis(1), timeline, fallbackConfig)
+    }
+
+    fun resolvePreviousPeriodOf(
+        period: FinancialPeriod,
+        timeline: List<SalaryCycleConfigRecord>,
+        fallbackConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    ): FinancialPeriod {
+        return resolvePeriodContaining(period.start.minusMillis(1), timeline, fallbackConfig)
+    }
 }
 
 @Singleton

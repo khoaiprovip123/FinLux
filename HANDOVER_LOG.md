@@ -1,8 +1,303 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.1 (versionCode 175)
-- **Trạng thái Build:** ✅ 100% PASS (344/344 unit tests) — Chuẩn hóa Category ID "Trả nợ & Tín dụng", phân tách ngữ nghĩa kế toán chi phí sinh hoạt (Living Expenses), bảo toàn ngân sách và kiểm thử thành công.
+- **Phiên bản hiện tại:** v1.25.5 (versionCode 179)
+- **Trạng thái Build:** ✅ 100% PASS (377/377 unit tests)
+
+## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
+### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
+- [ ] **B1: Docs & Roadmap Check:** Tra cứu `BACKLOG.md`, `BA_SPEC.md`, `DATA_SPEC.md` và `FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`.
+- [ ] **B2: Codebase Reality Check:** Quét codebase chống zombie code / code trùng lặp.
+- [ ] **B3: Sanity Check & Phản Biện:** Đánh giá tính hợp lý kế toán và cảnh báo rủi ro gãy code dây chuyền.
+- [ ] **B4: Đề Xuất & Khuyến Nghị:** So sánh Phương án A vs B và đưa ra khuyến nghị tối ưu dài hạn.
+
+### 2. Checklist Nghiệm Thu Máy Thật 5 Điểm (Physical Device Acceptance)
+- [ ] **Theme check:** Đẹp và chuẩn độ tương phản ở cả Dark Mode và Light Mode (Liquid Glass).
+- [ ] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
+- [ ] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
+- [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
+- [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+
+### [Task-REMINDER-BADGE-TIERS-STATUS-DOT] — Đại tu toàn diện Pill Badge đếm ngược: Phân tầng 4 màu sắc & Status Dot
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Phân tầng 4 cấp màu sắc ngữ nghĩa (Semantic Color Tiers)**:
+     - **Cấp 1 (Trong hôm nay - TODAY)**: Cam cháy đậm `Color(0xFFD97706)` (Light) / `Color(0xFFFBBF24)` (Dark), nền cam pastel `Color(0xFFF59E0B).copy(alpha = 0.20f)`, viền `BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.45f))`.
+     - **Cấp 2 (Ngày mai - TOMORROW)**: Xanh dương đậm `Color(0xFF1D4ED8)` (Light) / `Color(0xFF60A5FA)` (Dark), nền xanh pastel `tokens.primary.copy(alpha = 0.18f)`, viền `BorderStroke(1.dp, tokens.primary.copy(alpha = 0.40f))`.
+     - **Cấp 3 (Từ 2 ngày trở lên - FUTURE)**: Xám xanh trung tính `tokens.onSurfaceVariant`, nền `tokens.surfaceSoft`, viền `BorderStroke(0.8.dp, tokens.border.copy(alpha = 0.35f))`.
+     - **Cấp 4 (Quá hạn - OVERDUE)**: Cảnh báo đỏ `FinluxColors.ExpenseRed`, viền và nền đỏ pastel.
+  2. ✅ **Bổ sung chấm tròn trạng thái (Status Dot)**:
+     - `Box(modifier = Modifier.size(6.dp).background(badgeDotColor, CircleShape))` sắc nét 100% trên mọi mật độ pixel, thay thế hoàn toàn icon đồng hồ nhòe/trùng lặp.
+  3. ✅ **Xóa hoàn toàn shadow elevation**: Triệt tiêu hiện tượng lem nhem viền xám bẩn trên Light Theme.
+  4. ✅ **Core Model & Formatter**: Cập nhật `enum class ReminderCountdownTier` và `ReminderCountdownInfo` trong `ReminderTimeFormatter.kt`, kèm bộ unit test cập nhật 12 test cases.
+  5. ✅ **Kiểm thử & Đóng gói**:
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS** (389/389 tests passed).
+     - `.\gradlew.bat assembleDebug`: **BUILD SUCCESSFUL**.
+     - Cài đè qua ADB: **Success** và đã khởi chạy app trên thiết bị thật.
+- **Files thực tế đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/time/ReminderTimeFormatter.kt`
+  - `app/src/test/java/com/finlux/app/core/time/ReminderTimeFormatterTest.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-REMINDER-COUNTDOWN-BADGE] — Bổ sung chỉ số đếm ngược (Remaining Time Badge) trên màn hình Nhắc nhở định kỳ
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Core Time Formatter**: Tạo `ReminderTimeFormatter.kt` trong `core/time/`: hàm thuần túy `formatReminderCountdown` tính toán thời gian tương đối so với `Instant.now()`.
+  2. ✅ **Phân loại ca biên toàn diện**: Dưới 1 phút ("sắp diễn ra"), dưới 1 giờ ("còn X phút"), cùng ngày ("còn X giờ"), ngày mai ("ngày mai"), trên 1 ngày ("còn X ngày"), quá hạn ("quá hạn X ngày/giờ/phút").
+  3. ✅ **Unit Test tự động**: Tạo `ReminderTimeFormatterTest.kt` kiểm thử 12 ca biên đạt 100% PASS. Toàn bộ unit tests của project đạt 100% PASS.
+  4. ✅ **UI Liquid Glass Pill Badge**: Cập nhật `RemindersScreen.kt`, căn phải trong banner thời gian (`Arrangement.SpaceBetween`), đổi màu ngữ nghĩa theo trạng thái (Xanh dương cho bình thường, Cam ấm cho <1h, Đỏ cho quá hạn), tự động ẩn khi Switch tắt, memoize tối ưu bằng `remember(reminder.nextTriggerDate, reminder.enabled)`.
+  5. ✅ **Đóng gói & Nạp máy thật**: Build APK thành công và nạp đè lên thiết bị thật qua ADB (`adb install -r`), khởi chạy mượt mà không crash.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS** (389/389 unit tests passed).
+  - Đã nạp APK thành công lên thiết bị `adb-BM6HKBHEHQKFEMLR-prj23i._adb-tls-connect._tcp`.
+- **Files thực tế đã tạo mới & sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/time/ReminderTimeFormatter.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/core/time/ReminderTimeFormatterTest.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-22-SALARY-CYCLE-BUDGET-PHASE-4] — UI Self-Healing & Cross-Module Sync
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tự phục hồi tại `BudgetViewModel.kt` & các màn hình ngân sách:
+     - Kích hoạt fallback khi `currentBudgets.isEmpty() && prevBudgets.isNotEmpty()`, lấy hạn mức từ kỳ trước (`prevBudgets`) kết hợp tính `spentAmount` động từ giao dịch thực tế trong kỳ hiện tại. Người dùng mới chưa từng tạo ngân sách không bị kích hoạt fallback nhầm.
+     - Bổ sung `transitionAdvisoryBanner: String?` trong `BudgetUiState`.
+     - Tạo component chuẩn `FinluxAdvisoryBanner` trong `FinluxFeedbackComponents.kt` dùng dynamic tokens (`tokens.surfaceSoft`, `tokens.primary`, `tokens.onSurface`).
+     - Hiển thị Advisory Banner trên cả 3 màn hình theme: `ClassicBudgetScreen.kt`, `ModernBudgetScreen.kt`, `PrismBudgetScreen.kt`.
+  2. Chống sập chỉ số tại `HomeViewModel.kt`:
+     - Fallback Guard khi danh sách `budgets` kỳ mới tạm rỗng do độ trễ ghi CSDL (`budgets.isEmpty() && prevBudgets.isNotEmpty()`), bảo vệ KPI ngân sách và `DailySafeToSpend` không bị rơi về 0đ / 0%.
+  3. Bảo vệ màn hình báo cáo tại `ReportsViewModel.kt` & `ReportQueryWindowResolver.kt`:
+     - Nhận và truyền `timeline` để giải mã chính xác dải ngày và periodKey lịch sử đa chu kỳ lương.
+  4. Viết Unit Tests toàn diện cho cả 3 ViewModel & Resolver:
+     - `BudgetViewModelTest.kt`: Test fallback khi current rỗng và prev có dữ liệu; test người dùng mới cả 2 kỳ đều rỗng không kích hoạt; test khi kỳ hiện tại đã có ngân sách.
+     - `HomeViewModelTest.kt`: Test fallback guard cho KPI ngân sách và Safe-To-Spend; test khi cả 2 kỳ rỗng.
+     - `ReportQueryWindowResolverTest.kt` & `ReportsViewModelTest.kt`: Test giải mã lịch sử dải ngày theo versioning timeline.
+  5. Đảm bảo `.\gradlew.bat testDebugUnitTest` đạt 100% PASS và `npm --prefix functions run check` đạt 0 lỗi.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS (377/377 tests passed, 0 failures, 0 skipped)**.
+  - `npm --prefix functions run check`: **0 errors (TypeScript clean)**.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFeedbackComponents.kt` [MODIFIED - thêm `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt` [MODIFIED - thêm `transitionAdvisoryBanner`, timeline & fallback self-healing]
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt` [MODIFIED - tích hợp `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt` [MODIFIED - tích hợp `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` [MODIFIED - tích hợp `FinluxAdvisoryBanner`]
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt` [MODIFIED - thêm fallback guard bảo vệ KPI ngân sách & Safe-To-Spend]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportQueryWindowResolver.kt` [MODIFIED - nhận và phân giải dải ngày theo `timeline`]
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsViewModel.kt` [MODIFIED - quan sát và truyền `timeline` cho windowResolver và periodResolver]
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt` [MODIFIED - chuẩn hóa default `observeTimeline(): Flow<List<SalaryCycleConfigRecord>> = flowOf(emptyList())`]
+  - `app/src/test/java/com/finlux/app/presentation/budget/BudgetViewModelTest.kt` [MODIFIED - bổ sung 3 test cases cho Self-Healing fallback & banner]
+  - `app/src/test/java/com/finlux/app/presentation/home/HomeViewModelTest.kt` [MODIFIED - bổ sung test cases fallback guard và cập nhật fake repo]
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportQueryWindowResolverTest.kt` [MODIFIED - test case phân giải timeline cho salary cycle window]
+  - `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt` [MODIFIED - test case phân giải kỳ lịch sử với timeline records]
+  - `HANDOVER_LOG.md` [MODIFIED]
+
+### [Task-P1-21-SALARY-CYCLE-BUDGET-PHASE-3] — UX Flow Trên Settings & Tích Hợp ViewModel
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thiết kế Transition Selection Dialog (`SalaryCycleTransitionDialog`) trong `SalaryCycleSettingsSheet.kt`: Khi bấm "Lưu thay đổi" và phát hiện thay đổi ngày lương hoặc chu kỳ, hiển thị lựa chọn thời điểm áp dụng:
+     - Lựa chọn A (Khuyến nghị): Áp dụng từ kỳ lương tiếp theo (kỳ hiện tại giữ nguyên vẹn, ngày mới bắt đầu từ chu kỳ kế tiếp).
+     - Lựa chọn B: Áp dụng ngay hôm nay (chốt sổ sớm) kèm switch "Phân bổ lại hạn mức ngân sách theo tỷ lệ ngày (Proration)".
+  2. Tích hợp logic vào `SalaryCycleViewModel.kt`:
+     - Inject `ReconcileBudgetOnCycleChangeUseCase`, `FinancialPeriodResolver`, và `SalaryCycleRepository`.
+     - Lựa chọn A (`applyTransitionNextCycle`): Cập nhật `effectiveToDate` của bản ghi hiện hành và tạo `SalaryCycleConfigRecord` mới với `effectiveFromDate` là ngày bắt đầu kỳ kế tiếp (`nextCycleStart`).
+     - Lựa chọn B (`applyTransitionImmediate`): Cập nhật `effectiveToDate` của bản ghi cũ = hôm nay, tạo bản ghi mới `effectiveFromDate` = hôm nay, kích hoạt `ReconcileBudgetOnCycleChangeUseCase` với cờ `applyProration`.
+     - Giữ nguyên fallback lưu trực tiếp (`saveDirectly`) khi người dùng chỉ bật/tắt tính năng hoặc đổi ví tiết kiệm mà không đổi ngày/chu kỳ.
+  3. Viết Unit Tests toàn diện trong `SalaryCycleViewModelTest.kt`:
+     - Test phân nhánh hiển thị dialog chuyển tiếp khi đổi ngày lương.
+     - Test nhánh A (`applyTransitionNextCycle`): Kiểm tra timeline record được lên lịch đúng ngày bắt đầu kỳ mới.
+     - Test nhánh B (`applyTransitionImmediate`): Kiểm tra bản ghi cũ bị đóng hôm nay, bản ghi mới mở hôm nay và `reconcileBudgetUseCase` được gọi với cờ `applyProration = true`.
+     - Test lưu trực tiếp khi thiết lập ban đầu (`saveDirectly`).
+  4. Đảm bảo `.\gradlew.bat testDebugUnitTest` 100% PASS và `npm --prefix functions run check` đạt 0 lỗi.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS (371/371 tests passed, 0 failures, 0 skipped)**.
+  - `npm --prefix functions run check`: **0 errors (TypeScript clean)**.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt` [MODIFIED - thêm `SalaryCycleTransitionDialog`, tích hợp state `showTransitionDialog`]
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModel.kt` [MODIFIED - thêm `applyTransitionNextCycle`, `applyTransitionImmediate`, `dismissTransitionDialog`, phát hiện thay đổi ngày/chu kỳ]
+  - `app/src/test/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModelTest.kt` [MODIFIED - bổ sung test suites cho transition dialog, next cycle, immediate transition với proration]
+  - `HANDOVER_LOG.md` [MODIFIED]
+
+### [Task-P1-20-SALARY-CYCLE-BUDGET-PHASE-2] — Domain UseCases & Historical Period Resolver
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Nâng cấp `FinancialPeriodResolver.kt`: hỗ trợ timeline-aware resolution (`resolvePeriodContaining`, `resolvePeriodKey`, `resolvePreviousPeriod`, `resolveNextPeriod`), phân giải chính xác `periodKey` lịch sử theo cấu hình tại thời điểm đó.
+  2. Xây dựng công thức phân bổ tỷ lệ hạn mức (`BudgetProrationCalculator.kt`): `ProratedLimit = StandardLimit * (ActualDays / StandardDays)`.
+  3. Tạo mới `ReconcileBudgetOnCycleChangeUseCase.kt`: kế thừa định mức `limitAmount` sang kỳ mới, hỗ trợ phân bổ tỷ lệ (proration), quét giao dịch thực tế trong `[start, endExclusive)` để tính `spentAmount` chuẩn xác (chỉ tính `isLivingExpense`), cập nhật atomic qua `BudgetRepository.upsertBudgets` (sử dụng Firestore WriteBatch), đồng bộ cờ cảnh báo `notified80`, `notified100`.
+  4. Mở rộng `BudgetRepository` với default method `upsertBudgets` và cài đặt `WriteBatch` tối ưu trong `FirebaseBudgetRepository`.
+  5. Viết Unit Tests đầy đủ cho Period Resolver lịch sử, Reconcile UseCase và Proration Calculator.
+  6. Đảm bảo `.\gradlew.bat testDebugUnitTest` đạt 100% PASS.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: **100% PASS (367/367 tests passed, 0 failures, 0 skipped)**.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/BudgetProrationCalculator.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/ReconcileBudgetOnCycleChangeUseCase.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt` [MODIFIED - thêm extension `configAt`]
+  - `app/src/main/java/com/finlux/app/domain/usecase/FinancialPeriodResolver.kt` [MODIFIED - timeline-aware methods]
+  - `app/src/main/java/com/finlux/app/domain/repository/FinanceRepositories.kt` [MODIFIED - thêm `upsertBudgets`]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt` [MODIFIED - batch `upsertBudgets`]
+  - `app/src/test/java/com/finlux/app/domain/model/BudgetProrationCalculatorTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/ReconcileBudgetOnCycleChangeUseCaseTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/FinancialPeriodResolverTest.kt` [MODIFIED - timeline tests]
+  - `app/src/test/java/com/finlux/app/domain/usecase/ExecuteSalaryRolloverUseCaseTest.kt` [MODIFIED - mockk disambiguation]
+  - `app/src/test/java/com/finlux/app/presentation/budget/BudgetViewModelTest.kt` [MODIFIED - mockk disambiguation]
+  - `HANDOVER_LOG.md` [MODIFIED]
+
+### [Task-P1-19-SALARY-CYCLE-BUDGET-PHASE-1] — Model Hóa Dòng Thời Gian Cấu Hình (Salary Cycle Versioning) & Data Layer
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Khai báo model `SalaryCycleConfigRecord` trong `SalaryCycleModels.kt` với `effectiveFromDate`, `effectiveToDate`, `config`, `createdAt` và logic `isEffectiveAt(date/instant)`.
+  2. Mở rộng `SalaryCycleRepository` với `observeTimeline()`, `getConfigAt(instant)`, `saveConfigRecord(record)` đảm bảo 100% backward compatibility và cung cấp default interface methods.
+  3. Cập nhật `SalaryCycleFirestoreMapper.kt` để serialize/deserialize `SalaryCycleConfigRecord` (`recordToMap`, `recordFromMap`).
+  4. Cập nhật `FirebaseSalaryCycleRepository.kt` và `DemoSalaryCycleRepository.kt` hỗ trợ đọc/ghi timeline và fallback tự động về cấu hình hiện hành nếu chưa có lịch sử.
+  5. Cập nhật `firestore.rules` whitelist collection `salaryCycleTimeline` chuẩn bảo mật.
+  6. Viết Unit tests mới (`SalaryCycleTimelineTest`, `FirebaseSalaryCycleMapperTest`) và cập nhật các Test Fakes để `.\gradlew.bat testDebugUnitTest` đạt 100% PASS.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 100% PASS (BUILD SUCCESSFUL, 350+ tests bao gồm toàn bộ test cases mới cho timeline, versioning và fallback).
+  - `npm --prefix functions run check`: 100% PASS (TypeScript check exit code 0).
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt` (thêm `SalaryCycleConfigRecord` và `isEffectiveAt`)
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt` (mở rộng interface kèm default methods)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapper.kt` (`recordToMap`, `recordFromMap`)
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleRepository.kt` (triển khai timeline và fallback)
+  - `app/src/main/java/com/finlux/app/data/demo/DemoSalaryCycleRepository.kt` (triển khai timeline memory và fallback)
+  - `firestore.rules` (bổ sung match `/salaryCycleTimeline/{docId}`)
+  - `app/src/test/java/com/finlux/app/presentation/settings/salary/SalaryCycleViewModelTest.kt` (cập nhật FakeSalaryCycleRepo)
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapperTest.kt` (thêm test mapper cho record)
+  - `app/src/test/java/com/finlux/app/domain/model/SalaryCycleTimelineTest.kt` (tạo mới test case timeline & versioning)
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-18-AUTO-CHECK-UPDATES-TOGGLE] — Thêm Tính Năng Bật/Tắt Tự Động Nhận Bản Cập Nhật
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thêm `autoCheckUpdates: Boolean = true` vào `UiPreferences` (`FinanceModels.kt`).
+  2. Bổ sung đọc/ghi key `auto_check_updates` trong `DataStoreThemePreferenceRepository.kt`.
+  3. Cập nhật `AppUpdateViewModel.kt` inject `UiPreferencesRepository` để chống race condition khi Cold Start (chỉ gọi silent check nếu `autoCheckUpdates == true`, không spam API khi toggle Switch).
+  4. Thêm Switch toggle chuẩn Liquid Glass vào `SettingsScreen.kt` (Classic Liquid) và `PrismSettingsScreen.kt` (Prism).
+  5. Đảm bảo nút kiểm tra cập nhật thủ công luôn hoạt động độc lập với trạng thái công tắc tự động.
+  6. Kiểm thử unit test `.\gradlew.bat testDebugUnitTest`, đóng gói APK `assembleDebug`, nạp lên máy thật qua ADB và bàn giao nghiệm thu.
+- **Kết quả triển khai & Kiểm thử**:
+  - Unit test: `.\gradlew.bat testDebugUnitTest` 100% PASS (BUILD SUCCESSFUL, bao gồm 3/3 test cases mới trong `AppUpdateViewModelTest`).
+  - Đóng gói: `.\gradlew.bat assembleDebug` thành công (`app/build/outputs/apk/debug/app-debug.apk`).
+  - Nạp máy thật ADB: `adb install -r` (Success) và khởi chạy `am start -n com.finlux.app/.MainActivity`.
+  - Logcat: Hoạt động trơn tru, không có crash ngầm hay exception.
+  - Tuân thủ nghiêm ngặt Git: Chưa commit, chưa push. Bàn giao máy thật cho người dùng nghiệm thu trực tiếp công tắc toggle.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/updater/AppUpdateViewModelTest.kt`
+
+### [Task-P1-17-BUILD-DEPLOY-ADB-v1.25.4] — Tăng Version v1.25.4, Đóng Gói APK & Nạp Lên Thiết Bị Thật Qua ADB
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tăng `versionCode = 178`, `versionName = "1.25.4"` trong `app/build.gradle.kts`.
+  2. Đóng gói bản build debug: `.\gradlew.bat assembleDebug` thành công.
+  3. Cài đặt và khởi chạy lên thiết bị thật qua ADB (`adb install -r`, `adb shell am start`).
+  4. Tuân thủ nghiêm ngặt: Chưa commit/push, bàn giao máy thật cho người dùng nghiệm thu trực tiếp theo Checklist 5 điểm.
+- **Kết quả triển khai**:
+  - Đóng gói APK: `app/build/outputs/apk/debug/app-debug.apk` (BUILD SUCCESSFUL).
+  - Thiết bị ADB: `adb-BM6HKBHEHQKFEMLR-prj23i._adb-tls-connect._tcp` -> Install Success.
+  - Khởi chạy: `com.finlux.app/.MainActivity` đang hiển thị trên màn hình máy thật.
+
+### [Task-P1-16-DEAD-CODE-FORM-CONTROLS-CLEANUP] — Dọn Dẹp Code Thừa, Zombie Code & Gom Nhất Form Controls Vào FinluxFormControls.kt
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Rà soát tổng thể dependencies của các file cũ (`FinluxFormComponents.kt` và `FinluxAmountInputCard.kt`).
+  2. Di chuyển/hợp nhất toàn bộ các component và tiện ích dùng chung (`ErgonomicFormRow`, `ErgonomicInputRow`, `PrincipalInterestSplitCard`, `FinluxWalletPickerBottomSheet`, `SimpleWalletPickerSheet`, `FinluxCategoryPickerBottomSheet`, `SimpleCategoryPickerSheet`, `formatAmountDigitsWithDots`, `VndSuffixVisualTransformation`, `generateAmountSuggestions`, `ErgonomicCompactAmountCard`, `FinluxAmountInputCard`) vào `core/designsystem/component/form/FinluxFormControls.kt`.
+  3. Cập nhật `SavingSpinSettingsScreen.kt` kế thừa `FinluxAmountInput` chuẩn từ `form.FinluxFormControls.kt`.
+  4. Cập nhật các màn hình liên quan (`SalaryCycleSettingsSheet`, `RemindersScreen`, `NotificationsScreen`, `DebtPaymentSheet`, `AddEditDebtSheet`, `CreateDealSheet`, `ModernBudgetScreen`, `PrismBudgetScreen`, `ClassicBudgetScreen`, `PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`, `AddTransactionSheet`, `GoalsScreen`, `RecordDealOutlaySheet`, `RecordDealInflowSheet`, `TransferMoneyScreen`) sang import từ `com.finlux.app.core.designsystem.component.form.*`.
+  5. Xóa bỏ hoàn toàn 2 file trùng lặp/dead code:
+     - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt`
+     - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`
+  6. Kiểm thử xác nhận bằng `.\gradlew.bat testDebugUnitTest` đảm bảo 100% tests PASS và 0 Unresolved References.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 347/347 tests passed (100% PASS, 0 failures, 0 skipped).
+- **Danh sách file đã dọn dẹp & chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAmountInputCard.kt` (ĐÃ XÓA HOÀN TOÀN)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt` (ĐÃ XÓA HOÀN TOÀN)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt` (Hợp nhất toàn bộ Form Controls, pickers, split cards & formatters)
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt` (Chuyển sang dùng FinluxAmountInput)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/deal/CreateDealSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlaySheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowSheet.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt` (Chuyển import sang package form)
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt` (Chuyển import sang package form)
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountSuggestionsTest.kt` (Cập nhật import generateAmountSuggestions sang package form)
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-15-FORM-CONTROLS-STANDARDIZATION] — Kiểm Toán Design System & Chuẩn Hóa Finlux Form Controls Dùng Chung
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Kiểm toán Form Controls toàn bộ các màn hình/sheet nhập liệu (`AddTransactionSheet`, `TransferMoneyScreen`, `AddEditDebtSheet`, `ProcessDebtPaymentSheet`, `DepositToGoalSheet`, `WithdrawGoalSheet`, `CreateDealScreen`, `DealOutlaySheet`, `DealSettlementSheet`, `AdjustWalletBalanceSheet`).
+  2. Đóng gói bộ component chuẩn tại `core/designsystem/component/form/FinluxFormControls.kt`:
+     - `FinluxDateTimePicker`: DatePicker + TimePicker (hỗ trợ chọn ngày, giờ:phút, nhãn chuẩn "Hôm nay, dd/MM/yyyy • HH:mm").
+     - `FinluxAmountInput`: Ô nhập tiền tệ chuẩn (format VND realtime, tự động căn chỉnh font size, tích hợp quick suggestion chips, hỗ trợ chip hành động "Tất cả" và cảnh báo số dư).
+     - `FinluxNoteInput`: Ô nhập ghi chú chuẩn kèm icon badge, giới hạn ký tự và nút xóa nhanh.
+     - `FinluxWalletSelector`: Card chọn ví nguồn / ví đích chuẩn mực.
+     - `FinluxTransferWalletPair`: Bento Box đồng bộ cho chuyển tiền giữa 2 ví kèm nút hoán đổi Swap.
+  3. Refactor và ép kế thừa 100% trên các màn hình nhập liệu.
+  4. Chạy Unit test, nâng version `v1.25.3` (`versionCode = 177`), đóng gói APK và cài đặt qua ADB lên thiết bị để nghiệm thu.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 347/347 tests passed (100% PASS).
+- **Danh sách file đã chỉnh sửa**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt` (mới)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlaySheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-P1-14-ARCHITECTURE-MONEY-FLOW-MATRIX-STANDARDIZATION] — Chuẩn Hóa Kiến Trúc, Single Source Category Registry & Đồng Bộ Cửa Sổ Ngân Sách
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Cập nhật 4 nguyên tắc bảo vệ vào `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (Transaction Lifecycle Rollback, Transaction-based Date Resolution, Quy ước Ngân sách 2 đợt, Central Category Registry).
+  2. Bước 1: Xây dựng Registry Trung tâm (`SystemCategories.kt`), thay thế các literal string rải rác trong `FirebaseDebtRepository.kt`, `FirebaseGoalRepository.kt`, `FirebaseAuthRepository.kt`, `DemoFinluxRepository.kt`, `SyncDebtReminderUseCase.kt`, `ReportExporter.kt`, `XlsxReportWriter.kt`.
+  3. Bước 2: Phân tách ngữ nghĩa kế toán (`TransactionSemantics.kt`): `isLivingExpense()` loại trừ nợ gốc (`DEBT_PAYMENT`), nạp mục tiêu tích lũy (`SAVINGS`), xuất vốn deal (`OUTLAY_CAPITAL`). Đồng bộ KPI Chi tiêu trong `HomeViewModel.kt` dùng `it.isLivingExpense()`.
+  4. Bước 3: Sửa điểm gãy thời gian ngân sách: Cập nhật `budgetRef` trong `FirebaseTransactionRepository.kt` và `DemoFinluxRepository.kt` để giải quyết `periodKey` động qua `FinancialPeriodResolver.resolvePeriodKey(transaction.date, salaryConfig)`.
+  5. Bổ sung Unit tests, đảm bảo 100% pass, bump `v1.25.2` (code `176`), commit và push lên `main`.
+- **Kết quả kiểm thử**:
+  - `.\gradlew.bat testDebugUnitTest`: 347/347 tests passed (100% PASS).
+- **Danh sách file đã chỉnh sửa**:
+  - `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`
+  - `app/src/main/java/com/finlux/app/domain/model/SystemCategories.kt` (mới)
+  - `app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/demo/DemoFinluxRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/SyncDebtReminderUseCase.kt`
+  - `app/src/main/java/com/finlux/app/data/report/ReportExporter.kt`
+  - `app/src/main/java/com/finlux/app/data/report/XlsxReportWriter.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/di/RepositoryModule.kt`
+  - `app/src/test/java/com/finlux/app/domain/model/TransactionSemanticsTest.kt`
+  - `app/src/test/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepositoryTest.kt`
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+  - `docs/BACKLOG.md`
 
 ### [Task-P1-13-DEBT-CATEGORY-MAPPING] — Chuẩn Hóa Mapping Danh Mục "Trả Nợ & Tín Dụng" & Phân Tách Ngữ Nghĩa Kế Toán
 - **Status**: `[DONE]`

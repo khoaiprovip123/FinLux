@@ -5,8 +5,13 @@ import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.TransactionType
+import com.finlux.app.domain.repository.SalaryCycleRepository
 import com.finlux.app.domain.repository.TransactionRepository
+import com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver
+import com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator
+import com.finlux.app.domain.usecase.FinancialPeriodResolver
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
@@ -16,6 +21,7 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.time.YearMonth
@@ -28,6 +34,8 @@ private const val MAX_MONEY_AMOUNT = 999_999_999_999_999L
 class FirebaseTransactionRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
+    private val salaryCycleRepository: SalaryCycleRepository? = null,
+    private val financialPeriodResolver: FinancialPeriodResolver? = null,
 ) : TransactionRepository {
     override fun observeRecent(limit: Int): Flow<List<FinanceTransaction>> = callbackFlow {
         val uid = auth.currentUser?.uid
@@ -86,13 +94,14 @@ class FirebaseTransactionRepository(
         firebaseResult("Không thể thêm giao dịch") {
             require(transaction.amount.value in 1..MAX_MONEY_AMOUNT) { "Số tiền không hợp lệ" }
             val uid = requireUid()
+            val salaryConfig = salaryCycleRepository?.observeConfig()?.firstOrNull() ?: SalaryCycleConfig()
             val transactionRef = if (transaction.id.isNotBlank()) {
                 firestore.userTransactions(uid).document(transaction.id)
             } else {
                 firestore.userTransactions(uid).document()
             }
             val walletRef = firestore.userWallets(uid).document(transaction.walletId)
-            val budgetRef = transaction.budgetRef(firestore, uid)
+            val budgetRef = transaction.budgetRef(firestore, uid, salaryConfig, financialPeriodResolver)
             firestore.runTransaction { atomic ->
                 if (transaction.id.isNotBlank()) {
                     if (atomic.get(transactionRef).exists()) {
@@ -132,9 +141,10 @@ class FirebaseTransactionRepository(
     ): AppResult<Unit> = firebaseResult("Không thể sửa giao dịch") {
         require(updated.amount.value in 1..MAX_MONEY_AMOUNT) { "Số tiền không hợp lệ" }
         val uid = requireUid()
+        val salaryConfig = salaryCycleRepository?.observeConfig()?.firstOrNull() ?: SalaryCycleConfig()
         val transactionRef = firestore.userTransactions(uid).document(original.id)
         val newWalletRef = firestore.userWallets(uid).document(updated.walletId)
-        val newBudgetRef = updated.budgetRef(firestore, uid)
+        val newBudgetRef = updated.budgetRef(firestore, uid, salaryConfig, financialPeriodResolver)
 
         firestore.runTransaction { atomic ->
             // P0-01: Use stored document from Firestore as authoritative source of truth for old state
@@ -144,7 +154,7 @@ class FirebaseTransactionRepository(
                 error("Không thể chỉnh sửa giao dịch chuyển tiền. Vui lòng xóa và tạo lại giao dịch mới.")
             }
             val oldWalletRef = firestore.userWallets(uid).document(stored.walletId)
-            val oldBudgetRef = stored.budgetRef(firestore, uid)
+            val oldBudgetRef = stored.budgetRef(firestore, uid, salaryConfig, financialPeriodResolver)
 
             val oldWalletDoc = atomic.get(oldWalletRef)
             val oldBalance = oldWalletDoc.getLong("balance") ?: error("Không tìm thấy ví cũ")
@@ -249,6 +259,7 @@ class FirebaseTransactionRepository(
         transaction: FinanceTransaction,
     ): AppResult<Unit> = firebaseResult("Không thể xóa giao dịch") {
         val uid = requireUid()
+        val salaryConfig = salaryCycleRepository?.observeConfig()?.firstOrNull() ?: SalaryCycleConfig()
         val transactionRef = firestore.userTransactions(uid).document(transaction.id)
         firestore.runTransaction { atomic ->
             // P0-02: Derive walletRef and budgetRef strictly from stored transaction in Firestore
@@ -324,7 +335,7 @@ class FirebaseTransactionRepository(
                     error("Không tìm thấy ví")
                 }
                 val isCard = walletDoc?.getString("type")?.equals("CARD", ignoreCase = true) == true
-                val budgetRef = stored.budgetRef(firestore, uid)
+                val budgetRef = stored.budgetRef(firestore, uid, salaryConfig, financialPeriodResolver)
                 val budgetDoc = if (budgetRef != null && stored.type == TransactionType.EXPENSE) {
                     atomic.get(budgetRef)
                 } else null
@@ -536,19 +547,36 @@ class FirebaseTransactionRepository(
 /**
  * Returns a DocumentReference to the Budget document for this transaction's period+category,
  * or null if the transaction is not an EXPENSE or has no categoryId.
- * Budget IDs follow the standard convention: "{categoryId}_{periodKey}" (e.g. "abc123_month:2026-08").
+ * Budget IDs follow the standard convention: "{categoryId}_{periodKey}" (e.g. "abc123_month:2026-08" or "abc123_salary:2026-08-25").
  */
 internal fun FinanceTransaction.budgetRef(
     firestore: FirebaseFirestore,
     uid: String,
-    zone: ZoneId = FinanceTime.defaultZone,
+    salaryConfig: SalaryCycleConfig = SalaryCycleConfig(),
+    financialPeriodResolver: FinancialPeriodResolver? = null,
 ): DocumentReference? {
     if (type != TransactionType.EXPENSE) return null
     val catId = categoryId ?: return null
-    val month = FinanceTime.financialMonth(date, zone)
-    val budgetId = "${catId}_month:${month}"
+    val periodKey = financialPeriodResolver?.resolvePeriodKey(date, salaryConfig)
+        ?: if (salaryConfig.enabled) {
+            DefaultFinancialPeriodResolver(DefaultSalaryCycleCalculator()).resolvePeriodKey(date, salaryConfig)
+        } else {
+            val month = FinanceTime.financialMonth(date, FinanceTime.zoneOf(salaryConfig.financeTimeZone))
+            "month:$month"
+        }
+    val budgetId = "${catId}_${periodKey}"
     return firestore.collection("users").document(uid).collection("budgets").document(budgetId)
 }
+
+internal fun FinanceTransaction.budgetRef(
+    firestore: FirebaseFirestore,
+    uid: String,
+    zone: ZoneId,
+): DocumentReference? = budgetRef(
+    firestore = firestore,
+    uid = uid,
+    salaryConfig = SalaryCycleConfig(financeTimeZone = zone.id),
+)
 
 internal suspend inline fun <T> firebaseResult(message: String, block: () -> T): AppResult<T> =
     runCatching(block).fold(

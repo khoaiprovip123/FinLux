@@ -139,4 +139,57 @@ class FinancialPeriodResolverTest {
         assertEquals(expectedEnd, period.endExclusive)
         assertEquals("salary:2026-08-01", period.key)
     }
+
+    @Test
+    fun `timeline aware resolver correctly resolves past periods with historical configs`() {
+        val configH1 = SalaryCycleConfig(
+            enabled = true,
+            paydayRuleType = PaydayRuleType.DAY_OF_MONTH,
+            paydayDay = 5,
+            budgetPeriodBasis = BudgetPeriodBasis.SALARY_CYCLE,
+            financeTimeZone = "Asia/Ho_Chi_Minh",
+        )
+        val configH2 = SalaryCycleConfig(
+            enabled = true,
+            paydayRuleType = PaydayRuleType.DAY_OF_MONTH,
+            paydayDay = 15,
+            budgetPeriodBasis = BudgetPeriodBasis.SALARY_CYCLE,
+            financeTimeZone = "Asia/Ho_Chi_Minh",
+        )
+
+        val timeline = listOf(
+            com.finlux.app.domain.model.SalaryCycleConfigRecord(
+                id = "rec1",
+                effectiveFromDate = "2026-01-01",
+                effectiveToDate = "2026-07-01",
+                config = configH1,
+            ),
+            com.finlux.app.domain.model.SalaryCycleConfigRecord(
+                id = "rec2",
+                effectiveFromDate = "2026-07-01",
+                effectiveToDate = null,
+                config = configH2,
+            ),
+        )
+
+        // Date in May 2026 (historical period before July 1)
+        val mayDate = ZonedDateTime.of(2026, 5, 20, 10, 0, 0, 0, zone).toInstant()
+        val mayPeriod = resolver.resolvePeriodContaining(mayDate, timeline)
+        assertEquals("salary:2026-05-05", mayPeriod.key)
+        assertEquals("05/05 - 04/06", mayPeriod.displayLabel)
+
+        // Date in August 2026 (current period after July 1)
+        val augDate = ZonedDateTime.of(2026, 8, 20, 10, 0, 0, 0, zone).toInstant()
+        val augPeriod = resolver.resolvePeriodContaining(augDate, timeline)
+        assertEquals("salary:2026-08-15", augPeriod.key)
+        assertEquals("15/08 - 14/09", augPeriod.displayLabel)
+
+        // resolvePeriodKey directly
+        val mayKey = resolver.resolvePeriodKey(mayDate, timeline)
+        assertEquals("salary:2026-05-05", mayKey)
+
+        val augKey = resolver.resolvePeriodKey(augDate, timeline)
+        assertEquals("salary:2026-08-15", augKey)
+    }
 }
+

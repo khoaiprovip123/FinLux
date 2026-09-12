@@ -1,8 +1,10 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.BudgetPeriodBasis
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
+import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.TransactionType
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
@@ -21,6 +23,7 @@ import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -666,6 +669,38 @@ class FirebaseTransactionRepositoryTest {
 
         val ref = sampleTx.budgetRef(firestore, uid, ZoneId.of("Asia/Ho_Chi_Minh"))
         assertEquals(budgetDocRef, ref)
+    }
+
+    @Test
+    fun `budgetRef generates salary cycle period format when salary cycle is enabled`() {
+        val uid = "test_uid"
+        val sampleTx = sampleTransaction(categoryId = "cat_food")
+        val userDocRef: DocumentReference = mockk()
+        val budgetsColl: CollectionReference = mockk()
+        val budgetDocRef: DocumentReference = mockk()
+
+        every { firestore.collection("users").document(uid) } returns userDocRef
+        every { userDocRef.collection("budgets") } returns budgetsColl
+        every { budgetsColl.document("cat_food_salary:2026-07-25") } returns budgetDocRef
+
+        val salaryConfig = SalaryCycleConfig(
+            enabled = true,
+            paydayDay = 25,
+            budgetPeriodBasis = BudgetPeriodBasis.SALARY_CYCLE,
+            financeTimeZone = "Asia/Ho_Chi_Minh",
+        )
+        val ref = sampleTx.budgetRef(firestore, uid, salaryConfig)
+        assertEquals(budgetDocRef, ref)
+    }
+
+    @Test
+    fun `budgetRef returns null for non-EXPENSE transaction or missing category`() {
+        val uid = "test_uid"
+        val incomeTx = sampleTransaction(type = TransactionType.INCOME, categoryId = "cat_food")
+        val noCategoryTx = sampleTransaction(type = TransactionType.EXPENSE, categoryId = null)
+
+        assertNull(incomeTx.budgetRef(firestore, uid))
+        assertNull(noCategoryTx.budgetRef(firestore, uid))
     }
 
     private fun sampleTransaction(

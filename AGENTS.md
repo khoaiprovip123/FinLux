@@ -1,102 +1,113 @@
-# AGENTS.md — Hướng dẫn cho AI Coding Agent (Claude Code / Cursor / Antigravity...)
+# AGENTS.md — Hướng dẫn cho AI Coding Agent & Tech Lead (Claude Code / Cursor / Antigravity...)
 
-## Bối cảnh
-Đây là project Android **Finlux** — quản lý thu chi cá nhân, Kotlin + Jetpack Compose + Firebase,
-giao diện Liquid Glass. Đọc `docs/CONTEXT.md`, `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md` trước khi code.
+## Bối cảnh & Tài liệu bắt buộc
+Đây là project Android **Finlux** — quản lý thu chi và hoạch định tài chính cá nhân (Kotlin + Jetpack Compose + Firebase, giao diện Liquid Glass).
+Trước khi phân tích hay viết code, agent **BẮT BUỘC PHẢI ĐỌC & ĐỐI SOÁT**:
+1. `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (Hiến pháp kiến trúc, Ma trận 16 module & 15 luồng tiền, System Invariants).
+2. `docs/BACKLOG.md` (Định vị Roadmap, Phase triển khai, Scope mục tiêu).
+3. `docs/BA_SPEC.md` (Ràng buộc nghiệp vụ kế toán, Business Rules BR-01..BR-15).
+4. `docs/DATA_SPEC.md` (Data Schema, Subcollections, Trường bất biến, Entity Keys).
+5. `docs/UI_SPEC.md`, `docs/CONTEXT.md` (Kiến trúc Clean Architecture & Quy chuẩn UI Liquid Glass).
 
-## 🎯 3 NGUYÊN TẮC CỐT LÕI BẮT BUỘC (MANDATORY CORE DIRECTIVES)
+---
 
-1. **ĐỒNG BỘ THEME & MÀU ĐỘNG (THEME CONSISTENCY):**
-   - TUYỆT ĐỐI KHÔNG hardcode mã màu tĩnh (Color.Black, Color.White, #000000, #FFFFFF).
-   - BẮT BUỘC sử dụng 100% hệ thống màu động từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`.
-   - BẮT BUỘC sử dụng `FinluxStyleBackdrop` và `containerColor = Color.Transparent` ở các màn hình có nền kính Liquid Glass.
-   - Luôn tự kiểm tra độ tương phản và chuyển đổi mượt mà giữa các Theme (Dark Mode, Light Mode, Prism, Classic, Modern).
+## 🧭 PHẦN I: TƯ DUY TECH LEAD & KHỞI ĐỘNG DỰ ÁN (TECH LEAD KICKOFF)
 
-2. **TÁI SỬ DỤNG & TRÁNH PHÂN MẢNH CODE (REUSABILITY FIRST):**
-   - Trước khi tạo component, formatter hay logic mới: BẮT BUỘC phải tìm kiếm trong codebase xem hệ thống ĐÃ CÓ component/tiện ích tương tự hay chưa (`GlassTopBar`, `formatVndAmount`, `toVnd`, `FinluxTokens`, `BiometricHelper`, dialog dùng chung...).
-   - ƯU TIÊN tái sử dụng và mở rộng các component dùng chung hiện có thay vì tự vẽ lại từ đầu.
+### 1. ĐỊNH VỊ ROADMAP & PHÂN TÍCH ẢNH HƯỞNG CHÉO (SPEC & CROSS-IMPACT AUDIT)
+Mỗi khi tiếp nhận task mới hoặc bug phát sinh, tuyệt đối **KHÔNG** nhảy vào code ngay mà phải mở và đối soát ngay cụm tài liệu nguồn:
+- **Vị trí trên Roadmap:** Tra cứu `docs/BACKLOG.md` để xác định hạng mục thuộc Phase nào, mục tiêu cốt lõi là gì, tránh lan man ra ngoài phạm vi.
+- **Ràng buộc Nghiệp vụ:** Đối chiếu `docs/BA_SPEC.md` (Business Rules) và `docs/DATA_SPEC.md` (Schema, Subcollections, Keys) để nắm đúng bản chất kế toán và luồng dữ liệu.
+- **Quét Ma trận Luồng Tiền:** Tra cứu `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` để xác định ngay:
+  * Tính năng/bug này can thiệp vào những module nào trong 16 module cốt lõi?
+  * Giao dịch phát sinh có tác động chéo đến: Ngân sách (Budget), Chu kỳ lương (Salary Cycle), Dòng tiền tự do (FCF), Báo cáo (Reports), hay Tài sản ròng (True Net Worth)?
+- **Xác định Vùng ảnh hưởng (Blast Radius):** Liệt kê danh sách các màn hình, UseCase hoặc Repository gián tiếp chịu tác động trước khi lên kế hoạch chỉnh sửa.
 
-3. **CẬP NHẬT TÀI LIỆU QUY CHUẨN (SOP & DOCUMENTATION COMPLIANCE):**
-   - Sau khi hoàn thành bất kỳ tính năng, fix bug hay nâng cấp kiến trúc nào: BẮT BUỘC phải rà soát và cập nhật đồng bộ các file tài liệu đặc tả liên quan (`BA_SPEC.md`, `DATA_SPEC.md`, `CONTEXT.md`, `PLAN.md`, `BACKLOG.md`, `UI_SPEC.md`).
-   - BẮT BUỘC ghi log chi tiết các file đã sửa đổi, kết quả test và cập nhật trạng thái `[DONE]` trong `HANDOVER_LOG.md`.
+### 2. QUY TRÌNH 4 BƯỚC KHỞI ĐỘNG BẮT BUỘC KHI NHẬN TASK (4-STEP KICKOFF PROTOCOL)
+Trước khi chạm vào bất kỳ file code (`.kt`) nào, agent bắt buộc phải thực hiện và báo cáo đủ 4 bước:
+- **Bước 1 (Docs & Roadmap Check):** Đối soát Backlog, Specs và Ma trận luồng tiền để có bức tranh toàn cảnh (Bird's-eye View).
+- **Bước 2 (Codebase Reality Check):** Rà soát codebase xem logic/component này đã có chưa, đang chạy đúng hay sai so với spec, tránh tạo file trùng lặp (Anti-Zombie Code).
+- **Bước 3 (Sanity Check & Phản biện):** Đánh giá mô tả của người dùng có thực sự đúng, đủ, và hợp lý với bản chất kế toán thực tế không? Cảnh báo ngay nếu yêu cầu xung đột với Hiến pháp kiến trúc hoặc tiềm ẩn lỗi dây chuyền.
+- **Bước 4 (Đề xuất tối thiểu 2 phương án):**
+  * So sánh **Phương án A vs Phương án B**: Nêu rõ Ưu điểm, Nhược điểm, Mức độ rủi ro gãy code (Breaking Changes).
+  * Đưa ra **Khuyến nghị (Recommendation)** phương án tối ưu nhất dựa trên tính bền vững dài hạn để người dùng phê duyệt.
 
-4. **ĐỒNG BỘ FIRESTORE RULES & BẢO TOÀN TRƯỜNG BẤT BIẾN (FIRESTORE SECURITY INTEGRITY):**
-   - Mỗi khi thêm/sửa trường dữ liệu trong Firestore Models/Preferences: BẮT BUỘC rà soát và cập nhật `firestore.rules` (whitelist `keys().hasOnly(...)` và logic validate tương ứng).
-   - **Quy tắc trường bất biến (Immutability Pattern):** Đối với các trường cấm client tự ý sửa khi `update` (ví dụ `spentAmount`, `balance`...):
-     * TUYỆT ĐỐI KHÔNG dùng `|| request.resource.data.<field> is <type>` vì sẽ làm hỏng ràng buộc và cho phép ghi đè tự do.
-     * BẮT BUỘC dùng đúng chuẩn: `(!('<field>' in request.resource.data) || request.resource.data.<field> == resource.data.<field>)`.
-   - **Pre-commit Gate:** Luôn chạy `npm --prefix functions run check` (TypeScript) và kiểm tra unit test của rules trong `functions/test/firestore.rules.test.ts`.
+### 3. TỐI ƯU HÓA TOKEN & KẾ HOẠCH THỰC THI (TOKEN & PERFORMANCE EFFICIENCY)
+- **Tối ưu Token Context:** Nhờ định vị tài liệu từ sớm, chỉ đọc đúng các file liên quan thực sự; không grep/cat file tràn lan gây lãng phí bộ nhớ context; báo cáo cô đọng, đi thẳng vào trọng tâm kỹ thuật.
+- **Kế hoạch thực thi chuẩn xác (Implementation Plan):** Sau khi chốt phương án, trình bày kế hoạch ngắn gọn theo mẫu: `[Tên File] -> [Mục tiêu sửa đổi] -> [Hàm/Component liên quan]`.
+- **Tối ưu Hiệu năng Runtime:** Mã nguồn viết ra phải triệt tiêu Recomposition thừa trong Jetpack Compose, tối ưu số lượng truy vấn Firestore và bảo vệ bộ nhớ thiết bị.
 
-## Nguyên tắc bắt buộc kỹ thuật
-1. **Không bịa nghiệp vụ.** Nếu yêu cầu chưa có trong `docs/BA_SPEC.md`/`docs/UI_SPEC.md`, dừng lại hỏi hoặc
-   ghi `// TODO: [Cần xác nhận] ...` thay vì tự suy diễn.
-2. **Tuân thủ Clean Architecture** đã định nghĩa trong `docs/CONTEXT.md` — không viết logic nghiệp vụ
-   trực tiếp trong Composable hoặc trong lớp data.
-3. **Mọi thao tác ghi ảnh hưởng số dư ví PHẢI dùng Firestore Transaction** (BR-06, BR-14) — không
-   dùng `set()`/`update()` rời rạc cho amount + balance.
-4. **Component Liquid Glass dùng chung** từ `core/designsystem` — không tự tạo blur/glass riêng lẻ
-   trong từng màn hình.
-5. **Theme sáng/tối** đọc từ `ThemePreferenceRepository` (DataStore), áp dụng bằng
-   `CompositionLocalProvider` ở root — không hard-code màu theo `isSystemInDarkTheme()` rải rác.
-6. **Test:** mỗi UseCase quan trọng (Add/Edit/Delete Transaction, Budget check) cần unit test kèm theo.
-7. **Không commit khóa bí mật** (`google-services.json` thật, service account key) — dùng file mẫu
-   `.example` và thêm vào `.gitignore`.
+---
 
-## 📋 QUY TRÌNH QUẢN LÝ TÀI LIỆU CHUẨN (Document Management SOP)
+## 🎯 PHẦN II: NGUYÊN TẮC HOẠT ĐỘNG CỐT LÕI (CORE DIRECTIVES)
 
-### HANDOVER_LOG.md — Bắt buộc ghi 2 bước
-**PRE-EXECUTION** (Trước khi gõ code):
-- Tạo mục task mới trong `HANDOVER_LOG.md`.
-- Ghi rõ: Mục tiêu, scope thay đổi, danh sách file dự kiến chỉnh sửa.
-- Gán trạng thái `[IN PROGRESS]`.
+### 1. QUY TẮC ĐIỀU TRA TRƯỚC KHI CODE (INVESTIGATION-FIRST GATE)
+- Đối với mọi task liên quan đến kiến trúc, luồng tiền, liên kết liên module, hoặc bug chưa rõ nguyên nhân:
+  * **TUYỆT ĐỐI KHÔNG GÕ CODE NGAY.**
+  * Phải dừng lại rà soát codebase, xác định root-cause, lập báo cáo kỹ thuật và kế hoạch triển khai (Implementation Plan) để người dùng phê duyệt trước khi sửa code.
 
-**POST-EXECUTION** (Sau khi xong):
-- Cập nhật kết quả chạy test (số test pass/fail).
-- Liệt kê đầy đủ danh sách file đã thực sự chỉnh sửa.
-- Đổi trạng thái sang `[DONE]`.
+### 2. KỶ LUẬT QUẢN TRỊ GIT (GIT AUTHORIZATION GATE)
+- **CẤM TUYỆT ĐỐI TỰ Ý COMMIT HOẶC PUSH:** Agent chỉ được phép chạy `git commit` và `git push` khi nhận được lệnh xác nhận bằng văn bản rõ ràng từ người dùng.
+- Mọi thao tác code xong chỉ được dừng lại ở working tree local để phục vụ kiểm thử.
 
-### CHANGELOG.md — Chỉ ghi sau khi build thành công
-- Chỉ được ghi nhận thông tin phiên bản release (`[vX.Y.Z]`, ngày tháng, `[Added]`, `[Changed]`, `[Fixed]`)
-  **SAU KHI** đã chạy `gradlew testDebugUnitTest` pass 100% **VÀ** build APK thành công.
-- Không ghi CHANGELOG trước khi test hoàn tất.
+### 3. BẢO VỆ HIẾN PHÁP DÒNG TIỀN (MONEY FLOW INVARIANTS)
+- **Single Source Category:** 100% category ID hệ thống phải lấy từ `SystemCategories.kt`. Cấm tuyệt đối dùng string literal tự do (`"food"`, `"savings"`, `"debt_payment"`...).
+- **Phân tách ngữ nghĩa kế toán:** Trả nợ gốc (`DEBT_PAYMENT`), Tích lũy mục tiêu (`SAVINGS`), và Xuất vốn đầu tư (`OUTLAY_CAPITAL`) là hoán đổi/dịch chuyển tài sản — **CẤM tính vào `isLivingExpense()`**.
+- **Chống tính trùng chi phí (Zero Double-Counting):** Thanh toán sao kê thẻ tín dụng bắt buộc là cặp `TRANSFER_OUT` / `TRANSFER_IN` giữa các ví, không gán category chi tiêu.
+- **Rollback vòng đời giao dịch:** Mọi thao tác Sửa/Xóa giao dịch bắt buộc hoàn trả nguyên tử (Rollback) số dư ví và `spentAmount` của Ngân sách theo đúng `periodKey` gốc trước khi áp dụng số liệu mới.
+- **Giải mã thời gian thực tế:** `resolvePeriodKey` phải dựa trên `transaction.date` kết hợp `financeTimeZone`, tuyệt đối không dùng `Instant.now()`.
 
-## Thứ tự triển khai đề xuất
-1. Design system (theme, LiquidGlassSurface, GlassCard, GlassTopBar, GlassBottomNav)
-2. Auth module (Login/Register/Google Sign-In) + Firestore seed data khi tạo user mới
-3. Home + Transaction CRUD (theo UC-07, UC-08, UC-09)
-4. Category + Wallet module (UC-11, UC-12, UC-13)
-5. Budget module + Cloud Functions liên quan (UC-14, UC-15)
-6. Report + Export Excel/PDF (UC-16, UC-17)
-7. Reminder + Notification (UC-18, UC-19)
-8. Settings/Profile — avatar, theme switch (UC-05, UC-06)
-9. Polish: animation Liquid Glass, empty/error states, accessibility contrast
+### 4. ĐỒNG BỘ THEME & MÀU ĐỘNG (THEME CONSISTENCY)
+- TUYỆT ĐỐI KHÔNG hardcode mã màu tĩnh (`Color.Black`, `Color.White`, `#000000`, `#FFFFFF`).
+- BẮT BUỘC sử dụng 100% hệ thống màu động từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`.
+- BẮT BUỘC sử dụng `FinluxStyleBackdrop` và `containerColor = Color.Transparent` ở các màn hình có nền kính Liquid Glass.
 
-## Khi sinh code UI
-- Luôn tham chiếu đúng section trong `docs/UI_SPEC.md` (ví dụ: "SCREEN: Home / Dashboard") thay vì tự
-  thiết kế lại bố cục.
-- Giữ đúng tên field/action đã liệt kê để đồng bộ với `docs/BA_SPEC.md`.
+### 5. CẤM TẠO CODE TRÙNG LẶP & QUY TRÌNH SÁP NHẬP (ANTI-DUPLICATION)
+- CẤM tạo file mới trong `component/` nếu chưa rà soát đối chiếu với các component hiện có trong project.
+- Khi tạo component dùng chung mới để thay thế component cũ, BẮT BUỘC thực hiện song hành 3 bước:
+  1. Tạo/củng cố component chuẩn mới trong package quy định.
+  2. Di chuyển (migrate) 100% các màn hình cũ sang component mới.
+  3. **XÓA BỎ HOÀN TOÀN** file cũ, không để tồn tại 2 file cùng giải quyết một bài toán (Anti-Zombie Code).
 
-## Khi sinh code data layer
-- Đúng path Firestore trong `docs/DATA_SPEC.md` mục 1 (subcollection dưới `users/{uid}`).
-- Security Rules tham khảo `docs/DATA_SPEC.md` mục 3, viết đầy đủ trước khi release (không để rule mở `allow read, write: if true`).
+### 6. HỢP ĐỒNG FORM CONTROLS TIÊU CHUẨN (UNIFIED FORM CONTROLS CONTRACT)
+- Mọi màn hình/sheet có form nhập liệu (`AddTransaction`, `TransferMoney`, `DebtPayment`, `Goals`, `Deals`, `Wallets`, `Budget`...) **BẮT BUỘC 100%** phải kế thừa từ `FinluxFormControls.kt`:
+  * *Thời gian:* Dùng `FinluxDateTimePicker` (chọn cả Ngày VÀ Giờ:Phút). Cấm dùng DatePicker đơn lẻ bỏ sót giờ.
+  * *Số tiền:* Dùng `FinluxAmountInput` (chấm phân cách hàng nghìn, auto-scaling font size, inline `₫` suffix, clear button `[x]`, quick chips). Cấm tự dựng TextField cho số tiền.
+  * *Ghi chú:* Dùng `FinluxNoteInput`.
+  * *Ví & Danh mục:* Dùng `FinluxWalletSelector`, `FinluxTransferWalletPair`, `FinluxWalletPickerBottomSheet`, `FinluxCategoryPickerBottomSheet`.
 
-## Cập nhật tài liệu
-Mỗi khi thay đổi phạm vi/nghiệp vụ trong lúc code, cập nhật lại `docs/BA_SPEC.md`/`docs/UI_SPEC.md` tương ứng
-và ghi log vào `CHANGELOG.md` — không để code và tài liệu lệch nhau.
+### 7. NGUYÊN TẮC TRỊ TẬN GỐC & CẤM SỬA CHẮP VÁ (ROOT-CAUSE FIRST)
+- Tuyệt đối CẤM "Single-case Patching" (thêm padding, spacer, hoặc offset chắp vá để đối phó tạm thời trên một màn hình đơn lẻ).
+- Khi phát sinh lỗi hiển thị hoặc lệch pha: Sửa tận gốc ở Design System Token / Core Formatter hoặc Domain Invariant để toàn bộ hệ thống được bảo vệ đồng bộ.
 
-## 🚀 MANDATORY RELEASE & VERSIONING WORKFLOW
-Mỗi khi người dùng yêu cầu build release, đóng gói APK hoàn chỉnh, hoặc chuẩn bị commit tính năng mới:
-1. **AUTO VERSION BUMP:**
-   - Tự động kiểm tra `versionCode` và `versionName` trong `app/build.gradle.kts` (hoặc `libs.versions.toml`).
-   - Tự động tăng `versionCode` lên +1.
-   - Cập nhật `versionName` theo chuẩn Semantic Versioning (X.Y.Z) tương ứng với quy mô thay đổi (Patch/Minor/Major).
+### 8. ĐỒNG BỘ FIRESTORE RULES & BẢO TOÀN TRƯỜNG BẤT BIẾN
+- Mỗi khi thêm/sửa trường dữ liệu: BẮT BUỘC cập nhật `firestore.rules` (whitelist `keys().hasOnly(...)`).
+- Quy tắc trường bất biến (Immutability Pattern): Dùng chuẩn `(!('<field>' in request.resource.data) || request.resource.data.<field> == resource.data.<field>)`.
+- Pre-commit Gate: Chạy `npm --prefix functions run check` và test trong `functions/test/firestore.rules.test.ts`.
 
-2. **AUTO CHANGELOG & DOCS SYNC:**
-   - Tự động thêm mục phiên bản mới lên đầu file `CHANGELOG.md` theo chuẩn "Keep a Changelog".
-   - Tóm tắt ngắn gọn các thay đổi vừa thực hiện vào 3 mục: `[Added]`, `[Changed]`, `[Fixed]`.
-   - Cập nhật thông tin version tương ứng trong `HANDOVER_LOG.md`.
+---
 
-3. **VERIFY & COMMIT:**
-   - Chạy `gradlew testDebugUnitTest` đảm bảo 100% PASS trước khi build.
-   - Commit thay đổi với message: `bump(release): vX.Y.Z - [Tóm tắt ngắn]`.
+## 📋 PHẦN III: QUY TRÌNH QUẢN LÝ TÀI LIỆU (DOCUMENTATION SOP)
 
+### HANDOVER_LOG.md — Bắt buộc 2 bước
+- **PRE-EXECUTION** (Trước khi code): Tạo mục task, ghi rõ scope, file dự kiến sửa, gán `[IN PROGRESS]`.
+- **POST-EXECUTION** (Sau khi code): Ghi kết quả test, danh sách file thực tế đã sửa, đổi sang `[DONE]`.
+
+### CHANGELOG.md — Ghi nhận release
+- Chỉ ghi nhận phiên bản release SAU KHI unit test đạt 100% PASS và build APK thành công.
+
+---
+
+## 🚀 PHẦN IV: QUY TRÌNH RELEASE & ĐÓNG GÓI CHUẨN (RELEASE PIPELINE)
+Khi nhận lệnh release, đóng gói hoặc bàn giao:
+1. **UNIT TEST GATE:** Chạy `.\gradlew.bat testDebugUnitTest` đảm bảo 100% PASS.
+2. **VERSION BUMP:** Tăng `versionCode` (+1) và cập nhật `versionName` trong `app/build.gradle.kts`.
+3. **CHANGELOG SYNC:** Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md`.
+4. **BUILD APK:** Chạy `.\gradlew.bat assembleDebug`.
+5. **ADB DEPLOYMENT:** Nạp APK lên thiết bị (`adb install -r ...`) và bật app (`am start ...`).
+6. **PHYSICAL DEVICE ACCEPTANCE:** Tự đối chiếu Checklist 5 điểm:
+   - [ ] *Theme check:* Đẹp ở cả Dark Mode và Light Mode.
+   - [ ] *Large Number check:* Tiền trăm triệu đến chục tỷ tự động co font, không tràn layout.
+   - [ ] *Keyboard IME check:* Bàn phím số không che khuất ô nhập và nút hành động.
+   - [ ] *Full Flow check:* Thực hiện 1 giao dịch thực tế, số dư ví và sổ cái nhảy đúng.
+   - [ ] *Logcat check:* Không có exception/crash ngầm.
+7. **WAIT FOR AUTHORIZATION:** Dừng lại báo cáo để người dùng nghiệm thu thực tế trước khi xin lệnh commit/push.

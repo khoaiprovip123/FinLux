@@ -82,13 +82,14 @@ class TransactionSemanticsTest {
     }
 
     @Test
-    fun `isLivingExpense correctly includes daily spending and loan interest, but excludes principal and capital outlay`() {
-        val foodExpense = transaction("food", TransactionType.EXPENSE, categoryId = "food", amount = 200_000L)
-        val loanInterestExpense = transaction("interest", TransactionType.EXPENSE, categoryId = DEBT_PAYMENT_CATEGORY_ID, note = "Trả tiền lãi vay", amount = 500_000L)
-        val loanPrincipalPayment = transaction("principal", TransactionType.EXPENSE, categoryId = DEBT_PAYMENT_CATEGORY_ID, note = "Thanh toán nợ: Vay mua xe", amount = 5_000_000L)
-        val legacyPrincipalPayment = transaction("legacy_principal", TransactionType.EXPENSE, categoryId = DEBT_PRINCIPAL_CATEGORY_ID, amount = 3_000_000L)
+    fun `isLivingExpense correctly includes daily spending and loan interest, but excludes principal, capital outlay, and savings deposit`() {
+        val foodExpense = transaction("food", TransactionType.EXPENSE, categoryId = SystemCategories.FOOD, amount = 200_000L)
+        val loanInterestExpense = transaction("interest", TransactionType.EXPENSE, categoryId = SystemCategories.DEBT_PAYMENT, note = "Trả tiền lãi vay", amount = 500_000L)
+        val loanPrincipalPayment = transaction("principal", TransactionType.EXPENSE, categoryId = SystemCategories.DEBT_PAYMENT, note = "Thanh toán nợ: Vay mua xe", amount = 5_000_000L)
+        val legacyPrincipalPayment = transaction("legacy_principal", TransactionType.EXPENSE, categoryId = SystemCategories.LEGACY_DEBT_PRINCIPAL, amount = 3_000_000L)
         val capitalOutlayDeal = transaction("outlay", TransactionType.EXPENSE, dealFlowType = DealFlowType.OUTLAY_CAPITAL, amount = 10_000_000L)
-        val incomeSalary = transaction("salary", TransactionType.INCOME, categoryId = "salary", amount = 20_000_000L)
+        val savingsDeposit = transaction("savings", TransactionType.EXPENSE, categoryId = SystemCategories.SAVINGS, amount = 2_000_000L)
+        val incomeSalary = transaction("salary", TransactionType.INCOME, categoryId = SystemCategories.SALARY, amount = 20_000_000L)
         val transferOut = transaction("transfer", TransactionType.TRANSFER_OUT, amount = 1_000_000L)
 
         assertTrue(foodExpense.isLivingExpense(), "Food should be living expense")
@@ -96,8 +97,17 @@ class TransactionSemanticsTest {
         assertFalse(loanPrincipalPayment.isLivingExpense(), "Debt principal should be excluded from living expenses")
         assertFalse(legacyPrincipalPayment.isLivingExpense(), "Legacy principal should be excluded from living expenses")
         assertFalse(capitalOutlayDeal.isLivingExpense(), "Capital outlay should be excluded from living expenses")
+        assertFalse(savingsDeposit.isLivingExpense(), "Savings goal deposit should be excluded from living expenses")
         assertFalse(incomeSalary.isLivingExpense(), "Income is not living expense")
         assertFalse(transferOut.isLivingExpense(), "Transfer is not living expense")
+    }
+
+    @Test
+    fun `SystemCategories contains all core identifiers`() {
+        assertTrue(SystemCategories.ALL_SYSTEM_EXPENSE_IDS.contains(SystemCategories.DEBT_PAYMENT))
+        assertTrue(SystemCategories.ALL_SYSTEM_EXPENSE_IDS.contains(SystemCategories.SAVINGS))
+        assertTrue(SystemCategories.ALL_SYSTEM_EXPENSE_IDS.contains(SystemCategories.FOOD))
+        assertTrue(SystemCategories.ALL_SYSTEM_INCOME_IDS.contains(SystemCategories.SALARY))
     }
 
     private fun transaction(

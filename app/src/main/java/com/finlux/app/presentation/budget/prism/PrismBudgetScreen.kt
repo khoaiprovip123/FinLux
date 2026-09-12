@@ -69,15 +69,16 @@ import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.NotificationPermissionHandler
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.FinluxAdvisoryBanner
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxDialog
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxHeroCard
 import com.finlux.app.core.designsystem.component.FinluxScreenHeader
 import com.finlux.app.core.designsystem.component.FinluxSoftCard
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.FinluxCategoryPickerBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxTransactionRow
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
@@ -163,6 +164,13 @@ fun PrismBudgetScreen(
                     IconButton(onClick = { viewModel.nextMonth() }) {
                         Icon(Icons.Default.ChevronRight, contentDescription = "Tháng sau", tint = tokens.onSurface)
                     }
+                }
+            }
+
+            // Transition Advisory Banner
+            state.transitionAdvisoryBanner?.let { banner ->
+                item {
+                    FinluxAdvisoryBanner(message = banner)
                 }
             }
 

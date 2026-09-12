@@ -69,6 +69,13 @@ interface CategoryRepository {
 interface BudgetRepository {
     fun observeBudgets(periodKey: String): Flow<List<Budget>>
     suspend fun upsertBudget(budget: Budget): AppResult<String>
+    suspend fun upsertBudgets(budgets: List<Budget>): AppResult<Unit> {
+        for (budget in budgets) {
+            val res = upsertBudget(budget)
+            if (res is AppResult.Error) return res
+        }
+        return AppResult.Success(Unit)
+    }
     suspend fun deleteBudget(budget: Budget): AppResult<Unit>
 }
 

@@ -4,6 +4,16 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-09-10] - [v1.25.2] Chuẩn Hóa Kiến Trúc Hệ Thống, Central Category Registry & Đồng Bộ Cửa Sổ Ngân Sách
+
+- **Xây dựng Ma Trận Kiến Trúc 16 Module & 15 Luồng Tiền (`docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`)**: Lập bản đồ toàn diện hệ thống, phân loại 4 nhóm module (Core Foundation, Value Creation, Extension Engines, Platform & Security), ma trận 15 luồng tiền tương hỗ và 4 nguyên tắc bảo vệ kiến trúc tài chính (Transaction Lifecycle Rollback, Transaction-based Date Resolution, Semi-Monthly Budget Convention, Central Category Registry).
+- **Single Source of Truth cho Danh mục Hệ thống (`SystemCategories.kt`)**: Xóa bỏ hoàn toàn tình trạng chuỗi hardcode phân tán trong codebase (`FirebaseDebtRepository`, `FirebaseGoalRepository`, `FirebaseAuthRepository`, `DemoFinluxRepository`, `SyncDebtReminderUseCase`, `ReportExporter`, `XlsxReportWriter`), quản lý tập trung toàn bộ mã danh mục hệ thống.
+- **Đồng bộ KPI Chi phí sinh hoạt giữa Home Dashboard và Báo cáo**: Chuẩn hóa `HomeViewModel` sử dụng `it.isLivingExpense()`, mở rộng `TransactionSemantics.isLivingExpense()` để loại trừ cả tích lũy mục tiêu (`SAVINGS`), vốn đầu tư deal (`OUTLAY_CAPITAL`) và trả nợ gốc (`DEBT_PAYMENT`).
+- **Liên kết động cửa sổ Ngân sách theo Chu kỳ tài chính**: `FirebaseTransactionRepository.budgetRef` và `DemoFinluxRepository` tính `periodKey` (`month:YYYY-MM` hoặc `salary:YYYY-MM-DD`) động qua `FinancialPeriodResolver.resolvePeriodKey(transaction.date, salaryConfig)`, bảo vệ tính đúng đắn khi ghi bù chi tiêu quá khứ.
+- **Kiểm thử tự động**: Toàn bộ 347/347 Unit tests PASS 100%.
+
+---
+
 ## ✅ [DONE 2026-09-10] - [v1.25.1] Chuẩn Hóa Mapping Danh Mục "Trả Nợ & Tín Dụng" & Phân Tách Ngữ Nghĩa Kế Toán
 
 - **Chuẩn hóa Category ID (`"debt_payment"`)**: Loại bỏ các ID mồ côi (`"debt_principal"`, `"debt_interest"`) trong `FirebaseDebtRepository` & `DemoFinluxRepository`. Mọi khoản trả nợ vay (Bank, Personal, Installment) gán chuẩn `categoryId = DEBT_PAYMENT_CATEGORY_ID` (`"debt_payment"`), khắc phục lỗi biên lai hiển thị fallback "Chi tiêu" và giúp ngân sách "Trả nợ & Tín dụng" đếm đủ 100% dòng tiền chi trả.

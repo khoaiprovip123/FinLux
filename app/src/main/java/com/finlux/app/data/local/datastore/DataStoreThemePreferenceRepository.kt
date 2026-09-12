@@ -30,6 +30,7 @@ private val BiometricTimeoutKey = stringPreferencesKey("biometric_timeout")
 private val VisualStyleKey = stringPreferencesKey("visual_style")
 private val BalanceVisibleKey = booleanPreferencesKey("is_balance_visible")
 private val AutoRolloverBudgetsKey = booleanPreferencesKey("auto_rollover_budgets")
+private val AutoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates")
 
 @Singleton
 class DataStoreThemePreferenceRepository @Inject constructor(
@@ -73,6 +74,7 @@ class DataStoreThemePreferenceRepository @Inject constructor(
                 ?: com.finlux.app.domain.model.BiometricLockTimeout.IMMEDIATE,
             isBalanceVisible = stored[BalanceVisibleKey] ?: true,
             autoRolloverBudgets = stored[AutoRolloverBudgetsKey] ?: false,
+            autoCheckUpdates = stored[AutoCheckUpdatesKey] ?: true,
         )
     }
 
@@ -86,6 +88,7 @@ class DataStoreThemePreferenceRepository @Inject constructor(
             it[BiometricTimeoutKey] = preferences.biometricTimeout.name
             it[BalanceVisibleKey] = preferences.isBalanceVisible
             it[AutoRolloverBudgetsKey] = preferences.autoRolloverBudgets
+            it[AutoCheckUpdatesKey] = preferences.autoCheckUpdates
         }
     }
 }

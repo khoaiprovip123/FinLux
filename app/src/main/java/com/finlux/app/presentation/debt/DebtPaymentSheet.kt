@@ -51,11 +51,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.PrincipalInterestSplitCard
-import com.finlux.app.core.designsystem.component.SimpleWalletPickerSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.ErgonomicInputRow
+import com.finlux.app.core.designsystem.component.form.PrincipalInterestSplitCard
+import com.finlux.app.core.designsystem.component.form.SimpleWalletPickerSheet
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.domain.model.DebtAccount

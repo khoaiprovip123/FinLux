@@ -97,5 +97,38 @@ class FirebaseSalaryCycleMapperTest {
         assertEquals(Money(15_000_000L), mapped.totalExpectedSalary)
         assertEquals(1, mapped.activePaydays.size)
     }
+
+    @Test
+    fun `mapper round trips salary cycle config record`() {
+        val config = SalaryCycleConfig(
+            enabled = true,
+            paydayDay = 10,
+            salaryWalletId = "w1",
+        )
+        val record = com.finlux.app.domain.model.SalaryCycleConfigRecord(
+            id = "rec_2026-08-01",
+            effectiveFromDate = "2026-08-01",
+            effectiveToDate = "2026-09-10",
+            config = config,
+            createdAt = java.time.Instant.ofEpochMilli(1700000000000L),
+        )
+
+        val map = SalaryCycleFirestoreMapper.recordToMap(record)
+        val deserialized = SalaryCycleFirestoreMapper.recordFromMap(record.id, map)
+
+        org.junit.jupiter.api.Assertions.assertNotNull(deserialized)
+        assertEquals(record.id, deserialized!!.id)
+        assertEquals(record.effectiveFromDate, deserialized.effectiveFromDate)
+        assertEquals(record.effectiveToDate, deserialized.effectiveToDate)
+        assertEquals(record.config.paydayDay, deserialized.config.paydayDay)
+        assertEquals(record.config.salaryWalletId, deserialized.config.salaryWalletId)
+    }
+
+    @Test
+    fun `record mapper safely returns null on invalid or empty data`() {
+        org.junit.jupiter.api.Assertions.assertNull(SalaryCycleFirestoreMapper.recordFromMap("doc1", null))
+        org.junit.jupiter.api.Assertions.assertNull(SalaryCycleFirestoreMapper.recordFromMap("doc1", emptyMap()))
+        org.junit.jupiter.api.Assertions.assertNull(SalaryCycleFirestoreMapper.recordFromMap("doc1", mapOf("effectiveToDate" to "2026-10-01")))
+    }
 }
 

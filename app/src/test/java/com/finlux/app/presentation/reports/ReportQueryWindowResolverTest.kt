@@ -133,4 +133,31 @@ class ReportQueryWindowResolverTest {
 
         assertEquals(ReportRange(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 10)), window.range)
     }
+
+    @Test
+    fun `salary cycle resolves based on timeline records when provided`() {
+        val now = LocalDateTime.of(2026, 9, 12, 12, 0).atZone(zone).toInstant()
+        val defaultFallback = SalaryCycleConfig(enabled = true, paydayDay = 25)
+        val timelineRecord = com.finlux.app.domain.model.SalaryCycleConfigRecord(
+            id = "rec1",
+            effectiveFromDate = "2026-09-10",
+            effectiveToDate = null,
+            config = SalaryCycleConfig(enabled = true, paydayDay = 10),
+            createdAt = now,
+        )
+
+        val window = resolver.resolve(
+            period = ReportPeriod.SALARY_CYCLE,
+            custom = ReportRange(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 2)),
+            now = now,
+            salaryConfig = defaultFallback,
+            zone = zone,
+            timeline = listOf(timelineRecord),
+        )
+
+        assertEquals(LocalDate.of(2026, 9, 10), window.range.start)
+        assertEquals(LocalDate.of(2026, 10, 9), window.range.end)
+        assertEquals(LocalDate.of(2026, 9, 10), window.currentStart.atZone(zone).toLocalDate())
+        assertEquals(LocalDate.of(2026, 10, 10), window.currentEndExclusive.atZone(zone).toLocalDate())
+    }
 }

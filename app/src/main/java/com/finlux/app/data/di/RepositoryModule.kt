@@ -137,9 +137,10 @@ object FinanceRepositoryModule {
         demo: DemoFinluxRepository,
         auth: FirebaseAuth?,
         firestore: FirebaseFirestore?,
+        salaryCycleRepository: SalaryCycleRepository,
     ): TransactionRepository =
         if (BuildConfig.FIREBASE_CONFIGURED && auth != null && firestore != null) {
-            FirebaseTransactionRepository(auth, firestore)
+            FirebaseTransactionRepository(auth, firestore, salaryCycleRepository)
         } else demo
 
     @Provides

@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.SystemCategories
 import com.finlux.app.domain.model.UserProfile
 import com.finlux.app.domain.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -221,11 +222,11 @@ class FirebaseAuthRepository(
 
     private companion object {
         val defaultCategories = mapOf(
-            "food" to mapOf("name" to "Ăn uống", "type" to "expense", "icon" to "restaurant", "color" to "#D94B5B", "isDefault" to true, "isEssential" to true),
-            "transport" to mapOf("name" to "Di chuyển", "type" to "expense", "icon" to "directions_car", "color" to "#E6A23C", "isDefault" to true, "isEssential" to true),
-            "debt_payment" to mapOf("name" to "Trả nợ & Tín dụng", "type" to "expense", "icon" to "credit_card", "color" to "#E11D48", "isDefault" to true, "isEssential" to true),
-            "savings" to mapOf("name" to "Tích lũy & Mục tiêu", "type" to "expense", "icon" to "savings", "color" to "#8B5CF6", "isDefault" to true, "isEssential" to true),
-            "salary" to mapOf("name" to "Lương", "type" to "income", "icon" to "payments", "color" to "#168A62", "isDefault" to true, "isEssential" to true),
+            SystemCategories.FOOD to mapOf("name" to "Ăn uống", "type" to "expense", "icon" to "restaurant", "color" to "#D94B5B", "isDefault" to true, "isEssential" to true),
+            SystemCategories.TRANSPORT to mapOf("name" to "Di chuyển", "type" to "expense", "icon" to "directions_car", "color" to "#E6A23C", "isDefault" to true, "isEssential" to true),
+            SystemCategories.DEBT_PAYMENT to mapOf("name" to "Trả nợ & Tín dụng", "type" to "expense", "icon" to "credit_card", "color" to "#E11D48", "isDefault" to true, "isEssential" to true),
+            SystemCategories.SAVINGS to mapOf("name" to "Tích lũy & Mục tiêu", "type" to "expense", "icon" to "savings", "color" to "#8B5CF6", "isDefault" to true, "isEssential" to true),
+            SystemCategories.SALARY to mapOf("name" to "Lương", "type" to "income", "icon" to "payments", "color" to "#168A62", "isDefault" to true, "isEssential" to true),
         )
     }
 }

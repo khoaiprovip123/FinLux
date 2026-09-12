@@ -79,18 +79,20 @@ import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.NotificationPermissionHandler
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxScreenHeader
 import com.finlux.app.core.designsystem.component.FinluxSoftCard
-import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.ErgonomicInputRow
+import com.finlux.app.core.designsystem.component.form.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
-import com.finlux.app.core.designsystem.walletIcon
+import com.finlux.app.core.time.ReminderCountdownTier
+import com.finlux.app.core.time.formatReminderCountdown
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
 import com.finlux.app.domain.model.Money
@@ -190,6 +192,10 @@ fun RemindersScreen(
                 val zone = ZoneId.systemDefault()
                 val triggerZdt = reminder.nextTriggerDate.atZone(zone)
                 val triggerTimeText = triggerZdt.format(DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy"))
+                val countdownInfo = remember(reminder.nextTriggerDate, reminder.enabled) {
+                    if (!reminder.enabled) null
+                    else formatReminderCountdown(reminder.nextTriggerDate, Instant.now(), zone)
+                }
 
                 FinluxSoftCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -305,21 +311,83 @@ fun RemindersScreen(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = null,
-                                    tint = Color(0xFFF59E0B),
-                                    modifier = Modifier.size(14.dp),
-                                )
-                                Text(
-                                    text = if (reminder.enabled) "Kỳ tiếp theo: $triggerTimeText" else "Đang tạm dừng nhắc nhở",
-                                    style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
-                                    color = if (reminder.enabled) tokens.onSurfaceVariant else Color(0xFF9CA3AF),
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.weight(1f, fill = false),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = if (reminder.enabled) Color(0xFFF59E0B) else Color(0xFF9CA3AF),
+                                        modifier = Modifier.size(14.dp),
+                                    )
+                                    Text(
+                                        text = if (reminder.enabled) "Kỳ tiếp theo: $triggerTimeText" else "Đang tạm dừng nhắc nhở",
+                                        style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
+                                        color = if (reminder.enabled) tokens.onSurfaceVariant else Color(0xFF9CA3AF),
+                                        maxLines = 1,
+                                    )
+                                }
+
+                                if (reminder.enabled && countdownInfo != null) {
+                                    val badgeBgColor = when (countdownInfo.tier) {
+                                        ReminderCountdownTier.OVERDUE -> FinluxColors.ExpenseRed.copy(alpha = 0.18f)
+                                        ReminderCountdownTier.TODAY -> Color(0xFFF59E0B).copy(alpha = 0.20f)
+                                        ReminderCountdownTier.TOMORROW -> tokens.primary.copy(alpha = 0.18f)
+                                        ReminderCountdownTier.FUTURE -> tokens.surfaceSoft
+                                    }
+                                    val badgeBorderStroke = when (countdownInfo.tier) {
+                                        ReminderCountdownTier.OVERDUE -> BorderStroke(1.dp, FinluxColors.ExpenseRed.copy(alpha = 0.45f))
+                                        ReminderCountdownTier.TODAY -> BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.45f))
+                                        ReminderCountdownTier.TOMORROW -> BorderStroke(1.dp, tokens.primary.copy(alpha = 0.40f))
+                                        ReminderCountdownTier.FUTURE -> BorderStroke(0.8.dp, tokens.border.copy(alpha = 0.35f))
+                                    }
+                                    val badgeTextColor = when (countdownInfo.tier) {
+                                        ReminderCountdownTier.OVERDUE -> FinluxColors.ExpenseRed
+                                        ReminderCountdownTier.TODAY -> if (tokens.isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
+                                        ReminderCountdownTier.TOMORROW -> if (tokens.isDark) Color(0xFF60A5FA) else Color(0xFF1D4ED8)
+                                        ReminderCountdownTier.FUTURE -> tokens.onSurfaceVariant
+                                    }
+                                    val badgeDotColor = when (countdownInfo.tier) {
+                                        ReminderCountdownTier.OVERDUE -> FinluxColors.ExpenseRed
+                                        ReminderCountdownTier.TODAY -> if (tokens.isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
+                                        ReminderCountdownTier.TOMORROW -> if (tokens.isDark) Color(0xFF60A5FA) else Color(0xFF1D4ED8)
+                                        ReminderCountdownTier.FUTURE -> tokens.onSurfaceVariant.copy(alpha = 0.8f)
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = badgeBgColor,
+                                        border = badgeBorderStroke,
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .background(badgeDotColor, CircleShape),
+                                            )
+                                            Text(
+                                                text = countdownInfo.label,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                ),
+                                                color = badgeTextColor,
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

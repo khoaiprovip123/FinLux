@@ -12,6 +12,7 @@ import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.DashboardSummary
 import com.finlux.app.domain.model.FinanceTransaction
+import com.finlux.app.domain.model.SystemCategories
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.presentation.reports.CategoryExpense
@@ -113,7 +114,7 @@ object ReportExporter {
             val dateStr = tx.date.atZone(ZoneId.systemDefault()).format(dateTimeFormatter)
             val typeStr = when (tx.type) {
                 TransactionType.INCOME -> "Thu nhập"
-                TransactionType.EXPENSE -> if (tx.categoryId == "debt_payment") "Trả nợ" else "Chi tiêu"
+                TransactionType.EXPENSE -> if (tx.categoryId == SystemCategories.DEBT_PAYMENT) "Trả nợ" else "Chi tiêu"
                 TransactionType.TRANSFER_OUT -> "Chuyển đi"
                 TransactionType.TRANSFER_IN -> "Nhận chuyển"
             }
@@ -445,7 +446,7 @@ object ReportExporter {
             canvas.drawText(dateTimeStr, 46f, y + 16f, paintDate)
 
             // Col 2: Category & Note (2 lines in 1 cell)
-            val catName = if (tx.categoryId == "debt_payment") "Trả nợ & Tín dụng" else tx.categoryId?.let { categoryMap[it]?.name } ?: "Khác"
+            val catName = if (tx.categoryId == SystemCategories.DEBT_PAYMENT) "Trả nợ & Tín dụng" else tx.categoryId?.let { categoryMap[it]?.name } ?: "Khác"
             val truncatedCatName = smartEllipsize(paintCatName, catName, 202f)
 
             if (tx.note.isNotBlank()) {

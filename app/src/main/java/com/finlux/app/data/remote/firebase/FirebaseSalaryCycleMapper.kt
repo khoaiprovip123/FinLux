@@ -5,7 +5,10 @@ import com.finlux.app.domain.model.CycleRolloverRule
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.PaydayRuleType
 import com.finlux.app.domain.model.SalaryCycleConfig
+import com.finlux.app.domain.model.SalaryCycleConfigRecord
 import com.finlux.app.domain.model.SalaryScheduleType
+import com.google.firebase.Timestamp
+import java.time.Instant
 
 internal object SalaryCycleFirestoreMapper {
     fun toMap(config: SalaryCycleConfig): Map<String, Any?> = mapOf(
@@ -53,6 +56,35 @@ internal object SalaryCycleFirestoreMapper {
                 fallback = BudgetPeriodBasis.CALENDAR_MONTH,
             ),
             financeTimeZone = data["financeTimeZone"] as? String ?: "Asia/Ho_Chi_Minh",
+        )
+    }
+
+    fun recordToMap(record: SalaryCycleConfigRecord): Map<String, Any?> = mapOf(
+        "id" to record.id,
+        "effectiveFromDate" to record.effectiveFromDate,
+        "effectiveToDate" to record.effectiveToDate,
+        "config" to toMap(record.config),
+        "createdAt" to Timestamp(record.createdAt.epochSecond, record.createdAt.nano),
+    )
+
+    fun recordFromMap(id: String, data: Map<String, Any?>?): SalaryCycleConfigRecord? {
+        if (data.isNullOrEmpty()) return null
+        val effectiveFrom = data["effectiveFromDate"] as? String ?: return null
+        val effectiveTo = data["effectiveToDate"] as? String
+        @Suppress("UNCHECKED_CAST")
+        val configData = data["config"] as? Map<String, Any?>
+        val config = fromMap(configData)
+        val createdAt = when (val raw = data["createdAt"]) {
+            is Timestamp -> Instant.ofEpochSecond(raw.seconds, raw.nanoseconds.toLong())
+            else -> Instant.now()
+        }
+
+        return SalaryCycleConfigRecord(
+            id = id.ifBlank { data["id"] as? String ?: "" },
+            effectiveFromDate = effectiveFrom,
+            effectiveToDate = effectiveTo,
+            config = config,
+            createdAt = createdAt,
         )
     }
 

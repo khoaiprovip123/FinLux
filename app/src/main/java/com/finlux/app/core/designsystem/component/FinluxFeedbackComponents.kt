@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -328,6 +329,44 @@ fun FinluxOfflineState(
                 text = message,
                 style = FinluxTextStyles.Caption,
                 color = FinluxColors.WarningAmber,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+/**
+ * Standard Advisory Banner for transitions & tips (tokens-compliant).
+ * Displays smoothly across Classic, Modern, and Prism themes.
+ */
+@Composable
+fun FinluxAdvisoryBanner(
+    message: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Default.Info,
+) {
+    val tokens = LocalFinluxTokens.current
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = tokens.surfaceSoft,
+        border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.25f)),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tokens.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = tokens.onSurface,
                 fontWeight = FontWeight.Medium,
             )
         }

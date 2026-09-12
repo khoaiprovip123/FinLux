@@ -316,6 +316,22 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Subcollection: Salary Cycle Timeline (Dòng thời gian cấu hình chu kỳ lương)
+      match /salaryCycleTimeline/{docId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'id', 'effectiveFromDate', 'effectiveToDate', 'config', 'createdAt', 'updatedAt'
+          ])
+          && request.resource.data.effectiveFromDate is string
+          && request.resource.data.effectiveFromDate.size() == 10
+          && (!('effectiveToDate' in request.resource.data) || request.resource.data.effectiveToDate == null || (request.resource.data.effectiveToDate is string && request.resource.data.effectiveToDate.size() == 10))
+          && request.resource.data.config is map
+          && validSalaryCyclePreference(request.resource.data.config)
+          && (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+          && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
+      }
+
       match /savingSpinConfigs/{configId} {
         allow read: if isOwner(uid) && configId == 'default';
         allow create, update: if isOwner(uid)

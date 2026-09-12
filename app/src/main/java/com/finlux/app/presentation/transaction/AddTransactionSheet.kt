@@ -3,12 +3,14 @@ package com.finlux.app.presentation.transaction
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.ErgonomicInputRow
-import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxDialog
-import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
+import com.finlux.app.core.designsystem.component.form.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
+import com.finlux.app.core.designsystem.component.form.FinluxNoteInput
+import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxWalletSelector
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -140,7 +142,6 @@ fun AddTransactionSheet(
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    var showDatePicker by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showWalletPicker by remember { mutableStateOf(false) }
 
@@ -198,22 +199,6 @@ fun AddTransactionSheet(
             "Số dư ví [${activeWallet.name}] không đủ để chi tiêu (Khả dụng: ${formatVndAmount(activeWallet.balance.value)})"
         }
     } else null
-
-    // Date formatting with "Hôm nay" / "Hôm qua" smart labels
-    val localDate = state.date.atZone(ZoneId.systemDefault()).toLocalDate()
-    val today = LocalDate.now()
-    val dayPrefix = when (localDate) {
-        today -> "Hôm nay, "
-        today.minusDays(1) -> "Hôm qua, "
-        else -> ""
-    }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm") }
-    val formattedDate = dayPrefix + state.date.atZone(ZoneId.systemDefault()).format(dateFormatter)
-
-    // Formatted amount display
-    val formattedAmount = remember(state.amountInput) {
-        formatNumberWithDots(state.amountInput)
-    }
 
     var showDiscardDialog by remember { mutableStateOf(false) }
     val hasUnsavedChanges = enteredAmountValue > 0L || state.note.isNotBlank()
@@ -342,65 +327,31 @@ fun AddTransactionSheet(
                 }
             }
 
-            // 3. Amount Display & Quick Chips (Standard ErgonomicCompactAmountCard)
-            ErgonomicCompactAmountCard(
+            // 3. Amount Display & Quick Chips (Standard FinluxAmountInput)
+            FinluxAmountInput(
                 label = "Số tiền",
                 amountText = state.amountInput,
                 onAmountChange = { viewModel.setAmount(it) },
                 placeholder = "0",
                 amountColor = amountColor,
-                showSuggestions = true,
+                warningMessage = balanceErrorMessage,
+                showQuickChips = true,
                 amountFontSize = 32.sp,
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            // Warning Banner for Insufficient Wallet Balance
-            if (balanceErrorMessage != null) {
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
-                    border = BorderStroke(1.dp, Color(0xFFF43F5E).copy(alpha = 0.35f)),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = Color(0xFFE11D48),
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Text(
-                            text = balanceErrorMessage,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                            color = Color(0xFFE11D48),
-                        )
-                    }
-                }
-            }
-
-            // 4. Ergonomic Form Rows (Clean 2-line Label/Value Layout)
+            // 4. Ergonomic Form Rows (Standard Finlux Form Controls)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 // Hàng 1 (ĐƯA LÊN NGAY DƯỚI SỐ TIỀN): Ghi chú giao dịch
-                ErgonomicInputRow(
+                FinluxNoteInput(
                     label = "GHI CHÚ GIAO DỊCH",
-                    value = state.note,
-                    onValueChange = viewModel::setNote,
+                    note = state.note,
+                    onNoteChange = viewModel::setNote,
                     placeholder = if (isExpense) "Nhập ghi chú chi tiêu..." else "Nhập nguồn tiền, lý do...",
                     icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                    iconBgColor = Color(0xFF06B6D4).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF0891B2),
-                    fontSize = 18.sp,
-                    onClear = { viewModel.setNote("") },
                 )
 
                 // Hàng 2: Danh mục / Phân loại Thương vụ
@@ -437,26 +388,18 @@ fun AddTransactionSheet(
                 }
 
                 // Hàng 3: Ví thanh toán / Tài khoản
-                val walletIcon = activeWallet?.type?.let { walletIcon(it) } ?: Icons.Default.AccountBalanceWallet
-                ErgonomicFormRow(
+                FinluxWalletSelector(
                     label = if (isExpense) "VÍ THANH TOÁN" else "VÍ NHẬN TIỀN",
-                    primaryValue = activeWallet?.name ?: "Chưa chọn ví",
-                    secondaryValue = activeWallet?.balance?.let { "Số dư: ${formatVndAmount(it.value)}" },
-                    icon = walletIcon,
-                    iconBgColor = Color(0xFF3B82F6).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF3B82F6),
+                    selectedWallet = activeWallet,
                     onClick = { showWalletPicker = true },
+                    isError = isInsufficientBalance,
                 )
 
-                // Hàng 4: Thời gian giao dịch
-                ErgonomicFormRow(
+                // Hàng 4: Thời gian giao dịch (Standard FinluxDateTimePicker)
+                FinluxDateTimePicker(
                     label = "THỜI GIAN GIAO DỊCH",
-                    primaryValue = formattedDate,
-                    secondaryValue = null,
-                    icon = Icons.Default.CalendarMonth,
-                    iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF6366F1),
-                    onClick = { showDatePicker = true },
+                    selectedDateTime = state.date,
+                    onDateTimeChange = viewModel::setDate,
                 )
 
                 // Hàng 5: Đính kèm hóa đơn / chứng từ
@@ -544,57 +487,7 @@ fun AddTransactionSheet(
         )
     }
 
-    // Date & Time Picker Dialog
-    if (showDatePicker) {
-        val currentZoned = remember(state.date) { state.date.atZone(ZoneId.systemDefault()) }
-        val initialDateUtcMillis = remember(currentZoned) {
-            currentZoned.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-        }
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initialDateUtcMillis,
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val selectedMillis = datePickerState.selectedDateMillis
-                    showDatePicker = false
-                    if (selectedMillis != null) {
-                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
-                            .atZone(ZoneOffset.UTC)
-                            .toLocalDate()
 
-                        val timePickerDialog = android.app.TimePickerDialog(
-                            context,
-                            { _, hourOfDay, minute ->
-                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
-                                val newInstant = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                                viewModel.setDate(newInstant)
-                            },
-                            currentZoned.hour,
-                            currentZoned.minute,
-                            true, // 24-hour format
-                        )
-                        timePickerDialog.setOnCancelListener {
-                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
-                            val newInstant = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                            viewModel.setDate(newInstant)
-                        }
-                        timePickerDialog.show()
-                    }
-                }) {
-                    Text("Tiếp tục (Chọn giờ)")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy")
-                }
-            },
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
 
     // Category Creation Dialog
     if (showCreateCategoryDialog) {

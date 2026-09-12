@@ -85,10 +85,10 @@ import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
-import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
-import com.finlux.app.core.designsystem.component.ErgonomicFormRow
-import com.finlux.app.core.designsystem.component.FinluxCategoryPickerBottomSheet
-import com.finlux.app.core.designsystem.component.FinluxWalletPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon

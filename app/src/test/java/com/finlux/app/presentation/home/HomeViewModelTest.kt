@@ -305,6 +305,111 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `state activates fallback guard for budget KPI when current budgets empty and previous exist`() = runTest(testDispatcher) {
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+
+        val previousBudgets = listOf(
+            Budget(
+                id = "b1",
+                categoryId = "cat1",
+                periodKey = "prev_key",
+                limitAmount = Money(8_000_000L),
+                spentAmount = Money(0L),
+                notified80 = false,
+                notified100 = false,
+            ),
+        )
+
+        val txs = listOf(
+            FinanceTransaction(
+                id = "tx1",
+                type = TransactionType.EXPENSE,
+                amount = Money(2_000_000L),
+                categoryId = "cat1",
+                walletId = "w1",
+                date = Instant.now(),
+            ),
+        )
+
+        val now = Instant.now()
+        val dummyConfig = com.finlux.app.domain.model.SalaryCycleConfig()
+        val currentPeriod = periodResolver.resolvePeriodContaining(now, dummyConfig)
+        val prevPeriod = periodResolver.resolvePreviousPeriodOf(currentPeriod, dummyConfig)
+
+        val budgetRepo = object : BudgetRepository by FakeHomeBudgetRepository() {
+            override fun observeBudgets(periodKey: String): Flow<List<Budget>> = when (periodKey) {
+                currentPeriod.key -> flowOf(emptyList()) // Current is empty
+                prevPeriod.key -> flowOf(previousBudgets) // Previous has 8M
+                else -> flowOf(emptyList())
+            }
+        }
+
+        val txRepo = object : TransactionRepository by FakeHomeTransactionRepository() {
+            override fun observeMonth(month: YearMonth): Flow<List<FinanceTransaction>> = flowOf(txs)
+        }
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(emptyList()),
+            transactionRepository = txRepo,
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = budgetRepo,
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(emptyList()),
+            salaryCycleRepository = FakeHomeSalaryCycleRepository(),
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
+            dealRepository = FakeHomeDealRepository(),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            val state = if (initial.totalBudgetLimit == 0L) awaitItem() else initial
+            assertEquals(1, state.budgets.size)
+            assertEquals(8_000_000L, state.totalBudgetLimit, "KPI Ngân sách không bị sập về 0đ mà kế thừa 8M từ kỳ trước")
+            assertEquals(2_000_000L, state.totalBudgetSpent, "Chi tiêu tính theo giao dịch thực tế kỳ này")
+            assertEquals(6_000_000L, state.budgetRemaining, "Ngân sách còn lại bảo vệ Safe-To-Spend không bị 0đ")
+            assertEquals(25, state.totalBudgetPercent)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `state does not activate fallback guard when both current and previous budgets are empty`() = runTest(testDispatcher) {
+        val calculator = com.finlux.app.domain.usecase.DefaultSalaryCycleCalculator()
+        val periodResolver = com.finlux.app.domain.usecase.DefaultFinancialPeriodResolver(calculator)
+
+        val viewModel = HomeViewModel(
+            authRepository = FakeAuthRepository(),
+            dashboardRepository = FakeDashboardRepository(),
+            walletRepository = FakeHomeWalletRepository(emptyList()),
+            transactionRepository = FakeHomeTransactionRepository(),
+            categoryRepository = FakeHomeCategoryRepository(),
+            budgetRepository = FakeHomeBudgetRepository(),
+            notificationRepository = FakeHomeNotificationRepository(),
+            debtRepository = FakeHomeDebtRepository(emptyList()),
+            salaryCycleRepository = FakeHomeSalaryCycleRepository(),
+            financialPeriodResolver = periodResolver,
+            calculator = calculator,
+            clock = com.finlux.app.core.time.SystemFinanceClock(),
+            uiPreferencesRepository = FakeUiPreferencesRepository(),
+            dealRepository = FakeHomeDealRepository(),
+        )
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            assertEquals(0L, initial.totalBudgetLimit)
+            assertEquals(0L, initial.totalBudgetSpent)
+            assertEquals(0, initial.totalBudgetPercent)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `state computes trueNetWorth including active deals accurately`() = runTest(testDispatcher) {
         val wallets = listOf(
             Wallet("w1", "Tiền mặt", WalletType.CASH, Money(10_000_000L), "#1F6FBF", true, Instant.now()),
@@ -444,6 +549,7 @@ private class FakeHomeDebtRepository(private val list: List<DebtAccount>) : Debt
 
 private class FakeHomeSalaryCycleRepository : com.finlux.app.domain.repository.SalaryCycleRepository {
     override fun observeConfig(): Flow<com.finlux.app.domain.model.SalaryCycleConfig> = flowOf(com.finlux.app.domain.model.SalaryCycleConfig())
+    override fun observeTimeline(): Flow<List<com.finlux.app.domain.model.SalaryCycleConfigRecord>> = flowOf(emptyList())
     override suspend fun saveConfig(config: com.finlux.app.domain.model.SalaryCycleConfig): AppResult<Unit> = AppResult.Success(Unit)
     override suspend fun isRolloverProcessed(cycleKey: String): Boolean = false
     override suspend fun markRolloverProcessed(cycleKey: String): AppResult<Unit> = AppResult.Success(Unit)

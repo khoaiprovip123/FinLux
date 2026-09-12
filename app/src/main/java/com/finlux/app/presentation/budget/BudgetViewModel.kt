@@ -45,6 +45,14 @@ data class BudgetUiState(
     val transactions: List<FinanceTransaction> = emptyList(),
     val busy: Boolean = false,
     val message: String? = null,
+    val transitionAdvisoryBanner: String? = null,
+)
+
+private data class PeriodBudgetsSnapshot(
+    val period: FinancialPeriod?,
+    val prevPeriod: FinancialPeriod?,
+    val currentBudgets: List<Budget>,
+    val prevBudgets: List<Budget>,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -61,22 +69,45 @@ class BudgetViewModel @Inject constructor(
     private val copyBudgetUseCase: CopyBudgetUseCase,
 ) : ViewModel() {
     private val configFlow = salaryCycleRepository.observeConfig().stateIn(viewModelScope, SharingStarted.Eagerly, SalaryCycleConfig())
+    private val timelineFlow = salaryCycleRepository.observeTimeline().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     private val selectedTime = MutableStateFlow(Instant.now())
     private val action = MutableStateFlow(false to null as String?)
 
-    private val currentPeriod = combine(selectedTime, configFlow) { time, config ->
-        financialPeriodResolver.resolvePeriodContaining(time, config)
+    private val currentPeriod = combine(selectedTime, configFlow, timelineFlow) { time, config, timeline ->
+        if (timeline.isNotEmpty()) {
+            financialPeriodResolver.resolvePeriodContaining(time, timeline, config)
+        } else {
+            financialPeriodResolver.resolvePeriodContaining(time, config)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val state = combine(
+    private val previousPeriod = combine(currentPeriod, configFlow, timelineFlow) { period, config, timeline ->
+        period?.let {
+            if (timeline.isNotEmpty()) {
+                financialPeriodResolver.resolvePreviousPeriodOf(it, timeline, config)
+            } else {
+                financialPeriodResolver.resolvePreviousPeriodOf(it, config)
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private val periodAndBudgetsFlow = combine(
         currentPeriod,
+        previousPeriod,
         currentPeriod.flatMapLatest { p -> if (p == null) kotlinx.coroutines.flow.flowOf(emptyList()) else budgetRepository.observeBudgets(p.key) },
+        previousPeriod.flatMapLatest { prevP -> if (prevP == null) kotlinx.coroutines.flow.flowOf(emptyList()) else budgetRepository.observeBudgets(prevP.key) },
+    ) { period, prevPeriod, currentBudgets, prevBudgets ->
+        PeriodBudgetsSnapshot(period, prevPeriod, currentBudgets, prevBudgets)
+    }
+
+    val state = combine(
+        periodAndBudgetsFlow,
         categoryRepository.observeCategories(),
         currentPeriod.flatMapLatest { p ->
             if (p == null) kotlinx.coroutines.flow.flowOf(emptyList()) else transactionRepository.observePeriod(p.start, p.endExclusive)
         },
         action,
-    ) { period, budgets, categories, monthTransactions, actionState ->
+    ) { snapshot, categories, monthTransactions, actionState ->
         val byId = categories.associateBy(Category::id)
         val byName = categories.associateBy { it.name.lowercase().trim() }
 
@@ -84,7 +115,7 @@ class BudgetViewModel @Inject constructor(
             .filter {
                 it.type == TransactionType.EXPENSE &&
                 it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL &&
-                it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX)
+                it.date >= (snapshot.period?.start ?: Instant.MIN) && it.date < (snapshot.period?.endExclusive ?: Instant.MAX)
             }
             .groupBy { tx -> tx.categoryId?.takeIf { it.isNotBlank() } }
             .filterKeys { it != null }
@@ -95,12 +126,28 @@ class BudgetViewModel @Inject constructor(
             .filter {
                 it.type == TransactionType.EXPENSE &&
                 it.dealFlowType != com.finlux.app.domain.model.DealFlowType.OUTLAY_CAPITAL &&
-                it.categoryId != null && it.date >= (period?.start ?: Instant.MIN) && it.date < (period?.endExclusive ?: Instant.MAX)
+                it.categoryId != null && it.date >= (snapshot.period?.start ?: Instant.MIN) && it.date < (snapshot.period?.endExclusive ?: Instant.MAX)
             }
             .groupBy { tx -> tx.categoryId!!.lowercase().trim() }
             .mapValues { (_, txs) -> txs.sumOf { it.amount.value } }
 
-        val items = budgets.map { budget ->
+        val isFallbackActive = snapshot.currentBudgets.isEmpty() && snapshot.prevBudgets.isNotEmpty()
+        val budgetsToUse = if (isFallbackActive) {
+            snapshot.prevBudgets.map { prev ->
+                prev.copy(
+                    id = "${prev.categoryId}_${snapshot.period?.key ?: ""}",
+                    periodKey = snapshot.period?.key ?: "",
+                    periodStart = snapshot.period?.start ?: prev.periodStart,
+                    periodEndExclusive = snapshot.period?.endExclusive ?: prev.periodEndExclusive,
+                    periodBasis = snapshot.period?.basis?.name ?: prev.periodBasis,
+                    spentAmount = Money(0L),
+                )
+            }
+        } else {
+            snapshot.currentBudgets
+        }
+
+        val items = budgetsToUse.map { budget ->
             val cat = byId[budget.categoryId]
             val byIdAmount = spentByCategoryId[budget.categoryId] ?: 0L
             val catNameLower = cat?.name?.lowercase()?.trim()
@@ -112,8 +159,12 @@ class BudgetViewModel @Inject constructor(
             BudgetItemUi(dynamicBudget, cat, getBudgetStatus(dynamicBudget))
         }.sortedByDescending { it.status.progress }
 
+        val transitionAdvisoryBanner = if (isFallbackActive && snapshot.period != null) {
+            "Đang hiển thị hạn mức dự kiến từ kỳ trước. Chi tiêu thực tế được tự động tính theo các giao dịch trong kỳ này."
+        } else null
+
         BudgetUiState(
-            period = period,
+            period = snapshot.period,
             items = items,
             categories = categories.filter { it.type == CategoryType.EXPENSE },
             transactions = monthTransactions.filter {
@@ -122,6 +173,7 @@ class BudgetViewModel @Inject constructor(
             },
             busy = actionState.first,
             message = actionState.second,
+            transitionAdvisoryBanner = transitionAdvisoryBanner,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BudgetUiState())
 
@@ -146,7 +198,11 @@ class BudgetViewModel @Inject constructor(
             action.value = false to "Chưa xác định kỳ chi tiêu hiện tại"
             return@launch
         }
-        val nextPeriod = financialPeriodResolver.resolveNextPeriodOf(current, config)
+        val nextPeriod = if (timelineFlow.value.isNotEmpty()) {
+            financialPeriodResolver.resolveNextPeriodOf(current, timelineFlow.value, config)
+        } else {
+            financialPeriodResolver.resolveNextPeriodOf(current, config)
+        }
         when (val result = copyBudgetUseCase(current, nextPeriod, overwriteExisting)) {
             is AppResult.Success -> {
                 val count = result.value
@@ -174,7 +230,11 @@ class BudgetViewModel @Inject constructor(
             action.value = false to "Chưa xác định kỳ chi tiêu hiện tại"
             return@launch
         }
-        val previousPeriod = financialPeriodResolver.resolvePreviousPeriodOf(current, config)
+        val previousPeriod = if (timelineFlow.value.isNotEmpty()) {
+            financialPeriodResolver.resolvePreviousPeriodOf(current, timelineFlow.value, config)
+        } else {
+            financialPeriodResolver.resolvePreviousPeriodOf(current, config)
+        }
         when (val result = copyBudgetUseCase(previousPeriod, current, overwriteExisting)) {
             is AppResult.Success -> {
                 val count = result.value
