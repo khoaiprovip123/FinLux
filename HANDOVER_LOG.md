@@ -1,8 +1,34 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.3 (versionCode 177)
+- **Phiên bản hiện tại:** v1.25.4 (versionCode 178)
 - **Trạng thái Build:** ✅ 100% PASS (347/347 unit tests)
+
+## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
+### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
+- [ ] **B1: Docs & Roadmap Check:** Tra cứu `BACKLOG.md`, `BA_SPEC.md`, `DATA_SPEC.md` và `FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`.
+- [ ] **B2: Codebase Reality Check:** Quét codebase chống zombie code / code trùng lặp.
+- [ ] **B3: Sanity Check & Phản Biện:** Đánh giá tính hợp lý kế toán và cảnh báo rủi ro gãy code dây chuyền.
+- [ ] **B4: Đề Xuất & Khuyến Nghị:** So sánh Phương án A vs B và đưa ra khuyến nghị tối ưu dài hạn.
+
+### 2. Checklist Nghiệm Thu Máy Thật 5 Điểm (Physical Device Acceptance)
+- [ ] **Theme check:** Đẹp và chuẩn độ tương phản ở cả Dark Mode và Light Mode (Liquid Glass).
+- [ ] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
+- [ ] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
+- [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
+- [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+
+### [Task-P1-17-BUILD-DEPLOY-ADB-v1.25.4] — Tăng Version v1.25.4, Đóng Gói APK & Nạp Lên Thiết Bị Thật Qua ADB
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Tăng `versionCode = 178`, `versionName = "1.25.4"` trong `app/build.gradle.kts`.
+  2. Đóng gói bản build debug: `.\gradlew.bat assembleDebug` thành công.
+  3. Cài đặt và khởi chạy lên thiết bị thật qua ADB (`adb install -r`, `adb shell am start`).
+  4. Tuân thủ nghiêm ngặt: Chưa commit/push, bàn giao máy thật cho người dùng nghiệm thu trực tiếp theo Checklist 5 điểm.
+- **Kết quả triển khai**:
+  - Đóng gói APK: `app/build/outputs/apk/debug/app-debug.apk` (BUILD SUCCESSFUL).
+  - Thiết bị ADB: `adb-BM6HKBHEHQKFEMLR-prj23i._adb-tls-connect._tcp` -> Install Success.
+  - Khởi chạy: `com.finlux.app/.MainActivity` đang hiển thị trên màn hình máy thật.
 
 ### [Task-P1-16-DEAD-CODE-FORM-CONTROLS-CLEANUP] — Dọn Dẹp Code Thừa, Zombie Code & Gom Nhất Form Controls Vào FinluxFormControls.kt
 - **Status**: `[DONE]`

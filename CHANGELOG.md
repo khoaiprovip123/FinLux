@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.25.4] - 2026-09-11
+### Changed
+- Đóng gói và chuẩn hóa bản build release v1.25.4 (versionCode 178) sau khi hoàn tất kiểm toán, dọn dẹp dead code và kích hoạt 8 Nguyên tắc cốt lõi trong `AGENTS.md`.
+
 ## [1.25.3] - 2026-09-11
 ### Added
 - **Đóng Gói Bộ Điều Khiển Form Tiêu Chuẩn (Standard Finlux Form Controls - `FinluxFormControls.kt`)**:
