@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.updater.AppUpdateInfo
 import com.finlux.app.core.updater.AppUpdateManager
+import com.finlux.app.domain.repository.UiPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -26,6 +28,7 @@ sealed interface UpdateUiState {
 @HiltViewModel
 class AppUpdateViewModel @Inject constructor(
     private val updateManager: AppUpdateManager,
+    private val uiPreferencesRepository: UiPreferencesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
@@ -36,6 +39,13 @@ class AppUpdateViewModel @Inject constructor(
 
     fun checkForUpdates(silent: Boolean = false) {
         viewModelScope.launch {
+            if (silent) {
+                // Đảm bảo DataStore đã nạp xong từ đĩa, kiểm tra cờ autoCheckUpdates (chống race condition & spam)
+                val prefs = runCatching { uiPreferencesRepository.preferences.first() }.getOrNull()
+                if (prefs != null && !prefs.autoCheckUpdates) {
+                    return@launch
+                }
+            }
             if (!silent) _uiState.value = UpdateUiState.Checking
             when (val result = updateManager.checkForUpdates()) {
                 is AppResult.Success -> {

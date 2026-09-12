@@ -121,6 +121,7 @@ data class UiPreferences(
     val biometricTimeout: BiometricLockTimeout = BiometricLockTimeout.IMMEDIATE,
     val isBalanceVisible: Boolean = true,
     val autoRolloverBudgets: Boolean = false,
+    val autoCheckUpdates: Boolean = true,
 )
 
 data class DashboardSummary(

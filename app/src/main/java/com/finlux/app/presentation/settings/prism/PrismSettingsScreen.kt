@@ -503,6 +503,27 @@ fun PrismSettingsScreen(
                             )
                         },
                         SettingsMenuItem(
+                            Icons.Default.NotificationsNone,
+                            "Tự động nhận bản cập nhật",
+                            Color(0xFF4F46E5),
+                            subtitle = "Kiểm tra và nhắc nhở khi có phiên bản mới",
+                            trailing = {
+                                Switch(
+                                    checked = uiPreferences.autoCheckUpdates,
+                                    onCheckedChange = { isEnabled ->
+                                        onUiPreferencesChanged(uiPreferences.copy(autoCheckUpdates = isEnabled))
+                                    },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = tokens.primary,
+                                    ),
+                                )
+                            },
+                            onClick = {
+                                onUiPreferencesChanged(uiPreferences.copy(autoCheckUpdates = !uiPreferences.autoCheckUpdates))
+                            },
+                        ),
+                        SettingsMenuItem(
                             Icons.Default.SystemUpdate,
                             "Kiểm tra cập nhật",
                             Color(0xFF4F46E5),

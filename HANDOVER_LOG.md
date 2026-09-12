@@ -18,6 +18,29 @@
 - [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
 
+### [Task-P1-18-AUTO-CHECK-UPDATES-TOGGLE] — Thêm Tính Năng Bật/Tắt Tự Động Nhận Bản Cập Nhật
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Thêm `autoCheckUpdates: Boolean = true` vào `UiPreferences` (`FinanceModels.kt`).
+  2. Bổ sung đọc/ghi key `auto_check_updates` trong `DataStoreThemePreferenceRepository.kt`.
+  3. Cập nhật `AppUpdateViewModel.kt` inject `UiPreferencesRepository` để chống race condition khi Cold Start (chỉ gọi silent check nếu `autoCheckUpdates == true`, không spam API khi toggle Switch).
+  4. Thêm Switch toggle chuẩn Liquid Glass vào `SettingsScreen.kt` (Classic Liquid) và `PrismSettingsScreen.kt` (Prism).
+  5. Đảm bảo nút kiểm tra cập nhật thủ công luôn hoạt động độc lập với trạng thái công tắc tự động.
+  6. Kiểm thử unit test `.\gradlew.bat testDebugUnitTest`, đóng gói APK `assembleDebug`, nạp lên máy thật qua ADB và bàn giao nghiệm thu.
+- **Kết quả triển khai & Kiểm thử**:
+  - Unit test: `.\gradlew.bat testDebugUnitTest` 100% PASS (BUILD SUCCESSFUL, bao gồm 3/3 test cases mới trong `AppUpdateViewModelTest`).
+  - Đóng gói: `.\gradlew.bat assembleDebug` thành công (`app/build/outputs/apk/debug/app-debug.apk`).
+  - Nạp máy thật ADB: `adb install -r` (Success) và khởi chạy `am start -n com.finlux.app/.MainActivity`.
+  - Logcat: Hoạt động trơn tru, không có crash ngầm hay exception.
+  - Tuân thủ nghiêm ngặt Git: Chưa commit, chưa push. Bàn giao máy thật cho người dùng nghiệm thu trực tiếp công tắc toggle.
+- **Danh sách file thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/test/java/com/finlux/app/presentation/updater/AppUpdateViewModelTest.kt`
+
 ### [Task-P1-17-BUILD-DEPLOY-ADB-v1.25.4] — Tăng Version v1.25.4, Đóng Gói APK & Nạp Lên Thiết Bị Thật Qua ADB
 - **Status**: `[DONE]`
 - **Mục tiêu**:
