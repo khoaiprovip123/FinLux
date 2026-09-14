@@ -18,6 +18,27 @@
 - [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
 
+### [Task-CI-RELEASE-SIGNING-FIX] — Khắc phục lỗi verifyReleaseSigning trên GitHub Actions & chuẩn hóa đường dẫn Keystore
+- **Status**: `[DONE]`
+- **Kiểm thử xác nhận**:
+  - ✅ Giả lập CI (`CI=true` với đường dẫn fallback `FINLUX_KEYSTORE_PATH="gradle/debug.keystore"`): Task `:app:verifyReleaseSigning` chạy thành công tuyệt đối (**BUILD SUCCESSFUL**).
+  - ✅ Unit test toàn dự án: `.\gradlew.bat testDebugUnitTest` đạt **456/456 tests PASS 100% (0 failures, 0 skipped)**.
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Xác định nguyên nhân gốc rễ (Root-Cause Analysis)**:
+     - Trên GitHub Actions runner, khi secret `FINLUX_KEYSTORE_BASE64` chưa được cấu hình, workflow fallback gán `FINLUX_KEYSTORE_PATH=gradle/debug.keystore`.
+     - Trong `app/build.gradle.kts`, biểu thức `file(releaseKeystorePath)` phân giải tương đối theo thư mục module `app/` (tìm kiếm tại `app/gradle/debug.keystore` — không tồn tại), trong khi file `debug.keystore` thực tế nằm ở thư mục gốc `gradle/debug.keystore` của root project.
+     - Khi chạy trên CI (`CI=true`), task `verifyReleaseSigning` thực hiện `check(hasReleaseSigningConfig)` và ném lỗi `Thiếu cấu hình ký release`.
+  2. ✅ **Cải tiến cơ chế phân giải Keystore (`app/build.gradle.kts`)**:
+     - Nâng cấp `resolvedReleaseKeystoreFile`: ưu tiên kiểm tra `file(path)` (relative module `app/`), fallback sang `rootProject.file(path)` (relative root project), và hỗ trợ đường dẫn tuyệt đối (`isAbsolute`).
+     - Gán `storeFile = resolvedReleaseKeystoreFile` trong `signingConfigs.release`.
+  3. ✅ **Chuẩn hóa Workflow GitHub Actions (`.github/workflows/release.yml`)**:
+     - Cập nhật đường dẫn fallback: `FINLUX_KEYSTORE_PATH=${GITHUB_WORKSPACE}/gradle/debug.keystore`.
+     - Chuẩn hóa đường dẫn keystore khi decode từ secret: `${RUNNER_TEMP:-/tmp}/release.keystore` và bổ sung bước cleanup an toàn.
+- **Files thực tế đã sửa đổi**:
+  - `app/build.gradle.kts`
+  - `.github/workflows/release.yml`
+  - `HANDOVER_LOG.md`
+
 ### [Task-SPEC-PARITY-AND-COMMON-CODE] — Đồng bộ toàn diện đặc tả tài liệu & quy hoạch Common Code
 - **Status**: `[DONE]`
 - **Kiểm thử xác nhận**: ✅ `.\gradlew.bat testDebugUnitTest` đạt **456/456 tests PASS 100% (0 failures, 0 skipped)**.
