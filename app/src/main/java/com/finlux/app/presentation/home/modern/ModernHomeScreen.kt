@@ -61,7 +61,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.ExpenseRed
 import com.finlux.app.core.designsystem.NotificationPermissionHandler
@@ -463,7 +463,7 @@ private fun ReferenceTransactionRow(
             Modifier.size(38.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(11.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(referenceTransactionIcon(transaction, category), null, Modifier.size(20.dp), tint = accent)
+            Icon(com.finlux.app.core.common.CategoryIconHelper.resolveTransactionIcon(transaction, category), null, Modifier.size(20.dp), tint = accent)
         }
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
             Text(
@@ -498,18 +498,6 @@ private fun ReferenceTransactionRow(
         )
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .42f))
-}
-
-private fun referenceTransactionIcon(transaction: FinanceTransaction, category: Category?): ImageVector = when {
-    transaction.type == TransactionType.TRANSFER_IN || transaction.type == TransactionType.TRANSFER_OUT -> Icons.Default.SwapHoriz
-    category != null -> categoryIcon(category.icon)
-    transaction.type == TransactionType.INCOME -> Icons.Default.Payments
-    else -> when (category?.id) {
-        "food" -> Icons.Default.Restaurant
-        "transport" -> Icons.Default.DirectionsCar
-        "shopping" -> Icons.Default.ShoppingBag
-        else -> Icons.Default.AccountBalanceWallet
-    }
 }
 
 internal fun Long.toVnd(): String = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("vi-VN")).format(this)

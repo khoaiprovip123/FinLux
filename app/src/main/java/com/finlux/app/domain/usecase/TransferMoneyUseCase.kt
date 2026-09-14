@@ -2,6 +2,8 @@ package com.finlux.app.domain.usecase
 
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.domain.model.WalletType
+import com.finlux.app.domain.validation.WalletValidationResult
+import com.finlux.app.domain.validation.validateSufficientFunds
 import com.finlux.app.domain.repository.TransactionRepository
 import com.finlux.app.domain.repository.WalletRepository
 import kotlinx.coroutines.flow.first
@@ -27,8 +29,14 @@ class TransferMoneyUseCase @Inject constructor(
         val sourceWallet = wallets.find { it.id == sourceId } ?: return AppResult.Error("Không tìm thấy ví nguồn")
         if (wallets.none { it.id == destinationId }) return AppResult.Error("Không tìm thấy ví đích")
 
-        if (sourceWallet.type != WalletType.CARD && amount > sourceWallet.balance.value) {
-            return AppResult.Error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
+        when (sourceWallet.validateSufficientFunds(amount, isExpense = true)) {
+            is WalletValidationResult.InsufficientFunds -> {
+                return AppResult.Error("Số dư ví nguồn không đủ để thực hiện chuyển tiền")
+            }
+            is WalletValidationResult.CreditLimitExceeded -> {
+                return AppResult.Error("Chuyển tiền vượt quá hạn mức thẻ tín dụng")
+            }
+            is WalletValidationResult.Valid -> Unit
         }
 
         return repository.transferBetweenWallets(sourceId, destinationId, amount, note.trim(), date)

@@ -91,6 +91,7 @@ import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.validation.WalletValidationResult
 import java.text.DecimalFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -813,106 +814,164 @@ fun FinluxWalletSelector(
     subtitle: String? = null,
     isError: Boolean = false,
     enabled: Boolean = true,
+    validationResult: WalletValidationResult = WalletValidationResult.Valid,
+    warningMessage: String? = null,
 ) {
     val tokens = LocalFinluxTokens.current
+    val hasViolation = isError || validationResult !is WalletValidationResult.Valid || warningMessage != null
 
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = tokens.surfaceSoft,
-        border = BorderStroke(
-            1.dp,
-            if (isError) Color(0xFFEF4444).copy(alpha = 0.5f) else tokens.border,
-        ),
-        shadowElevation = 1.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(
-                enabled = enabled,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = true),
-                onClick = onClick,
+    val resolvedWarning = warningMessage ?: when (validationResult) {
+        is WalletValidationResult.InsufficientFunds -> {
+            if (validationResult.available <= 0L) {
+                "Ví [${validationResult.walletName}] đã hết số dư (Hiện có: ${formatVndAmount(validationResult.available)})"
+            } else {
+                "Số dư ví [${validationResult.walletName}] không đủ (Hiện có: ${formatVndAmount(validationResult.available)} - Cần: ${formatVndAmount(validationResult.required)})"
+            }
+        }
+        is WalletValidationResult.CreditLimitExceeded -> {
+            "Vượt hạn mức thẻ tín dụng (Hạn mức: ${formatVndAmount(validationResult.creditLimit)} - Dự kiến: ${formatVndAmount(validationResult.newDebt)})"
+        }
+        is WalletValidationResult.Valid -> null
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = tokens.surfaceSoft,
+            border = BorderStroke(
+                1.dp,
+                if (hasViolation) tokens.error.copy(alpha = 0.6f) else tokens.border,
             ),
-    ) {
-        Row(
+            shadowElevation = 1.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .clip(RoundedCornerShape(18.dp))
+                .clickable(
+                    enabled = enabled,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(bounded = true),
+                    onClick = onClick,
+                ),
         ) {
-            // Wallet Logo or Badge
-            if (selectedWallet != null) {
-                FinancialInstitutionLogo(
-                    institution = findInstitutionForWallet(selectedWallet.name),
-                    walletType = selectedWallet.type,
-                    customColorHex = selectedWallet.colorHex,
-                    size = 42.dp,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Wallet Logo or Badge
+                if (selectedWallet != null) {
+                    FinancialInstitutionLogo(
+                        institution = findInstitutionForWallet(selectedWallet.name),
+                        walletType = selectedWallet.type,
+                        customColorHex = selectedWallet.colorHex,
+                        size = 42.dp,
+                    )
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = tokens.primary.copy(alpha = 0.12f),
+                        modifier = Modifier.size(42.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = tokens.primary,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    Text(
+                        text = label.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                        ),
+                        color = tokens.onSurfaceVariant,
+                    )
+                    Text(
+                        text = selectedWallet?.name ?: placeholder,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = if (selectedWallet != null) tokens.onSurface else tokens.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val effectiveSubtitle = subtitle ?: selectedWallet?.let {
+                        "Số dư: ${formatVndAmount(it.balance.value)}"
+                    }
+                    if (effectiveSubtitle != null) {
+                        Text(
+                            text = effectiveSubtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = if (hasViolation) tokens.error else tokens.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = null,
+                    tint = Color(0xFF9CA3AF),
+                    modifier = Modifier.size(14.dp),
                 )
-            } else {
+            }
+        }
+
+        // Liquid Glass Warning Banner
+        AnimatedVisibility(
+            visible = resolvedWarning != null,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            if (resolvedWarning != null) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = tokens.primary.copy(alpha = 0.12f),
-                    modifier = Modifier.size(42.dp),
+                    color = tokens.error.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.25f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
+                            imageVector = Icons.Default.Warning,
                             contentDescription = null,
-                            tint = tokens.primary,
-                            modifier = Modifier.size(22.dp),
+                            tint = tokens.error,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = resolvedWarning,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = tokens.error,
                         )
                     }
                 }
             }
-
-            Spacer(Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                Text(
-                    text = label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                    ),
-                    color = tokens.onSurfaceVariant,
-                )
-                Text(
-                    text = selectedWallet?.name ?: placeholder,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = if (selectedWallet != null) tokens.onSurface else tokens.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                val effectiveSubtitle = subtitle ?: selectedWallet?.let {
-                    "Số dư: ${formatVndAmount(it.balance.value)}"
-                }
-                if (effectiveSubtitle != null) {
-                    Text(
-                        text = effectiveSubtitle,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                        color = if (isError) Color(0xFFEF4444) else tokens.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                contentDescription = null,
-                tint = Color(0xFF9CA3AF),
-                modifier = Modifier.size(14.dp),
-            )
         }
     }
 }
@@ -933,13 +992,28 @@ fun FinluxTransferWalletPair(
     destSubtitle: String? = null,
     isSourceError: Boolean = false,
     errorMessage: String? = null,
+    sourceValidationResult: WalletValidationResult = WalletValidationResult.Valid,
 ) {
     val tokens = LocalFinluxTokens.current
+    val resolvedSourceWarning = errorMessage ?: when (sourceValidationResult) {
+        is WalletValidationResult.InsufficientFunds -> {
+            if (sourceValidationResult.available <= 0L) {
+                "Ví [${sourceValidationResult.walletName}] đã hết số dư"
+            } else {
+                "Số dư ví [${sourceValidationResult.walletName}] không đủ để chuyển"
+            }
+        }
+        is WalletValidationResult.CreditLimitExceeded -> {
+            "Chuyển tiền vượt quá hạn mức thẻ tín dụng"
+        }
+        is WalletValidationResult.Valid -> null
+    }
+    val hasSourceViolation = isSourceError || sourceValidationResult !is WalletValidationResult.Valid || resolvedSourceWarning != null
 
     Surface(
         shape = RoundedCornerShape(22.dp),
         color = tokens.surfaceSoft,
-        border = BorderStroke(1.dp, if (errorMessage != null) Color(0xFFEF4444).copy(alpha = 0.4f) else tokens.border),
+        border = BorderStroke(1.dp, if (hasSourceViolation) tokens.error.copy(alpha = 0.5f) else tokens.border),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -997,7 +1071,7 @@ fun FinluxTransferWalletPair(
                     Text(
                         text = sourceSubtitle ?: "Khả dụng: ${formatVndAmount(sourceWallet?.balance?.value ?: 0L)}",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                        color = if (isSourceError) Color(0xFFEF4444) else tokens.onSurfaceVariant,
+                        color = if (hasSourceViolation) tokens.error else tokens.onSurfaceVariant,
                     )
                 }
                 Icon(
@@ -1073,13 +1147,13 @@ fun FinluxTransferWalletPair(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color(0xFF10B981).copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                            .background(tokens.primary.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.AccountBalanceWallet,
                             contentDescription = null,
-                            tint = Color(0xFF10B981),
+                            tint = tokens.primary,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -1104,12 +1178,40 @@ fun FinluxTransferWalletPair(
                 )
             }
 
-            if (errorMessage != null) {
-                Text(
-                    text = errorMessage,
-                    color = Color(0xFFEF4444),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-                )
+            AnimatedVisibility(
+                visible = resolvedSourceWarning != null,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                if (resolvedSourceWarning != null) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = tokens.error.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.25f)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = tokens.error,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Text(
+                                text = resolvedSourceWarning,
+                                color = tokens.error,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                            )
+                        }
+                    }
+                }
             }
         }
     }

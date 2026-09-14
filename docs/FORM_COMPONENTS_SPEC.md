@@ -7,9 +7,9 @@
 ## 📍 1. Vị Trí Lưu Trữ Mã Nguồn
 
 Toàn bộ component tiêu chuẩn được đặt tập trung tại:
-- **Form & Pickers Component:** [`app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxFormComponents.kt)
-- **Amount Hero Component:** [`app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt)
-- **Package:** `com.finlux.app.core.designsystem.component.*`
+- **Unified Form Controls Contract:** [`app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt)
+- **Amount Card & Formatter Components:** [`app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt)
+- **Package:** `com.finlux.app.core.designsystem.component.form.*` & `com.finlux.app.core.designsystem.component.*`
 
 ---
 

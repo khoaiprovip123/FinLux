@@ -46,7 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.core.designsystem.ExpenseRed
 import com.finlux.app.core.designsystem.FinluxTextSecondary
@@ -66,7 +66,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.finlux.app.core.navigation.Route
 
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import com.finlux.app.presentation.transaction.TransactionViewMode
 import com.finlux.app.presentation.transaction.prism.PrismSpendingCalendarView
 
@@ -139,7 +139,7 @@ fun ClassicTransactionsScreen(
                             )
                         }) {
                             Icon(
-                                imageVector = if (viewMode == TransactionViewMode.LIST) Icons.Default.CalendarMonth else Icons.Default.FormatListBulleted,
+                                imageVector = if (viewMode == TransactionViewMode.LIST) Icons.Default.CalendarMonth else Icons.AutoMirrored.Filled.FormatListBulleted,
                                 contentDescription = "Chuyển chế độ xem",
                                 tint = if (viewMode == TransactionViewMode.CALENDAR) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             )

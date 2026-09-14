@@ -203,9 +203,9 @@ Nâng cấp module **Quản lý Nợ & Tín dụng** (`com.finlux.app.presentati
 ## 🚨 [BUG CRITICAL] - Không Chặn Tạo Giao Dịch Chi Tiêu Khi Số Dư Ví Thanh Toán <= 0 Hoặc Không Đủ Tiền
 
 > **Tên Ticket:** `[BUG CRITICAL] Không chặn tạo giao dịch chi tiêu khi nguồn tiền ví thanh toán <= 0 hoặc nhỏ hơn số tiền chi tiêu (Expense Insufficient Wallet Funds Validation)`  
-> **Trạng thái:** ⏳ `[OPEN] - Chờ triển khai`  
+> **Trạng thái:** ✅ `[RESOLVED] - Đã xử lý triệt để qua WalletBalanceValidator & FinluxWalletSelector (Phase 1)`  
 > **Mức độ ưu tiên:** 🔴 High / Financial Integrity & Balance Validation  
-> **Ngày ghi nhận:** 2026-08-24  
+> **Ngày ghi nhận:** 2026-08-24 (Đã giải quyết: 2026-09-14)  
 > **File ảnh hưởng:**  
 > - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`  
 > - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionViewModel.kt`  

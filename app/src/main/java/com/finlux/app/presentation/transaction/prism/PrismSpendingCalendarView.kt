@@ -80,7 +80,7 @@ fun PrismSpendingCalendarView(
     }
 
     val monthFormatter = remember {
-        DateTimeFormatter.ofPattern("'Tháng' MM, yyyy", Locale("vi", "VN"))
+        DateTimeFormatter.ofPattern("'Tháng' MM, yyyy", Locale.Builder().setLanguage("vi").setRegion("VN").build())
     }
 
     // Filter transactions for selected date
@@ -246,7 +246,7 @@ fun PrismSpendingCalendarView(
         }
 
         // 2. Selected Day Detail Section
-        val dayTitleFormatter = remember { DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", Locale("vi", "VN")) }
+        val dayTitleFormatter = remember { DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", Locale.Builder().setLanguage("vi").setRegion("VN").build()) }
         val dayTitle = remember(effectiveSelectedDate) {
             when (effectiveSelectedDate) {
                 today -> "Hôm nay, ${effectiveSelectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"

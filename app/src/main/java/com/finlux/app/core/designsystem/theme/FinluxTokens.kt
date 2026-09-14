@@ -144,6 +144,7 @@ data class FinluxDesignTokens(
     val textSecondary: Color get() = onSurfaceVariant
     val onHeroMuted: Color get() = onHero.copy(alpha = 0.82f)
     val heroGlassSurface: Color get() = onHero.copy(alpha = 0.18f)
+    val error: Color get() = FinluxColors.ExpenseRed
 }
 
 // Prism Tokens (Soft Surface + Data-First + Minimal Glass)

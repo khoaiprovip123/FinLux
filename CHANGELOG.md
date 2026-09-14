@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.25.6] - 2026-09-14
+### Added
+- **Bảo Vệ Tính Toàn Vẹn Tiền Tệ (Financial Integrity & Shared Validation - Phase 1)**:
+  * Tạo bộ xác thực độc lập `WalletBalanceValidator.kt` tại tầng Domain: chặn chi tiêu/xuất tiền khi số dư ví tiền mặt, ngân hàng không đủ hoặc thẻ tín dụng vượt hạn mức tín dụng được cấp.
+  * Hỗ trợ cơ chế hoàn trả số dư nguyên tử (`rollbackAmount`) khi chỉnh sửa giao dịch chi tiêu cũ.
+  * Tích hợp chốt chặn an toàn vào toàn bộ các UseCase xuất tiền: `AddTransactionUseCase`, `EditTransactionUseCase`, `TransferMoneyUseCase`.
+  * Bộ kiểm thử độc lập: `WalletBalanceValidatorTest.kt` (7 tests) và `TransactionValidationInsufficientFundsTest.kt` (7 tests) PASS 100%.
+- **Nâng Cấp Design System & Controls Dùng Chung (Liquid Glass Form Controls)**:
+  * Tích hợp `validationResult` và banner cảnh báo Liquid Glass tự động (`AnimatedVisibility`) vào `FinluxWalletSelector` và `FinluxTransferWalletPair` trong `FinluxFormControls.kt`.
+  * Tự động đổi màu viền sang đỏ lỗi `tokens.error` khi ví thiếu tiền và tự động khóa cứng (disable) nút Lưu trên `AddTransactionSheet.kt`.
+- **Bịt Điểm Mù Kiểm Thử Tầng Presentation (Testing Coverage - Phase 2)**:
+  * Viết mới toàn diện `WalletsViewModelTest.kt` (8/8 tests PASS): Phân nhóm ví, tính Net Worth chuẩn xác (Tổng ví thường - Dư nợ thẻ tín dụng), chuyển tiền hợp lệ, chặn chuyển tiền khi thiếu số dư, bật/tắt ẩn số dư (`toggleHideBalance`), lưu trữ ví (`archiveWallet`), xóa ví.
+  * Bổ sung toàn diện `RemindersViewModelTest.kt` (6/6 tests PASS): Toggle bật/tắt kèm lập lịch/hủy báo thức native (`ReminderScheduler`), xóa nhắc nhở, phân giải Countdown Badge 4 Tiers (`OVERDUE`, `TODAY`, `TOMORROW`, `FUTURE`).
+  * Nâng tổng số lượng unit tests của toàn bộ hệ thống lên **427/427 unit tests PASS 100% (0 failures, 0 skipped)**.
+- **Dọn Dẹp Mã Nguồn & Bản Đồ Quan Hệ Quy Tắc (Modernization & Rule Matrix - Phase 3)**:
+  * Thiết lập tài liệu pháp lý kỹ thuật `docs/RULE_MAPPING_MATRIX.md` (Registry 15+ tài liệu, Tháp 5 cấp độ Hierarchy of Truth, Ma trận kích hoạt theo ngữ cảnh và Ma trận quan hệ chéo).
+  * Tạo `CategoryIconHelper.kt` gom toàn bộ logic phân giải icon/màu danh mục từ `ModernHomeScreen` và `ClassicHomeScreen`, triệt tiêu 100% hardcoded string literal sang `SystemCategories.kt`.
+  * Nâng cấp API @Deprecated của AndroidX và Compose: `hiltViewModel()` sang `androidx.hilt.lifecycle.viewmodel.compose`, `Icons.AutoMirrored.Filled.FormatListBulleted`, `Locale.Builder().setLanguage("vi").setRegion("VN").build()`.
+
+### Changed
+- Cập nhật `versionCode = 180` và `versionName = "1.25.6"` trong `app/build.gradle.kts`.
+- Đồng bộ đặc tả kỹ thuật `docs/FORM_COMPONENTS_SPEC.md`, `docs/BACKLOG.md` (giải quyết ticket critical), `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` và `HANDOVER_LOG.md`.
+
 ## [1.25.5] - 2026-09-12
 ### Added
 - **Hệ Thống Lịch Sử Chu Kỳ Lương & Ngân Sách Đa Kỳ (Salary Cycle Timeline & Versioning - Phase 1)**:

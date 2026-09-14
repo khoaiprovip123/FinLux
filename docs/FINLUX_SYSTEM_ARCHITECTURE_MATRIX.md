@@ -2,7 +2,7 @@
 *(FINLUX SYSTEM ARCHITECTURE MATRIX & UNIFIED MONEY FLOW CONSTITUTION)*
 
 - **Dự án:** FinLux — Quản lý Tài chính Cá nhân Thông minh (Android / Jetpack Compose / Firebase)
-- **Phiên bản hiện tại:** v1.25.1 (versionCode 175)
+- **Phiên bản hiện tại:** v1.25.6 (versionCode 180)
 - **Tài liệu tham chiếu cốt lõi:** `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md`, `docs/debt_category_mapping_investigation.md`
 - **Mục tiêu:** Định danh 100% các module/tiểu hệ thống, lập bản đồ phụ thuộc chéo, chỉ rõ các điểm gãy xung đột dữ liệu, thiết lập Hiến pháp Tài chính Bất biến (Financial Invariants) và lộ trình tái cấu trúc triệt để.
 

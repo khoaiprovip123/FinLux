@@ -61,10 +61,12 @@ import java.util.Locale
 fun formatVndAmount(amount: Long, isCompact: Boolean = false): String {
     return if (isCompact && amount >= 1_000_000) {
         val millions = amount.toDouble() / 1_000_000.0
-        val df = DecimalFormat("#.#", DecimalFormatSymbols(Locale("vi", "VN")))
+        val localeVn = Locale.Builder().setLanguage("vi").setRegion("VN").build()
+        val df = DecimalFormat("#.#", DecimalFormatSymbols(localeVn))
         "${df.format(millions)} tr"
     } else {
-        val symbols = DecimalFormatSymbols(Locale("vi", "VN")).apply {
+        val localeVn = Locale.Builder().setLanguage("vi").setRegion("VN").build()
+        val symbols = DecimalFormatSymbols(localeVn).apply {
             groupingSeparator = '.'
         }
         val df = DecimalFormat("#,###", symbols)
