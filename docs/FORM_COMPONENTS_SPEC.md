@@ -85,8 +85,63 @@ if (showWalletPicker) {
 
 ---
 
-### 3️⃣ `ErgonomicFormRow` — Hàng Chọn Dữ Liệu 2 Dòng Tiêu Chuẩn
-Hàng chọn thông tin (Selector Row) chuẩn Liquid Glass cho các trường cần bấm để mở picker (Danh mục, Ví, Ngày tháng...).
+### 3️⃣ `FinluxWalletSelector` & `FinluxTransferWalletPair` — Thẻ Chọn Ví Tích Hợp Thẩm Định Số Dư Khả Dụng (Liquid Glass Validation)
+Thẻ chọn ví nguồn / ví nhận tiền chuẩn Liquid Glass tích hợp cơ chế bảo vệ số dư khả dụng thời gian thực (`WalletValidationResult`), tự động chuyển viền đỏ và bung banner cảnh báo Liquid Glass khi thiếu số dư hoặc vượt hạn mức thẻ tín dụng.
+
+* **Đặc điểm thiết kế:**
+  - Surface bo góc 18dp với nền `tokens.surfaceSoft`, viền mảnh `BorderStroke(1.dp, tokens.border)`.
+  - **Tự động đổi trạng thái vi phạm (`hasViolation = true`):**
+    * Khi `isError = true`, `validationResult !is WalletValidationResult.Valid` hoặc `warningMessage != null`:
+      - Viền thẻ tự động chuyển sang màu đỏ cảnh báo `BorderStroke(1.dp, tokens.error.copy(alpha = 0.6f))`.
+      - Phụ đề số dư chuyển sang màu đỏ `tokens.error`.
+  - **Logo thương hiệu & Phân loại ví:** Hiển thị `FinancialInstitutionLogo` (42dp) nhận diện ngân hàng/ví điện tử (MB, VCB, MoMo...) hoặc badge icon tròn `Tokens.primary` (42dp bo góc 12dp).
+  - **Column 3 tầng:**
+    * Dòng 1: Label viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt `tokens.onSurfaceVariant`).
+    * Dòng 2: Tên ví (`15sp SemiBold`, màu `tokens.onSurface`).
+    * Dòng 3: Số dư khả dụng (`12sp Medium`, định dạng chuẩn `formatVndAmount(it.balance.value)`).
+  - Icon mũi tên điều hướng Chevron `>` bên phải.
+  - **Banner Cảnh Báo Liquid Glass Tự Động Bung (`AnimatedVisibility`):**
+    * Tự động mở rộng với hiệu ứng `expandVertically() + fadeIn()` bên dưới thẻ khi có lỗi số dư.
+    * Nền kính mờ `tokens.error.copy(alpha = 0.08f)` với viền đỏ tán sắc `tokens.error.copy(alpha = 0.25f)` bo góc 12dp.
+    * Icon cảnh báo `Icons.Default.Warning` (16dp, màu `tokens.error`) đi kèm thông điệp chi tiết:
+      - `WalletValidationResult.InsufficientFunds`:
+        * Hết số dư: *"Ví [Tên ví] đã hết số dư (Hiện có: 0 ₫)"*.
+        * Không đủ: *"Số dư ví [Tên ví] không đủ (Hiện có: X ₫ - Cần: Y ₫)"*.
+      - `WalletValidationResult.CreditLimitExceeded`:
+        * *"Vượt hạn mức thẻ tín dụng (Hạn mức: X ₫ - Dự kiến: Y ₫)"*.
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.form.FinluxWalletSelector
+import com.finlux.app.domain.validation.WalletBalanceValidator
+
+val validationResult = remember(selectedWallet, amount) {
+    WalletBalanceValidator.validate(
+        wallet = selectedWallet,
+        amount = amount,
+        isExpense = isExpense,
+        creditLimit = selectedWallet?.creditLimit,
+    )
+}
+
+FinluxWalletSelector(
+    label = "VÍ THANH TOÁN",
+    selectedWallet = selectedWallet,
+    onClick = { showWalletPicker = true },
+    validationResult = validationResult,
+)
+```
+
+* **Các màn hình đang kế thừa:**
+  - [`AddTransactionSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt) (Chọn ví chi tiêu/thu nhập, khóa nút Lưu khi thiếu tiền).
+  - [`RecordDealOutlaySheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlaySheet.kt) (Chọn ví xuất vốn đầu tư / cho vay).
+  - [`RecordDealInflowSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowSheet.kt) (Chọn ví nhận tiền thu hồi vốn / lợi nhuận).
+  - [`GoalsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt) (Chọn ví nguồn nạp tiền tích lũy mục tiêu).
+
+---
+
+### 4️⃣ `ErgonomicFormRow` — Hàng Chọn Dữ Liệu 2 Dòng Tiêu Chuẩn
+Hàng chọn thông tin (Selector Row) chuẩn Liquid Glass cho các trường cần bấm để mở picker (Danh mục, Ngày tháng...).
 
 * **Đặc điểm thiết kế:**
   - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)`.
@@ -94,7 +149,7 @@ Hàng chọn thông tin (Selector Row) chuẩn Liquid Glass cho các trường c
   - Column 2 dòng:
     * Dòng 1: Label viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt).
     * Dòng 2: Tên giá trị chính (`15sp SemiBold`, màu `tokens.onSurface`).
-    * Dòng phụ: Phụ đề / Số dư khả dụng (`12sp Medium`).
+    * Dòng phụ: Phụ đề / Ghi chú (`12sp Medium`).
   - Mũi tên điều hướng `>` (Chevron) bên phải.
 
 * **Khởi tạo & Sử dụng:**
@@ -102,19 +157,18 @@ Hàng chọn thông tin (Selector Row) chuẩn Liquid Glass cho các trường c
 import com.finlux.app.core.designsystem.component.ErgonomicFormRow
 
 ErgonomicFormRow(
-    label = "VÍ THANH TOÁN",
-    primaryValue = activeWallet?.name ?: "Chưa chọn ví",
-    secondaryValue = activeWallet?.let { "Số dư: ${formatVndAmount(it.balance.value)}" },
-    icon = walletIcon,
-    iconBgColor = walletAccent.copy(alpha = 0.14f),
-    iconTintColor = walletAccent,
-    onClick = { showWalletPicker = true },
+    label = "DANH MỤC",
+    primaryValue = activeCategory?.name ?: "Chưa chọn danh mục",
+    icon = categoryIcon(activeCategory?.iconName),
+    iconBgColor = categoryColor.copy(alpha = 0.14f),
+    iconTintColor = categoryColor,
+    onClick = { showCategoryPicker = true },
 )
 ```
 
 ---
 
-### 4️⃣ `ErgonomicInputRow` — Thẻ Nhập Liệu Phẳng Bo Góc
+### 5️⃣ `ErgonomicInputRow` — Thẻ Nhập Liệu Phẳng Bo Góc
 Hàng nhập text/số thay thế hoàn toàn cho `OutlinedTextField` của Material 3 (giải quyết triệt để lỗi label notch cutout đè lên viền kính).
 
 * **Đặc điểm thiết kế:**
@@ -141,67 +195,77 @@ ErgonomicInputRow(
 
 ---
 
-### 5️⃣ `ErgonomicCompactAmountCard` — Thẻ Ô Nhập / Hiển Thị Tiền Gọn Gàng (Custom Color & Focus-driven Quick Chips)
-Thẻ Surface bo góc 18dp độc lập, dùng để hiển thị hoặc nhập số tiền thu gọn với typography 16sp Bold, tự động preview định dạng phân tách hàng nghìn VNĐ trong thời gian thực, có chữ mờ (placeholder), dải chip gợi ý nhân số tiền thông minh (vd: gõ 3 -> [3k, 30k, 300k, 3000k]) **chỉ hiển thị mượt mà khi người dùng focus vào ô nhập**, viền sáng highlight tinh tế khi active và cho phép tùy biến màu sắc số tiền theo từng màn hình. Không có dòng chữ phụ bên dưới.
+### 6️⃣ `FinluxAmountInput` & `ErgonomicCompactAmountCard` — Ô Nhập Liệu Tiền Tệ Thông Minh (Decimal Magnitude Scaling & Focus-driven Reveal)
+Bộ đôi Component nhập số tiền chuẩn mực của Finlux Design System:
+- **`FinluxAmountInput` (Hero Size):** Dành cho form chính (Thêm/Sửa giao dịch, Chuyển tiền) với typography to nổi bật (32sp), tự động co giãn kích thước font chống tràn số (Auto-scaling), định dạng phân tách hàng nghìn VNĐ trong thời gian thực, nút xóa nhanh `[x]`, hậu tố `₫` inline, và dải chip gợi ý nhân cấp tự bung theo focus.
+- **`ErgonomicCompactAmountCard` (Compact Size):** Dành cho các form phụ có nhiều trường tiền tệ (Thanh toán nợ, Phân bổ gốc/lãi, Ngân sách, Mục tiêu tài chính) với typography 16sp Bold, hỗ trợ dải chip rút gọn hoặc ẩn khi nằm trong layout 2 cột.
 
-* **Đặc điểm thiết kế:**
-  - Thẻ Surface bo góc 18dp, viền mảnh `BorderStroke(1.dp, tokens.border)` (tự động chuyển sang viền sáng `amountColor` khi ô nhập được focus).
-  - **Label ở trên:** Chữ viết hoa nhỏ gọn (`10.5sp Bold`, chữ xám nhạt).
-  - **Ô nhập / hiển thị tiền:** Typography 16sp Bold, tự format VNĐ khi gõ (vd: `15.000 ₫`), có placeholder xám mờ khi chưa nhập.
-  - **Dải Chip Gợi Ý Tiền Tệ Thông Minh Decimal Magnitude Scaling (`AnimatedVisibility` khi `isFocused = true`):**
-    * Khi chưa focus vào ô nhập: Card giữ kích thước siêu gọn gàng, không hiển thị dải chip chiếm diện tích.
-    * Khi người dùng tap/focus vào ô nhập: Dải chip mượt mà mở rộng với hiệu ứng fade & expand.
-    * **Thuật toán Decimal Magnitude Scaling**: Tự động sinh dải gợi ý $V = N \times 10^k$ từ 1.000đ đến 1.000.000.000đ:
-      - Ô rỗng/số 0: Danh sách 8 mốc mặc định chuẩn `[50k, 100k, 200k, 500k, 1M, 2M, 5M, 10M]`.
-      - Gõ `"3"` $\rightarrow$ `[3.000, 30.000, 300.000, 3.000.000, 30.000.000]`.
-      - Gõ `"35"` $\rightarrow$ `[3.500, 35.000, 350.000, 3.500.000, 35.000.000]` (bao gồm mốc x100 = 3.500).
-      - Gõ `"356"` $\rightarrow$ `[3.560, 35.600, 356.000, 3.560.000, 35.600.000]` (bao gồm mốc x10 = 3.560, x100 = 35.600).
-      - Gõ `"3568"` $\rightarrow$ `[35.680, 356.800, 3.568.000, 35.680.000]`.
-    * Khi bấm vào chip, số tiền trong ô nhập được cập nhật trực tiếp (`onValueChange`).
-    * Cho phép tùy biến ẩn hoàn toàn gợi ý (`showSuggestions = false` khi nằm trong layout hẹp 2 cột).
-  - **Tùy biến màu (`amountColor: Color`):** Hỗ trợ truyền bất kỳ màu nào (Xanh dương cho gốc, Tím cho lãi, Đỏ cho chi tiêu, Xanh lá cho thu nhập...).
-  - **Chế độ Read-only hoặc Input:** Tự động chuyển sang chế độ chỉ đọc nếu không truyền `onAmountChange` hoặc set `isReadOnly = true`.
-  - **Linh hoạt bố cục:** Dùng độc lập 1 card full width hoặc xếp 2 card cạnh nhau trong `Row` bằng `Modifier.weight(1f)`.
+* **Thuật toán Decimal Magnitude Scaling ($V = N \times 10^k$):**
+  - Tự động sinh dải chip gợi ý nhân cấp tiền tệ từ 1.000đ đến 1.000.000.000đ (1 tỷ VNĐ) dựa trên các chữ số người dùng đang gõ:
+    * **Ô rỗng hoặc giá trị $\le 0$:** Hiển thị 8 mốc mặc định: `[50k, 100k, 200k, 500k, 1M, 2M, 5M, 10M]`.
+    * **Gõ `"3"`:** $\rightarrow$ `[3.000, 30.000, 300.000, 3.000.000, 30.000.000]`.
+    * **Gõ `"35"`:** $\rightarrow$ `[3.500, 35.000, 350.000, 3.500.000, 35.000.000]`.
+    * **Gõ `"356"`:** $\rightarrow$ `[3.560, 35.600, 356.000, 3.560.000, 35.600.000]`.
+    * **Gõ `"3568"`:** $\rightarrow$ `[35.680, 356.800, 3.568.000, 35.680.000]`.
+  - Giới hạn tối đa 5 chip gợi ý và kẹp trần an toàn `maxLimit = 1_000_000_000L` chống tràn số.
+  - Khi bấm vào chip: Số tiền được cập nhật ngay lập tức vào state của ô nhập.
+
+* **Cơ chế Tự Bung Chip Theo Focus (Focus-driven Quick Chips Reveal):**
+  - **Khi chưa focus (`isFocused = false`):** Thẻ duy trì kích thước tối giản, ẩn hoàn toàn dải chip gợi ý để tiết kiệm không gian màn hình.
+  - **Khi người dùng tap/focus (`isFocused = true`):** Dải chip mở rộng mượt mà với hiệu ứng:
+    `enter = expandVertically(expandFrom = Alignment.Top) + fadeIn()`
+    `exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut()`.
+  - Viền thẻ tự động phát sáng highlight theo màu ngữ nghĩa `amountColor.copy(alpha = 0.5f)`.
+
+* **Thuật toán Co Giãn Cỡ Chữ Tự Động (Dynamic Auto-scaling Typography):**
+  - Ngăn chặn hoàn toàn lỗi tràn layout khi nhập số tiền lớn (hàng trăm triệu đến chục tỷ):
+    * Số chữ số $< 9$: Giữ nguyên kích thước `amountFontSize` (mặc định 32sp).
+    * Số chữ số $\ge 9$ (từ 100.000.000đ): Co font xuống $82\%$ (`amountFontSize * 0.82f` $\approx 26.2\text{sp}$).
+    * Số chữ số $\ge 11$ (từ 10.000.000.000đ): Co font xuống $70\%$ (`amountFontSize * 0.70f` $\approx 22.4\text{sp}$).
+
+* **Các tiện ích công thái học chuẩn:**
+  - **Inline `₫` suffix:** Sử dụng `VndSuffixVisualTransformation` hiển thị ký hiệu `₫` sau số tiền mà không làm bẩn dữ liệu raw digits.
+  - **Nút xóa nhanh `[x]`:** Hình tròn bo góc `28dp` xuất hiện khi có số, bấm vào xóa trắng ô nhập ngay lập tức.
+  - **Dynamic Semantic Tinting:** Tự động suy diễn màu dải chip từ `amountColor` (Container `amountColor.copy(alpha = 0.12f)`, Border `amountColor.copy(alpha = 0.30f)`, Content `amountColor`) đảm bảo sự hài hòa thị giác.
 
 * **Khởi tạo & Sử dụng:**
 ```kotlin
+import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
 import com.finlux.app.core.designsystem.component.ErgonomicCompactAmountCard
 
-// 1. Chế độ Nhập liệu (Editable) có màu tùy biến & dải chip gợi ý (mặc định bật)
+// 1. FinluxAmountInput (Hero size cho form chính)
+FinluxAmountInput(
+    label = "SỐ TIỀN CHI TIÊU",
+    amountText = amountInput,
+    onAmountChange = { amountInput = it },
+    amountColor = LocalFinluxTokens.current.expenseRed,
+    showQuickChipsOnFocusOnly = true,
+)
+
+// 2. ErgonomicCompactAmountCard (Compact size cho form phụ)
 ErgonomicCompactAmountCard(
     label = "HẠN MỨC CHI TIÊU THÁNG",
     amountText = limitInput,
     onAmountChange = { limitInput = it },
-    placeholder = "0",
     amountColor = tokens.primary,
-    showSuggestions = true, // Mặc định là true
-    modifier = Modifier.fillMaxWidth(),
-)
-
-// 2. Chế độ Chỉ đọc (Read-only) tự động tính toán
-ErgonomicCompactAmountCard(
-    label = "TRỪ TIỀN GỐC",
-    amountText = principalAmount.toString(),
-    isReadOnly = true,
-    amountColor = tokens.primary,
-    modifier = Modifier.weight(1f),
+    showSuggestions = true,
 )
 ```
 
 * **Các màn hình đang kế thừa:**
-  - [`AddTransactionSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt) (Ô nhập số tiền giao dịch chính, hỗ trợ màu động `ExpenseRed` / `IncomeGreen`).
-  - [`PrismBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt), [`ClassicBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt), [`ModernBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt) (Ô nhập hạn mức chi tiêu tháng).
-  - [`PrismWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt), [`ModernWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt), [`ClassicWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt) (Ô nhập số dư ví ban đầu/hiện tại & Ô nhập số tiền chuyển liên ví).
-  - [`GoalsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt) (Nạp/Rút tiền mục tiêu, Mục tiêu cần đạt & Tích lũy tháng trong `GoalEditor`).
-  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Tổng số tiền trả & Ô trừ tiền gốc / Ô nhập tiền lãi phát sinh qua `PrincipalInterestSplitCard`).
-  - [`AddEditDebtSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt) (Hạn mức/Vay gốc, Dư nợ hiện tại, Trả tối thiểu hàng tháng).
+  - [`AddTransactionSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt) (FinluxAmountInput chính với ExpenseRed / IncomeGreen).
+  - [`PrismBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt), [`ClassicBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt), [`ModernBudgetScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt) (Hạn mức chi tiêu tháng).
+  - [`PrismWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt), [`ModernWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt), [`ClassicWalletsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt) (Số dư ví & Số tiền chuyển liên ví).
+  - [`GoalsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt) (Nạp/Rút tiền mục tiêu, Mục tiêu cần đạt & Tích lũy tháng).
+  - [`DebtPaymentSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt) (Tổng số tiền trả & PrincipalInterestSplitCard).
+  - [`AddEditDebtSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt) (Hạn mức/Vay gốc, Dư nợ hiện tại, Trả tối thiểu).
   - [`SalaryCycleSettingsSheet.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/settings/salary/SalaryCycleSettingsSheet.kt) (Mức lương dự kiến mỗi kỳ).
-  - [`RemindersScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt) (Số tiền dự kiến trong nhắc nhở chi tiêu).
-  - [`NotificationsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt) (Số tiền thanh toán nhanh từ thông báo).
+  - [`RemindersScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt) (Số tiền nhắc nhở chi tiêu).
+  - [`NotificationsScreen.kt`](file:///d:/Sources/FinLux/app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt) (Số tiền thanh toán nhanh).
 
 ---
 
-### 6️⃣ `PrincipalInterestSplitCard` — Card Đôi Phân Bổ Gốc & Lãi
+### 7️⃣ `PrincipalInterestSplitCard` — Card Đôi Phân Bổ Gốc & Lãi
 Thẻ đôi chia 2 cột liền mạch được cấu thành từ 2 `ErgonomicCompactAmountCard` độc lập, dành riêng cho các nghiệp vụ thanh toán nợ / vay tài chính.
 
 * **Đặc điểm thiết kế:**
@@ -223,7 +287,7 @@ PrincipalInterestSplitCard(
 
 ---
 
-### 7️⃣ `FinluxSnackbarHost` & `FinluxGlassSnackbar` — Floating Liquid Glass Toast / Snackbar Chuẩn
+### 8️⃣ `FinluxSnackbarHost` & `FinluxGlassSnackbar` — Floating Liquid Glass Toast / Snackbar Chuẩn
 Bộ đôi Component hiển thị thông báo Toast / Snackbar tiêu chuẩn lấy cảm hứng từ Native Toast HyperOS cao cấp, tích hợp hiệu ứng Liquid Glass, tự động né thanh điều hướng (Bottom Bar) và hỗ trợ nút hành động ("Hoàn tác" / Undo).
 
 * **Đặc điểm thiết kế:**

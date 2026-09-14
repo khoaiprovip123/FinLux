@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.core.designsystem.component.getTransactionAmountPrefix
+import com.finlux.app.core.designsystem.component.getTransactionSemanticColor
+import com.finlux.app.core.time.FinanceTime
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -100,11 +103,7 @@ fun TransactionDetailSheet(
     val isTransfer = transaction.type == TransactionType.TRANSFER_OUT || transaction.type == TransactionType.TRANSFER_IN
     val isIncome = transaction.type == TransactionType.INCOME
 
-    val accentColor = when (transaction.type) {
-        TransactionType.INCOME -> category?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
-        TransactionType.EXPENSE -> category?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
-        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
-    }
+    val accentColor = category?.let { colorFromHex(it.colorHex) } ?: getTransactionSemanticColor(transaction.type)
 
     val headerIcon = when (transaction.type) {
         TransactionType.INCOME -> category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward
@@ -119,13 +118,11 @@ fun TransactionDetailSheet(
         TransactionType.TRANSFER_IN -> "Nhận tiền chuyển"
     }
 
-    val amountPrefix = when (transaction.type) {
-        TransactionType.INCOME, TransactionType.TRANSFER_IN -> "+"
-        TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> "-"
-    }
+    val amountPrefix = getTransactionAmountPrefix(transaction.type)
 
-    val formattedDate = transaction.date.atZone(ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("HH:mm · dd/MM/yyyy"))
+    val formattedDate = remember(transaction.date) {
+        FinanceTime.formatDateTime(transaction.date)
+    }
 
     val receiptCode = remember(transaction.id) {
         val hash = if (transaction.id.isNotBlank()) transaction.id.takeLast(6).uppercase() else "000000"
@@ -347,8 +344,8 @@ fun TransactionDetailSheet(
                     }
                     DetailItemRow(
                         icon = if (isTransfer) Icons.Default.SwapHoriz else Icons.Default.AccountBalanceWallet,
-                        iconTint = Color(0xFF2563EB),
-                        iconBg = Color(0xFF2563EB).copy(alpha = 0.12f),
+                        iconTint = FinluxColors.TransferBlue,
+                        iconBg = FinluxColors.TransferBlue.copy(alpha = 0.12f),
                         label = walletLabel,
                         value = walletValue,
                     )
@@ -360,8 +357,8 @@ fun TransactionDetailSheet(
                     // Thời gian
                     DetailItemRow(
                         icon = Icons.Default.CalendarToday,
-                        iconTint = Color(0xFF0284C7),
-                        iconBg = Color(0xFF0284C7).copy(alpha = 0.12f),
+                        iconTint = FinluxColors.PrimaryCyan,
+                        iconBg = FinluxColors.PrimaryCyan.copy(alpha = 0.12f),
                         label = "Thời gian",
                         value = formattedDate,
                     )
@@ -373,8 +370,8 @@ fun TransactionDetailSheet(
                     // Ghi chú
                     DetailItemRow(
                         icon = Icons.AutoMirrored.Filled.Notes,
-                        iconTint = Color(0xFF7C3AED),
-                        iconBg = Color(0xFF7C3AED).copy(alpha = 0.12f),
+                        iconTint = FinluxColors.PrimaryViolet,
+                        iconBg = FinluxColors.PrimaryViolet.copy(alpha = 0.12f),
                         label = "Ghi chú",
                         value = transaction.note.ifBlank { "Không có ghi chú" },
                     )
@@ -385,8 +382,8 @@ fun TransactionDetailSheet(
                         )
                         DetailItemRow(
                             icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                            iconTint = Color(0xFF2563EB),
-                            iconBg = Color(0xFF2563EB).copy(alpha = 0.12f),
+                            iconTint = FinluxColors.TransferBlue,
+                            iconBg = FinluxColors.TransferBlue.copy(alpha = 0.12f),
                             label = "Hóa đơn & Chứng từ",
                             value = "Đã lưu chứng từ đính kèm ✓",
                         )
@@ -659,7 +656,7 @@ fun TransactionDetailSheet(
                 Icon(
                     imageVector = Icons.Default.Shield,
                     contentDescription = null,
-                    tint = Color(0xFF6366F1),
+                    tint = FinluxColors.PrimaryViolet,
                     modifier = Modifier.size(15.dp),
                 )
                 Spacer(Modifier.width(6.dp))

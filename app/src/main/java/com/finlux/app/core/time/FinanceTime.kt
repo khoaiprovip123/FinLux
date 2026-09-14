@@ -50,4 +50,32 @@ object FinanceTime {
     fun monthEnd(month: YearMonth, zone: ZoneId = defaultZone): Instant {
         return month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
     }
+
+    val TIME_FORMATTER: java.time.format.DateTimeFormatter =
+        java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+
+    val DATE_TIME_FORMATTER: java.time.format.DateTimeFormatter =
+        java.time.format.DateTimeFormatter.ofPattern("HH:mm · dd/MM/yyyy")
+
+    val DATE_FORMATTER: java.time.format.DateTimeFormatter =
+        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+
+    val DATE_MONTH_FORMATTER: java.time.format.DateTimeFormatter =
+        java.time.format.DateTimeFormatter.ofPattern("dd/MM")
+
+    fun formatTime(instant: Instant, zone: ZoneId = defaultZone): String =
+        instant.atZone(zone).format(TIME_FORMATTER)
+
+    fun formatDateTime(instant: Instant, zone: ZoneId = defaultZone): String =
+        instant.atZone(zone).format(DATE_TIME_FORMATTER)
+
+    fun formatDate(instant: Instant, zone: ZoneId = defaultZone): String =
+        instant.atZone(zone).format(DATE_FORMATTER)
+
+    fun formatDate(date: java.time.LocalDate): String =
+        date.format(DATE_FORMATTER)
+
+    fun formatDateMonth(date: java.time.LocalDate): String =
+        date.format(DATE_MONTH_FORMATTER)
 }
+

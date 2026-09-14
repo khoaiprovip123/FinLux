@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +83,44 @@ fun getTransactionSemanticColor(type: TransactionType): Color = when (type) {
     TransactionType.INCOME -> FinluxColors.IncomeGreen
     TransactionType.EXPENSE -> FinluxColors.ExpenseRed
     TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
+}
+
+/**
+ * Resolves standard gradient brush for transaction category/icon badges.
+ */
+fun getTransactionIconBrush(
+    type: TransactionType,
+    categoryColorHex: String? = null,
+): Brush {
+    val parsedColor = if (!categoryColorHex.isNullOrBlank()) colorFromHex(categoryColorHex) else null
+    return when (type) {
+        TransactionType.INCOME -> Brush.linearGradient(
+            listOf(FinluxColors.IncomeGreen, FinluxColors.IncomeGreen.copy(alpha = 0.82f))
+        )
+        TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> Brush.linearGradient(
+            listOf(FinluxColors.TransferBlue, FinluxColors.PrimaryViolet)
+        )
+        else -> if (parsedColor != null) {
+            Brush.linearGradient(listOf(parsedColor, parsedColor.copy(alpha = 0.85f)))
+        } else {
+            Brush.linearGradient(
+                listOf(FinluxColors.ExpenseRed, FinluxColors.ExpenseRed.copy(alpha = 0.82f))
+            )
+        }
+    }
+}
+
+/**
+ * Standard Sign Prefix (+ / −) for Transaction amounts.
+ */
+fun getTransactionAmountPrefix(
+    type: TransactionType,
+    isTransferOut: Boolean = true,
+): String = when (type) {
+    TransactionType.INCOME -> "+"
+    TransactionType.TRANSFER_IN -> "+"
+    TransactionType.TRANSFER_OUT -> "−"
+    TransactionType.EXPENSE -> "−"
 }
 
 /**

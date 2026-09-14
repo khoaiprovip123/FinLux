@@ -42,6 +42,8 @@ graph TD
 2. **Spec vs Hiến pháp Kiến trúc:** Nếu một màn hình trong `UI_SPEC.md` yêu cầu hiển thị nút hoặc logic vi phạm `FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (ví dụ: đòi tính nợ gốc vào chi tiêu sinh hoạt) -> **Hiến pháp kiến trúc phủ quyết**, giữ nguyên bản chất kế toán.
 3. **Spec vs Kỷ luật Vận hành:** Mọi yêu cầu commit/push tự động trong bất kỳ plan nào đều bị `AGENTS.md` (Cấp 1) vô hiệu hóa hoàn toàn -> **Bắt buộc chờ lệnh phê duyệt bằng văn bản từ Tech Lead**.
 4. **Phát hiện tài liệu lỗi thời:** Khi tài liệu Cấp 3 hoặc Cấp 4 lệch pha so với thực tế đã thống nhất (ví dụ: đường dẫn file cũ), Agent phải lập báo cáo cảnh báo Tech Lead và cập nhật đồng bộ tài liệu, không được âm thầm làm sai.
+5. **Nguyên tắc Đồng bộ Đặc tả Ngược (Spec Parity Invariant - Điều II.9):** Code và Spec bắt buộc khớp nhau 100%. Khi thay đổi UseCase, Validator, Invariants, Form Controls hay Schema, Agent bắt buộc phải cập nhật ngược lại tài liệu đặc tả tương ứng (`docs/BA_SPEC.md`, `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`, `docs/FORM_COMPONENTS_SPEC.md`, `docs/DATA_SPEC.md`). Cấm tuyệt đối coi task là hoàn thành khi chỉ có code/test mà chưa cập nhật tài liệu.
+6. **Nguyên tắc Triệt tiêu Code Cục bộ & Quy hoạch Mã Dùng Chung (DRY Invariant - Điều II.10):** Cấm viết các khối `when (type)`, `when (categoryId)` hoặc tự parse/format ngày giờ, tiền tệ lặp lại trong các file Composable UI. Mọi logic ánh xạ xuất hiện từ 2 vị trí trở lên bắt buộc phải được trích xuất về `core/common` hoặc `core/designsystem` trước khi bàn giao.
 
 ---
 
@@ -57,8 +59,10 @@ Bảng phân tích mối quan hệ chéo, điều khoản ràng buộc và hậu
 | **`AGENTS.md`**<br>(Điều II.4 - Đồng bộ Theme) | `docs/UI_SPEC.md`<br>`FinluxTokens.kt` | CẤM hardcode mã màu hex (`Color(0xFF...)`, `#FFFFFF`...). 100% màu phải lấy từ `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`. | Màn hình bị chói lóa ở Dark Mode hoặc chữ tàng hình ở Light Mode, vỡ phong cách Liquid Glass. |
 | **`AGENTS.md`**<br>(Điều II.5 & II.6 - Form tiêu chuẩn) | `docs/FORM_COMPONENTS_SPEC.md`<br>`FinluxFormControls.kt` | 100% form nhập liệu phải kế thừa `FinluxAmountInput` (Decimal Magnitude Scaling), `FinluxDateTimePicker`, `FinluxWalletSelector`, `FinluxNoteInput`. | Sinh ra code trùng lặp (Anti-Zombie Code), mỗi màn hình một kiểu nhập tiền, mất dải chip gợi ý, lỗi che khuất bàn phím IME. |
 | **`AGENTS.md`**<br>(Điều II.8 - Firestore Rules) | `docs/DATA_SPEC.md`<br>`firestore.rules` | Mỗi khi thêm trường dữ liệu: BẮT BUỘC cập nhật `firestore.rules` (whitelist `keys().hasOnly(...)`) và bảo toàn trường bất biến. | Thao tác ghi Firestore bị chặn quyền (`PERMISSION_DENIED`), crash ứng dụng trên môi trường thực tế. |
+| **`AGENTS.md`**<br>(Điều II.9 - Đồng bộ đặc tả ngược) | `docs/BA_SPEC.md`<br>`docs/FORM_COMPONENTS_SPEC.md`<br>`docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`<br>`docs/DATA_SPEC.md` | Bất kỳ thay đổi nào về UseCase/Validation/Invariants PHẢI cập nhật `BA_SPEC.md` & `ARCHITECTURE_MATRIX`; thay đổi UI Control/Component PHẢI cập nhật `FORM_COMPONENTS_SPEC.md`; thay đổi Schema PHẢI cập nhật `DATA_SPEC.md`. | Lệch pha nghiêm trọng giữa đặc tả và mã nguồn (Spec Drift), agent phiên sau hiểu sai nghiệp vụ, gây lỗi dây chuyền. |
+| **`AGENTS.md`**<br>(Điều II.10 - Triệt tiêu code cục bộ) | `core/common/` (`FinanceTime`, `CategoryIconHelper`)<br>`core/designsystem/` (`TransactionSemantics`, `FinluxTokens`) | Cấm viết logic mapping màu, icon, định dạng thời gian/tiền tệ cục bộ trong Composable UI. Xuất hiện $\ge 2$ nơi bắt buộc trích xuất Shared Helper trước khi làm tính năng mới. | Codebase phân mảnh, duplicate logic khắp nơi, sửa màu hoặc format ở một màn hình bị sót các màn hình khác. |
 | **`AGENTS.md`**<br>(Phần III - Quản lý tài liệu) | `HANDOVER_LOG.md` | Bắt buộc 2 bước: PRE-EXECUTION (`[IN PROGRESS]`) trước khi code và POST-EXECUTION (`[DONE]`) sau khi test. | Agent phiên sau bị mất ngữ cảnh, không biết việc làm dở, lặp lại công việc tốn token/quota. |
-| **`AGENTS.md`**<br>(Phần IV - Release Pipeline) | `app/build.gradle.kts`<br>`CHANGELOG.md` | Bắt buộc: 100% tests PASS -> Bump Version (+1) -> Sync Changelog -> Build APK -> ADB Deploy -> Nghiệm thu máy thật 5 điểm. | Phát hành APK lỗi, sai lệch phiên bản phát hành, không thể cập nhật đè lên máy người dùng. |
+| **`AGENTS.md`**<br>(Phần IV - Release Pipeline) | `app/build.gradle.kts`<br>`CHANGELOG.md` | Bắt buộc: 100% tests PASS -> Bump Version (+1) -> Sync Changelog -> Build APK -> ADB Deploy -> Nghiệm thu máy thật 5 điểm + DoD (Spec Parity, Shared Code). | Phát hành APK lỗi, sai lệch phiên bản phát hành, không thể cập nhật đè lên máy người dùng. |
 | **`docs/BACKLOG.md`** | `FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` | Mọi ticket phát triển hoặc sửa lỗi phải định vị chính xác thuộc Module nào trong 16 module. | Phát triển tính năng lạc lõng, chồng chéo chức năng đã có. |
 | **`tech_debt_remediation_plan.md`** | `WalletBalanceValidator.kt`<br>`FinluxFormControls.kt` | Quy hoạch logic kiểm tra số dư và UI cảnh báo thành module dùng chung, không viết cục bộ trong từng màn hình. | Phát sinh nợ kỹ thuật phân mảnh (Siloed Logic), bỏ lọt lỗ hổng âm ví ở các màn hình Chuyển tiền, Trả nợ, Nạp hũ. |
 
@@ -99,7 +103,9 @@ Quy tắc **"ĐỤNG ĐẾN ĐÂU — BẮT BUỘC ĐỌC & ĐỐI SOÁT ĐÓ"**
 ### Chi Tiết Yêu Cầu Tuân Thủ Cho Từng Ngữ Cảnh:
 
 #### 🟢 Ngữ Cảnh 1: Thao Tác Với Form Nhập Liệu & Bộ Chọn (Inputs & Form Controls)
-- **Tài liệu kích hoạt bắt buộc:** `docs/FORM_COMPONENTS_SPEC.md` + `FinluxFormControls.kt` + `AGENTS.md` (Mục II.5, II.6).
+- **Tài liệu kích hoạt bắt buộc:** `docs/FORM_COMPONENTS_SPEC.md` + `FinluxFormControls.kt` + `AGENTS.md` (Mục II.5, II.6, II.9).
+- **Quy tắc kích hoạt đặc tả ngược (Spec Parity Trigger - Điều II.9):**
+  * **KHI SỬA BẤT KỲ UI CONTROL / COMPONENT NÀO** $\rightarrow$ BẮT BUỘC kích hoạt cập nhật `docs/FORM_COMPONENTS_SPEC.md` hoặc `docs/UI_SPEC.md` (ghi nhận tham số mới, viền cảnh báo, banner, typography auto-scaling).
 - **Checklist Không Thể Bỏ Qua:**
   - [ ] Ô nhập tiền: Dùng `FinluxAmountInput` hoặc `ErgonomicCompactAmountCard` (mặc định `AmountChipMode.MAGNITUDE_SCALING` $V = N \times 10^k$, auto-scaling font, inline `₫`). CẤM tự vẽ TextField thủ công.
   - [ ] Chọn ngày giờ: Dùng `FinluxDateTimePicker` (chọn cả Ngày VÀ Giờ:Phút). CẤM dùng DatePicker đơn lẻ làm mất thông tin giờ giao dịch.
@@ -108,7 +114,9 @@ Quy tắc **"ĐỤNG ĐẾN ĐÂU — BẮT BUỘC ĐỌC & ĐỐI SOÁT ĐÓ"**
   - [ ] Ghi chú: Dùng `FinluxNoteInput`.
 
 #### 🔵 Ngữ Cảnh 2: Thao Tác Với Dòng Tiền, Kế Toán & UseCase (Money Flows & Financial Logic)
-- **Tài liệu kích hoạt bắt buộc:** `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` + `docs/BA_SPEC.md` + `docs/DATA_SPEC.md` + `AGENTS.md` (Mục II.3).
+- **Tài liệu kích hoạt bắt buộc:** `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` + `docs/BA_SPEC.md` + `docs/DATA_SPEC.md` + `AGENTS.md` (Mục II.3, II.9).
+- **Quy tắc kích hoạt đặc tả ngược (Spec Parity Trigger - Điều II.9):**
+  * **KHI SỬA BẤT KỲ FILE USECASE / VALIDATION / INVARIANT NÀO** $\rightarrow$ BẮT BUỘC kích hoạt cập nhật `docs/BA_SPEC.md` và `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (đồng bộ Business Rules, điều kiện biên, múi giờ, bảo vệ danh mục).
 - **Checklist Không Thể Bỏ Qua:**
   - [ ] Xuất tiền khỏi ví: Bắt buộc xác thực qua `WalletBalanceValidator` (hoặc `wallet.validateSufficientFunds`).
   - [ ] Định danh Category: 100% lấy từ `SystemCategories.kt`, cấm hardcode string tự do (`"food"`, `"debt_payment"`...).
@@ -117,12 +125,15 @@ Quy tắc **"ĐỤNG ĐẾN ĐÂU — BẮT BUỘC ĐỌC & ĐỐI SOÁT ĐÓ"**
   - [ ] Thời gian tài chính: `resolvePeriodKey` phải dựa vào `transaction.date` + timezone, tuyệt đối không dùng `Instant.now()`.
 
 #### 🟣 Ngữ Cảnh 3: Thao Tác Với Giao Diện, Theme & Liquid Glass (Presentation & Styling)
-- **Tài liệu kích hoạt bắt buộc:** `docs/UI_SPEC.md` + `docs/CONTEXT.md` + `FinluxTokens.kt` + `AGENTS.md` (Mục II.4).
+- **Tài liệu kích hoạt bắt buộc:** `docs/UI_SPEC.md` + `docs/CONTEXT.md` + `FinluxTokens.kt` + `AGENTS.md` (Mục II.4, II.7, II.10).
+- **Quy tắc kích hoạt quy hoạch mã dùng chung (Zero Duplication Trigger - Điều II.10):**
+  * **KHI VIẾT HOẶC SỬA LOGIC MAPPING MÀU, ICON, ĐỊNH DẠNG THỜI GIAN / TIỀN TỆ** $\rightarrow$ BẮT BUỘC quy hoạch tập trung về `core/common` (`CategoryIconHelper`, `FinanceTime`) hoặc `core/designsystem` (`TransactionSemantics`, `FinluxTokens`). Tuyệt đối CẤM viết các khối `when (type)`, `when (categoryId)` hoặc tự định dạng thời gian cục bộ lặp lại ở từng Screen.
 - **Checklist Không Thể Bỏ Qua:**
   - [ ] Tuyệt đối không hardcode mã màu hex (`#...` hay `Color(...)`). Dùng 100% `LocalFinluxTokens.current` và `MaterialTheme.colorScheme`.
   - [ ] Màn hình có nền kính Liquid Glass: Bắt buộc dùng `FinluxStyleBackdrop` và `containerColor = Color.Transparent`.
   - [ ] Khoảng cách & Bo góc: Sử dụng `tokens.spacing.*` và `tokens.radius.*`.
   - [ ] Không tạo component mới trong `component/` nếu chưa rà soát các component chuẩn hiện có.
+  - [ ] Logic hiển thị (Icon, Color tint, Prefix, Date/Time): Dùng helper tập trung (`FinanceTime`, `getTransactionSemanticColor`, `getTransactionIconBrush`, `getTransactionAmountPrefix`, `CategoryIconHelper`).
 
 #### 🟡 Ngữ Cảnh 4: Thao Tác Với Schema Dữ Liệu & Firestore Rules (Data & Security)
 - **Tài liệu kích hoạt bắt buộc:** `docs/DATA_SPEC.md` + `firestore.rules` + `AGENTS.md` (Mục II.8).

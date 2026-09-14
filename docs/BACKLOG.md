@@ -4,6 +4,15 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-09-14] - [v1.25.6] Wave 2 Xử Lý Nợ Kỹ Thuật, Hiến Pháp Quản Trị & Quy Hoạch Mã Dùng Chung
+
+- **Hiến pháp & Kỷ luật Quản trị (`AGENTS.md`, `docs/RULE_MAPPING_MATRIX.md`)**: Bổ sung Điều II.9 (Bắt buộc đồng bộ đặc tả ngược - Spec Parity Gate) và Điều II.10 (Triệt tiêu code cục bộ - Zero Local Duplication Gate). Nâng cấp Definition of Done (DoD) với 2 tiêu chí kiểm soát bắt buộc.
+- **Đồng bộ Đặc tả Ngược (Spec Parity)**: Cập nhật `docs/BA_SPEC.md` (BR-CAT-01 bảo vệ danh mục hệ thống mặc định, BR-WALLET-VAL-01 kiểm tra số dư khả dụng), `docs/FORM_COMPONENTS_SPEC.md` (viền cảnh báo động cho `FinluxWalletSelector`, thuật toán Decimal Magnitude Scaling cho `FinluxAmountInput`), và `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (bảo toàn tính toán kỳ lương đa múi giờ Tokyo / New York).
+- **Quy hoạch Mã dùng chung (Common Code DRY)**: Gom toàn bộ logic mapping màu, brush và tiền tố giao dịch vào `FinluxTransactionComponents.kt` (`getTransactionSemanticColor`, `getTransactionIconBrush`, `getTransactionAmountPrefix`). Gom toàn bộ logic format ngày giờ tập trung vào `FinanceTime.kt`. Refactor làm sạch 7 màn hình và bottom sheet giao dịch.
+- **Hoàn tất Độ phủ Kiểm thử ViewModel & Múi giờ**: Viết mới `DealsViewModelTest.kt` (9 tests), `CategoriesViewModelTest.kt` (13 tests), `FinancialPeriodTimezoneTest.kt` (7 tests). Nâng toàn bộ test suite lên **456 / 456 unit tests PASS 100%**.
+
+---
+
 ## ✅ [DONE 2026-09-10] - [v1.25.2] Chuẩn Hóa Kiến Trúc Hệ Thống, Central Category Registry & Đồng Bộ Cửa Sổ Ngân Sách
 
 - **Xây dựng Ma Trận Kiến Trúc 16 Module & 15 Luồng Tiền (`docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`)**: Lập bản đồ toàn diện hệ thống, phân loại 4 nhóm module (Core Foundation, Value Creation, Extension Engines, Platform & Security), ma trận 15 luồng tiền tương hỗ và 4 nguyên tắc bảo vệ kiến trúc tài chính (Transaction Lifecycle Rollback, Transaction-based Date Resolution, Semi-Monthly Budget Convention, Central Category Registry).

@@ -91,6 +91,7 @@ import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomS
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.core.time.ReminderCountdownTier
 import com.finlux.app.core.time.formatReminderCountdown
 import com.finlux.app.domain.model.Category
@@ -190,8 +191,7 @@ fun RemindersScreen(
                 val catIcon = category?.let { categoryIcon(it.icon) } ?: Icons.Default.Category
                 val catColor = category?.let { colorFromHex(it.colorHex, tokens.primary) } ?: tokens.primary
                 val zone = ZoneId.systemDefault()
-                val triggerZdt = reminder.nextTriggerDate.atZone(zone)
-                val triggerTimeText = triggerZdt.format(DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy"))
+                val triggerTimeText = FinanceTime.formatDateTime(reminder.nextTriggerDate, zone)
                 val countdownInfo = remember(reminder.nextTriggerDate, reminder.enabled) {
                     if (!reminder.enabled) null
                     else formatReminderCountdown(reminder.nextTriggerDate, Instant.now(), zone)
@@ -623,7 +623,7 @@ private fun ReminderEditorSheet(
                                     color = Color(0xFF9CA3AF),
                                 )
                                 Text(
-                                    text = selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                    text = FinanceTime.formatDate(selectedDate),
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
@@ -676,7 +676,7 @@ private fun ReminderEditorSheet(
                                     color = Color(0xFF9CA3AF),
                                 )
                                 Text(
-                                    text = selectedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                                    text = selectedTime.format(FinanceTime.TIME_FORMATTER),
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,

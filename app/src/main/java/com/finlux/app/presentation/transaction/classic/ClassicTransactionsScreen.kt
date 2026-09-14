@@ -34,6 +34,9 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import com.finlux.app.core.designsystem.component.getTransactionAmountPrefix
+import com.finlux.app.core.designsystem.component.getTransactionSemanticColor
+import com.finlux.app.core.time.FinanceTime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -264,7 +267,7 @@ fun ClassicTransactionsScreen(
                         val headerTitle = when (date) {
                             today -> "Hôm nay"
                             yesterday -> "Hôm qua"
-                            else -> date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                            else -> FinanceTime.formatDate(date)
                         }
                         val dayIncome = txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount.value }
                         val dayExpense = txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount.value }
@@ -310,11 +313,7 @@ fun ClassicTransactionsScreen(
                         val cat = categories[transaction.categoryId]
                         val relWallet = wallets[transaction.relatedWalletId]
                         val curWallet = wallets[transaction.walletId]
-                        val rowAccent = when (transaction.type) {
-                            TransactionType.INCOME -> cat?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
-                            TransactionType.EXPENSE -> cat?.let { colorFromHex(it.colorHex) } ?: ExpenseRed
-                            TransactionType.TRANSFER_OUT, TransactionType.TRANSFER_IN -> FinluxColors.TransferBlue
-                        }
+                        val rowAccent = cat?.let { colorFromHex(it.colorHex) } ?: getTransactionSemanticColor(transaction.type)
                         val rowIcon = when (transaction.type) {
                             TransactionType.INCOME -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
                             TransactionType.EXPENSE -> cat?.let { categoryIcon(it.icon) } ?: Icons.Default.Payments
@@ -333,7 +332,7 @@ fun ClassicTransactionsScreen(
                                 curWallet?.let { append(" • ${it.name}") }
                             }
                             append(" • ")
-                            append(transaction.date.atZone(financeZone).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")))
+                            append(FinanceTime.formatDateTime(transaction.date, financeZone))
                         }
 
                         GlassCard(

@@ -129,12 +129,36 @@ Main flow:
   6. Nếu giao dịch Chi thuộc danh mục có ngân sách → kiểm tra ngưỡng cảnh báo (xem UC-15)
 Alternative flow:
   A1. Số tiền = 0 hoặc âm → validation lỗi
-  A2. Số dư ví không đủ (nếu bật chế độ chặn âm) → cảnh báo, cho phép user xác nhận vẫn lưu (không chặn cứng)
+  A2. Số dư ví không đủ hoặc vượt hạn mức (WalletBalanceValidator):
+      - Ví tiêu chuẩn (Tiền mặt, Ngân hàng, Ví điện tử...): Chặn cứng chi tiêu/chuyển tiền khi số dư khả dụng không đủ (WalletValidationResult.InsufficientFunds), hiển thị viền đỏ và banner cảnh báo Liquid Glass, vô hiệu hóa nút Lưu.
+      - Thẻ tín dụng: Cảnh báo vượt hạn mức thẻ (WalletValidationResult.CreditLimitExceeded) khi số tiền mới vượt tổng hạn mức.
 Postcondition: Giao dịch được lưu, số dư ví cập nhật, đồng bộ realtime các thiết bị khác
 Business rule:
   BR-05: Số tiền dương, tối đa 15 chữ số (VND)
   BR-06: Xóa/sửa giao dịch phải cập nhật lại số dư ví tương ứng (cộng/trừ ngược)
+  BR-WALLET-VAL-01: Kiểm tra số dư ví khả dụng trước khi chi tiêu/chuyển tiền (WalletBalanceValidator).
 ```
+
+### UC-11: Quản lý danh mục (thêm/sửa/xóa)
+```
+Actor: User
+Precondition: Đã đăng nhập
+Main flow:
+  1. Vào Cài đặt → Danh mục Thu/Chi (CategoriesScreen)
+  2. Xem danh sách danh mục theo 2 tab: Thu nhập / Chi tiêu
+  3. Nhấn "+" để tạo danh mục mới (nhập tên, chọn icon, chọn mã màu, chọn gắn cờ thiết yếu)
+  4. Nhấn vào danh mục tùy chỉnh để chỉnh sửa thông tin
+  5. Vuốt hoặc nhấn nút Xóa để xóa danh mục tùy chỉnh
+Alternative flow:
+  A1. Tên danh mục để trống → Báo lỗi validation "Vui lòng nhập tên danh mục"
+  A2. Chỉnh sửa hoặc xóa danh mục hệ thống mặc định (thuộc SystemCategories.ALL_SYSTEM_IDS hoặc isDefault = true) →
+      Hệ thống chặn cứng ở cả UseCase (SaveCategoryUseCase, DeleteCategoryUseCase) và UI, báo lỗi:
+      "Không thể chỉnh sửa danh mục hệ thống mặc định" hoặc "Không thể xóa danh mục hệ thống mặc định".
+Postcondition: Danh mục được lưu/xóa và đồng bộ realtime lên Firestore
+Business rule:
+  BR-CAT-01: Bảo vệ danh mục hệ thống — Cấm chỉnh sửa, đổi tên hoặc xóa các danh mục mặc định thuộc SystemCategories.ALL_SYSTEM_IDS.
+```
+
 
 ### UC-12: Quản lý ví/tài khoản và chọn tổ chức tài chính
 ```
@@ -470,6 +494,8 @@ Business rules: BR-SS-01..14 theo FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md.
 | BR-12 | Nhắc bill là local notification, cấu hình sync cloud |
 | BR-13 | Conflict resolution: last-write-wins (Firestore default) |
 | BR-14 | Cập nhật số dư ví bắt buộc qua Firestore Transaction |
+| BR-CAT-01 | Bảo vệ danh mục hệ thống: Cấm chỉnh sửa, đổi tên hoặc xóa các danh mục mặc định thuộc SystemCategories.ALL_SYSTEM_IDS (isDefault = true). Chặn cứng tại UseCase & UI |
+| BR-WALLET-VAL-01 | Kiểm tra số dư khả dụng trước chi tiêu/chuyển tiền (WalletBalanceValidator): Chặn cứng ví chuẩn khi thiếu số dư; Cảnh báo thẻ tín dụng khi vượt hạn mức; Hiển thị viền đỏ và banner Liquid Glass |
 | BR-DEBT-01 | Phân loại công nợ: Thẻ tín dụng, Vay ngân hàng/cá nhân, Trả góp/BNPL |
 | BR-DEBT-02 | Thuật toán mô phỏng thoát nợ Snowball (nợ nhỏ trước) & Avalanche (lãi cao trước) |
 | BR-DEBT-03 | Thanh toán nợ nguyên tử qua Firestore Transaction (trừ ví, giảm nợ, ghi sổ cái) |

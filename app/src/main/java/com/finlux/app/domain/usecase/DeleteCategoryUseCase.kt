@@ -6,5 +6,10 @@ import com.finlux.app.domain.repository.CategoryRepository
 import javax.inject.Inject
 
 class DeleteCategoryUseCase @Inject constructor(private val repository: CategoryRepository) {
-    suspend operator fun invoke(category: Category): AppResult<Unit> = repository.deleteCategory(category)
+    suspend operator fun invoke(category: Category): AppResult<Unit> {
+        if (category.isDefault || category.id in com.finlux.app.domain.model.SystemCategories.ALL_SYSTEM_IDS) {
+            return AppResult.Error("Không thể xóa danh mục hệ thống mặc định")
+        }
+        return repository.deleteCategory(category)
+    }
 }
