@@ -10,6 +10,8 @@ import com.finlux.app.domain.model.NotificationType
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.WalletType
+import com.finlux.app.domain.validation.WalletValidationResult
+import com.finlux.app.domain.validation.validateSufficientFunds
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.NotificationRepository
@@ -39,9 +41,15 @@ class AddTransactionUseCase @Inject constructor(
         if (transaction.type == TransactionType.EXPENSE) {
             val wallets = walletRepository.observeWallets().firstOrNull().orEmpty()
             val wallet = wallets.firstOrNull { it.id == transaction.walletId }
-            if (wallet != null && wallet.type != WalletType.CARD) {
-                if (wallet.balance.value < transaction.amount.value) {
-                    return AppResult.Error("Số dư ví [${wallet.name}] không đủ để thực hiện chi tiêu")
+            if (wallet != null) {
+                when (wallet.validateSufficientFunds(transaction.amount.value, isExpense = true)) {
+                    is WalletValidationResult.InsufficientFunds -> {
+                        return AppResult.Error("Số dư ví [${wallet.name}] không đủ để thực hiện chi tiêu")
+                    }
+                    is WalletValidationResult.CreditLimitExceeded -> {
+                        return AppResult.Error("Giao dịch vượt quá hạn mức thẻ tín dụng [${wallet.name}]")
+                    }
+                    is WalletValidationResult.Valid -> Unit
                 }
             }
         }

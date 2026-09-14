@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.5 (versionCode 179)
-- **Trạng thái Build:** ✅ 100% PASS (377/377 unit tests)
+- **Phiên bản hiện tại:** v1.25.6 (versionCode 180)
+- **Trạng thái Build:** ✅ 100% PASS (456/456 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
 ### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
@@ -17,6 +17,247 @@
 - [ ] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+
+### [Task-CI-RELEASE-SIGNING-FIX] — Khắc phục lỗi verifyReleaseSigning trên GitHub Actions & chuẩn hóa đường dẫn Keystore
+- **Status**: `[DONE]`
+- **Kiểm thử xác nhận**:
+  - ✅ Giả lập CI (`CI=true` với đường dẫn fallback `FINLUX_KEYSTORE_PATH="gradle/debug.keystore"`): Task `:app:verifyReleaseSigning` chạy thành công tuyệt đối (**BUILD SUCCESSFUL**).
+  - ✅ Unit test toàn dự án: `.\gradlew.bat testDebugUnitTest` đạt **456/456 tests PASS 100% (0 failures, 0 skipped)**.
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Xác định nguyên nhân gốc rễ (Root-Cause Analysis)**:
+     - Trên GitHub Actions runner, khi secret `FINLUX_KEYSTORE_BASE64` chưa được cấu hình, workflow fallback gán `FINLUX_KEYSTORE_PATH=gradle/debug.keystore`.
+     - Trong `app/build.gradle.kts`, biểu thức `file(releaseKeystorePath)` phân giải tương đối theo thư mục module `app/` (tìm kiếm tại `app/gradle/debug.keystore` — không tồn tại), trong khi file `debug.keystore` thực tế nằm ở thư mục gốc `gradle/debug.keystore` của root project.
+     - Khi chạy trên CI (`CI=true`), task `verifyReleaseSigning` thực hiện `check(hasReleaseSigningConfig)` và ném lỗi `Thiếu cấu hình ký release`.
+  2. ✅ **Cải tiến cơ chế phân giải Keystore (`app/build.gradle.kts`)**:
+     - Nâng cấp `resolvedReleaseKeystoreFile`: ưu tiên kiểm tra `file(path)` (relative module `app/`), fallback sang `rootProject.file(path)` (relative root project), và hỗ trợ đường dẫn tuyệt đối (`isAbsolute`).
+     - Gán `storeFile = resolvedReleaseKeystoreFile` trong `signingConfigs.release`.
+  3. ✅ **Chuẩn hóa Workflow GitHub Actions (`.github/workflows/release.yml`)**:
+     - Cập nhật đường dẫn fallback: `FINLUX_KEYSTORE_PATH=${GITHUB_WORKSPACE}/gradle/debug.keystore`.
+     - Chuẩn hóa đường dẫn keystore khi decode từ secret: `${RUNNER_TEMP:-/tmp}/release.keystore` và bổ sung bước cleanup an toàn.
+- **Files thực tế đã sửa đổi**:
+  - `app/build.gradle.kts`
+  - `.github/workflows/release.yml`
+  - `HANDOVER_LOG.md`
+
+### [Task-SPEC-PARITY-AND-COMMON-CODE] — Đồng bộ toàn diện đặc tả tài liệu & quy hoạch Common Code
+- **Status**: `[DONE]`
+- **Kiểm thử xác nhận**: ✅ `.\gradlew.bat testDebugUnitTest` đạt **456/456 tests PASS 100% (0 failures, 0 skipped)**.
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Đồng bộ đặc tả tài liệu (Spec Parity)**:
+     - `docs/BA_SPEC.md`: Bổ sung BR-CAT-01 bảo vệ danh mục hệ thống mặc định (`SystemCategories.ALL_SYSTEM_IDS` / `isDefault = true`), bổ sung BR-WALLET-VAL-01 kiểm tra số dư ví khả dụng trước khi chi tiêu/chuyển tiền (`WalletBalanceValidator`), bổ sung đặc tả UC-11 (Quản lý danh mục) và cập nhật UC-07 (Thêm giao dịch).
+     - `docs/FORM_COMPONENTS_SPEC.md`: Bổ sung mục 3️⃣ đặc tả `FinluxWalletSelector` & `FinluxTransferWalletPair` (tham số `validationResult: WalletValidationResult`, cơ chế viền đỏ và banner Liquid Glass); đặc tả thuật toán Decimal Magnitude Scaling ($N \times 10^k$), cơ chế tự bung chip theo focus (`AnimatedVisibility`) và auto-scaling typography cho `FinluxAmountInput` & `ErgonomicCompactAmountCard`.
+     - `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`: Cập nhật Module 6 & 11 ghi chú kiểm chứng cơ chế phân giải chu kỳ tài chính đa múi giờ (`FinancialPeriodTimezoneTest`) với New York (EDT/GMT-4) và Tokyo (JST/GMT+9) tại các ca biên 23:55 và 00:05.
+  2. ✅ **Rà soát & Quy hoạch Common Code**:
+     - Centralize semantic color, icon brush gradient, và sign prefix (`+`/`−`) vào `FinluxTransactionComponents.kt` (`getTransactionSemanticColor`, `getTransactionIconBrush`, `getTransactionAmountPrefix`).
+     - Centralize date/time formatters vào `FinanceTime.kt` (`TIME_FORMATTER`, `DATE_TIME_FORMATTER`, `DATE_FORMATTER`, `DATE_MONTH_FORMATTER`, `formatTime`, `formatDateTime`, `formatDate`, `formatDateMonth`).
+     - Triệt tiêu 100% các khối `when` mapping màu và định dạng thời gian tự viết rải rác trên toàn bộ các màn hình:
+       * `PrismTransactionsScreen.kt`: dùng `getTransactionAmountPrefix`, `getTransactionSemanticColor`, `getTransactionIconBrush`, `FinanceTime.formatTime`, `FinanceTime.formatDateMonth`, `FinanceTime.formatDate`.
+       * `WalletTransactionsBottomSheet.kt`: dùng `getTransactionAmountPrefix`, `getTransactionSemanticColor`, `getTransactionIconBrush`, `FinanceTime.formatTime`, `FinanceTime.formatDateMonth`, `FinanceTime.formatDate`.
+       * `TransactionDetailSheet.kt`: dùng `getTransactionSemanticColor`, `getTransactionAmountPrefix`, `FinanceTime.formatDateTime`.
+       * `ModernTransactionsScreen.kt`: dùng `getTransactionSemanticColor`, `getTransactionAmountPrefix`, `FinanceTime.formatDate`, `FinanceTime.formatDateTime`.
+       * `ClassicTransactionsScreen.kt`: dùng `getTransactionSemanticColor`, `FinanceTime.formatDate`, `FinanceTime.formatDateTime`.
+       * `WalletDetailBottomSheet.kt`: dùng `FinanceTime.formatDateTime`.
+       * `RemindersScreen.kt`: dùng `FinanceTime.formatDateTime`, `FinanceTime.formatDate`, `FinanceTime.TIME_FORMATTER`.
+- **Files thực tế đã sửa đổi**:
+  - `docs/BA_SPEC.md`
+  - `docs/FORM_COMPONENTS_SPEC.md`
+  - `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt`
+  - `app/src/main/java/com/finlux/app/core/time/FinanceTime.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletTransactionsBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/WalletDetailBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-TECH-DEBT-WAVE-2] — Hoàn tất độ phủ ViewModel, kiểm thử múi giờ & dọn dẹp Dynamic Tokens
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Bịt kín độ phủ kiểm thử ViewModel (Zero Test Blindspots)**:
+     - Viết mới `DealsViewModelTest.kt` (13 test cases): tải deals, phân loại trạng thái/loại, luồng xuất vốn (`recordOutlay`), thu hồi vốn (`recordInflow`), ROI %, stop-loss (`closeDealWithLoss`), reopen deal, validation dữ liệu.
+     - Viết mới `CategoriesViewModelTest.kt` (8 test cases): tải danh mục Thu/Chi, tạo mới, chỉnh sửa, xóa danh mục tùy chỉnh.
+     - Củng cố Domain Invariants trong `SaveCategoryUseCase` & `DeleteCategoryUseCase`: bảo vệ tuyệt đối danh mục hệ thống mặc định (`SystemCategories.ALL_SYSTEM_IDS` / `isDefault = true`), chặn sửa/xóa ở tầng domain.
+  2. ✅ **Kiểm thử ca biên múi giờ đa quốc gia (Timezone Resilience)**:
+     - Viết mới test suite `FinancialPeriodTimezoneTest.kt` (8 test cases):
+       + Kiểm thử New York (`America/New_York`, GMT-5 / GMT-4 EDT) và Tokyo (`Asia/Tokyo`, GMT+9).
+       + Kiểm thử ca biên 23:55 ngày cuối kỳ và 00:05 ngày đầu kỳ mới cho cả Calendar Month và Salary Cycle.
+       + Kiểm thử cùng 1 mốc Instant UTC nhưng định tuyến chính xác sang các tháng tài chính khác nhau theo `financeTimeZone`.
+       + Kiểm thử cơ chế fallback an toàn về `Asia/Ho_Chi_Minh` khi timezone identifier không hợp lệ.
+  3. ✅ **Dọn dẹp mã màu tĩnh rò rỉ (Wave 1 Clean-Up)**:
+     - Triệt tiêu 100% hardcoded hex color `Color(0x...)` tại 3 file:
+       + `PrismTransactionsScreen.kt`: 0 hardcoded colors, chuẩn hóa sang `tokens` (`surface`, `border`, `onSurfaceVariant`, `heroGradient`) và `FinluxColors`. Nâng cấp import `hiltViewModel`.
+       + `TransactionDetailSheet.kt`: 0 hardcoded colors, chuẩn hóa sang `FinluxColors` (`PrimaryBlue`, `PrimaryCyan`, `PrimaryViolet`).
+       + `WalletTransactionsBottomSheet.kt`: 0 hardcoded colors, chuẩn hóa sang `FinluxColors` (`IncomeGreen`, `ExpenseRed`, `TransferBlue`, `PrimaryViolet`) và `tokens`.
+  4. ✅ **Kiểm thử xác nhận & Build**:
+     - `.\gradlew.bat testDebugUnitTest`: **456/456 unit tests PASS 100% (0 failures, 0 skipped)** — tăng 29 unit tests mới, vượt mốc 440+ theo yêu cầu.
+     - `.\gradlew.bat assembleDebug`: BUILD SUCCESSFUL.
+- **Files thực tế đã sửa đổi / tạo mới**:
+  - `app/src/test/java/com/finlux/app/presentation/deal/DealsViewModelTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/presentation/category/CategoriesViewModelTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/FinancialPeriodTimezoneTest.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/SaveCategoryUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/DeleteCategoryUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionDetailSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletTransactionsBottomSheet.kt`
+
+### [Task-TECH-DEBT-PHASE-3] — Dọn dẹp mã nguồn, gom Helper dùng chung & đồng bộ đặc tả tài liệu
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Gom logic rò rỉ về Helper dùng chung**:
+     - Tạo `app/src/main/java/com/finlux/app/core/common/CategoryIconHelper.kt` gom logic ánh xạ Icon và Semantic Color của Category từ `ModernHomeScreen.kt` và `ClassicHomeScreen.kt`.
+     - Triệt tiêu 100% hardcoded string literal (`"food"`, `"transport"`, `"shopping"`), chuẩn hóa toàn bộ về hằng số trong `SystemCategories.kt`.
+  2. ✅ **Nâng cấp các cảnh báo @Deprecated từ AndroidX / Compose**:
+     - Nâng cấp import `hiltViewModel()` sang `androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel` trên toàn bộ các màn hình bị cảnh báo (`ClassicHomeScreen`, `ModernHomeScreen`, `ClassicTransactionsScreen`, `ModernTransactionsScreen`).
+     - Nâng cấp `Icons.Filled.FormatListBulleted` sang `Icons.AutoMirrored.Filled.FormatListBulleted` trong `ClassicTransactionsScreen.kt` và `ModernTransactionsScreen.kt`.
+     - Thay thế constructor deprecated `Locale(lang, country)` sang `Locale.Builder().setLanguage(lang).setRegion(country).build()` trong `PrismSpendingCalendarView.kt` và `FinluxTransactionComponents.kt`.
+  3. ✅ **Đồng bộ hóa tài liệu đặc tả (Doc Parity)**:
+     - `docs/FORM_COMPONENTS_SPEC.md`: Cập nhật đường dẫn chuẩn về `FinluxFormControls.kt`.
+     - `docs/BACKLOG.md`: Chuyển trạng thái ticket [BUG CRITICAL] dòng 203 sang `[RESOLVED] - Đã xử lý triệt để qua WalletBalanceValidator & FinluxWalletSelector (Phase 1)`.
+     - `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`: Cập nhật header phiên bản đồng bộ lên `v1.25.6 (versionCode 180)`.
+  4. ✅ **Kiểm thử & Đóng gói nạp thiết bị**:
+     - `.\gradlew.bat testDebugUnitTest`: **427/427 unit tests PASS 100% (0 failures, 0 skipped)**.
+     - `.\gradlew.bat assembleDebug`: BUILD SUCCESSFUL.
+     - Đã nạp APK đè lên điện thoại qua ADB (`adb install -r ...`) và khởi chạy MainActivity thành công.
+- **Files thực tế đã sửa đổi / tạo mới**:
+  - `app/src/main/java/com/finlux/app/core/common/CategoryIconHelper.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxTransactionComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/classic/ClassicHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/modern/ModernHomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismSpendingCalendarView.kt`
+  - `docs/FORM_COMPONENTS_SPEC.md`
+  - `docs/BACKLOG.md`
+  - `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-TECH-DEBT-PHASE-2] — Bịt điểm mù kiểm thử tầng Presentation (WalletsViewModel & RemindersViewModel)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Viết mới toàn diện `WalletsViewModelTest.kt` (8/8 tests PASS 100%)**:
+     - File: `app/src/test/java/com/finlux/app/presentation/wallet/WalletsViewModelTest.kt`
+     - Bao phủ 6 kịch bản bắt buộc của Tech Lead + 2 kịch bản mở rộng:
+       + `loadWallets success and categorizeWallets correctly groups Cash, Bank, and Card`: Phân nhóm chính xác ví Tiền mặt, Ngân hàng, Thẻ tín dụng.
+       + `calculateNetWorth properly sums regular assets and deducts credit card debt`: Tổng tài sản ròng = Tổng ví thường - Tổng dư nợ thẻ tín dụng.
+       + `transfer valid amount updates both source and destination wallet balances`: Chuyển tiền thành công, số dư 2 ví nguồn và đích cập nhật chuẩn xác.
+       + `transfer with insufficient balance rejects operation and sets error in actionState`: Chặn chuyển tiền khi ví nguồn thiếu số dư, hiển thị thông báo lỗi lên UiState.
+       + `toggleHideBalance updates balance visibility state correctly`: Bật/tắt ẩn số dư chuẩn xác.
+       + `archiveWallet archives wallet successfully and updates status`: Ví được đưa vào danh sách lưu trữ (status = "archived", archivedAt != null).
+       + `delete wallet removes item and updates actionState message`: Xóa ví thành công khỏi kho lưu trữ.
+       + `consumeMessage clears action message from state`: Xóa message khỏi state khi UI tiêu thụ xong.
+  2. ✅ **Bổ sung toàn diện `RemindersViewModelTest.kt` (6/6 tests PASS 100%)**:
+     - File: `app/src/test/java/com/finlux/app/presentation/reminders/RemindersViewModelTest.kt`
+     - Bao phủ 3 kịch bản chính của Tech Lead + 3 kịch bản toàn vẹn:
+       + `toggleReminder switches enabled state and reschedules or cancels alarm accordingly`: Toggle tắt thì hủy báo thức (`cancel`), toggle bật thì đặt lại báo thức (`schedule`).
+       + `deleteReminder removes item and cancels scheduled alarm`: Xóa bản ghi và hủy lịch báo thức tương ứng.
+       + `countdown badge resolves correct tier for OVERDUE, TODAY, TOMORROW, and FUTURE reminders`: Map chính xác 4 tiers thời gian (`OVERDUE`, `TODAY`, `TOMORROW`, `FUTURE`) và nhãn tương đối.
+       + `remindersUiState loads reminders sorted by nextTriggerDate and filters expense categories only`: Sắp xếp tăng dần theo thời gian kích hoạt và lọc bỏ danh mục Thu.
+       + `save reminder with blank title sets validation error in UiState`: Chặn tạo nhắc nhở thiếu tiêu đề.
+       + `consumeMessage clears action message from state`: Xóa thông báo khi UI đã hiển thị.
+  3. ✅ **Kiểm thử Test Gate toàn hệ thống**:
+     - Chạy `.\gradlew.bat testDebugUnitTest` thành công 100%.
+     - **Kết quả: 427/427 unit tests PASS 100% (0 failures, 0 skipped)**, vượt xa mốc 425+ tests của Tech Lead!
+- **Files thực tế đã sửa đổi / tạo mới**:
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersViewModel.kt`
+  - `app/src/test/java/com/finlux/app/presentation/wallet/WalletsViewModelTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/presentation/reminders/RemindersViewModelTest.kt` [NEW]
+  - `HANDOVER_LOG.md`
+
+### [Task-TECH-DEBT-PHASE-1] — Bảo vệ tính toàn vẹn tiền tệ (Shared Domain Validator & Reusable UI Controls)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Xây dựng bộ xác thực độc lập `WalletBalanceValidator.kt`**:
+     - Đặt tại `com.finlux.app.domain.validation`.
+     - Sealed Interface `WalletValidationResult` (`Valid`, `InsufficientFunds`, `CreditLimitExceeded`).
+     - Hàm `WalletBalanceValidator.validate(...)` và Extension `Wallet.validateSufficientFunds(...)` hỗ trợ `rollbackAmount` khi sửa giao dịch.
+  2. ✅ **Kiểm thử độc lập `WalletBalanceValidatorTest.kt`**:
+     - 7/7 test cases bao phủ 100% các ca biên: ví 0đ chi tiêu, ví không đủ tiền, ví vừa đủ, giao dịch thu nhập (luôn valid), thẻ tín dụng trong/vượt hạn mức, hoàn trả rollback khi sửa giao dịch.
+  3. ✅ **Nâng cấp Design System `FinluxFormControls.kt`**:
+     - `FinluxWalletSelector`: thêm tham số `validationResult` và `warningMessage`. Tự động đổi viền đỏ `tokens.error.copy(alpha = 0.6f)` và bung banner cảnh báo Liquid Glass `AnimatedVisibility` với icon `Icons.Default.Warning` và thông điệp lỗi rõ ràng.
+     - `FinluxTransferWalletPair`: thêm `sourceValidationResult`, tự động đổi viền đỏ và bung banner lỗi cho ví nguồn.
+     - Bổ sung property `val error: Color get() = FinluxColors.ExpenseRed` vào `FinluxDesignTokens` trong `FinluxTokens.kt` để toàn hệ thống dùng chung token lỗi.
+  4. ✅ **Tích hợp UseCase & Giao diện Chốt chặn**:
+     - `AddTransactionUseCase.kt`, `EditTransactionUseCase.kt`, `TransferMoneyUseCase.kt`: Tích hợp chốt chặn qua `validateSufficientFunds`, trả về `AppResult.Error` nếu thiếu số dư hoặc vượt hạn mức thẻ.
+     - `AddTransactionSheet.kt`: Truyền `validationResult` vào `FinluxWalletSelector`. Khóa cứng (disable) nút Lưu ở cả TopBar Check icon và nút Lưu đáy màn hình khi `walletValidationResult !is WalletValidationResult.Valid`.
+  5. ✅ **Kiểm thử tích hợp `TransactionValidationInsufficientFundsTest.kt`**:
+     - 7/7 test cases kiểm tra chốt chặn UseCase PASS 100%.
+     - Toàn bộ test suite đạt **413/413 unit tests PASS (100%)**, vượt mốc 410+ tests của Tech Lead!
+  6. ✅ **Đóng gói & Nạp thiết bị thật**:
+     - `.\gradlew.bat assembleDebug`: BUILD SUCCESSFUL.
+     - Đã nạp đè lên điện thoại qua ADB (`adb install -r app-debug.apk`) và khởi chạy MainActivity thành công.
+- **Files thực tế đã sửa đổi / tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/validation/WalletBalanceValidator.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/validation/WalletBalanceValidatorTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionValidationInsufficientFundsTest.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/core/designsystem/theme/FinluxTokens.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AddTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/EditTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/TransferMoneyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `docs/tech_debt_remediation_plan.md`
+  - `HANDOVER_LOG.md`
+
+### [Task-RESTORE-DECIMAL-MAGNITUDE-SCALING] — Chuẩn hóa thuật toán Decimal Magnitude Scaling thuần toán học (FORM_COMPONENTS_SPEC.md Mục 5)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Chuẩn hóa công thức thuần toán học (không ngoại lệ rẽ nhánh)**:
+     - Với bất kỳ số $N$ người dùng gõ vào: sinh các giá trị $V = N \times 10^k$ với $k$ nhỏ nhất sao cho $V \ge 1.000$đ đến $V \le 1.000.000.000$đ (1 tỷ VNĐ).
+     - Luôn lấy thứ tự từ nhỏ đến lớn (5 mốc đầu tiên):
+       * Gõ `"1"`   -> `[1.000, 10.000, 100.000, 1.000.000, 10.000.000]`.
+       * Gõ `"11"`  -> `[1.100, 11.000, 110.000, 1.100.000, 11.000.000]` (chắc chắn có mốc 1.100).
+       * Gõ `"12"`  -> `[1.200, 12.000, 120.000, 1.200.000, 12.000.000]` (chắc chắn có mốc 1.200).
+       * Gõ `"15"`  -> `[1.500, 15.000, 150.000, 1.500.000, 15.000.000]` (giữ nguyên mốc 1.500).
+       * Gõ `"356"` -> `[3.560, 35.600, 356.000, 3.560.000, 35.600.000]`.
+  2. ✅ **Chuẩn hóa 8 mốc mặc định khi rỗng hoặc bằng 0**:
+     - Hiển thị danh sách 8 mốc: `[50k, 100k, 200k, 500k, 1M, 2M, 5M, 10M]` (tuyệt đối không có dấu cộng `+`, bấm vào là gán đè trực tiếp).
+  3. ✅ **Kiểm thử Unit Test**:
+     - Cập nhật bộ test `AmountSuggestionsTest.kt` kiểm tra toàn bộ các ca biên `"1"`, `"11"`, `"12"`, `"15"`, `"3"`, `"35"`, `"356"`, `"3568"`, rỗng và 500 triệu.
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS (398/398 unit tests passed)**.
+  4. ✅ **Đóng gói & Nạp máy thật**:
+     - Đã chạy `.\scripts\build_and_install.ps1`: Build APK thành công (33.72 MB) và nạp đè lên thiết bị `adb-BM6HKBHEHQKFEMLR-prj23i._adb-tls-connect._tcp`, tự động mở app.
+- **Files thực tế đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountSuggestionsTest.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-AMOUNT-INPUT-STANDARDIZATION-PHASE-2] — Chuẩn hóa TransactionFilterBottomSheet & Tích hợp QuickChip trong DebtPaymentSheet
+- **Status**: `[DONE]`
+- **Phạm vi thực hiện (Thu hẹp theo chỉ thị Tech Lead)**:
+  1. ✅ **Nâng cấp hỗ trợ customChips**: Bổ sung `customChips: List<Pair<String, () -> Unit>>? = null` trong `FinluxAmountInput` và `ErgonomicCompactAmountCard`, cho phép truyền chip nghiệp vụ đặc thù trực tiếp vào control.
+  2. ✅ **TransactionFilterBottomSheet.kt**: Thay thế 2 ô `OutlinedTextField` thủ công ("Từ", "Đến") bằng 2 thẻ `ErgonomicCompactAmountCard` đồng bộ trong `Row`, giữ nguyên layout tinh gọn, hỗ trợ inline currency `₫`, auto-scaling font và clear button `[x]`.
+  3. ✅ **DebtPaymentSheet.kt**: Tích hợp 3 chip ("Tối thiểu", "50% nợ", "Tất toán hết") vào tham số `customChips` của `ErgonomicCompactAmountCard`, xóa bỏ hoàn toàn hàm `QuickChip` tự vẽ thủ công (Anti-Duplication).
+  4. ✅ **AddTransactionSheet.kt & các màn hình khác**: Đã dùng chuẩn `FinluxAmountInput` và `ErgonomicCompactAmountCard`, tự động kế thừa focus và Dynamic Semantic Tinting từ Phase 1. Giữ nguyên các màn hình khác đúng theo chỉ thị để tránh rủi ro hồi quy.
+  5. ✅ **Kết quả kiểm thử**:
+     - `.\gradlew.bat compileDebugKotlin`: **BUILD SUCCESSFUL**.
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS (394/394 unit tests passed, 0 failures, 0 skipped)**.
+- **Files thực tế đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionFilterBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-AMOUNT-INPUT-STANDARDIZATION-PHASE-1] — Nâng cấp Primitive Control trong FinluxFormControls.kt
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ Thêm `enum class AmountChipMode { INCREMENTAL, REPLACE_VALUE, MAGNITUDE_SCALING }`.
+  2. ✅ Nâng cấp `FinluxAmountInput`:
+     - Tự động bung/thu gọn dải chip theo Focus: `AnimatedVisibility(visible = shouldShowChips, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut())`.
+     - Tự động hóa màu sắc Chip theo ngữ cảnh (Dynamic Semantic Tinting): Tự suy diễn `chipContainerColor` (`amountColor.copy(alpha = 0.12f)`), `chipBorderColor` (`amountColor.copy(alpha = 0.30f)`), `chipContentColor` (`amountColor`).
+     - Hỗ trợ 3 chế độ chip linh hoạt (`INCREMENTAL`, `REPLACE_VALUE`, `MAGNITUDE_SCALING`).
+  3. ✅ Đồng bộ toàn bộ tham số mới sang `ErgonomicCompactAmountCard` và `FinluxAmountInputCard`.
+  4. ✅ Thêm bộ unit tests `AmountChipModeTest.kt` kiểm thử nhãn chip và thuật toán gợi ý.
+  5. ✅ Kết quả kiểm thử:
+     - `.\gradlew.bat compileDebugKotlin`: **BUILD SUCCESSFUL**.
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS (394/394 tests passed, 0 failures, 0 skipped)**.
+- **Files thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountChipModeTest.kt` [NEW]
 
 ### [Task-REMINDER-BADGE-TIERS-STATUS-DOT] — Đại tu toàn diện Pill Badge đếm ngược: Phân tầng 4 màu sắc & Status Dot
 - **Status**: `[DONE]`

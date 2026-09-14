@@ -237,42 +237,28 @@ fun DebtPaymentSheet(
                 }
             }
 
-            // 3. Compact Ergonomic Amount Input Card & Quick Chips
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ErgonomicCompactAmountCard(
-                    label = "TỔNG SỐ TIỀN TRẢ",
-                    amountText = amountText,
-                    onAmountChange = { amountText = it },
-                    placeholder = "0",
-                    amountColor = tokens.primary,
-                    showSuggestions = false,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                // Quick Chips: Tối thiểu | 50% nợ | Tất toán hết
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
+            val debtChips = remember(debt) {
+                buildList {
                     if (debt.minimumPayment.value > 0L) {
-                        QuickChip(
-                            label = "Tối thiểu",
-                            onClick = { amountText = debt.minimumPayment.value.toString() },
-                            modifier = Modifier.weight(1f),
-                        )
+                        add("Tối thiểu" to { amountText = debt.minimumPayment.value.toString() })
                     }
-                    QuickChip(
-                        label = "50% nợ",
-                        onClick = { amountText = (debt.remainingBalance.value / 2).toString() },
-                        modifier = Modifier.weight(1f),
-                    )
-                    QuickChip(
-                        label = "Tất toán hết",
-                        onClick = { amountText = debt.remainingBalance.value.toString() },
-                        modifier = Modifier.weight(1f),
-                    )
+                    add("50% nợ" to { amountText = (debt.remainingBalance.value / 2).toString() })
+                    add("Tất toán hết" to { amountText = debt.remainingBalance.value.toString() })
                 }
             }
+
+            // 3. Compact Ergonomic Amount Input Card with integrated debt action chips
+            ErgonomicCompactAmountCard(
+                label = "TỔNG SỐ TIỀN TRẢ",
+                amountText = amountText,
+                onAmountChange = { amountText = it },
+                placeholder = "0",
+                amountColor = tokens.primary,
+                showSuggestions = true,
+                showQuickChipsOnFocusOnly = false,
+                customChips = debtChips,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             // 4. Note (Placed right beneath Amount Input)
             ErgonomicInputRow(
@@ -400,38 +386,5 @@ fun DebtPaymentSheet(
             onSelectWallet = { wallet -> selectedWalletId = wallet.id },
             onDismiss = { showWalletPicker = false },
         )
-    }
-}
-
-@Composable
-private fun QuickChip(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val tokens = LocalFinluxTokens.current
-
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = tokens.surfaceSoft,
-        border = BorderStroke(1.dp, tokens.border),
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
-    ) {
-        Box(
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = tokens.onSurface,
-                textAlign = TextAlign.Center,
-            )
-        }
     }
 }

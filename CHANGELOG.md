@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.25.6] - 2026-09-14
+### Added
+- **Bảo Vệ Tính Toàn Vẹn Tiền Tệ (Financial Integrity & Shared Validation - Phase 1)**:
+  * Tạo bộ xác thực độc lập `WalletBalanceValidator.kt` tại tầng Domain: chặn chi tiêu/xuất tiền khi số dư ví tiền mặt, ngân hàng không đủ hoặc thẻ tín dụng vượt hạn mức tín dụng được cấp.
+  * Hỗ trợ cơ chế hoàn trả số dư nguyên tử (`rollbackAmount`) khi chỉnh sửa giao dịch chi tiêu cũ.
+  * Tích hợp chốt chặn an toàn vào toàn bộ các UseCase xuất tiền: `AddTransactionUseCase`, `EditTransactionUseCase`, `TransferMoneyUseCase`.
+  * Bộ kiểm thử độc lập: `WalletBalanceValidatorTest.kt` (7 tests) và `TransactionValidationInsufficientFundsTest.kt` (7 tests) PASS 100%.
+- **Nâng Cấp Design System & Controls Dùng Chung (Liquid Glass Form Controls)**:
+  * Tích hợp `validationResult` và banner cảnh báo Liquid Glass tự động (`AnimatedVisibility`) vào `FinluxWalletSelector` và `FinluxTransferWalletPair` trong `FinluxFormControls.kt`.
+  * Tự động đổi màu viền sang đỏ lỗi `tokens.error` khi ví thiếu tiền và tự động khóa cứng (disable) nút Lưu trên `AddTransactionSheet.kt`.
+- **Bịt Điểm Mù Kiểm Thử Tầng Presentation (Testing Coverage - Phase 2)**:
+  * Viết mới toàn diện `WalletsViewModelTest.kt` (8/8 tests PASS): Phân nhóm ví, tính Net Worth chuẩn xác (Tổng ví thường - Dư nợ thẻ tín dụng), chuyển tiền hợp lệ, chặn chuyển tiền khi thiếu số dư, bật/tắt ẩn số dư (`toggleHideBalance`), lưu trữ ví (`archiveWallet`), xóa ví.
+  * Bổ sung toàn diện `RemindersViewModelTest.kt` (6/6 tests PASS): Toggle bật/tắt kèm lập lịch/hủy báo thức native (`ReminderScheduler`), xóa nhắc nhở, phân giải Countdown Badge 4 Tiers (`OVERDUE`, `TODAY`, `TOMORROW`, `FUTURE`).
+  * Nâng tổng số lượng unit tests của toàn bộ hệ thống lên **427/427 unit tests PASS 100% (0 failures, 0 skipped)**.
+- **Dọn Dẹp Mã Nguồn & Bản Đồ Quan Hệ Quy Tắc (Modernization & Rule Matrix - Phase 3)**:
+  * Thiết lập tài liệu pháp lý kỹ thuật `docs/RULE_MAPPING_MATRIX.md` (Registry 15+ tài liệu, Tháp 5 cấp độ Hierarchy of Truth, Ma trận kích hoạt theo ngữ cảnh và Ma trận quan hệ chéo).
+  * Tạo `CategoryIconHelper.kt` gom toàn bộ logic phân giải icon/màu danh mục từ `ModernHomeScreen` và `ClassicHomeScreen`, triệt tiêu 100% hardcoded string literal sang `SystemCategories.kt`.
+  * Nâng cấp API @Deprecated của AndroidX và Compose: `hiltViewModel()` sang `androidx.hilt.lifecycle.viewmodel.compose`, `Icons.AutoMirrored.Filled.FormatListBulleted`, `Locale.Builder().setLanguage("vi").setRegion("VN").build()`.
+
+- **Hiến Pháp & Quản Trị Hệ Thống (Governance & Spec Parity Gate - Wave 2)**:
+  * Bổ sung Điều II.9 (Bắt buộc đồng bộ đặc tả ngược - Spec Parity Gate) và Điều II.10 (Triệt tiêu code cục bộ - Zero Local Duplication Gate) vào `AGENTS.md` và `docs/RULE_MAPPING_MATRIX.md`.
+  * Cập nhật Definition of Done (DoD) bổ sung tiêu chí kiểm soát Spec Parity và Shared Code.
+  * Đồng bộ toàn diện đặc tả: `docs/BA_SPEC.md` (BR-CAT-01 bảo vệ danh mục hệ thống mặc định, BR-WALLET-VAL-01 kiểm tra số dư khả dụng), `docs/FORM_COMPONENTS_SPEC.md` (cập nhật viền cảnh báo `FinluxWalletSelector`, auto-scaling font & Magnitude chips cho `FinluxAmountInput`), và `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (kiểm chứng múi giờ Tokyo / New York).
+- **Quy Hoạch Toàn Diện Shared Helpers & Triệt Tiêu Mã Trùng Lặp (DRY - Wave 2)**:
+  * Trích xuất `getTransactionSemanticColor`, `getTransactionIconBrush`, `getTransactionAmountPrefix` vào `FinluxTransactionComponents.kt`.
+  * Quy hoạch toàn diện chuẩn định dạng thời gian vào `FinanceTime.kt` (`formatTime`, `formatDateTime`, `formatDate`, `formatDateMonth`).
+  * Refactor triệt tiêu khối `when (type)` và logic format rải rác trên 7 màn hình/bottom sheet giao dịch (`PrismTransactionsScreen`, `WalletTransactionsBottomSheet`, `TransactionDetailSheet`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`, `WalletDetailBottomSheet`, `RemindersScreen`).
+- **Bịt Điểm Mù Kiểm Thử & Kiểm Thử Đa Múi Giờ (Testing Coverage Wave 2)**:
+  * Viết mới `DealsViewModelTest.kt` (9/9 tests PASS): Tải danh sách deal, phân loại theo trạng thái, luồng xuất/thu hồi vốn (`recordOutlay`, `recordInflow`), cập nhật tiến độ ROI/hoàn vốn, xác thực dữ liệu tạo deal.
+  * Viết mới `CategoriesViewModelTest.kt` (13/13 tests PASS): Tải danh mục Thu/Chi, tạo mới, chỉnh sửa, xóa danh mục tùy biến, chặn xóa/chặn sửa danh mục mặc định của hệ thống (`SystemCategories`).
+  * Viết mới `FinancialPeriodTimezoneTest.kt` (7/7 tests PASS): Kiểm thử tính toán kỳ tài chính chuẩn xác xuyên múi giờ quốc tế (`America/New_York`, `Asia/Tokyo`, `UTC`).
+  * Bảo toàn tỷ lệ vượt qua: **456 / 456 unit tests PASS 100% (0 failures, 0 skipped)**.
+
+### Changed
+- Cập nhật `versionCode = 180` và `versionName = "1.25.6"` trong `app/build.gradle.kts`.
+- Đồng bộ đặc tả kỹ thuật `docs/FORM_COMPONENTS_SPEC.md`, `docs/BACKLOG.md`, `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`, `docs/RULE_MAPPING_MATRIX.md` và `HANDOVER_LOG.md`.
+
 ## [1.25.5] - 2026-09-12
 ### Added
 - **Hệ Thống Lịch Sử Chu Kỳ Lương & Ngân Sách Đa Kỳ (Salary Cycle Timeline & Versioning - Phase 1)**:

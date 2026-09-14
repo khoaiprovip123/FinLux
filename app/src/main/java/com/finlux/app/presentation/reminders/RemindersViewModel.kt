@@ -67,4 +67,10 @@ class RemindersViewModel @Inject constructor(
     }
 
     fun consumeMessage() { action.value = action.value.first to null }
+
+    fun resolveCountdown(
+        reminder: Reminder,
+        now: java.time.Instant = java.time.Instant.now(),
+        zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
+    ) = com.finlux.app.core.time.formatReminderCountdown(reminder.nextTriggerDate, now, zone)
 }

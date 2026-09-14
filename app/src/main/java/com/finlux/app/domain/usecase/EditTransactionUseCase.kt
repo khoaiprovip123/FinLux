@@ -10,6 +10,8 @@ import com.finlux.app.domain.model.NotificationType
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.WalletType
+import com.finlux.app.domain.validation.WalletValidationResult
+import com.finlux.app.domain.validation.validateSufficientFunds
 import com.finlux.app.domain.repository.BudgetRepository
 import com.finlux.app.domain.repository.CategoryRepository
 import com.finlux.app.domain.repository.NotificationRepository
@@ -45,15 +47,19 @@ class EditTransactionUseCase @Inject constructor(
         if (updated.type == TransactionType.EXPENSE) {
             val wallets = walletRepository.observeWallets().firstOrNull().orEmpty()
             val wallet = wallets.firstOrNull { it.id == updated.walletId }
-            if (wallet != null && wallet.type != WalletType.CARD) {
-                val availableBalance = if (original.walletId == updated.walletId) {
-                    val refund = if (original.type == TransactionType.EXPENSE) original.amount.value else -original.amount.value
-                    wallet.balance.value + refund
-                } else {
-                    wallet.balance.value
-                }
-                if (availableBalance < updated.amount.value) {
-                    return AppResult.Error("Số dư ví [${wallet.name}] không đủ để thực hiện chi tiêu")
+            if (wallet != null) {
+                val refund = if (original.walletId == updated.walletId) {
+                    if (original.type == TransactionType.EXPENSE) original.amount.value else -original.amount.value
+                } else 0L
+
+                when (wallet.validateSufficientFunds(updated.amount.value, isExpense = true, rollbackAmount = refund)) {
+                    is WalletValidationResult.InsufficientFunds -> {
+                        return AppResult.Error("Số dư ví [${wallet.name}] không đủ để thực hiện chi tiêu")
+                    }
+                    is WalletValidationResult.CreditLimitExceeded -> {
+                        return AppResult.Error("Giao dịch vượt quá hạn mức thẻ tín dụng [${wallet.name}]")
+                    }
+                    is WalletValidationResult.Valid -> Unit
                 }
             }
         }

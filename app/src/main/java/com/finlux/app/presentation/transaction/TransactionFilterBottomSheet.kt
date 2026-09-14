@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon
@@ -304,26 +305,29 @@ fun TransactionFilterBottomSheet(
                         color = tokens.onSurfaceVariant,
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = tempMinimumAmount,
-                        onValueChange = { tempMinimumAmount = it.filter(Char::isDigit).take(15) },
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    ErgonomicCompactAmountCard(
+                        label = "TỪ",
+                        amountText = tempMinimumAmount,
+                        onAmountChange = { tempMinimumAmount = it.filter(Char::isDigit).take(15) },
+                        placeholder = "0",
+                        amountColor = tokens.primary,
+                        showSuggestions = false,
+                        amountFontSize = 16.sp,
                         modifier = Modifier.weight(1f),
-                        label = { Text("Từ") },
-                        suffix = { Text("đ") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(16.dp),
                     )
-                    OutlinedTextField(
-                        value = tempMaximumAmount,
-                        onValueChange = { tempMaximumAmount = it.filter(Char::isDigit).take(15) },
+                    ErgonomicCompactAmountCard(
+                        label = "ĐẾN",
+                        amountText = tempMaximumAmount,
+                        onAmountChange = { tempMaximumAmount = it.filter(Char::isDigit).take(15) },
+                        placeholder = "0",
+                        amountColor = tokens.primary,
+                        showSuggestions = false,
+                        amountFontSize = 16.sp,
                         modifier = Modifier.weight(1f),
-                        label = { Text("Đến") },
-                        suffix = { Text("đ") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(16.dp),
                     )
                 }
             }

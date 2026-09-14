@@ -59,6 +59,10 @@ import com.finlux.app.core.designsystem.component.FinluxBottomSheet
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxSoftCard
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.component.getTransactionAmountPrefix
+import com.finlux.app.core.designsystem.component.getTransactionIconBrush
+import com.finlux.app.core.designsystem.component.getTransactionSemanticColor
+import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.core.designsystem.findInstitutionForWallet
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
@@ -343,9 +347,9 @@ fun WalletTransactionsBottomSheet(
                     groupedTransactions.forEach { (date, txList) ->
                         item(key = "header_$date") {
                             val headerTitle = when (date) {
-                                today -> "Hôm nay, ${date.format(DateTimeFormatter.ofPattern("dd/MM"))}"
-                                yesterday -> "Hôm qua, ${date.format(DateTimeFormatter.ofPattern("dd/MM"))}"
-                                else -> date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                today -> "Hôm nay, ${FinanceTime.formatDateMonth(date)}"
+                                yesterday -> "Hôm qua, ${FinanceTime.formatDateMonth(date)}"
+                                else -> FinanceTime.formatDate(date)
                             }
 
                             Text(
@@ -463,11 +467,8 @@ private fun WalletTransactionCard(
     val isTransferOut = transaction.type == TransactionType.TRANSFER_OUT || (isTransfer && transaction.walletId == currentWalletId)
 
     // Xác định dấu và màu số tiền
-    val (amountPrefix, amountColor) = when {
-        isIncome -> "+" to FinluxColors.IncomeGreen
-        isTransfer -> if (isTransferOut) "−" to Color(0xFF3B82F6) else "+" to FinluxColors.IncomeGreen
-        else -> "−" to FinluxColors.ExpenseRed
-    }
+    val amountPrefix = getTransactionAmountPrefix(transaction.type, isTransferOut)
+    val amountColor = if (isTransfer && !isTransferOut) FinluxColors.IncomeGreen else getTransactionSemanticColor(transaction.type)
 
     val displayAmount = amountPrefix + formatVndAmount(transaction.amount.value).replace("đ", "₫")
 
@@ -481,28 +482,17 @@ private fun WalletTransactionCard(
         else -> if (isIncome) "Thu nhập" else "Chi tiêu"
     }
 
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     val timeText = remember(transaction.date, zone) {
-        transaction.date.atZone(zone).format(timeFormatter)
+        FinanceTime.formatTime(transaction.date, zone)
     }
 
-    val iconColorHex = category?.colorHex
-    val parsedColor = remember(iconColorHex) {
-        if (!iconColorHex.isNullOrBlank()) colorFromHex(iconColorHex) else null
-    }
-
-    val iconBackgroundBrush = remember(transaction.type, parsedColor) {
-        when {
-            isIncome -> Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF059669)))
-            isTransfer -> Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1)))
-            parsedColor != null -> Brush.linearGradient(listOf(parsedColor, parsedColor.copy(alpha = 0.85f)))
-            else -> Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626)))
-        }
+    val iconBackgroundBrush = remember(transaction.type, category?.colorHex) {
+        getTransactionIconBrush(transaction.type, category?.colorHex)
     }
 
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (tokens.isDark) tokens.surfaceSoft else Color.White,
+        color = if (tokens.isDark) tokens.surfaceSoft else tokens.surface,
         border = BorderStroke(1.dp, tokens.border),
         shadowElevation = if (tokens.isDark) 0.dp else 1.dp,
         modifier = modifier

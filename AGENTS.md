@@ -84,6 +84,17 @@ Trước khi chạm vào bất kỳ file code (`.kt`) nào, agent bắt buộc p
 - Quy tắc trường bất biến (Immutability Pattern): Dùng chuẩn `(!('<field>' in request.resource.data) || request.resource.data.<field> == resource.data.<field>)`.
 - Pre-commit Gate: Chạy `npm --prefix functions run check` và test trong `functions/test/firestore.rules.test.ts`.
 
+### 9. BẮT BUỘC ĐỒNG BỘ ĐẶC TẢ NGƯỢC (MANDATORY SPEC PARITY GATE)
+- Bất kỳ thay đổi nào về Logic nghiệp vụ (Domain rules, Validators, Constraints, Invariants) PHẢI được cập nhật đồng thời vào `docs/BA_SPEC.md` và `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`.
+- Bất kỳ thay đổi/nâng cấp nào về tham số, hành vi, hoặc visual của UI Controls PHẢI được ghi nhận lại vào `docs/FORM_COMPONENTS_SPEC.md` hoặc `docs/UI_SPEC.md`.
+- Bất kỳ thay đổi về Schema/DTO PHẢI cập nhật vào `docs/DATA_SPEC.md`.
+- Nghiêm cấm tình trạng "Code chạy trước, tài liệu để sau". Task chỉ được coi là hoàn thành khi Code và Spec khớp nhau 100%.
+
+### 10. TRIỆT TIÊU CODE CỤC BỘ & QUY HOẠCH MÃ DÙNG CHUNG (ZERO LOCAL DUPLICATION / DRY GATE)
+- Tuyệt đối cấm viết logic phân loại, mapping màu sắc, giải quyết icon (`when (type)`, `when (categoryId)`), hoặc tự định dạng tiền tệ/thời gian thủ công rải rác trong các file Composable UI.
+- Mọi logic ánh xạ và chuyển đổi dữ liệu hiển thị BẮT BUỘC phải quy hoạch tập trung tại `core/common` (ví dụ `CategoryIconHelper`, `FinanceTime`) hoặc `core/designsystem` (`TransactionSemantics`, `FinluxTokens`).
+- Khi phát hiện cùng một logic mapping/formatting xuất hiện từ 2 vị trí trở lên, agent BẮT BUỘC phải trích xuất thành Shared Helper/Extension trước khi implement tính năng mới.
+
 ---
 
 ## 📋 PHẦN III: QUY TRÌNH QUẢN LÝ TÀI LIỆU (DOCUMENTATION SOP)
@@ -104,7 +115,9 @@ Khi nhận lệnh release, đóng gói hoặc bàn giao:
 3. **CHANGELOG SYNC:** Cập nhật `CHANGELOG.md` và `HANDOVER_LOG.md`.
 4. **BUILD APK:** Chạy `.\gradlew.bat assembleDebug`.
 5. **ADB DEPLOYMENT:** Nạp APK lên thiết bị (`adb install -r ...`) và bật app (`am start ...`).
-6. **PHYSICAL DEVICE ACCEPTANCE:** Tự đối chiếu Checklist 5 điểm:
+6. **PHYSICAL DEVICE ACCEPTANCE & DEFINITION OF DONE:** Tự đối chiếu Checklist chuẩn:
+   - [ ] *Spec Parity:* Đã cập nhật đầy đủ các file đặc tả liên quan trong `docs/` chưa?
+   - [ ] *Shared Code:* Đã trích xuất logic mapping/helper dùng chung về `core/common` hoặc `core/designsystem` chưa?
    - [ ] *Theme check:* Đẹp ở cả Dark Mode và Light Mode.
    - [ ] *Large Number check:* Tiền trăm triệu đến chục tỷ tự động co font, không tràn layout.
    - [ ] *Keyboard IME check:* Bàn phím số không che khuất ô nhập và nút hành động.

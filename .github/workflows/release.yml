@@ -86,15 +86,16 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
             echo "Decoding private release keystore from GitHub secrets..."
-            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.keystore
-            echo "FINLUX_KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
+            KEYSTORE_FILE="${RUNNER_TEMP:-/tmp}/release.keystore"
+            echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE"
+            echo "FINLUX_KEYSTORE_PATH=${KEYSTORE_FILE}" >> $GITHUB_ENV
             echo "FINLUX_KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> $GITHUB_ENV
             echo "FINLUX_KEY_ALIAS=${KEY_ALIAS}" >> $GITHUB_ENV
             echo "FINLUX_KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
             echo "HAS_RELEASE_KEY=true" >> $GITHUB_ENV
           else
             echo "GitHub release secrets not found. Falling back to embedded gradle/debug.keystore..."
-            echo "FINLUX_KEYSTORE_PATH=gradle/debug.keystore" >> $GITHUB_ENV
+            echo "FINLUX_KEYSTORE_PATH=${GITHUB_WORKSPACE}/gradle/debug.keystore" >> $GITHUB_ENV
             echo "FINLUX_KEYSTORE_PASSWORD=android" >> $GITHUB_ENV
             echo "FINLUX_KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
             echo "FINLUX_KEY_PASSWORD=android" >> $GITHUB_ENV
@@ -107,7 +108,7 @@ jobs:
       - name: Clean up Keystore Secret File
         if: always()
         run: |
-          rm -f /tmp/release.keystore
+          rm -f "${RUNNER_TEMP:-/tmp}/release.keystore" /tmp/release.keystore
 
       - name: Package Release Artifacts & Generate Checksums
         run: |

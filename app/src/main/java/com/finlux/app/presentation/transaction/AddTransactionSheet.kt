@@ -11,6 +11,8 @@ import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
 import com.finlux.app.core.designsystem.component.form.FinluxNoteInput
 import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.form.FinluxWalletSelector
+import com.finlux.app.domain.validation.WalletValidationResult
+import com.finlux.app.domain.validation.validateSufficientFunds
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -176,29 +178,32 @@ fun AddTransactionSheet(
     val activeCategory = state.categories.firstOrNull { it.id == state.categoryId }
     val activeWallet = state.wallets.firstOrNull { it.id == state.walletId }
     val enteredAmountValue = state.amountInput.toLongOrNull() ?: 0L
-    val isCreditCard = activeWallet?.type == WalletType.CARD
 
-    val isInsufficientBalance = isExpense && !isCreditCard && activeWallet != null && (
-        (state.editingTransaction == null && (activeWallet.balance.value <= 0L || (enteredAmountValue > 0L && enteredAmountValue > activeWallet.balance.value))) ||
-        (state.editingTransaction != null && run {
-            val original = state.editingTransaction
-            val available = if (original.walletId == activeWallet.id) {
-                val refund = if (original.type == TransactionType.EXPENSE) original.amount.value else -original.amount.value
-                activeWallet.balance.value + refund
+    val rollbackAmount = if (state.editingTransaction != null && state.editingTransaction.walletId == activeWallet?.id) {
+        if (state.editingTransaction.type == TransactionType.EXPENSE) state.editingTransaction.amount.value else -state.editingTransaction.amount.value
+    } else 0L
+
+    val walletValidationResult = activeWallet?.validateSufficientFunds(
+        amount = enteredAmountValue,
+        isExpense = isExpense,
+        rollbackAmount = rollbackAmount,
+    ) ?: WalletValidationResult.Valid
+
+    val isInsufficientBalance = walletValidationResult !is WalletValidationResult.Valid
+
+    val balanceErrorMessage = when (walletValidationResult) {
+        is WalletValidationResult.InsufficientFunds -> {
+            if (walletValidationResult.available <= 0L) {
+                "Ví [${walletValidationResult.walletName}] đã hết số dư (${formatVndAmount(walletValidationResult.available)})"
             } else {
-                activeWallet.balance.value
+                "Số dư ví [${walletValidationResult.walletName}] không đủ để chi tiêu (Khả dụng: ${formatVndAmount(walletValidationResult.available)})"
             }
-            available <= 0L || (enteredAmountValue > 0L && enteredAmountValue > available)
-        })
-    )
-
-    val balanceErrorMessage = if (isInsufficientBalance && activeWallet != null) {
-        if (activeWallet.balance.value <= 0L && state.editingTransaction == null) {
-            "Ví [${activeWallet.name}] đã hết số dư (${formatVndAmount(activeWallet.balance.value)})"
-        } else {
-            "Số dư ví [${activeWallet.name}] không đủ để chi tiêu (Khả dụng: ${formatVndAmount(activeWallet.balance.value)})"
         }
-    } else null
+        is WalletValidationResult.CreditLimitExceeded -> {
+            "Vượt hạn mức thẻ tín dụng (Hạn mức: ${formatVndAmount(walletValidationResult.creditLimit)})"
+        }
+        is WalletValidationResult.Valid -> null
+    }
 
     var showDiscardDialog by remember { mutableStateOf(false) }
     val hasUnsavedChanges = enteredAmountValue > 0L || state.note.isNotBlank()
@@ -392,7 +397,7 @@ fun AddTransactionSheet(
                     label = if (isExpense) "VÍ THANH TOÁN" else "VÍ NHẬN TIỀN",
                     selectedWallet = activeWallet,
                     onClick = { showWalletPicker = true },
-                    isError = isInsufficientBalance,
+                    validationResult = walletValidationResult,
                 )
 
                 // Hàng 4: Thời gian giao dịch (Standard FinluxDateTimePicker)

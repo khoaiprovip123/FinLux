@@ -86,7 +86,6 @@ fun WalletDetailBottomSheet(
         WalletType.INVESTMENT -> "Đầu tư / Tiết kiệm"
         WalletType.OTHER -> "Khác"
     }
-    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
 
     val displayedTransactions = if (selectedCategoryFilterId != null) {
         detail.transactions.filter { it.categoryId == selectedCategoryFilterId }
@@ -571,7 +570,7 @@ fun WalletDetailBottomSheet(
                         val isTransferOut = tx.type == TransactionType.TRANSFER_OUT
                         val isTransferIn = tx.type == TransactionType.TRANSFER_IN
                         val isTransfer = isTransferOut || isTransferIn
-                        val txDateStr = tx.date.atZone(FinanceTime.VIETNAM_ZONE).format(dateFormatter)
+                        val txDateStr = FinanceTime.formatDateTime(tx.date, FinanceTime.VIETNAM_ZONE)
 
                         val amountColor = when {
                             isIncome -> Color(0xFF10B981)

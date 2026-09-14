@@ -91,6 +91,7 @@ import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.Wallet
+import com.finlux.app.domain.validation.WalletValidationResult
 import java.text.DecimalFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -288,14 +289,14 @@ fun generateAmountSuggestions(rawInput: String): List<Pair<String, String>> {
 
     if (baseNumber <= 0L) {
         return listOf(
-            "50.000" to "50000",
-            "100.000" to "100000",
-            "200.000" to "200000",
-            "500.000" to "500000",
-            "1.000.000" to "1000000",
-            "2.000.000" to "2000000",
-            "5.000.000" to "5000000",
-            "10.000.000" to "10000000",
+            "50k" to "50000",
+            "100k" to "100000",
+            "200k" to "200000",
+            "500k" to "500000",
+            "1M" to "1000000",
+            "2M" to "2000000",
+            "5M" to "5000000",
+            "10M" to "10000000",
         )
     }
 
@@ -303,16 +304,9 @@ fun generateAmountSuggestions(rawInput: String): List<Pair<String, String>> {
     val maxLimit = 1_000_000_000L // 1 tỷ VNĐ
     val maxChips = 5
 
-    val startK = when {
-        baseNumber < 10L -> 3
-        baseNumber < 100L -> 2
-        baseNumber < 1_000L -> 1
-        else -> 1
-    }
-
     val list = mutableListOf<Pair<String, String>>()
-    var currentMultiplier = 1L
-    for (i in 0 until startK) {
+    var currentMultiplier = 10L
+    while (baseNumber * currentMultiplier < minTarget && currentMultiplier <= maxLimit) {
         currentMultiplier *= 10L
     }
 
@@ -374,9 +368,38 @@ class VndSuffixVisualTransformation(
 }
 
 /**
+ * Chế độ hiển thị và hành vi của dải Chip gợi ý số tiền trong [FinluxAmountInput].
+ */
+enum class AmountChipMode {
+    /** Cộng dồn giá trị (+50k, +100k, +500k, +1tr, +2tr...) */
+    INCREMENTAL,
+    /** Thay thế giá trị bằng mốc tuyệt đối (50k, 100k, 200k, 500k, 1tr...) */
+    REPLACE_VALUE,
+    /** Tự động nhân theo cấp số nhân với chuỗi số đang gõ (N x 10^k) */
+    MAGNITUDE_SCALING,
+}
+
+internal fun formatChipAmountLabel(amt: Long, isIncremental: Boolean): String {
+    val prefix = if (isIncremental) "+" else ""
+    return when {
+        amt >= 1_000_000_000L && amt % 1_000_000_000L == 0L -> "${prefix}${amt / 1_000_000_000L} tỷ"
+        amt >= 1_000_000_000L -> "${prefix}${amt / 1_000_000_000f} tỷ"
+        amt >= 1_000_000L && amt % 1_000_000L == 0L -> "${prefix}${amt / 1_000_000L}tr"
+        amt >= 1_000_000L -> "${prefix}${amt / 1_000_000f}tr"
+        amt >= 1_000L && amt % 1_000L == 0L -> "${prefix}${amt / 1_000L}k"
+        amt >= 1_000L -> "${prefix}${amt / 1_000f}k"
+        else -> "$prefix$amt"
+    }
+}
+
+internal fun generateMagnitudeSuggestions(currentDigits: String): List<Long> {
+    return generateAmountSuggestions(currentDigits).mapNotNull { it.second.toLongOrNull() }
+}
+
+/**
  * Standard Finlux Amount Input Control.
  * Realtime Vietnamese Dot Separator Formatting (e.g. 100.000), inline ₫ symbol,
- * dynamic responsive font size downscaling, clear button, and quick suggestion chips.
+ * dynamic responsive font size downscaling, clear button, and focus-driven quick suggestion chips.
  */
 @Composable
 fun FinluxAmountInput(
@@ -388,7 +411,13 @@ fun FinluxAmountInput(
     amountColor: Color = LocalFinluxTokens.current.primary,
     amountFontSize: TextUnit = 32.sp,
     quickAmounts: List<Long>? = null,
+    chipMode: AmountChipMode = AmountChipMode.MAGNITUDE_SCALING,
+    chipContainerColor: Color? = null,
+    chipBorderColor: Color? = null,
+    chipContentColor: Color? = null,
+    showQuickChipsOnFocusOnly: Boolean = true,
     leadingActionChip: Pair<String, () -> Unit>? = null,
+    customChips: List<Pair<String, () -> Unit>>? = null,
     warningMessage: String? = null,
     showQuickChips: Boolean = true,
     isReadOnly: Boolean = false,
@@ -410,7 +439,17 @@ fun FinluxAmountInput(
     val defaultQuickAmounts = remember {
         listOf(50_000L, 100_000L, 200_000L, 500_000L, 1_000_000L, 2_000_000L)
     }
-    val effectiveQuickAmounts = quickAmounts ?: defaultQuickAmounts
+    val magnitudeSuggestions = remember(cleanDigits) {
+        generateAmountSuggestions(cleanDigits)
+    }
+    val effectiveQuickAmounts = remember(chipMode, quickAmounts) {
+        quickAmounts ?: defaultQuickAmounts
+    }
+
+    // Dynamic Semantic Tinting: Tự động suy diễn màu dải chip từ amountColor
+    val resolvedChipContainer = chipContainerColor ?: amountColor.copy(alpha = 0.12f)
+    val resolvedChipBorder = chipBorderColor ?: amountColor.copy(alpha = 0.30f)
+    val resolvedChipContent = chipContentColor ?: amountColor
 
     Surface(
         shape = RoundedCornerShape(22.dp),
@@ -533,8 +572,14 @@ fun FinluxAmountInput(
                 )
             }
 
-            // Quick suggestion chips
-            if (showQuickChips && !isReadOnly && enabled) {
+            // Quick suggestion chips with Focus animation
+            val shouldShowChips = showQuickChips && !isReadOnly && enabled && (!showQuickChipsOnFocusOnly || isFocused)
+
+            AnimatedVisibility(
+                visible = shouldShowChips,
+                enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            ) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -547,8 +592,8 @@ fun FinluxAmountInput(
                         item {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = tokens.primary.copy(alpha = 0.14f),
-                                border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.3f)),
+                                color = resolvedChipContainer,
+                                border = BorderStroke(1.dp, resolvedChipBorder),
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
                                     .clickable(onClick = leadingActionChip.second),
@@ -558,7 +603,7 @@ fun FinluxAmountInput(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = tokens.primary,
+                                        color = resolvedChipContent,
                                         fontSize = 12.sp,
                                     ),
                                 )
@@ -566,36 +611,87 @@ fun FinluxAmountInput(
                         }
                     }
 
-                    // Incremental Quick Amount Chips
-                    items(effectiveQuickAmounts) { amt ->
-                        val chipText = when {
-                            amt >= 1_000_000L && amt % 1_000_000L == 0L -> "+${amt / 1_000_000L}tr"
-                            amt >= 1_000_000L -> "+${amt / 1_000_000f}tr"
-                            amt >= 1_000L -> "+${amt / 1_000L}k"
-                            else -> "+$amt"
+                    // Custom Action Chips (e.g. "Tối thiểu", "50% nợ", "Tất toán hết")
+                    if (customChips != null) {
+                        items(customChips) { chip ->
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = resolvedChipContainer,
+                                border = BorderStroke(1.dp, resolvedChipBorder),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(onClick = chip.second),
+                            ) {
+                                Text(
+                                    text = chip.first,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = resolvedChipContent,
+                                        fontSize = 12.sp,
+                                    ),
+                                )
+                            }
                         }
+                    } else if (chipMode == AmountChipMode.MAGNITUDE_SCALING) {
+                        // Smart Decimal Magnitude Scaling Chips ([50k, 100k, ...] or [12.000, 120.000, ...])
+                        items(magnitudeSuggestions) { suggestion ->
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = resolvedChipContainer,
+                                border = BorderStroke(1.dp, resolvedChipBorder),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        onAmountChange(suggestion.second)
+                                    },
+                            ) {
+                                Text(
+                                    text = suggestion.first,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = resolvedChipContent,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 12.sp,
+                                    ),
+                                )
+                            }
+                        }
+                    } else {
+                        // Quick Amount Chips (INCREMENTAL or REPLACE_VALUE)
+                        items(effectiveQuickAmounts) { amt ->
+                            val isIncremental = chipMode == AmountChipMode.INCREMENTAL
+                            val chipText = formatChipAmountLabel(amt, isIncremental)
 
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = tokens.surface,
-                            border = BorderStroke(1.dp, tokens.border),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable {
-                                    val currentVal = cleanDigits.toLongOrNull() ?: 0L
-                                    val updated = currentVal + amt
-                                    onAmountChange(updated.toString())
-                                },
-                        ) {
-                            Text(
-                                text = chipText,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = tokens.onSurface,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 12.sp,
-                                ),
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = resolvedChipContainer,
+                                border = BorderStroke(1.dp, resolvedChipBorder),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        when (chipMode) {
+                                            AmountChipMode.INCREMENTAL -> {
+                                                val currentVal = cleanDigits.toLongOrNull() ?: 0L
+                                                val updated = currentVal + amt
+                                                onAmountChange(updated.toString())
+                                            }
+                                            AmountChipMode.REPLACE_VALUE, AmountChipMode.MAGNITUDE_SCALING -> {
+                                                onAmountChange(amt.toString())
+                                            }
+                                        }
+                                    },
+                            ) {
+                                Text(
+                                    text = chipText,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = resolvedChipContent,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 12.sp,
+                                    ),
+                                )
+                            }
                         }
                     }
                 }
@@ -718,106 +814,164 @@ fun FinluxWalletSelector(
     subtitle: String? = null,
     isError: Boolean = false,
     enabled: Boolean = true,
+    validationResult: WalletValidationResult = WalletValidationResult.Valid,
+    warningMessage: String? = null,
 ) {
     val tokens = LocalFinluxTokens.current
+    val hasViolation = isError || validationResult !is WalletValidationResult.Valid || warningMessage != null
 
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = tokens.surfaceSoft,
-        border = BorderStroke(
-            1.dp,
-            if (isError) Color(0xFFEF4444).copy(alpha = 0.5f) else tokens.border,
-        ),
-        shadowElevation = 1.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(
-                enabled = enabled,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = true),
-                onClick = onClick,
+    val resolvedWarning = warningMessage ?: when (validationResult) {
+        is WalletValidationResult.InsufficientFunds -> {
+            if (validationResult.available <= 0L) {
+                "Ví [${validationResult.walletName}] đã hết số dư (Hiện có: ${formatVndAmount(validationResult.available)})"
+            } else {
+                "Số dư ví [${validationResult.walletName}] không đủ (Hiện có: ${formatVndAmount(validationResult.available)} - Cần: ${formatVndAmount(validationResult.required)})"
+            }
+        }
+        is WalletValidationResult.CreditLimitExceeded -> {
+            "Vượt hạn mức thẻ tín dụng (Hạn mức: ${formatVndAmount(validationResult.creditLimit)} - Dự kiến: ${formatVndAmount(validationResult.newDebt)})"
+        }
+        is WalletValidationResult.Valid -> null
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = tokens.surfaceSoft,
+            border = BorderStroke(
+                1.dp,
+                if (hasViolation) tokens.error.copy(alpha = 0.6f) else tokens.border,
             ),
-    ) {
-        Row(
+            shadowElevation = 1.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .clip(RoundedCornerShape(18.dp))
+                .clickable(
+                    enabled = enabled,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(bounded = true),
+                    onClick = onClick,
+                ),
         ) {
-            // Wallet Logo or Badge
-            if (selectedWallet != null) {
-                FinancialInstitutionLogo(
-                    institution = findInstitutionForWallet(selectedWallet.name),
-                    walletType = selectedWallet.type,
-                    customColorHex = selectedWallet.colorHex,
-                    size = 42.dp,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Wallet Logo or Badge
+                if (selectedWallet != null) {
+                    FinancialInstitutionLogo(
+                        institution = findInstitutionForWallet(selectedWallet.name),
+                        walletType = selectedWallet.type,
+                        customColorHex = selectedWallet.colorHex,
+                        size = 42.dp,
+                    )
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = tokens.primary.copy(alpha = 0.12f),
+                        modifier = Modifier.size(42.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = tokens.primary,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    Text(
+                        text = label.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                        ),
+                        color = tokens.onSurfaceVariant,
+                    )
+                    Text(
+                        text = selectedWallet?.name ?: placeholder,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = if (selectedWallet != null) tokens.onSurface else tokens.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val effectiveSubtitle = subtitle ?: selectedWallet?.let {
+                        "Số dư: ${formatVndAmount(it.balance.value)}"
+                    }
+                    if (effectiveSubtitle != null) {
+                        Text(
+                            text = effectiveSubtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = if (hasViolation) tokens.error else tokens.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = null,
+                    tint = Color(0xFF9CA3AF),
+                    modifier = Modifier.size(14.dp),
                 )
-            } else {
+            }
+        }
+
+        // Liquid Glass Warning Banner
+        AnimatedVisibility(
+            visible = resolvedWarning != null,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            if (resolvedWarning != null) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = tokens.primary.copy(alpha = 0.12f),
-                    modifier = Modifier.size(42.dp),
+                    color = tokens.error.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.25f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
+                            imageVector = Icons.Default.Warning,
                             contentDescription = null,
-                            tint = tokens.primary,
-                            modifier = Modifier.size(22.dp),
+                            tint = tokens.error,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = resolvedWarning,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = tokens.error,
                         )
                     }
                 }
             }
-
-            Spacer(Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                Text(
-                    text = label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                    ),
-                    color = tokens.onSurfaceVariant,
-                )
-                Text(
-                    text = selectedWallet?.name ?: placeholder,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = if (selectedWallet != null) tokens.onSurface else tokens.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                val effectiveSubtitle = subtitle ?: selectedWallet?.let {
-                    "Số dư: ${formatVndAmount(it.balance.value)}"
-                }
-                if (effectiveSubtitle != null) {
-                    Text(
-                        text = effectiveSubtitle,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                        color = if (isError) Color(0xFFEF4444) else tokens.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                contentDescription = null,
-                tint = Color(0xFF9CA3AF),
-                modifier = Modifier.size(14.dp),
-            )
         }
     }
 }
@@ -838,13 +992,28 @@ fun FinluxTransferWalletPair(
     destSubtitle: String? = null,
     isSourceError: Boolean = false,
     errorMessage: String? = null,
+    sourceValidationResult: WalletValidationResult = WalletValidationResult.Valid,
 ) {
     val tokens = LocalFinluxTokens.current
+    val resolvedSourceWarning = errorMessage ?: when (sourceValidationResult) {
+        is WalletValidationResult.InsufficientFunds -> {
+            if (sourceValidationResult.available <= 0L) {
+                "Ví [${sourceValidationResult.walletName}] đã hết số dư"
+            } else {
+                "Số dư ví [${sourceValidationResult.walletName}] không đủ để chuyển"
+            }
+        }
+        is WalletValidationResult.CreditLimitExceeded -> {
+            "Chuyển tiền vượt quá hạn mức thẻ tín dụng"
+        }
+        is WalletValidationResult.Valid -> null
+    }
+    val hasSourceViolation = isSourceError || sourceValidationResult !is WalletValidationResult.Valid || resolvedSourceWarning != null
 
     Surface(
         shape = RoundedCornerShape(22.dp),
         color = tokens.surfaceSoft,
-        border = BorderStroke(1.dp, if (errorMessage != null) Color(0xFFEF4444).copy(alpha = 0.4f) else tokens.border),
+        border = BorderStroke(1.dp, if (hasSourceViolation) tokens.error.copy(alpha = 0.5f) else tokens.border),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -902,7 +1071,7 @@ fun FinluxTransferWalletPair(
                     Text(
                         text = sourceSubtitle ?: "Khả dụng: ${formatVndAmount(sourceWallet?.balance?.value ?: 0L)}",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                        color = if (isSourceError) Color(0xFFEF4444) else tokens.onSurfaceVariant,
+                        color = if (hasSourceViolation) tokens.error else tokens.onSurfaceVariant,
                     )
                 }
                 Icon(
@@ -978,13 +1147,13 @@ fun FinluxTransferWalletPair(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color(0xFF10B981).copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                            .background(tokens.primary.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.AccountBalanceWallet,
                             contentDescription = null,
-                            tint = Color(0xFF10B981),
+                            tint = tokens.primary,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -1009,12 +1178,40 @@ fun FinluxTransferWalletPair(
                 )
             }
 
-            if (errorMessage != null) {
-                Text(
-                    text = errorMessage,
-                    color = Color(0xFFEF4444),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-                )
+            AnimatedVisibility(
+                visible = resolvedSourceWarning != null,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                if (resolvedSourceWarning != null) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = tokens.error.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.25f)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = tokens.error,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Text(
+                                text = resolvedSourceWarning,
+                                color = tokens.error,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -1032,7 +1229,13 @@ fun FinluxAmountInputCard(
     label: String = "Số tiền",
     primaryColor: Color = LocalFinluxTokens.current.primary,
     quickAmounts: List<Long> = listOf(500_000L, 1_000_000L, 2_000_000L, 5_000_000L, 10_000_000L),
+    chipMode: AmountChipMode = AmountChipMode.INCREMENTAL,
+    chipContainerColor: Color? = null,
+    chipBorderColor: Color? = null,
+    chipContentColor: Color? = null,
+    customChips: List<Pair<String, () -> Unit>>? = null,
     showQuickChips: Boolean = true,
+    showQuickChipsOnFocusOnly: Boolean = true,
     showCalculator: Boolean = false,
     onCalculatorClick: (() -> Unit)? = null,
 ) {
@@ -1042,7 +1245,13 @@ fun FinluxAmountInputCard(
         label = label,
         amountColor = primaryColor,
         quickAmounts = quickAmounts,
+        chipMode = chipMode,
+        chipContainerColor = chipContainerColor,
+        chipBorderColor = chipBorderColor,
+        chipContentColor = chipContentColor,
+        customChips = customChips,
         showQuickChips = showQuickChips,
+        showQuickChipsOnFocusOnly = showQuickChipsOnFocusOnly,
         modifier = modifier,
     )
 }
@@ -1059,10 +1268,20 @@ fun ErgonomicCompactAmountCard(
     placeholder: String = "0",
     amountColor: Color = LocalFinluxTokens.current.primary,
     showSuggestions: Boolean = true,
+    showQuickChipsOnFocusOnly: Boolean = true,
+    chipMode: AmountChipMode = AmountChipMode.MAGNITUDE_SCALING,
+    chipContainerColor: Color? = null,
+    chipBorderColor: Color? = null,
+    chipContentColor: Color? = null,
+    quickAmounts: List<Long>? = null,
+    leadingActionChip: Pair<String, () -> Unit>? = null,
+    customChips: List<Pair<String, () -> Unit>>? = null,
+    warningMessage: String? = null,
     amountFontSize: TextUnit = 24.sp,
     modifier: Modifier = Modifier,
     isReadOnly: Boolean = onAmountChange == null,
     enabled: Boolean = true,
+    maxDigits: Int = 13,
 ) {
     FinluxAmountInput(
         amountText = amountText,
@@ -1072,8 +1291,18 @@ fun ErgonomicCompactAmountCard(
         amountColor = amountColor,
         amountFontSize = amountFontSize,
         showQuickChips = showSuggestions,
+        showQuickChipsOnFocusOnly = showQuickChipsOnFocusOnly,
+        chipMode = chipMode,
+        chipContainerColor = chipContainerColor,
+        chipBorderColor = chipBorderColor,
+        chipContentColor = chipContentColor,
+        quickAmounts = quickAmounts,
+        leadingActionChip = leadingActionChip,
+        customChips = customChips,
+        warningMessage = warningMessage,
         isReadOnly = isReadOnly,
         enabled = enabled,
+        maxDigits = maxDigits,
         modifier = modifier,
     )
 }

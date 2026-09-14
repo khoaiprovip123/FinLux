@@ -17,8 +17,15 @@ val releaseKeystorePath = System.getenv("FINLUX_KEYSTORE_PATH")
 val releaseKeystorePassword = System.getenv("FINLUX_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("FINLUX_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("FINLUX_KEY_PASSWORD")
-val hasReleaseSigningConfig = !releaseKeystorePath.isNullOrBlank() &&
-    file(releaseKeystorePath).exists() &&
+
+// Hỗ trợ phân giải linh hoạt: đường dẫn tuyệt đối, tương đối module 'app', hoặc tương đối rootProject
+val resolvedReleaseKeystoreFile = releaseKeystorePath?.takeIf { it.isNotBlank() }?.let { p ->
+    val direct = file(p)
+    if (direct.exists()) direct else rootProject.file(p).takeIf { it.exists() }
+}
+
+val hasReleaseSigningConfig = resolvedReleaseKeystoreFile != null &&
+    resolvedReleaseKeystoreFile.exists() &&
     !releaseKeystorePassword.isNullOrBlank() &&
     !releaseKeyAlias.isNullOrBlank() &&
     !releaseKeyPassword.isNullOrBlank()
@@ -33,8 +40,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 179
-        versionName = "1.25.5"
+        versionCode = 180
+        versionName = "1.25.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -50,9 +57,9 @@ android {
                 keyPassword = "android"
             }
         }
-        if (hasReleaseSigningConfig) {
+        if (hasReleaseSigningConfig && resolvedReleaseKeystoreFile != null) {
             create("release") {
-                storeFile = file(requireNotNull(releaseKeystorePath))
+                storeFile = resolvedReleaseKeystoreFile
                 storePassword = releaseKeystorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword
