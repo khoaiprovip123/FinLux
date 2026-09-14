@@ -18,6 +18,62 @@
 - [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
 
+### [Task-RESTORE-DECIMAL-MAGNITUDE-SCALING] — Chuẩn hóa thuật toán Decimal Magnitude Scaling thuần toán học (FORM_COMPONENTS_SPEC.md Mục 5)
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Chuẩn hóa công thức thuần toán học (không ngoại lệ rẽ nhánh)**:
+     - Với bất kỳ số $N$ người dùng gõ vào: sinh các giá trị $V = N \times 10^k$ với $k$ nhỏ nhất sao cho $V \ge 1.000$đ đến $V \le 1.000.000.000$đ (1 tỷ VNĐ).
+     - Luôn lấy thứ tự từ nhỏ đến lớn (5 mốc đầu tiên):
+       * Gõ `"1"`   -> `[1.000, 10.000, 100.000, 1.000.000, 10.000.000]`.
+       * Gõ `"11"`  -> `[1.100, 11.000, 110.000, 1.100.000, 11.000.000]` (chắc chắn có mốc 1.100).
+       * Gõ `"12"`  -> `[1.200, 12.000, 120.000, 1.200.000, 12.000.000]` (chắc chắn có mốc 1.200).
+       * Gõ `"15"`  -> `[1.500, 15.000, 150.000, 1.500.000, 15.000.000]` (giữ nguyên mốc 1.500).
+       * Gõ `"356"` -> `[3.560, 35.600, 356.000, 3.560.000, 35.600.000]`.
+  2. ✅ **Chuẩn hóa 8 mốc mặc định khi rỗng hoặc bằng 0**:
+     - Hiển thị danh sách 8 mốc: `[50k, 100k, 200k, 500k, 1M, 2M, 5M, 10M]` (tuyệt đối không có dấu cộng `+`, bấm vào là gán đè trực tiếp).
+  3. ✅ **Kiểm thử Unit Test**:
+     - Cập nhật bộ test `AmountSuggestionsTest.kt` kiểm tra toàn bộ các ca biên `"1"`, `"11"`, `"12"`, `"15"`, `"3"`, `"35"`, `"356"`, `"3568"`, rỗng và 500 triệu.
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS (398/398 unit tests passed)**.
+  4. ✅ **Đóng gói & Nạp máy thật**:
+     - Đã chạy `.\scripts\build_and_install.ps1`: Build APK thành công (33.72 MB) và nạp đè lên thiết bị `adb-BM6HKBHEHQKFEMLR-prj23i._adb-tls-connect._tcp`, tự động mở app.
+- **Files thực tế đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountSuggestionsTest.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-AMOUNT-INPUT-STANDARDIZATION-PHASE-2] — Chuẩn hóa TransactionFilterBottomSheet & Tích hợp QuickChip trong DebtPaymentSheet
+- **Status**: `[DONE]`
+- **Phạm vi thực hiện (Thu hẹp theo chỉ thị Tech Lead)**:
+  1. ✅ **Nâng cấp hỗ trợ customChips**: Bổ sung `customChips: List<Pair<String, () -> Unit>>? = null` trong `FinluxAmountInput` và `ErgonomicCompactAmountCard`, cho phép truyền chip nghiệp vụ đặc thù trực tiếp vào control.
+  2. ✅ **TransactionFilterBottomSheet.kt**: Thay thế 2 ô `OutlinedTextField` thủ công ("Từ", "Đến") bằng 2 thẻ `ErgonomicCompactAmountCard` đồng bộ trong `Row`, giữ nguyên layout tinh gọn, hỗ trợ inline currency `₫`, auto-scaling font và clear button `[x]`.
+  3. ✅ **DebtPaymentSheet.kt**: Tích hợp 3 chip ("Tối thiểu", "50% nợ", "Tất toán hết") vào tham số `customChips` của `ErgonomicCompactAmountCard`, xóa bỏ hoàn toàn hàm `QuickChip` tự vẽ thủ công (Anti-Duplication).
+  4. ✅ **AddTransactionSheet.kt & các màn hình khác**: Đã dùng chuẩn `FinluxAmountInput` và `ErgonomicCompactAmountCard`, tự động kế thừa focus và Dynamic Semantic Tinting từ Phase 1. Giữ nguyên các màn hình khác đúng theo chỉ thị để tránh rủi ro hồi quy.
+  5. ✅ **Kết quả kiểm thử**:
+     - `.\gradlew.bat compileDebugKotlin`: **BUILD SUCCESSFUL**.
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS (394/394 unit tests passed, 0 failures, 0 skipped)**.
+- **Files thực tế đã sửa đổi**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionFilterBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+  - `HANDOVER_LOG.md`
+
+### [Task-AMOUNT-INPUT-STANDARDIZATION-PHASE-1] — Nâng cấp Primitive Control trong FinluxFormControls.kt
+- **Status**: `[DONE]`
+- **Mục tiêu hoàn thành**:
+  1. ✅ Thêm `enum class AmountChipMode { INCREMENTAL, REPLACE_VALUE, MAGNITUDE_SCALING }`.
+  2. ✅ Nâng cấp `FinluxAmountInput`:
+     - Tự động bung/thu gọn dải chip theo Focus: `AnimatedVisibility(visible = shouldShowChips, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut())`.
+     - Tự động hóa màu sắc Chip theo ngữ cảnh (Dynamic Semantic Tinting): Tự suy diễn `chipContainerColor` (`amountColor.copy(alpha = 0.12f)`), `chipBorderColor` (`amountColor.copy(alpha = 0.30f)`), `chipContentColor` (`amountColor`).
+     - Hỗ trợ 3 chế độ chip linh hoạt (`INCREMENTAL`, `REPLACE_VALUE`, `MAGNITUDE_SCALING`).
+  3. ✅ Đồng bộ toàn bộ tham số mới sang `ErgonomicCompactAmountCard` và `FinluxAmountInputCard`.
+  4. ✅ Thêm bộ unit tests `AmountChipModeTest.kt` kiểm thử nhãn chip và thuật toán gợi ý.
+  5. ✅ Kết quả kiểm thử:
+     - `.\gradlew.bat compileDebugKotlin`: **BUILD SUCCESSFUL**.
+     - `.\gradlew.bat testDebugUnitTest`: **100% PASS (394/394 tests passed, 0 failures, 0 skipped)**.
+- **Files thực tế đã sửa đổi/tạo mới**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt`
+  - `app/src/test/java/com/finlux/app/core/designsystem/AmountChipModeTest.kt` [NEW]
+
 ### [Task-REMINDER-BADGE-TIERS-STATUS-DOT] — Đại tu toàn diện Pill Badge đếm ngược: Phân tầng 4 màu sắc & Status Dot
 - **Status**: `[DONE]`
 - **Mục tiêu hoàn thành**:
