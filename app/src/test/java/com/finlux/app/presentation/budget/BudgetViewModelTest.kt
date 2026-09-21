@@ -437,4 +437,55 @@ class BudgetViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    // ────────────────────────────────────────────────────────────────
+    // T-SYNC-BGT-VM: DataSyncManager triggers BudgetViewModel reload
+    // ────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `T-SYNC-BGT-VM DataSyncManager notifyDataRestored triggers budget state reload`() = runTest {
+        // Arrange: create a dedicated DataSyncManager for this test
+        val syncManager = com.finlux.app.core.sync.DataSyncManager()
+
+        val syncViewModel = BudgetViewModel(
+            budgetRepository = fakeBudgetRepo,
+            categoryRepository = fakeCategoryRepo,
+            transactionRepository = fakeTransactionRepo,
+            salaryCycleRepository = salaryCycleRepository,
+            financialPeriodResolver = financialPeriodResolver,
+            getBudgetStatus = GetBudgetStatusUseCase(),
+            saveBudget = saveBudget,
+            deleteBudget = deleteBudget,
+            copyBudgetUseCase = copyBudgetUseCase,
+            dataSyncManager = syncManager,
+        )
+
+        // Keep state active
+        kotlinx.coroutines.CoroutineScope(testDispatcher).launch {
+            syncViewModel.state.collect { }
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        syncViewModel.state.test {
+            // Initial state: no budgets
+            val initial = awaitItem()
+            assertTrue(initial.items.isEmpty(), "Initial state should have no budgets")
+
+            // Simulate: budget data arrives after restore (budget repository is updated)
+            budgetFlow.value = listOf(buildBudget(8_000_000L))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Simulate: DataSyncManager fires notifyDataRestored() after restore completed
+            syncManager.notifyDataRestored()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // BudgetViewModel state must reload with new budget
+            val updated = awaitItem()
+            assertTrue(updated.items.isNotEmpty(), "Budget items must reload after notifyDataRestored()")
+            assertEquals(8_000_000L, updated.items.first().budget.limitAmount.value,
+                "limitAmount must reflect newly restored budget of 8,000,000")
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

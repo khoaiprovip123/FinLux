@@ -801,6 +801,137 @@ class RestoreBackupUseCaseTest {
         assertNull(reconciledCash, "Cash wallet without new transactions should not be overwritten")
     }
 
+    // ─── T-RST-15: Smart Merge updates Goal when savedAmount changed ──────────────
+
+    @Test
+    fun `T-RST-15 Smart Merge Goal updates savedAmount when snapshot has different progress`() = runTest {
+        // Existing goal on device: savedAmount = 5,000,000
+        val existingGoal = FinancialGoal(
+            id = "goal-1",
+            name = "Mua xe",
+            targetAmount = Money(50_000_000L),
+            savedAmount = Money(5_000_000L),   // ← Device has 5M saved
+            deadline = Instant.parse("2026-12-31T00:00:00Z"),
+            category = "savings",
+            monthlyContribution = Money(5_000_000L),
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        every { goalRepository.observeGoals() } returns flowOf(listOf(existingGoal))
+
+        // Snapshot has same goal but savedAmount = 10,000,000 (user deposited more)
+        val snapshotWithUpdatedGoal = createStandardSnapshot().copy(
+            goals = listOf(
+                GoalSnapshot(
+                    id = "goal-1",
+                    name = "Mua xe",
+                    targetAmount = 50_000_000L,
+                    savedAmount = 10_000_000L,  // ← Snapshot has 10M (more progress)
+                    deadline = "2026-12-31T00:00:00Z",
+                    category = "savings",
+                    monthlyContribution = 5_000_000L,
+                    imageUri = null,
+                    createdAt = "2026-01-01T00:00:00Z",
+                )
+            )
+        )
+
+        val capturedGoal = slot<FinancialGoal>()
+        coEvery { goalRepository.upsertGoal(capture(capturedGoal)) } returns AppResult.Success("goal-1")
+
+        val result = useCase(snapshotWithUpdatedGoal, RestoreStrategy.SMART_MERGE, currentUserId)
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+        val report = (result as AppResult.Success<RestoreReport>).value
+
+        // Must update, not skip
+        assertEquals(1, report.conflictsResolved, "Goal with different savedAmount must be resolved as conflict")
+        assertEquals(1, report.goalsRestored, "Goal must be counted in goalsRestored")
+
+        // Updated goal must preserve original ID and have new savedAmount
+        assertEquals("goal-1", capturedGoal.captured.id)
+        assertEquals(10_000_000L, capturedGoal.captured.savedAmount.value,
+            "savedAmount must be updated to 10,000,000 from snapshot")
+    }
+
+    // ─── T-RST-16: Smart Merge updates Budget when limitAmount changed ────────────
+
+    @Test
+    fun `T-RST-16 Smart Merge Budget updates limitAmount when snapshot has different limit`() = runTest {
+        // Existing budget on device: limitAmount = 3,000,000
+        val existingBudget = Budget(
+            id = "cat-custom-1_month:2026-09",
+            categoryId = "cat-custom-1",
+            periodKey = "month:2026-09",
+            limitAmount = Money(3_000_000L),    // ← Device has 3M limit
+            spentAmount = Money(0L),
+            notified80 = false,
+            notified100 = false,
+        )
+        every { budgetRepository.observeBudgets(any()) } returns flowOf(listOf(existingBudget))
+
+        // Snapshot has same budget (same natural key) but limitAmount = 5,000,000
+        val snapshotWithUpdatedBudget = createStandardSnapshot().copy(
+            budgets = listOf(
+                BudgetSnapshot(
+                    id = "cat-custom-1_month:2026-09",
+                    categoryId = "cat-custom-1",
+                    periodKey = "month:2026-09",
+                    limitAmount = 5_000_000L,   // ← Snapshot has 5M limit (changed)
+                    spentAmount = 0L,
+                    notified80 = false,
+                    notified100 = false,
+                )
+            )
+        )
+
+        val capturedBudget = slot<Budget>()
+        coEvery { budgetRepository.upsertBudget(capture(capturedBudget)) } returns AppResult.Success("b-id")
+
+        val result = useCase(snapshotWithUpdatedBudget, RestoreStrategy.SMART_MERGE, currentUserId)
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+        val report = (result as AppResult.Success<RestoreReport>).value
+
+        // Must update, not skip
+        assertEquals(1, report.conflictsResolved, "Budget with different limitAmount must be resolved as conflict")
+        assertEquals(1, report.budgetsRestored, "Budget must be counted in budgetsRestored")
+
+        // Updated budget must preserve original ID and have new limitAmount
+        assertEquals("cat-custom-1_month:2026-09", capturedBudget.captured.id)
+        assertEquals(5_000_000L, capturedBudget.captured.limitAmount.value,
+            "limitAmount must be updated to 5,000,000 from snapshot")
+    }
+
+    // ─── T-RST-17: Smart Merge skips Goal when no field has changed ──────────────
+
+    @Test
+    fun `T-RST-17 Smart Merge Goal skips update when all fields are identical to existing`() = runTest {
+        val existingGoal = FinancialGoal(
+            id = "goal-1",
+            name = "Mua xe",
+            targetAmount = Money(50_000_000L),
+            savedAmount = Money(10_000_000L),
+            deadline = Instant.parse("2026-12-31T00:00:00Z"),
+            category = "savings",
+            monthlyContribution = Money(5_000_000L),
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        every { goalRepository.observeGoals() } returns flowOf(listOf(existingGoal))
+
+        // Snapshot goal is IDENTICAL to device goal
+        val snapshotIdentical = createStandardSnapshot() // goal-1 with same savedAmount = 10M
+
+        val result = useCase(snapshotIdentical, RestoreStrategy.SMART_MERGE, currentUserId)
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+        val report = (result as AppResult.Success<RestoreReport>).value
+
+        // Must skip, not update
+        assertTrue(report.skippedCount > 0, "Identical goal must be counted as skipped")
+        assertEquals(0, report.goalsRestored, "Identical goal must NOT be counted in goalsRestored")
+        coVerify(exactly = 0) { goalRepository.upsertGoal(match { it.id == "goal-1" }) }
+    }
+
     // ─── T-RST-14: Smart Merge Full Ledger Reconciliation on Dirty State ──────────
 
     @Test

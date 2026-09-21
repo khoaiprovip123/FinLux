@@ -446,6 +446,60 @@ class ExportBackupUseCaseTest {
         assertEquals(6, payments.length(), "Must contain exactly 6 payments across 2 debts")
     }
 
+    // ─── T-EXP-BGT-GOL: Exported file must have non-empty budgets & goals ─────
+
+    @Test
+    fun `T-EXP-BGT-GOL exported finlux file contains non-empty budgets and goals arrays`() = runTest {
+        // Arrange: user has 1 budget and 2 goals
+        mockStandardData(
+            walletCount = 1,
+            txCount = 5,
+            categoryCount = 2,
+            debtCount = 0,
+            paymentsPerDebt = 0,
+            goalCount = 2,         // 2 goals
+            reminderCount = 0,
+            dealCount = 0,
+            includeSalaryCycle = false,
+            includeSavingSpin = false,
+        )
+        // Note: mockStandardData sets budgets to 1 budget via observeBudgets("*")
+
+        val result = useCase(currentUserId)
+
+        assertInstanceOf(AppResult.Success::class.java, result)
+        val file = (result as AppResult.Success<File>).value
+        val root = org.json.JSONObject(file.readText(Charsets.UTF_8))
+
+        // Budgets must NOT be empty
+        val budgetsArray = root.getJSONArray("budgets")
+        assertTrue(budgetsArray.length() > 0,
+            "budgets array must not be empty when user has created budgets. Got: ${budgetsArray.length()}")
+        assertEquals(1, budgetsArray.length(), "Must export exactly 1 budget")
+
+        // Goals must NOT be empty
+        val goalsArray = root.getJSONArray("goals")
+        assertTrue(goalsArray.length() > 0,
+            "goals array must not be empty when user has created goals. Got: ${goalsArray.length()}")
+        assertEquals(2, goalsArray.length(), "Must export exactly 2 goals")
+
+        // Verify goal fields are correctly serialized
+        val firstGoal = goalsArray.getJSONObject(0)
+        assertTrue(firstGoal.has("id"), "Goal must have id field")
+        assertTrue(firstGoal.has("name"), "Goal must have name field")
+        assertTrue(firstGoal.has("targetAmount"), "Goal must have targetAmount field")
+        assertTrue(firstGoal.has("savedAmount"), "Goal must have savedAmount field")
+        assertTrue(firstGoal.has("deadline"), "Goal must have deadline field")
+
+        // Verify budget fields are correctly serialized
+        val firstBudget = budgetsArray.getJSONObject(0)
+        assertTrue(firstBudget.has("categoryId"), "Budget must have categoryId field")
+        assertTrue(firstBudget.has("periodKey"), "Budget must have periodKey field")
+        assertTrue(firstBudget.has("limitAmount"), "Budget must have limitAmount field")
+        assertEquals(5_000_000L, firstBudget.getLong("limitAmount"),
+            "Budget limitAmount must match fixture value")
+    }
+
     // ─── BONUS: End-to-end integration with ValidateBackupUseCase ──────────
 
     @Test

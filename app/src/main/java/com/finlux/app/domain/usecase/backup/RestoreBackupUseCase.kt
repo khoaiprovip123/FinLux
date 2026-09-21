@@ -435,14 +435,19 @@ class RestoreBackupUseCase(
         }
 
         // 5. Goals
-        val existingGoals = goalRepository.observeGoals().first().associateBy { it.id }
+        val existingGoals = goalRepository.observeGoals().first()
+        val existingGoalsById = existingGoals.associateBy { it.id }
+        val existingGoalsByName = existingGoals.associateBy { it.name.trim().lowercase() }
         snapshot.goals.forEach { gSnapshot ->
             val domainGoal = gSnapshot.toDomain(combinedRemapTable, isCrossAccount)
-            val existing = existingGoals[domainGoal.id]
+            val existing = existingGoalsById[domainGoal.id] ?: existingGoalsByName[domainGoal.name.trim().lowercase()]
             if (existing != null) {
-                val snapshotCreated = runCatching { Instant.parse(gSnapshot.createdAt) }.getOrDefault(Instant.MIN)
-                if (snapshotCreated.isAfter(existing.createdAt)) {
-                    goalRepository.upsertGoal(domainGoal)
+                val hasChanged = domainGoal.savedAmount != existing.savedAmount ||
+                    domainGoal.targetAmount != existing.targetAmount ||
+                    domainGoal.deadline != existing.deadline ||
+                    domainGoal.category != existing.category
+                if (hasChanged) {
+                    goalRepository.upsertGoal(domainGoal.copy(id = existing.id))
                     conflictsResolved++
                     goalsRestored++
                 } else {
@@ -510,10 +515,18 @@ class RestoreBackupUseCase(
         val existingBudgets = budgetRepository.observeBudgets("*").first().associateBy { it.id }
         snapshot.budgets.forEach { bSnapshot ->
             val domainBudget = bSnapshot.toDomain(combinedRemapTable, isCrossAccount)
-            if (existingBudgets.containsKey(domainBudget.id)) {
-                budgetRepository.upsertBudget(domainBudget)
-                conflictsResolved++
-                budgetsRestored++
+            val naturalKey = "${domainBudget.categoryId}_${domainBudget.periodKey}"
+            val existing = existingBudgets[domainBudget.id] ?: existingBudgets.values.firstOrNull {
+                "${it.categoryId}_${it.periodKey}" == naturalKey
+            }
+            if (existing != null) {
+                if (domainBudget.limitAmount != existing.limitAmount) {
+                    budgetRepository.upsertBudget(domainBudget.copy(id = existing.id))
+                    conflictsResolved++
+                    budgetsRestored++
+                } else {
+                    skippedCount++
+                }
             } else {
                 budgetRepository.upsertBudget(domainBudget)
                 budgetsRestored++

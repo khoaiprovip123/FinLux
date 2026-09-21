@@ -18,6 +18,33 @@
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [x] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
 
+### [Task-FIX-BACKUP-RESTORE-BUDGETS-GOALS] — Khắc phục Triệt để Lỗi Ngân sách & Mục tiêu trong Backup & Restore
+- **Status**: `[DONE]`
+- **Kết quả thực thi (POST-EXECUTION):**
+  - ✅ **Unit Tests:** `520/520 PASSED — 0 FAILED` (vượt mốc 515+ yêu cầu)
+  - ✅ **Build APK:** `assembleDebug` thành công — `app/build/outputs/apk/debug/app-debug.apk` (~33.6 MB)
+  - ✅ **Compile Errors Fixed (Pre-existing bugs phát hiện qua build):**
+    1. `BudgetViewModel.kt` — Thiếu `}` đóng `flatMapLatest` khiến `state` bị infer sai type → cascade 30+ errors trong `PrismBudgetScreen.kt`
+    2. `ReportsViewModel.kt` — Cast sai `DateRange` (→ `ReportRange`) và `SalaryTimeline` (→ `List<SalaryCycleConfigRecord>`)
+  - ✅ **Tests mới bổ sung (6 test cases):**
+    - `T-RST-15`: Smart Merge Goal cập nhật `savedAmount` khi có tiến độ mới
+    - `T-RST-16`: Smart Merge Budget cập nhật `limitAmount` khi có thay đổi
+    - `T-RST-17`: Smart Merge Goal bỏ qua đúng khi không có biến động
+    - `T-EXP-BGT-GOL`: Export file `.finlux` có `budgets[]` + `goals[]` không rỗng
+    - `T-SYNC-GOL-VM`: `DataSyncManager.notifyDataRestored()` kích hoạt reload goals
+    - `T-SYNC-BGT-VM`: `DataSyncManager.notifyDataRestored()` kích hoạt reload budget state
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/.../budget/BudgetViewModel.kt` [FIX — thiếu `}` flatMapLatest]
+  - `app/src/main/java/.../reports/ReportsViewModel.kt` [FIX — cast sai type]
+  - `app/src/test/.../backup/RestoreBackupUseCaseTest.kt` [ADD T-RST-15, T-RST-16, T-RST-17]
+  - `app/src/test/.../backup/ExportBackupUseCaseTest.kt` [ADD T-EXP-BGT-GOL]
+  - `app/src/test/.../goal/GoalsViewModelTest.kt` [ADD T-SYNC-GOL-VM + ReactiveGoalRepository]
+  - `app/src/test/.../budget/BudgetViewModelTest.kt` [ADD T-SYNC-BGT-VM]
+  - `HANDOVER_LOG.md` [MODIFY]
+- **Trạng thái Build:** ✅ BUILD SUCCESSFUL — 520/520 tests PASS
+
+---
+
 ### [Task-PHASE2-ACCOUNT-DELETION] — Trải nghiệm Giao diện Liquid Glass & Hàng rào An toàn 3 Bước (Phase 2)
 - **Status**: `[DONE]`
 - **Mục tiêu**:

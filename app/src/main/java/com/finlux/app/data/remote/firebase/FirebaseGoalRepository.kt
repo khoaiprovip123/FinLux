@@ -213,16 +213,44 @@ internal fun FinancialGoal.toGoalMap(): Map<String, Any?> = mapOf(
     "createdAt" to Timestamp(Date.from(createdAt)),
 )
 
+private fun parseInstantField(raw: Any?, defaultInstant: Instant): Instant {
+    if (raw == null) return defaultInstant
+    return when (raw) {
+        is Timestamp -> raw.toDate().toInstant()
+        is Date -> raw.toInstant()
+        is Number -> runCatching { Instant.ofEpochMilli(raw.toLong()) }.getOrDefault(defaultInstant)
+        is String -> {
+            runCatching { Instant.parse(raw) }
+                .recoverCatching { Instant.ofEpochMilli(raw.toLong()) }
+                .getOrDefault(defaultInstant)
+        }
+        else -> defaultInstant
+    }
+}
+
+private fun parseMoneyField(raw: Any?): Money {
+    if (raw == null) return Money(0L)
+    val amount = when (raw) {
+        is Number -> raw.toLong()
+        is String -> raw.toLongOrNull() ?: 0L
+        else -> 0L
+    }
+    return Money(amount)
+}
+
 internal fun DocumentSnapshot.toGoal(): FinancialGoal? = runCatching {
+    val goalName = getString("name")?.takeIf { it.isNotBlank() } ?: return@runCatching null
+    val defaultDeadline = Instant.now().plusSeconds(180L * 86400)
     FinancialGoal(
         id = id,
-        name = requireNotNull(getString("name")),
-        targetAmount = Money(getLong("targetAmount") ?: 0L),
-        savedAmount = Money(getLong("savedAmount") ?: 0L),
-        deadline = requireNotNull(getTimestamp("deadline")).toDate().toInstant(),
-        category = getString("category") ?: "Khác",
-        monthlyContribution = Money(getLong("monthlyContribution") ?: 0L),
+        name = goalName,
+        targetAmount = parseMoneyField(get("targetAmount")),
+        savedAmount = parseMoneyField(get("savedAmount")),
+        deadline = parseInstantField(get("deadline"), defaultDeadline),
+        category = getString("category")?.takeIf { it.isNotBlank() } ?: "Khác",
+        monthlyContribution = parseMoneyField(get("monthlyContribution")),
         imageUri = getString("imageUri"),
-        createdAt = getTimestamp("createdAt")?.toDate()?.toInstant() ?: Instant.now(),
+        createdAt = parseInstantField(get("createdAt"), Instant.now()),
     )
 }.getOrNull()
+

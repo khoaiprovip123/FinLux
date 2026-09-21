@@ -2,6 +2,7 @@ package com.finlux.app.presentation.reports
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.finlux.app.core.sync.DataSyncManager
 import com.finlux.app.core.time.FinanceClock
 import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.core.time.SystemFinanceClock
@@ -287,6 +288,7 @@ class ReportsViewModel @Inject constructor(
     private val calculateSavingSpinStreakUseCase: CalculateSavingSpinStreakUseCase = CalculateSavingSpinStreakUseCase(financialPeriodResolver, clock),
     private val getTrueNetWorthUseCase: com.finlux.app.domain.usecase.GetTrueNetWorthUseCase = com.finlux.app.domain.usecase.GetTrueNetWorthUseCase(walletRepository, debtRepository, dealRepository),
     private val deleteTransactionUseCase: com.finlux.app.domain.usecase.DeleteTransactionUseCase? = null,
+    private val dataSyncManager: DataSyncManager = DataSyncManager(),
 ) : ViewModel() {
     private val userSelectedPeriod = MutableStateFlow<ReportPeriod?>(null)
     private val today = LocalDate.now(FinanceTime.VIETNAM_ZONE)
@@ -342,8 +344,16 @@ class ReportsViewModel @Inject constructor(
             salaryCycleRepository.observeConfig(),
             salaryCycleRepository.observeTimeline(),
             selectedWalletId,
-        ) { period, custom, salaryConfig, timeline, walletId ->
-            BaseParams(period, custom, salaryConfig, walletId, timeline)
+            dataSyncManager.refreshTrigger,
+        ) { args: Array<Any?> ->
+            val period = args[0] as ReportPeriod
+            @Suppress("UNCHECKED_CAST")
+            val custom = args[1] as? ReportRange
+            val salaryConfig = args[2] as SalaryCycleConfig
+            @Suppress("UNCHECKED_CAST")
+            val timeline = args[3] as? List<SalaryCycleConfigRecord> ?: emptyList()
+            val walletId = args[4] as? String
+            BaseParams(period, custom ?: ReportRange(LocalDate.now().withDayOfMonth(1), LocalDate.now()), salaryConfig, walletId, timeline)
         },
         combine(selectedCategoryDetailId, selectedCategoryIsExpense, selectedCategoryDrillWalletId, selectedWalletDrillCategoryId) { catId, isExp, drillW, drillCat ->
             DrillDownParams(catId, isExp, drillW, drillCat)

@@ -3,6 +3,7 @@ package com.finlux.app.presentation.budget
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.core.sync.DataSyncManager
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.CategoryType
@@ -67,6 +68,7 @@ class BudgetViewModel @Inject constructor(
     private val saveBudget: SaveBudgetUseCase,
     private val deleteBudget: DeleteBudgetUseCase,
     private val copyBudgetUseCase: CopyBudgetUseCase,
+    private val dataSyncManager: DataSyncManager = DataSyncManager(),
 ) : ViewModel() {
     private val configFlow = salaryCycleRepository.observeConfig().stateIn(viewModelScope, SharingStarted.Eagerly, SalaryCycleConfig())
     private val timelineFlow = salaryCycleRepository.observeTimeline().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -100,14 +102,15 @@ class BudgetViewModel @Inject constructor(
         PeriodBudgetsSnapshot(period, prevPeriod, currentBudgets, prevBudgets)
     }
 
-    val state = combine(
-        periodAndBudgetsFlow,
-        categoryRepository.observeCategories(),
-        currentPeriod.flatMapLatest { p ->
-            if (p == null) kotlinx.coroutines.flow.flowOf(emptyList()) else transactionRepository.observePeriod(p.start, p.endExclusive)
-        },
-        action,
-    ) { snapshot, categories, monthTransactions, actionState ->
+    val state = dataSyncManager.refreshTrigger.flatMapLatest {
+        combine(
+            periodAndBudgetsFlow,
+            categoryRepository.observeCategories(),
+            currentPeriod.flatMapLatest { p ->
+                if (p == null) kotlinx.coroutines.flow.flowOf(emptyList()) else transactionRepository.observePeriod(p.start, p.endExclusive)
+            },
+            action,
+        ) { snapshot, categories, monthTransactions, actionState ->
         val byId = categories.associateBy(Category::id)
         val byName = categories.associateBy { it.name.lowercase().trim() }
 
@@ -175,7 +178,9 @@ class BudgetViewModel @Inject constructor(
             message = actionState.second,
             transitionAdvisoryBanner = transitionAdvisoryBanner,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BudgetUiState())
+    }  // close combine lambda
+    }  // close flatMapLatest lambda
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BudgetUiState())
 
     fun previousMonth() {
         val p = currentPeriod.value ?: return
