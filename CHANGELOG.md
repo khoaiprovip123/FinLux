@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.25.7] - 2026-09-21
+### Added
+- **Tính Năng Sao Lưu & Phục Hồi Dữ Liệu Toàn Diện (Backup & Restore - Phase 1 & 2)**:
+  * Kiến trúc JSON Snapshot 10 module độc lập: Wallets, Categories, Budgets, Transactions, Debts, Debt Payments, Goals, Reminders, Deals, Saving Spin Config.
+  * Hỗ trợ 2 chiến lược phục hồi dữ liệu:
+    - `FULL_OVERWRITE` (True Wipe & Replace): Xóa sạch dữ liệu cũ theo thứ tự đảo ngược phụ thuộc (Reverse Dependency Order) bằng `deleteWalletRaw` / `deleteTransactionRaw`, nạp snapshot nguyên bản bảo toàn 100% ID gốc.
+    - `SMART_MERGE` (Hợp nhất thông minh): Nhận diện thông minh ví Tiền mặt (chống tạo ví thứ 2), khử trùng lặp giao dịch theo Content Signature (`walletId_amount_date_type_note`), giải quyết xung đột dựa trên `updatedAt`.
+  * **Điều hòa số dư Tổng lực (Full Ledger Balance Reconciliation)**: Tự động điều hòa và sửa sai số dư mọi ví dựa trên toàn bộ sổ cái giao dịch trong cơ sở dữ liệu và seed khởi tạo, triệt tiêu tình trạng lệch số dư sau khi merge.
+  * **Kiểm toán số dư tự động (WalletBalanceAudit)**: Tự động đối soát và phát hiện sai lệch số dư ngay khi kết thúc quá trình khôi phục.
+  * **Đồng bộ UI phản ứng tức thì (DataSyncManager)**: Phát xung reactive reload cho `HomeViewModel`, `WalletsViewModel`, `TransactionsViewModel` khi nạp dữ liệu hoàn tất.
+  * **Bộ Kiểm Thử Độc Lập**: Bổ sung `RestoreBackupUseCaseTest` (14 test cases T-RST-01 đến T-RST-14) và `BackupRestoreViewModelTest` (6 test cases), nâng tổng số test suite toàn dự án lên **499/499 unit tests PASS 100%**.
+
+### Changed
+- Cập nhật `versionCode = 181` và `versionName = "1.25.7"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và đặc tả `docs/backup_restore_spec.md`.
+
 ## [1.25.6] - 2026-09-14
 ### Added
 - **Bảo Vệ Tính Toàn Vẹn Tiền Tệ (Financial Integrity & Shared Validation - Phase 1)**:

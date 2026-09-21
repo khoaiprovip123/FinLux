@@ -541,6 +541,19 @@ class FirebaseTransactionRepository(
         Unit
     }
 
+    override suspend fun deleteTransactionRaw(transactionId: String): AppResult<Unit> = firebaseResult("Không thể xóa giao dịch") {
+        val uid = requireUid()
+        firestore.userTransactions(uid).document(transactionId).delete().await()
+        Unit
+    }
+
+    override suspend fun restoreTransactionRaw(transaction: FinanceTransaction): AppResult<String> = firebaseResult("Không thể phục hồi giao dịch") {
+        val uid = requireUid()
+        val id = transaction.id.ifBlank { firestore.userTransactions(uid).document().id }
+        firestore.userTransactions(uid).document(id).set(transaction.copy(id = id).toFirestoreMap()).await()
+        id
+    }
+
     private fun requireUid(): String = auth.currentUser?.uid ?: error("Phiên đăng nhập đã hết hạn")
 }
 

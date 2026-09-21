@@ -1,22 +1,145 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.6 (versionCode 180)
-- **Trạng thái Build:** ✅ 100% PASS (456/456 unit tests)
+- **Phiên bản hiện tại:** v1.25.7 (versionCode 181)
+- **Trạng thái Build:** ✅ 100% PASS (499/499 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
 ### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
-- [ ] **B1: Docs & Roadmap Check:** Tra cứu `BACKLOG.md`, `BA_SPEC.md`, `DATA_SPEC.md` và `FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`.
-- [ ] **B2: Codebase Reality Check:** Quét codebase chống zombie code / code trùng lặp.
-- [ ] **B3: Sanity Check & Phản Biện:** Đánh giá tính hợp lý kế toán và cảnh báo rủi ro gãy code dây chuyền.
-- [ ] **B4: Đề Xuất & Khuyến Nghị:** So sánh Phương án A vs B và đưa ra khuyến nghị tối ưu dài hạn.
+- [x] **B1: Docs & Roadmap Check:** Tra cứu `BACKLOG.md`, `BA_SPEC.md`, `DATA_SPEC.md` và `FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md`.
+- [x] **B2: Codebase Reality Check:** Quét codebase chống zombie code / code trùng lặp.
+- [x] **B3: Sanity Check & Phản Biện:** Đánh giá tính hợp lý kế toán và cảnh báo rủi ro gãy code dây chuyền.
+- [x] **B4: Đề Xuất & Khuyến Nghị:** So sánh Phương án A vs B và đưa ra khuyến nghị tối ưu dài hạn.
 
 ### 2. Checklist Nghiệm Thu Máy Thật 5 Điểm (Physical Device Acceptance)
-- [ ] **Theme check:** Đẹp và chuẩn độ tương phản ở cả Dark Mode và Light Mode (Liquid Glass).
-- [ ] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
-- [ ] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
-- [ ] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
-- [ ] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+- [x] **Theme check:** Đẹp và chuẩn độ tương phản ở cả Dark Mode và Light Mode (Liquid Glass).
+- [x] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
+- [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
+- [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
+- [x] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+
+### [Task-FIX-SMART-MERGE-BALANCE-RECONCILIATION] — Cải tổ Điều hòa số dư Tổng lực (Full Ledger Reconciliation) & Khử bẫy timestamp trong Smart Merge
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. **Khử bẫy `updatedAt` / `createdAt` & không đếm System Categories vào skipped count:** Loại bỏ việc tăng `skippedCount` cho built-in system categories. Giao dịch chỉ skip khi đã tồn tại bản ghi giống hệt (theo ID hoặc Content Signature) mà snapshot không có cập nhật mới hơn.
+  2. **Điều hòa số dư Tổng lực (Full Ledger Balance Reconciliation):** Sau khi hoàn tất merge transactions, hệ thống đối soát toàn bộ sổ cái trong DB:
+     $$\text{recalculatedBalance} = \text{seed} + \sum_{\text{TẤT CẢ giao dịch trong DB của ví}} \text{balanceDelta()}$$
+     Nếu số dư trong document ví khác với số dư sổ cái -> tự động sửa sai bằng `restoreWalletRaw` và tăng `walletsRestored++`. Nhờ đó, dù giao dịch đã được nạp từ trước hay mới nạp, ví Vietcombank đang 0 đ sẽ tự động nhảy lên đúng 10.000 đ!
+  3. **Smart Merge Audit:** `auditSmartMergeBalances` đối soát: $\text{Số dư lưu trữ} == \text{Số dư sổ cái} (\text{seed} + \text{netCashflow})$, đảm bảo 100% khớp và xanh mướt.
+  4. **Dirty State Unit Test:** Bổ sung `T-RST-14` mô phỏng chính xác ca biên: DB đã có sẵn 2 giao dịch VCB (+10.000 đ) nhưng số dư ví đang bị sai ở 0 đ. Chạy Smart Merge -> VCB tự động nhảy lên 10.000 đ, `walletsRestored = 1`, audit pass 100%.
+- **Files thực tế đã sửa**:
+  - `app/src/main/java/com/finlux/app/domain/usecase/backup/RestoreBackupUseCase.kt` [MODIFY]
+  - `app/src/test/java/com/finlux/app/domain/usecase/backup/RestoreBackupUseCaseTest.kt` [MODIFY]
+  - `HANDOVER_LOG.md` [MODIFY]
+
+### [Task-FIX-BACKUP-RESTORE-BUGS] — Sửa dứt điểm Bug Trùng lặp dữ liệu & Wipe vô hiệu trong Backup & Restore
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. **FULL_OVERWRITE True Wipe:** Bổ sung `deleteWalletRaw` và `deleteTransactionRaw` trong Repository & Firebase implementation để xóa sạch 100% database Firestore trước khi nạp snapshot.
+  2. **FULL_OVERWRITE Raw Restore:** Bổ sung `restoreWalletRaw` và `restoreTransactionRaw` giữ nguyên ID gốc từ snapshot (không sinh UUID mới), không gọi `addWithBalanceUpdate` để tránh đúp số dư.
+  3. **SMART_MERGE Chống nhân đôi ví & giao dịch:**
+     - Map ví Tiền mặt trong snapshot vào ví Tiền mặt hiện có trên máy, tuyệt đối không tạo ví Tiền mặt thứ 2.
+     - Map ví khác theo ID hoặc theo `(name, type)`.
+     - Đối chiếu giao dịch theo ID hoặc Content Signature (`walletId_amount_date_note_type`), cập nhật theo `updatedAt` nếu đã tồn tại, chống insert trùng.
+  4. **UI State Synchronization:** Tạo cơ chế đồng bộ `DataSyncManager` để trigger reload tức thì cho `HomeViewModel`, `WalletsViewModel`, `TransactionsViewModel` ngay khi restore hoàn tất.
+  5. **Kiểm thử & Nạp máy thật:** Viết unit test mô phỏng kịch bản (không nhân đôi, assert count == snapshot count), chạy `testDebugUnitTest` 100% PASS (497/497 tests), build và cài APK qua ADB.
+- **Files thực tế đã sửa / tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/repository/FinanceRepositories.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseWalletRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/core/sync/DataSyncManager.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/backup/RestoreBackupUseCase.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/presentation/settings/backup/BackupRestoreViewModel.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/presentation/home/HomeViewModel.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletsViewModel.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsViewModel.kt` [MODIFY]
+  - `app/src/test/java/com/finlux/app/domain/usecase/backup/RestoreBackupUseCaseTest.kt` [MODIFY]
+  - `app/src/test/java/com/finlux/app/presentation/settings/backup/BackupRestoreViewModelTest.kt` [MODIFY]
+  - `app/build.gradle.kts` [MODIFY]
+  - `HANDOVER_LOG.md` [MODIFY]
+
+### [Task-PHASE3-BACKUP-UI] — Triển khai Phase 3: Giao diện Sao lưu & Phục hồi Liquid Glass & Entry Point
+- **Status**: `[IN PROGRESS]`
+- **Mục tiêu**:
+  1. Xây dựng `BackupModule.kt` trong `data/di/` cung cấp các use cases cho Hilt.
+  2. Xây dựng `BackupRestoreViewModel.kt` quản lý State flow (`BackupUiState`, `DataStats`, Export, Validate, Restore).
+  3. Xây dựng `BackupRestoreSheet.kt` theo chuẩn thiết kế Liquid Glass (Cloud Sync status, Export Card with ShareSheet, Restore Card with SAF picker, Preview Card, Strategy selection, 2-step confirmation dialog for Full Overwrite, Restore report summary dialog).
+  4. Tích hợp Entry Point tại `PrismSettingsScreen.kt` (thay thế InfoDialog bằng `showBackupRestoreSheet`).
+  5. Viết unit tests cho `BackupRestoreViewModelTest.kt` đạt 100% PASS.
+  6. Biên dịch và nạp APK lên thiết bị Android qua ADB.
+- **Files dự kiến sửa / tạo mới**:
+  - `app/src/main/java/com/finlux/app/data/di/BackupModule.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/settings/backup/BackupRestoreUiState.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/settings/backup/BackupRestoreViewModel.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/settings/backup/BackupRestoreSheet.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt` [MODIFY]
+  - `app/src/test/java/com/finlux/app/presentation/settings/backup/BackupRestoreViewModelTest.kt` [NEW]
+  - `HANDOVER_LOG.md` [MODIFY]
+
+### [Task-PHASE2-RESTORE-ENGINE] — Triển khai Phase 2: Restore Engine (Full Overwrite & Smart Merge)
+- **Status**: `[DONE]`
+- **Kiểm thử xác nhận**:
+  - ✅ Unit test toàn dự án: `.\gradlew.bat testDebugUnitTest` đạt **486/486 tests PASS 100% (0 failures, 0 skipped)** — tăng 9 tests mới (vượt mốc 486+ theo chỉ đạo Tech Lead).
+  - ✅ `RestoreBackupUseCaseTest`: 9/9 tests PASS (T-RST-01..T-RST-09 đầy đủ theo spec).
+  - ✅ `assembleDebug`: BUILD SUCCESSFUL.
+- **Mục tiêu hoàn thành**:
+  1. ✅ **`BackupSchemaMigrator.kt`**:
+     - Kiểm soát phiên bản schema (`CURRENT_SCHEMA_VERSION = 1`, `MIN_SUPPORTED_SCHEMA_VERSION = 1`), sẵn sàng mở rộng tuần tự cho schema v2/v3 trong tương lai.
+  2. ✅ **`RestoreBackupUseCase.kt`**:
+     - Hỗ trợ đầy đủ 2 chiến lược: `FULL_OVERWRITE` (xóa an toàn ngược thứ tự phụ thuộc → nạp lại tuần tự theo Dependency Order) và `SMART_MERGE` (hợp nhất theo `updatedAt`, tự động đổi tên danh mục custom trùng ID).
+     - Bảo vệ tuyệt đối `SystemCategories.ALL_SYSTEM_IDS` (BR-CAT-01): không bao giờ xóa hoặc ghi đè danh mục hệ thống mặc định trong bất kỳ chiến lược nào.
+     - Cơ chế Cross-Account ID Remapping (`idRemapTable`): sinh UUID mới cho toàn bộ entities người dùng và tái ánh xạ toàn bộ foreign key (`walletId`, `categoryId`, `dealId`, `debtId`), gán `userId = currentUserId`.
+     - Hậu kiểm tài chính `WalletBalanceAudit`: đối soát `wallet.balance` với tổng dòng tiền `balanceDelta()` từ transactions, phát hiện chính xác lệch số dư và ghi nhận vào `RestoreReport.balanceDiscrepancies`.
+     - Tái kích hoạt hệ thống báo thức native qua `ReminderScheduler.schedule(reminder)` cho tất cả reminders active được khôi phục.
+  3. ✅ **Củng cố Repository Interfaces & Domain Semantics**:
+     - Bổ sung `FinanceTransaction.balanceDelta()` vào `domain/model/TransactionSemantics.kt` phục vụ tính toán dòng tiền ví dùng chung.
+     - Bổ sung các phương thức default an toàn: `upsertPaymentHistory` & `deletePaymentHistory` trên `DebtRepository`; `restoreTransaction` & `deleteTransactionRaw` trên `TransactionRepository`.
+- **Files thực tế đã sửa đổi / tạo mới**:
+  - `app/src/main/java/com/finlux/app/domain/usecase/backup/BackupSchemaMigrator.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/backup/RestoreBackupUseCase.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/TransactionSemantics.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/domain/repository/DebtRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/domain/repository/FinanceRepositories.kt` [MODIFY]
+  - `app/src/test/java/com/finlux/app/domain/usecase/backup/RestoreBackupUseCaseTest.kt` [NEW]
+  - `HANDOVER_LOG.md` [MODIFY]
+
+### [Task-PHASE1-BACKUP-ENGINE] — Triển khai Phase 1: Snapshot Models, Export & Validate Backup UseCases
+- **Status**: `[DONE]`
+- **Kiểm thử xác nhận**:
+  - ✅ Unit test toàn dự án: `.\gradlew.bat testDebugUnitTest` đạt **477/477 tests PASS 100% (0 failures, 0 skipped)** — tăng 21 tests mới.
+  - ✅ `ExportBackupUseCaseTest`: 8/8 tests PASS (T-EXP-01..07 + end-to-end roundtrip).
+  - ✅ `ValidateBackupUseCaseTest`: 13/13 tests PASS (T-VAL-01..09 + 4 edge case tests).
+- **Mục tiêu hoàn thành**:
+  1. ✅ **Snapshot Domain Models (`domain/model/backup/`)**:
+     - `FinluxBackupSnapshot.kt`: định nghĩa model 9 entity cốt lõi (Wallets, Categories, Transactions, Budgets, Debts, DebtPayments, Goals, Reminders, Deals) + configs (SalaryCycle, SavingSpin), metadata (schemaVersion, appVersion, appVersionCode, exportedAt, exportedByUid, checksum, payloadSizeBytes).
+     - `BackupPreviewSummary.kt`: định nghĩa DTO tóm tắt file backup hiển thị cho UI (số lượng entities, khoảng thời gian transactions, gắn cờ cross-account, tính hợp lệ chữ ký).
+     - `RestoreReport.kt`: DTO báo cáo kết quả sau phục hồi cho Phase 2.
+  2. ✅ **Core Checksum Helper (`core/common/BackupChecksumHelper.kt`)**:
+     - Centralize thuật toán tính & xác thực SHA-256 (Anti-tampering & Zero local duplication).
+  3. ✅ **`ExportBackupUseCase.kt`**:
+     - Thu thập song song không chặn từ 10 repositories qua Kotlin Coroutines (`async/await`).
+     - Ánh xạ domain models sang snapshot formats (tất cả Instant định dạng ISO 8601 UTC).
+     - Serialization JSON thuần túy (không dependency bên thứ 3) với `@JvmName` annotations ngăn chặn type erasure clash.
+     - Tính toán SHA-256 digest và ghi file ra thư mục cache với phần mở rộng `.finlux`.
+  4. ✅ **`ValidateBackupUseCase.kt`**:
+     - Kiểm tra tuần tự 5 bước: cú pháp JSON, trường bắt buộc, dải schema version (`CURRENT_SCHEMA_VERSION = 1`, `MIN_SUPPORTED_SCHEMA_VERSION = 1`), toàn vẹn chữ ký SHA-256.
+     - Tự động nhận diện tài khoản chéo (`isCrossAccount = exportedByUid != currentUserId`).
+     - Thống kê chi tiết số lượng thực thể và min/max date của transactions phục vụ Preview Card.
+  5. ✅ **Cấu hình Dependencies JVM Testing**:
+     - Bổ sung `org.json:json:20240303` vào `libs.versions.toml` và `testImplementation` trong `app/build.gradle.kts` để hỗ trợ parse JSON chuẩn xác trên JVM unit test.
+- **Files thực tế đã sửa đổi / tạo mới**:
+  - `docs/backup_restore_spec.md` [NEW]
+  - `gradle/libs.versions.toml` [MODIFY]
+  - `app/build.gradle.kts` [MODIFY]
+  - `app/src/main/java/com/finlux/app/core/common/BackupChecksumHelper.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/backup/FinluxBackupSnapshot.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/backup/BackupPreviewSummary.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/model/backup/RestoreReport.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/backup/ExportBackupUseCase.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/backup/ValidateBackupUseCase.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/backup/ValidateBackupUseCaseTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/backup/ExportBackupUseCaseTest.kt` [NEW]
+  - `HANDOVER_LOG.md` [MODIFY]
 
 ### [Task-CI-RELEASE-SIGNING-FIX] — Khắc phục lỗi verifyReleaseSigning trên GitHub Actions & chuẩn hóa đường dẫn Keystore
 - **Status**: `[DONE]`

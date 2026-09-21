@@ -91,6 +91,19 @@ class FirebaseWalletRepository(
         Unit
     }
 
+    override suspend fun deleteWalletRaw(walletId: String): AppResult<Unit> = firebaseResult("Không thể xóa ví") {
+        val uid = requireUid()
+        firestore.userWallets(uid).document(walletId).delete().await()
+        Unit
+    }
+
+    override suspend fun restoreWalletRaw(wallet: Wallet): AppResult<String> = firebaseResult("Không thể phục hồi ví") {
+        val uid = requireUid()
+        val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
+        firestore.userWallets(uid).document(id).set(wallet.copy(id = id).toWalletMap()).await()
+        id
+    }
+
     private fun requireUid(): String = auth.currentUser?.uid ?: error("Phiên đăng nhập đã hết hạn")
 }
 

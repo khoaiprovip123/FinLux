@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.CameraAlt
+import com.finlux.app.presentation.settings.backup.BackupRestoreSheet
 import com.finlux.app.presentation.settings.salary.SalaryCycleSettingsSheet
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
@@ -159,6 +160,7 @@ fun PrismSettingsScreen(
     var showAppearance by remember { mutableStateOf(false) }
     var showBiometricTimeoutDialog by remember { mutableStateOf(false) }
     var showSalaryCycleSheet by remember { mutableStateOf(false) }
+    var showBackupRestoreSheet by remember { mutableStateOf(false) }
     var infoDialog by remember { mutableStateOf<InfoDialogContent?>(null) }
     var amountVisible by remember { mutableStateOf(true) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
@@ -302,6 +304,12 @@ fun PrismSettingsScreen(
         )
     }
 
+    if (showBackupRestoreSheet) {
+        BackupRestoreSheet(
+            onDismiss = { showBackupRestoreSheet = false },
+        )
+    }
+
     LaunchedEffect(nameState.message, nameState.isError) {
         if (nameState.message != null && !nameState.isError) {
             delay(650)
@@ -411,13 +419,8 @@ fun PrismSettingsScreen(
                             Icons.Default.Backup,
                             "Sao lưu dữ liệu",
                             Color(0xFF2563EB),
-                            subtitle = "Đồng bộ tự động qua tài khoản FinLux",
-                            onClick = {
-                                infoDialog = InfoDialogContent(
-                                    "Sao lưu & đồng bộ",
-                                    "Dữ liệu tài chính được Firestore lưu và đồng bộ tự động giữa các thiết bị đăng nhập cùng tài khoản. Khi có mạng, thay đổi sẽ được cập nhật theo thời gian thực.",
-                                )
-                            },
+                            subtitle = "Sao lưu ngoại tuyến .finlux & đồng bộ đám mây",
+                            onClick = { showBackupRestoreSheet = true },
                         ),
                         SettingsMenuItem(
                             Icons.Default.Fingerprint,

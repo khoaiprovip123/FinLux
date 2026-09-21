@@ -4,6 +4,24 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-09-21] - [v1.25.7] Hệ Thống Sao Lưu & Phục Hồi Dữ Liệu Toàn Diện (Full Data Snapshot & Recovery Engine)
+
+- **Kiến trúc JSON Snapshot 10 Module Toàn Vẹn (`docs/backup_restore_spec.md`)**:
+  * Thiết kế định dạng `.finlux` (JSON chuẩn + SHA-256 Checksum) bảo đảm toàn vẹn dữ liệu cho 10 module: Wallets, Categories, Budgets, Transactions, Debts, Debt Payments, Goals, Reminders, Deals, Saving Spin Config.
+- **Hai Chiến Lược Khôi Phục Độc Lập**:
+  * `FULL_OVERWRITE` (True Wipe & Replace): Xóa sạch dữ liệu cũ theo thứ tự đảo ngược phụ thuộc (Reverse Dependency Order) bằng các hàm Raw (`deleteWalletRaw`, `deleteTransactionRaw`), nạp snapshot nguyên bản bảo toàn 100% ID gốc.
+  * `SMART_MERGE` (Hợp nhất thông minh): Nhận diện thông minh ví Tiền mặt (`CASH` / `isDefault` / "Tiền mặt") để ánh xạ vào ví hiện có (chống tạo ví thứ 2), khử trùng lặp giao dịch theo Content Signature (`walletId_amount_date_type_note`), cập nhật bản ghi khi `updatedAt` mới hơn.
+- **Tự Động Điều Hòa Số Dư Tổng Lực (Self-Healing Full Ledger Balance Reconciliation)**:
+  * Sau khi nạp giao dịch, tính toán lại tổng dòng tiền từ toàn bộ sổ cái giao dịch trong cơ sở dữ liệu kết hợp số dư seed khởi tạo: $\text{recalculatedBalance} = \text{seed} + \sum \text{delta}$.
+  * Tự động phát hiện và sửa sai số dư tài liệu ví trên Firestore khi có độ lệch, đảm bảo số dư ví và tổng tài sản khả dụng khớp 100% với thực tế, triệt tiêu hoàn toàn ca biên dirty-state.
+- **Kiểm Toán Số Dư & Đồng Bộ UI Tức Thì**:
+  * Tích hợp `WalletBalanceAudit` tự động đối soát $\text{balance} == \text{seed} + \text{netCashflow}$ và trả về báo cáo kiểm toán trực quan.
+  * Singleton `DataSyncManager` phát xung `refreshTrigger` kích hoạt reactive reload cho `HomeViewModel`, `WalletsViewModel`, `TransactionsViewModel`, xóa bỏ triệt để desync giữa các màn hình.
+- **Kiểm Thử Độc Lập Toàn Diện**:
+  * Viết mới 14 test cases trong `RestoreBackupUseCaseTest` (T-RST-01 đến T-RST-14) và 6 test cases trong `BackupRestoreViewModelTest`. Nâng toàn bộ test suite dự án lên **499/499 unit tests PASS 100%**.
+
+---
+
 ## ✅ [DONE 2026-09-14] - [v1.25.6] Wave 2 Xử Lý Nợ Kỹ Thuật, Hiến Pháp Quản Trị & Quy Hoạch Mã Dùng Chung
 
 - **Hiến pháp & Kỷ luật Quản trị (`AGENTS.md`, `docs/RULE_MAPPING_MATRIX.md`)**: Bổ sung Điều II.9 (Bắt buộc đồng bộ đặc tả ngược - Spec Parity Gate) và Điều II.10 (Triệt tiêu code cục bộ - Zero Local Duplication Gate). Nâng cấp Definition of Done (DoD) với 2 tiêu chí kiểm soát bắt buộc.

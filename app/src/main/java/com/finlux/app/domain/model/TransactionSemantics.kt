@@ -92,3 +92,12 @@ const val SAVINGS_CATEGORY_ID = SystemCategories.SAVINGS
 private const val TRANSFER_IN_SUFFIX = "_in"
 private const val TRANSFER_OUT_SUFFIX = "_out"
 private const val ACTIVE_WALLET_STATUS = "active"
+
+/**
+ * Calculates the balance impact of this transaction on its [FinanceTransaction.walletId].
+ * Positive for INCOME and TRANSFER_IN, negative for EXPENSE and TRANSFER_OUT.
+ */
+fun FinanceTransaction.balanceDelta(): Long = when (type) {
+    TransactionType.INCOME, TransactionType.TRANSFER_IN -> amount.value
+    TransactionType.EXPENSE, TransactionType.TRANSFER_OUT -> -amount.value
+}

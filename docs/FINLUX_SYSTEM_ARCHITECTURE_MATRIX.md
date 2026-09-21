@@ -2,15 +2,15 @@
 *(FINLUX SYSTEM ARCHITECTURE MATRIX & UNIFIED MONEY FLOW CONSTITUTION)*
 
 - **Dự án:** FinLux — Quản lý Tài chính Cá nhân Thông minh (Android / Jetpack Compose / Firebase)
-- **Phiên bản hiện tại:** v1.25.6 (versionCode 180)
-- **Tài liệu tham chiếu cốt lõi:** `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md`, `docs/debt_category_mapping_investigation.md`
+- **Phiên bản hiện tại:** v1.25.7 (versionCode 181)
+- **Tài liệu tham chiếu cốt lõi:** `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md`, `docs/backup_restore_spec.md`, `docs/debt_category_mapping_investigation.md`
 - **Mục tiêu:** Định danh 100% các module/tiểu hệ thống, lập bản đồ phụ thuộc chéo, chỉ rõ các điểm gãy xung đột dữ liệu, thiết lập Hiến pháp Tài chính Bất biến (Financial Invariants) và lộ trình tái cấu trúc triệt để.
 
 ---
 
 ## PHẦN 1: ĐIỀU TRA & ĐỊNH DANH TOÀN DIỆN MỌI MODULE (FULL CODEBASE RECONNAISSANCE)
 
-Dựa trên kết quả rà soát toàn bộ 4 tầng kiến trúc (`presentation/`, `domain/`, `data/`, `docs/` và `FinluxNavHost.kt`), hệ thống FinLux bao gồm **16 Module / Tiểu hệ thống cốt lõi**:
+Dựa trên kết quả rà soát toàn bộ 4 tầng kiến trúc (`presentation/`, `domain/`, `data/`, `docs/` và `FinluxNavHost.kt`), hệ thống FinLux bao gồm **17 Module / Tiểu hệ thống cốt lõi**:
 
 | STT | Tên Module | Phạm vi Mã Nguồn (Presentation / Domain / Data) | % Hoàn thiện | Chức năng Cốt lõi đang Vận hành | Điểm Còn Dở, Hardcode hoặc Chắp Vá |
 |:---:|:---|:---|:---:|:---|:---|
@@ -30,6 +30,7 @@ Dựa trên kết quả rà soát toàn bộ 4 tầng kiến trúc (`presentatio
 | **14** | **Security & Lock** | `core/security/`<br>`BiometricHelper.kt`, `AppLockManager.kt` | 95% | Khóa ứng dụng bằng vân tay/khuôn mặt, tùy chỉnh thời gian timeout (ngay lập tức, 1 phút, 5 phút), bảo vệ vòng đời tránh sự kiện inactive giả lập. | Hoàn thiện tốt, tuân thủ đúng quy chuẩn AndroidX Biometric. |
 | **15** | **In-App Updater** | `presentation/updater`<br>`AppUpdateViewModel.kt`, `AppUpdateManager.kt` | 90% | Kiểm tra phiên bản mới từ GitHub Release API, thông báo changelog dạng pop-up kính Liquid Glass, tải APK về máy và gọi Intent cài đặt. | Chưa có thanh tiến trình % chi tiết khi tải file APK nặng trên mạng yếu (hiện tại hiển thị vòng xoay spinner). |
 | **16** | **Design System** | `core/designsystem/`<br>`FinluxTheme.kt`, `FinluxTokens.kt`, `LiquidGlassSurface.kt` | 98% | Hệ thống Liquid Glass đa tầng (VisionOS style), 5 bảng màu (Dark, Light, Prism, Classic, Modern), 3 phong cách (Classic Liquid, Modern Liquid, Prism Liquid), Spring Physics tương tác mượt mà. | Hoàn thiện xuất sắc, 100% không hardcode mã màu tĩnh theo đúng 3 Nguyên Tắc Cốt Lõi Bắt Buộc. |
+| **17** | **Backup & Restore Engine** | `presentation/settings/backup`<br>`domain/model/backup/`<br>`domain/usecase/backup/`<br>`core/sync/DataSyncManager.kt`<br>`data/remote/firebase/` | 100% | Sao lưu & Khôi phục toàn diện 10 modules dữ liệu ra tệp `.finlux` (JSON chuẩn + SHA-256 Checksum). Hỗ trợ 2 cơ chế: `FULL_OVERWRITE` (True Reverse Raw Wipe & nạp nguyên bản giữ nguyên ID) và `SMART_MERGE` (ánh xạ định danh ví Tiền mặt chống tạo đúp ví, khử trùng lặp giao dịch theo Content Signature, giải quyết xung đột theo `updatedAt`). **Tự động điều hòa số dư tổng lực (Self-Healing Full Ledger Reconciliation)** bảo đảm số dư khớp 100% với sổ cái giao dịch. **Cơ chế DataSyncManager (@Singleton)** phát xung cập nhật tức thì chống desync UI giữa Home, Wallets và Transactions. | Hoàn thiện 100% đạt chuẩn kiểm thử tự động độc lập 14 test cases (`RestoreBackupUseCaseTest`), không còn nợ kỹ thuật. |
 
 ---
 
