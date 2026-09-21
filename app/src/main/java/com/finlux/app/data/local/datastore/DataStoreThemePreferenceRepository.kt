@@ -56,6 +56,10 @@ class DataStoreThemePreferenceRepository @Inject constructor(
         context.finluxDataStore.edit { it[UiStyleKey] = uiStyle.name }
     }
 
+    override suspend fun resetPreferences() {
+        context.finluxDataStore.edit { it.clear() }
+    }
+
     override val preferences: Flow<UiPreferences> = context.finluxDataStore.data.map { stored ->
         UiPreferences(
             visualStyle = stored[VisualStyleKey]

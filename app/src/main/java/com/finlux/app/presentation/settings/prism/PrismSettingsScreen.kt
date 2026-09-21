@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.CameraAlt
 import com.finlux.app.presentation.settings.backup.BackupRestoreSheet
+import com.finlux.app.presentation.settings.deleteaccount.DeleteAccountBottomSheet
 import com.finlux.app.presentation.settings.salary.SalaryCycleSettingsSheet
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
@@ -53,6 +54,7 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -161,6 +163,7 @@ fun PrismSettingsScreen(
     var showBiometricTimeoutDialog by remember { mutableStateOf(false) }
     var showSalaryCycleSheet by remember { mutableStateOf(false) }
     var showBackupRestoreSheet by remember { mutableStateOf(false) }
+    var showDeleteAccountSheet by remember { mutableStateOf(false) }
     var infoDialog by remember { mutableStateOf<InfoDialogContent?>(null) }
     var amountVisible by remember { mutableStateOf(true) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
@@ -307,6 +310,16 @@ fun PrismSettingsScreen(
     if (showBackupRestoreSheet) {
         BackupRestoreSheet(
             onDismiss = { showBackupRestoreSheet = false },
+        )
+    }
+
+    if (showDeleteAccountSheet) {
+        DeleteAccountBottomSheet(
+            onDismiss = { showDeleteAccountSheet = false },
+            onAccountDeleted = {
+                showDeleteAccountSheet = false
+                onSignedOut()
+            },
         )
     }
 
@@ -536,6 +549,56 @@ fun PrismSettingsScreen(
                         ),
                     ),
                 )
+            }
+
+            item {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(tokens.radius.standardCard))
+                        .clickable { showDeleteAccountSheet = true },
+                    shape = RoundedCornerShape(tokens.radius.standardCard),
+                    color = tokens.error.copy(alpha = if (tokens.isDark) 0.10f else 0.05f),
+                    border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.35f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(tokens.error.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.WarningAmber,
+                                contentDescription = null,
+                                tint = tokens.error,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "VÙNG NGUY HIỂM",
+                                style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.error,
+                            )
+                            Text(
+                                text = "Xóa tài khoản & Toàn bộ dữ liệu",
+                                style = FinluxTextStyles.Body.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.textPrimary,
+                            )
+                            Text(
+                                text = "Xóa vĩnh viễn dữ liệu đám mây, ví, giao dịch và tài khoản",
+                                style = FinluxTextStyles.Caption,
+                                color = tokens.textSecondary,
+                            )
+                        }
+                    }
+                }
             }
 
             item {

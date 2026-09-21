@@ -39,4 +39,8 @@ class DataStoreDebtPreferenceRepository @Inject constructor(
     override suspend fun saveExtraMonthlyPayment(amount: Long) {
         context.debtPreferencesDataStore.edit { it[DebtExtraPaymentKey] = amount }
     }
+
+    override suspend fun resetPreferences() {
+        context.debtPreferencesDataStore.edit { it.clear() }
+    }
 }

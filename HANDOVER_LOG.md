@@ -2,7 +2,7 @@
 
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.25.7 (versionCode 181)
-- **Trạng thái Build:** ✅ 100% PASS (499/499 unit tests)
+- **Trạng thái Build:** ✅ 100% PASS (514/514 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
 ### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
@@ -17,6 +17,50 @@
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 - [x] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+
+### [Task-PHASE2-ACCOUNT-DELETION] — Trải nghiệm Giao diện Liquid Glass & Hàng rào An toàn 3 Bước (Phase 2)
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Xây dựng `DeleteAccountViewModel`: Quản lý state damage preview (số ví, giao dịch, nợ, mục tiêu, ngân sách, nhắc nhở), export backup offline (.finlux), re-auth provider check (Google ID Token & Password), confirm text validation ("XÓA TÀI KHOẢN"), purging progress tracking qua 6 giai đoạn, và emit navigate to Welcome/Auth.
+  2. Xây dựng `DeleteAccountBottomSheet`: ModalBottomSheet kính mờ Liquid Glass, 100% token dynamic `LocalFinluxTokens.current`, 3 bước an toàn (Thống kê thiệt hại -> Gợi ý tải backup .finlux -> Re-auth & Gõ "XÓA TÀI KHOẢN") + Purging Progress Overlay toàn màn hình.
+  3. Tích hợp khối "VÙNG NGUY HIỂM" (DANGER ZONE) vào đáy `PrismSettingsScreen.kt` ngay trên nút Đăng xuất với Card kính viền đỏ và icon Warning.
+  4. Xử lý điều hướng reset backstack (`popUpTo(0)`) về Auth khi xóa hoàn tất.
+  5. Viết bộ kiểm thử `DeleteAccountViewModelTest` (T-DEL-VM-01 đến T-DEL-VM-06) và đạt 100% PASS testDebugUnitTest (514/514 unit tests pass).
+  6. Biên dịch `assembleDebug` và nạp thành công lên điện thoại thật qua ADB.
+- **Files thực tế đã tạo & sửa**:
+  - `app/src/main/java/com/finlux/app/presentation/settings/deleteaccount/DeleteAccountViewModel.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/settings/deleteaccount/DeleteAccountBottomSheet.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/domain/usecase/account/PurgeUserDataUseCase.kt` [MODIFY]
+  - `app/src/test/java/com/finlux/app/presentation/settings/deleteaccount/DeleteAccountViewModelTest.kt` [NEW]
+  - `HANDOVER_LOG.md` [MODIFY]
+
+---
+
+### [Task-PHASE1-ACCOUNT-DELETION] — Xây dựng Hạ tầng Dọn dẹp Dữ liệu & Logic Domain Xóa Tài Khoản (Phase 1)
+- **Status**: `[DONE]`
+- **Mục tiêu**:
+  1. Cập nhật `firestore.rules`: Cho phép `delete` trên `salaryRollovers` và cho phép bulk/raw wipe trên `transactions` cho chủ sở hữu (`isOwner(uid)`).
+  2. Mở rộng `AuthRepository` & `FirebaseAuthRepository`: Thêm `getAuthProviderId`, `reauthenticateWithPassword`, `reauthenticateWithGoogle`, `deleteAuthAccount`.
+  3. Xây dựng `PurgeUserDataUseCase`: Reverse wipe 14 subcollections Firestore (chunk 400 docs/batch) + Cloud Storage (receipts, avatars).
+  4. Xây dựng `DeleteAccountUseCase`: Điều phối pipeline Pre-flight Gate -> Cancel native alarms -> Purge Storage/Firestore -> Delete Auth -> Reset Local Storage/Memory.
+  5. Viết bộ kiểm thử độc lập: `PurgeUserDataUseCaseTest` (T-PURGE-01 đến T-PURGE-04) và `DeleteAccountUseCaseTest` (T-DEL-01 đến T-DEL-05).
+  6. Bảo đảm 100% PASS test suite, nâng tổng số tests vượt mốc 508 tests (508/508 tests PASS).
+- **Files thực tế đã sửa**:
+  - `firestore.rules` [MODIFY]
+  - `app/src/main/java/com/finlux/app/domain/repository/AuthRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseAuthRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/domain/repository/ThemePreferenceRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/domain/repository/DebtPreferenceRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreDebtPreferenceRepository.kt` [MODIFY]
+  - `app/src/main/java/com/finlux/app/domain/usecase/account/PurgeUserDataUseCase.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/domain/usecase/account/DeleteAccountUseCase.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/account/PurgeUserDataUseCaseTest.kt` [NEW]
+  - `app/src/test/java/com/finlux/app/domain/usecase/account/DeleteAccountUseCaseTest.kt` [NEW]
+  - `HANDOVER_LOG.md` [MODIFY]
+
+---
 
 ### [Task-FIX-SMART-MERGE-BALANCE-RECONCILIATION] — Cải tổ Điều hòa số dư Tổng lực (Full Ledger Reconciliation) & Khử bẫy timestamp trong Smart Merge
 - **Status**: `[DONE]`

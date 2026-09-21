@@ -186,8 +186,7 @@ service cloud.firestore {
                 transactionDelta(request.resource.data)
               ))
           );
-        allow delete: if isOwner(uid)
-          && walletMovesBy(uid, resource.data.walletId, 0 - transactionDelta(resource.data));
+        allow delete: if isOwner(uid);
       }
 
       // Subcollection: Wallets
@@ -313,7 +312,7 @@ service cloud.firestore {
           && request.resource.data.cycleKey is string
           && request.resource.data.processedAt is timestamp;
         allow update: if false;
-        allow delete: if false;
+        allow delete: if isOwner(uid);
       }
 
       // Subcollection: Salary Cycle Timeline (Dòng thời gian cấu hình chu kỳ lương)

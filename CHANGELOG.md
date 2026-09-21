@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.25.8] - 2026-09-21
+### Added
+- **Tính Năng Xóa Tài Khoản Vĩnh Viễn & Dọn Dẹp Dữ Liệu Toàn Diện (Account Deletion & Data Purge - Phase 1 & 2)**:
+  * **Kiến trúc Dọn Dẹp Đảo Ngược 11 Subcollections**: `PurgeUserDataUseCase` dọn dẹp Firestore sạch 100% theo thứ tự phụ thuộc (Transactions -> Deals -> Goals -> Reminders -> Debts -> Budgets -> Categories -> Wallets -> Saving Spin -> User Root Document).
+  * **Hàng Rào Bảo Mật 3 Bước Tối Cao (3-Step Safety Shield)**:
+    - *Bước 1: Damage Preview* — Thống kê trực quan số lượng bản ghi tài chính sắp bị xóa (số ví, giao dịch, nợ, mục tiêu, ngân sách, nhắc nhở).
+    - *Bước 2: Offline Emergency Backup* — Tích hợp `ExportBackupUseCase` cho phép người dùng xuất file sao lưu mã hóa `.finlux` về máy trước khi xóa.
+    - *Bước 3: Re-authentication Bảo Mật & Xác Nhận Bằng Chữ* — Tự động nhận diện Auth Provider (`google.com` hoặc `password`), yêu cầu xác thực lại và gõ chính xác cụm từ `"XÓA TÀI KHOẢN"`.
+  * **Xóa Triệt Để Dữ Liệu Cục Bộ & Firebase Auth**: Xóa DataStore preferences (`ThemePreferenceRepository`, `DebtPreferenceRepository`), hủy Firebase User vĩnh viễn và phát xung dọn sạch backstack (`popUpTo(0)`) quay về màn hình Chào mừng/Đăng nhập.
+  * **Bảo Mật Firestore Rules**: Bổ sung quyền `delete` cho chủ sở hữu tài khoản (`isOwner(userId)`) trên tài liệu root `/users/{userId}`.
+  * **Giao Diện Liquid Glass Vùng Nguy Hiểm (Danger Zone)**: Bổ sung Card kính viền đỏ cảnh báo tại đáy `PrismSettingsScreen.kt` kết hợp BottomSheet Liquid Glass kính mờ và Full-screen Purging Overlay theo dõi tiến trình 6 giai đoạn dọn dẹp.
+  * **Bộ Kiểm Thử Đơn Vị Tự Động**: Bổ sung `PurgeUserDataUseCaseTest` (4 tests), `DeleteAccountUseCaseTest` (5 tests), `DeleteAccountViewModelTest` (6 tests), nâng tổng số test suite toàn dự án lên **514/514 unit tests PASS 100%**.
+
+### Changed
+- Cập nhật `versionCode = 182` và `versionName = "1.25.8"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và hoàn thiện đặc tả kỹ thuật `docs/account_deletion_spec.md`.
+
 ## [1.25.7] - 2026-09-21
 ### Added
 - **Tính Năng Sao Lưu & Phục Hồi Dữ Liệu Toàn Diện (Backup & Restore - Phase 1 & 2)**:
