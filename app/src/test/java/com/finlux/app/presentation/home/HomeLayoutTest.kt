@@ -1,9 +1,10 @@
-package com.finlux.app.presentation.home.prism
+package com.finlux.app.presentation.home
 
+import com.finlux.app.domain.model.FinanceTransaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class PrismHomeLayoutTest {
+class HomeLayoutTest {
 
     @Test
     fun `home profile header stays compact`() {
@@ -46,7 +47,7 @@ class PrismHomeLayoutTest {
 
     @Test
     fun `computePeriodBars handles empty and normal transactions correctly`() {
-        val emptyBars = computePeriodBars(emptyList(), null, 5)
+        val emptyBars = computePeriodBars(emptyList<FinanceTransaction>(), null, 5)
         assertEquals(listOf(0L, 0L, 0L, 0L, 0L), emptyBars)
     }
 }

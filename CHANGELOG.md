@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.25.15] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Màn Hình Chủ HomeScreen Master (Phase 3 - Batch 3.5: Master Adaptive Home Architecture)**:
+  * Tái cấu trúc `HomeScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  * Tích hợp toàn diện Bento Grid layout, Financial Overview Card (Tài sản ròng Net Worth, Tổng tài sản thô, Tổng nợ, carousel Thu / Chi / Dòng tiền tự động), Action Toolbar nhanh và Quick Insights Bento.
+  * Tích hợp trực quan Budget Card, Wallets Overview, Vòng quay may mắn tiết kiệm `SavingSpinHomeCard` và danh sách giao dịch gần đây thông minh.
+  * Di chuyển và quy hoạch lại `HomeLayoutTest.kt` vào package dùng chung `com.finlux.app.presentation.home`.
+  * XÓA BỎ HOÀN TOÀN các file màn hình trùng lặp cũ: `ClassicHomeScreen.kt`, `ModernHomeScreen.kt`, `PrismHomeScreen.kt` (giảm hơn 50 KB mã nguồn thừa).
+  * **HOÀN TẤT TOÀN BỘ 6/6 BATCHES CỦA PHASE 3: ADAPTIVE UI CONSOLIDATION**.
+
+### Changed
+- Cập nhật `versionCode = 189` và `versionName = "1.25.15"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
 ## [1.25.14] - 2026-09-22
 ### Added
 - **Sáp Nhập Toàn Diện Cụm ReportsScreen (Phase 3 - Batch 3.4: Adaptive Reports Architecture)**:
