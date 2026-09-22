@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.25.12] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm BudgetScreen (Phase 3 - Batch 3.2: Adaptive Budget Architecture)**:
+  * Tái cấu trúc `BudgetScreen.kt` thành Composable Screen thống nhất duy nhất, tích hợp quản lý hạn mức theo chu kỳ, bộ chọn tháng, smart threshold alerts (80% vàng, 100% đỏ theo BR-09).
+  * Tích hợp thanh điều hướng `FinluxAdaptiveTopBar`, bề mặt thẻ `FinluxAdaptiveCard`, `GradientHeroCard` và `FinluxHeroCard` tự động thích ứng với 3 phong cách UI.
+  * Hợp nhất BottomSheet xem lịch sử giao dịch theo danh mục và Sheet thiết lập ngân sách mới / chỉnh sửa.
+  * XÓA BỎ HOÀN TOÀN 3 file: `ClassicBudgetScreen.kt`, `ModernBudgetScreen.kt`, `PrismBudgetScreen.kt` (giảm hơn 80 KB mã nguồn trùng lặp).
+
+### Changed
+- Cập nhật `versionCode = 186` và `versionName = "1.25.12"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
 ## [1.25.11] - 2026-09-22
 ### Added
 - **Sáp Nhập Toàn Diện Cụm WalletsScreen (Phase 3 - Batch 3.1: Adaptive Wallets Architecture)**:
