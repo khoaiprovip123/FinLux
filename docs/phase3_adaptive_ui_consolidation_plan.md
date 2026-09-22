@@ -111,8 +111,8 @@ Mục tiêu của Phase 3 là: Chuyển đổi toàn diện sang **Component-dri
 ---
 
 ## 5. Tiêu Chuẩn Nghiệm Thu & An Toàn (Definition of Done)
-- [ ] 100% 521/521 Unit tests PASS ở mọi batch.
-- [ ] Xóa sạch 15 file màn hình rác không còn tồn tại trong repo (Zero Zombie Code).
-- [ ] Chuyển đổi giữa 3 style giao diện (`Classic`, `Modern`, `Prism`) trong Cài đặt diễn ra mượt mà, tức thì không giật lag.
-- [ ] Dung lượng mã nguồn tầng Presentation giảm ít nhất 350 KB - 400 KB.
-- [ ] Cập nhật `CHANGELOG.md`, `HANDOVER_LOG.md` và `docs/` sau mỗi batch.
+- [x] 100% 521/521 Unit tests PASS ở mọi batch.
+- [x] Xóa sạch 15 file màn hình rác không còn tồn tại trong repo (Zero Zombie Code).
+- [x] Chuyển đổi giữa 3 style giao diện (`Classic`, `Modern`, `Prism`) trong Cài đặt diễn ra mượt mà, tức thì không giật lag.
+- [x] Dung lượng mã nguồn tầng Presentation giảm ít nhất 350 KB - 400 KB.
+- [x] Cập nhật `CHANGELOG.md`, `HANDOVER_LOG.md` và `docs/` sau mỗi batch.
