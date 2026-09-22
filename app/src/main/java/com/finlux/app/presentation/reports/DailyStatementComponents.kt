@@ -1,4 +1,4 @@
-package com.finlux.app.presentation.reports.prism
+package com.finlux.app.presentation.reports
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -46,7 +46,6 @@ import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DailyFinancialStatement
-import com.finlux.app.presentation.reports.ReportsUiState
 import java.time.format.DateTimeFormatter
 
 /**
@@ -58,7 +57,7 @@ import java.time.format.DateTimeFormatter
  * - Cuối ngày còn bao nhiêu?
  */
 @Composable
-fun PrismDailyStatementCard(
+fun DailyStatementCard(
     state: ReportsUiState,
     modifier: Modifier = Modifier,
 ) {
@@ -316,7 +315,7 @@ fun PrismDailyStatementCard(
  * Hiển thị rõ: Trước hôm nay + Hôm nay = Tổng lũy kế.
  */
 @Composable
-fun PrismCumulativeMetricsCard(
+fun CumulativeMetricsCard(
     state: ReportsUiState,
     modifier: Modifier = Modifier,
 ) {
@@ -422,7 +421,7 @@ private fun CumulativeRow(
  * Bảng Đối chiếu Tài chính theo ngày (Daily Statement Table).
  */
 @Composable
-fun PrismDailyStatementsTable(
+fun DailyStatementsTable(
     statements: List<DailyFinancialStatement>,
     modifier: Modifier = Modifier,
 ) {
@@ -522,3 +521,13 @@ fun PrismDailyStatementsTable(
         }
     }
 }
+
+// Aliases for compatibility
+@Composable
+fun PrismDailyStatementCard(state: ReportsUiState, modifier: Modifier = Modifier) = DailyStatementCard(state, modifier)
+
+@Composable
+fun PrismCumulativeMetricsCard(state: ReportsUiState, modifier: Modifier = Modifier) = CumulativeMetricsCard(state, modifier)
+
+@Composable
+fun PrismDailyStatementsTable(statements: List<DailyFinancialStatement>, modifier: Modifier = Modifier) = DailyStatementsTable(statements, modifier)

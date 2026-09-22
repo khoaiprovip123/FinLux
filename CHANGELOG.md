@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.25.14] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm ReportsScreen (Phase 3 - Batch 3.4: Adaptive Reports Architecture)**:
+  * Tái cấu trúc `ReportsScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  * Tích hợp toàn bộ hệ thống báo cáo: 4 Primary Tabs (Tổng quan | Thu & Chi | Danh mục | Chuyên sâu), Donut chart trực quan, Hero Banner đa lớp, bộ lọc kỳ báo cáo và xuất báo cáo CSV/PDF.
+  * Tích hợp 6 Deep-Dive Sub Tabs: Vay nợ, Tiết kiệm mục tiêu, Đầu tư thương vụ, Ngân sách danh mục, Phân bổ tài sản ví và Xu hướng dòng tiền (Cashflow Trend Chart).
+  * Di chuyển và quy hoạch tập trung `DailyStatementComponents.kt` (DailyStatementCard, CumulativeMetricsCard, DailyStatementsTable) vào package `com.finlux.app.presentation.reports`.
+  * XÓA BỎ HOÀN TOÀN các file trùng lặp: `ClassicReportsScreen.kt`, `ModernReportsScreen.kt`, `PrismReportsScreen.kt`, `PrismDailyStatementComponents.kt` (giảm hơn 230 KB mã nguồn thừa).
+
+### Changed
+- Cập nhật `versionCode = 188` và `versionName = "1.25.14"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
 ## [1.25.13] - 2026-09-22
 ### Added
 - **Sáp Nhập Toàn Diện Cụm TransactionsScreen (Phase 3 - Batch 3.3: Adaptive Transactions Architecture)**:

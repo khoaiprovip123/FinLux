@@ -1,7 +1,7 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.13 (versionCode 187)
+- **Phiên bản hiện tại:** v1.25.14 (versionCode 188)
 - **Trạng thái Build:** ✅ 100% PASS (521/521 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
@@ -16,6 +16,29 @@
 - [x] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
+
+### [Task-PHASE-3-BATCH-3.4] — Sáp Nhập Cụm 4: ReportsScreen (Adaptive Architecture)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Tái cấu trúc `ReportsScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  2. Tích hợp 4 Primary Tabs (Tổng quan | Thu & Chi | Danh mục | Chuyên sâu), Donut chart, bộ lọc kỳ báo cáo và xuất báo cáo CSV/PDF.
+  3. Tích hợp 6 Deep-Dive Sub Tabs: Vay nợ, Tiết kiệm, Thương vụ đầu tư, Ngân sách, Tài sản ví và Xu hướng dòng tiền.
+  4. Trích xuất quy hoạch `DailyStatementComponents.kt` vào package `com.finlux.app.presentation.reports`.
+  5. XÓA BỎ HOÀN TOÀN các file trùng lặp: `ClassicReportsScreen.kt`, `ModernReportsScreen.kt`, `PrismReportsScreen.kt`, `PrismDailyStatementComponents.kt`.
+  6. Đạt Quality Gate: `compileDebugKotlin` sạch, 521/521 unit tests PASS 100%.
+- **Files đã sửa/tạo/xóa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/ReportsScreen.kt` (tái cấu trúc thống nhất)
+  - `app/src/main/java/com/finlux/app/presentation/reports/DailyStatementComponents.kt` (quy hoạch tập trung)
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt` (đã xóa)
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt` (đã xóa)
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt` (đã xóa)
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismDailyStatementComponents.kt` (đã xóa)
+  - `app/build.gradle.kts` (versionCode 188, versionName 1.25.14)
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (BUILD SUCCESSFUL).
 
 ### [Task-PHASE-3-BATCH-3.3] — Sáp Nhập Cụm 3: TransactionsScreen (Adaptive Architecture)
 - **Status**: `[DONE]`
