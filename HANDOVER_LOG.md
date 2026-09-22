@@ -1,7 +1,7 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.12 (versionCode 186)
+- **Phiên bản hiện tại:** v1.25.13 (versionCode 187)
 - **Trạng thái Build:** ✅ 100% PASS (521/521 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
@@ -16,6 +16,29 @@
 - [x] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
+
+### [Task-PHASE-3-BATCH-3.3] — Sáp Nhập Cụm 3: TransactionsScreen (Adaptive Architecture)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Tái cấu trúc `TransactionsScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  2. Hiển thị thẻ giao dịch qua `FinluxAdaptiveCard`, thanh tiêu đề qua `FinluxAdaptiveTopBar`.
+  3. Tích hợp thanh tìm kiếm, bộ lọc nhanh phân đoạn [ Tất cả | Thu | Chi | Chuyển ], và chuyển đổi ViewMode (Danh sách theo ngày vs Spending Calendar Heatmap).
+  4. Trích xuất quy hoạch `SpendingCalendarView.kt` vào package `presentation/transaction`.
+  5. XÓA BỎ HOÀN TOÀN 3 file: `ClassicTransactionsScreen.kt`, `ModernTransactionsScreen.kt`, `PrismTransactionsScreen.kt`.
+  6. Đạt Quality Gate: `compileDebugKotlin` sạch, 521/521 unit tests PASS 100%.
+- **Files đã sửa/tạo/xóa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/TransactionsScreen.kt` (tái cấu trúc thống nhất)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/SpendingCalendarView.kt` (quy hoạch tập trung)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt` (đã xóa)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt` (đã xóa)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismSpendingCalendarView.kt` (đã xóa/chuyển)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt` (đã xóa)
+  - `app/build.gradle.kts` (versionCode 187, versionName 1.25.13)
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
 
 ### [Task-PHASE-3-BATCH-3.2] — Sáp Nhập Cụm 2: BudgetScreen (Adaptive Architecture)
 - **Status**: `[DONE]`

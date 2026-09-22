@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.25.13] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm TransactionsScreen (Phase 3 - Batch 3.3: Adaptive Transactions Architecture)**:
+  * Tái cấu trúc `TransactionsScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  * Tích hợp thanh tiêu đề `FinluxAdaptiveTopBar`, bề mặt thẻ `FinluxAdaptiveCard`, thanh tìm kiếm và bộ lọc nhanh phân đoạn [ Tất cả | Thu | Chi | Chuyển ].
+  * Chuyển đổi mượt mà giữa 2 chế độ hiển thị: Danh sách theo ngày (Explorer view) và Bản đồ nhiệt chi tiêu (Spending Calendar Heatmap).
+  * Di chuyển và quy hoạch tập trung `SpendingCalendarView.kt` vào package `presentation/transaction`.
+  * XÓA BỎ HOÀN TOÀN 3 file: `ClassicTransactionsScreen.kt`, `ModernTransactionsScreen.kt`, `PrismTransactionsScreen.kt` (giảm hơn 90 KB mã nguồn trùng lặp).
+
+### Changed
+- Cập nhật `versionCode = 187` và `versionName = "1.25.13"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
 ## [1.25.12] - 2026-09-22
 ### Added
 - **Sáp Nhập Toàn Diện Cụm BudgetScreen (Phase 3 - Batch 3.2: Adaptive Budget Architecture)**:

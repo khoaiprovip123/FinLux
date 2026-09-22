@@ -1,4 +1,4 @@
-package com.finlux.app.presentation.transaction.prism
+package com.finlux.app.presentation.transaction
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -48,17 +48,17 @@ import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Wallet
-import com.finlux.app.presentation.transaction.DayFinancialSummary
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Spending Calendar Heatmap View for Finlux Prism History 2.0
+ * Spending Calendar Heatmap View for Finlux Transaction History
  */
 @Composable
-fun PrismSpendingCalendarView(
+fun SpendingCalendarView(
     dailySummaries: Map<LocalDate, DayFinancialSummary>,
     selectedDate: LocalDate?,
     onSelectDate: (LocalDate?) -> Unit,
@@ -68,7 +68,7 @@ fun PrismSpendingCalendarView(
     onTransactionClick: (FinanceTransaction) -> Unit,
     onTransactionLongClick: (FinanceTransaction) -> Unit,
     modifier: Modifier = Modifier,
-    zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
+    zone: ZoneId = ZoneId.systemDefault(),
 ) {
     val tokens = LocalFinluxTokens.current
     var currentMonth by remember { mutableStateOf(YearMonth.now(zone)) }
