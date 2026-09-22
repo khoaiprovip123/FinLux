@@ -13,10 +13,12 @@ import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import com.finlux.app.core.common.AppSystemConfig
+
 const val ACTION_SAVING_SPIN_REMINDER = "com.finlux.app.ACTION_SAVING_SPIN_REMINDER"
 const val ACTION_SAVING_SPIN_SNOOZE = "com.finlux.app.ACTION_SAVING_SPIN_SNOOZE"
 const val EXTRA_OPEN_SAVING_SPIN = "open_saving_spin"
-const val SAVING_SPIN_ALARM_REQUEST_CODE = 73_091
+const val SAVING_SPIN_ALARM_REQUEST_CODE = AppSystemConfig.AlarmRequestCodes.SAVING_SPIN_DAILY_REMINDER
 
 @Singleton
 class AlarmSavingSpinScheduler @Inject constructor(

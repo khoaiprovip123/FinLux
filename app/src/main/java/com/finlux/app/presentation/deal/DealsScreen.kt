@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.FinancialDeal
@@ -102,7 +103,7 @@ fun DealsScreen(
                 FloatingActionButton(
                     onClick = { showCreateDialog = true },
                     containerColor = tokens.primary,
-                    contentColor = Color.White,
+                    contentColor = tokens.onHero,
                     shape = RoundedCornerShape(16.dp),
                 ) {
                     Row(
@@ -335,8 +336,8 @@ private fun HeroSummaryCard(state: DealsUiState) {
                         .clip(RoundedCornerShape(12.dp))
                         .background(
                             if (isZero) tokens.surfaceSoft
-                            else if (overallRoi >= 0) Color(0xFF10B981).copy(alpha = 0.15f)
-                            else Color(0xFFEF4444).copy(alpha = 0.15f)
+                            else if (overallRoi >= 0) FinluxColors.IncomeGreen.copy(alpha = 0.15f)
+                            else tokens.error.copy(alpha = 0.15f)
                         )
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                 ) {
@@ -344,7 +345,7 @@ private fun HeroSummaryCard(state: DealsUiState) {
                         text = if (isZero) "ROI 0.0%" else String.format(java.util.Locale.US, "ROI %+.1f%%", overallRoi),
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = if (isZero) tokens.textSecondary else if (overallRoi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
+                            color = if (isZero) tokens.textSecondary else if (overallRoi >= 0) FinluxColors.IncomeGreen else tokens.error,
                         ),
                     )
                 }
@@ -379,7 +380,7 @@ private fun HeroSummaryCard(state: DealsUiState) {
                         text = if (profit > 0) "+${profit.toVnd()}" else profit.toVnd(),
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = if (profit >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                            color = if (profit >= 0) FinluxColors.IncomeGreen else tokens.error,
                         ),
                     )
                 }
@@ -486,7 +487,7 @@ private fun DealCardItem(
                         // Category Tag
                         Surface(
                             shape = RoundedCornerShape(5.dp),
-                            color = if (isLending) Color(0xFFF59E0B).copy(alpha = 0.14f) else tokens.primary.copy(alpha = 0.14f),
+                            color = if (isLending) FinluxColors.WarningAmber.copy(alpha = 0.14f) else tokens.primary.copy(alpha = 0.14f),
                         ) {
                             Text(
                                 text = if (isLending) "Cho vay" else "Đầu tư",
@@ -494,7 +495,7 @@ private fun DealCardItem(
                                     fontSize = 9.5.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = if (isLending) Color(0xFFD97706) else tokens.primary,
+                                color = if (isLending) FinluxColors.WarningAmber else tokens.primary,
                                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
                             )
                         }
@@ -520,14 +521,14 @@ private fun DealCardItem(
                         else -> "Chưa thu hồi"
                     }
                     val debtBg = when {
-                        deal.isFullyRecovered -> Color(0xFF10B981).copy(alpha = 0.15f)
-                        deal.totalRecovered.value > 0 -> Color(0xFF3B82F6).copy(alpha = 0.15f)
-                        else -> Color(0xFFF59E0B).copy(alpha = 0.15f)
+                        deal.isFullyRecovered -> FinluxColors.IncomeGreen.copy(alpha = 0.15f)
+                        deal.totalRecovered.value > 0 -> tokens.primary.copy(alpha = 0.15f)
+                        else -> FinluxColors.WarningAmber.copy(alpha = 0.15f)
                     }
                     val debtColor = when {
-                        deal.isFullyRecovered -> Color(0xFF059669)
-                        deal.totalRecovered.value > 0 -> Color(0xFF2563EB)
-                        else -> Color(0xFFD97706)
+                        deal.isFullyRecovered -> FinluxColors.IncomeGreen
+                        deal.totalRecovered.value > 0 -> tokens.primary
+                        else -> FinluxColors.WarningAmber
                     }
                     Box(
                         modifier = Modifier
@@ -551,8 +552,8 @@ private fun DealCardItem(
                             .clip(RoundedCornerShape(8.dp))
                             .background(
                                 if (isZero) tokens.surfaceSoft
-                                else if (roi >= 0) Color(0xFF10B981).copy(alpha = 0.15f)
-                                else Color(0xFFEF4444).copy(alpha = 0.15f)
+                                else if (roi >= 0) FinluxColors.IncomeGreen.copy(alpha = 0.15f)
+                                else tokens.error.copy(alpha = 0.15f)
                             )
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
@@ -560,7 +561,7 @@ private fun DealCardItem(
                             text = if (isZero) "0.0%" else String.format(java.util.Locale.US, "%+.1f%%", roi),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = if (isZero) tokens.textSecondary else if (roi >= 0) Color(0xFF059669) else Color(0xFFDC2626),
+                                color = if (isZero) tokens.textSecondary else if (roi >= 0) FinluxColors.IncomeGreen else tokens.error,
                             ),
                         )
                     }
@@ -575,7 +576,7 @@ private fun DealCardItem(
                         .fillMaxWidth()
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp)),
-                    color = Color(0xFF10B981),
+                    color = FinluxColors.IncomeGreen,
                     trackColor = tokens.border,
                 )
                 Row(
@@ -620,7 +621,7 @@ private fun DealCardItem(
                         text = deal.remainingCapital.value.toVnd(),
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = if (deal.remainingCapital.value > 0) Color(0xFFF59E0B) else tokens.textSecondary,
+                            color = if (deal.remainingCapital.value > 0) FinluxColors.WarningAmber else tokens.textSecondary,
                         ),
                     )
                 }
@@ -639,8 +640,8 @@ private fun DealCardItem(
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Bold,
                             color = when {
-                                profit > 0 -> if (isLending) Color(0xFF8B5CF6) else Color(0xFF10B981)
-                                profit < 0 -> Color(0xFFEF4444)
+                                profit > 0 -> if (isLending) FinluxColors.PrimaryViolet else FinluxColors.IncomeGreen
+                                profit < 0 -> tokens.error
                                 else -> tokens.textSecondary
                             },
                         ),
@@ -696,7 +697,7 @@ private fun EmptyDealsView(
                 onClick = onCreateClick,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = tokens.primary,
-                    contentColor = Color.White,
+                    contentColor = tokens.onHero,
                 ),
                 shape = RoundedCornerShape(12.dp),
             ) {

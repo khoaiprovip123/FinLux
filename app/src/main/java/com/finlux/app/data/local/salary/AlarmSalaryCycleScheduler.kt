@@ -17,9 +17,11 @@ import javax.inject.Singleton
 import com.finlux.app.domain.model.SalaryScheduleType
 import java.time.ZoneId
 
+import com.finlux.app.core.common.AppSystemConfig
+
 const val ACTION_SALARY_PAYDAY = "com.finlux.app.ACTION_SALARY_PAYDAY"
-const val SALARY_PAYDAY_ALARM_REQUEST_CODE = 9925
-const val SALARY_PAYDAY_ALARM_REQUEST_CODE_SECOND = 9926
+const val SALARY_PAYDAY_ALARM_REQUEST_CODE = AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_PRIMARY
+const val SALARY_PAYDAY_ALARM_REQUEST_CODE_SECOND = AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_SECONDARY
 
 @Singleton
 class AlarmSalaryCycleScheduler @Inject constructor(

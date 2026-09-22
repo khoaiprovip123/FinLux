@@ -49,7 +49,7 @@ class DataStoreThemePreferenceRepository @Inject constructor(
     override val uiStyle: Flow<AppUiStyle> = context.finluxDataStore.data.map { preferences ->
         preferences[UiStyleKey]
             ?.let { stored -> AppUiStyle.entries.firstOrNull { it.name == stored } }
-            ?: AppUiStyle.CLASSIC_LIQUID
+            ?: AppUiStyle.DEFAULT
     }
 
     override suspend fun setUiStyle(uiStyle: AppUiStyle) {

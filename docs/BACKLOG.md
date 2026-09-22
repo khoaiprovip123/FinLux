@@ -4,6 +4,24 @@ Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi 
 
 ---
 
+## ✅ [DONE 2026-09-22] - [v1.25.9] Trục Quản Trị Kiến Trúc, Chuẩn Hóa Design System Tokens (10 Batches) & Khắc Phục Splash Regression
+
+- **Trục Kiến Trúc Quản Trị & Triệt Tiêu Số Ma Thuật (Phase 1 Governance)**:
+  * Khởi tạo `FinanceBusinessConstants.kt`: Quản lý tập trung 100% ngưỡng cảnh báo ngân sách (80%, 100%), tỷ lệ trả nợ thẻ tín dụng tối thiểu (3%), số tiền thanh toán tối thiểu (50.000 đ), kỳ hạn mục tiêu mặc định (180 ngày).
+  * Khởi tạo `AppSystemConfig.kt`: Quản lý các hằng số kỹ thuật & hạ tầng (Firestore chunk size 400 docs, giới hạn backup warning 50.000 tx, Alarm Request Codes, múi giờ mặc định `"Asia/Ho_Chi_Minh"`).
+  * Khởi tạo `FirestoreSchema.kt`: Quản lý strongly-typed collection paths & field names, xóa bỏ 100% string literal thô trong Data Layer.
+  * Mở rộng 5 điều khoản quản trị mới (Điều II.11: Zero Magic Numbers, Điều II.12: Firestore Schema Governance, Điều II.13: Anti-Code Defragmentation & SSoT, Điều II.14: Strict DRY, Điều II.15 & II.16: Dead Code Elimination & Encapsulation).
+- **Chuẩn Hóa Design System Dynamic Tokens (Phase 2 Master Refactor - 10 Batches)**:
+  * Rà soát và chuyển đổi hơn 1.000 vị trí màu thô, màu tĩnh sang dynamic design tokens (`LocalFinluxTokens.current` và `FinluxColors`) trên hơn 40 màn hình và bottom sheets.
+  * Chuẩn hóa bảng màu biểu đồ phân tích, Bento Grid và Hero Cards bảo toàn 100% thẩm mỹ Liquid Glass sang trọng ở cả Dark Mode và Light Mode.
+- **Khắc Phục Regression Màn Hình Splash (Brand Hero Luxury Gradient)**:
+  * Khôi phục dải gradient nhận diện thương hiệu `Brush.verticalGradient(listOf(Color(0xFF0E1630), Color(0xFF171F4C), Color(0xFF261D5C), Color(0xFF34175E)))` (Deep Midnight Navy -> Deep Indigo -> Royal Violet -> Deep Royal Purple).
+  * Chữ "Fin" trắng sáng (`tokens.onHero`), chữ "Lux" đổ dốc màu xanh tím, slogan và spinner tương phản cao, status bar icons sáng.
+- **Kiểm Thử & Đóng Gói**:
+  * 521/521 unit tests PASS 100%. Nạp APK và kiểm thử trực tiếp trên điện thoại vật lý.
+
+---
+
 ## ✅ [DONE 2026-09-21] - [v1.25.7] Hệ Thống Sao Lưu & Phục Hồi Dữ Liệu Toàn Diện (Full Data Snapshot & Recovery Engine)
 
 - **Kiến trúc JSON Snapshot 10 Module Toàn Vẹn (`docs/backup_restore_spec.md`)**:

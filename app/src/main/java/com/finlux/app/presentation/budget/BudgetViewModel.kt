@@ -74,6 +74,7 @@ class BudgetViewModel @Inject constructor(
     private val timelineFlow = salaryCycleRepository.observeTimeline().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     private val selectedTime = MutableStateFlow(Instant.now())
     private val action = MutableStateFlow(false to null as String?)
+    private val healedBudgets = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
     private val currentPeriod = combine(selectedTime, configFlow, timelineFlow) { time, config, timeline ->
         if (timeline.isNotEmpty()) {
@@ -158,6 +159,17 @@ class BudgetViewModel @Inject constructor(
                 spentByCategoryName[catNameLower] ?: 0L
             } else 0L
             val dynamicSpent = byIdAmount + byNameAmount
+
+            // Self-Healing: Reconcile Firestore document if stored spentAmount is out-of-sync with real transactions
+            if (!isFallbackActive && budget.id.isNotBlank() && budget.spentAmount.value != dynamicSpent) {
+                val healKey = "${budget.id}_$dynamicSpent"
+                if (healedBudgets.add(healKey)) {
+                    viewModelScope.launch {
+                        budgetRepository.upsertBudget(budget.copy(spentAmount = Money(dynamicSpent)))
+                    }
+                }
+            }
+
             val dynamicBudget = budget.copy(spentAmount = Money(dynamicSpent))
             BudgetItemUi(dynamicBudget, cat, getBudgetStatus(dynamicBudget))
         }.sortedByDescending { it.status.progress }

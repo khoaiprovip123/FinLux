@@ -55,7 +55,7 @@ internal object SalaryCycleFirestoreMapper {
                 raw = data["budgetPeriodBasis"] as? String,
                 fallback = BudgetPeriodBasis.CALENDAR_MONTH,
             ),
-            financeTimeZone = data["financeTimeZone"] as? String ?: "Asia/Ho_Chi_Minh",
+            financeTimeZone = data["financeTimeZone"] as? String ?: com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_NAME,
         )
     }
 

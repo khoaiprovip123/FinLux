@@ -90,7 +90,6 @@ import kotlin.math.abs
 fun FinluxNavHost(
     selectedTheme: ThemePreference,
     onThemeSelected: (ThemePreference) -> Unit,
-    selectedUiStyle: AppUiStyle = AppUiStyle.CLASSIC_LIQUID,
     onUiStyleSelected: (AppUiStyle) -> Unit = {},
     uiPreferences: UiPreferences,
     onUiPreferencesChanged: (UiPreferences) -> Unit,
@@ -352,7 +351,6 @@ fun FinluxNavHost(
                 SettingsScreen(
                     selectedTheme = selectedTheme,
                     onThemeSelected = onThemeSelected,
-                    selectedUiStyle = selectedUiStyle,
                     onUiStyleSelected = onUiStyleSelected,
                     uiPreferences = uiPreferences,
                     onUiPreferencesChanged = onUiPreferencesChanged,

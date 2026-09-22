@@ -109,6 +109,7 @@ import com.finlux.app.core.designsystem.component.FinluxSoftCard
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.navigation.Route
 import com.finlux.app.domain.model.Category
@@ -465,7 +466,7 @@ fun PrismReportsScreen(
         DatePickerDialog(
             onDismissRequest = { showCustomRangePicker = false },
             colors = DatePickerDefaults.colors(
-                containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                containerColor = tokens.surface,
             ),
             shape = RoundedCornerShape(28.dp),
             confirmButton = {
@@ -492,7 +493,7 @@ fun PrismReportsScreen(
             DateRangePicker(
                 state = rangeState,
                 colors = DatePickerDefaults.colors(
-                    containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    containerColor = tokens.surface,
                     titleContentColor = tokens.onSurface,
                     headlineContentColor = tokens.onSurface,
                     weekdayContentColor = tokens.onSurfaceVariant,
@@ -614,7 +615,7 @@ private fun PrismReportsHeader(
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Normal,
                 ),
-                color = Color(0xFF6B7280),
+                color = tokens.textSecondary,
             )
         }
 
@@ -625,8 +626,8 @@ private fun PrismReportsHeader(
             // "Bộ lọc" Pill Button
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surface,
+                border = BorderStroke(1.dp, tokens.border),
                 shadowElevation = 1.dp,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
@@ -644,7 +645,7 @@ private fun PrismReportsHeader(
                     Icon(
                         imageVector = Icons.Default.FilterList,
                         contentDescription = "Bộ lọc",
-                        tint = Color(0xFF5B4DFF),
+                        tint = tokens.primary,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
@@ -661,8 +662,8 @@ private fun PrismReportsHeader(
             // Export Button
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surface,
+                border = BorderStroke(1.dp, tokens.border),
                 shadowElevation = 1.dp,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
@@ -811,6 +812,7 @@ private fun PrismReportsHeroBanner(
     state: ReportsUiState,
     onPickMonth: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     val net = state.summary.net
     val income = state.summary.income.value
     val expense = state.summary.expense.value
@@ -830,18 +832,14 @@ private fun PrismReportsHeroBanner(
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF5B4DFF).copy(alpha = 0.4f)),
+            .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = tokens.primary.copy(alpha = 0.4f)),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF5B4DFF),
-                            Color(0xFF6366F1),
-                            Color(0xFF7C3AED),
-                        ),
+                        colors = tokens.heroGradient,
                     ),
                 )
                 .padding(20.dp),
@@ -866,7 +864,7 @@ private fun PrismReportsHeroBanner(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             ),
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = tokens.onHeroMuted,
                         )
                     }
 
@@ -885,7 +883,7 @@ private fun PrismReportsHeroBanner(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.5.sp,
                         ),
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = tokens.onHeroMuted,
                     )
 
                     // Con số to nổi bật nhất: Tổng tiền hiện có / Số dư ví thực tế
@@ -896,7 +894,7 @@ private fun PrismReportsHeroBanner(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp,
                         ),
-                        color = Color.White,
+                        color = tokens.onHero,
                     )
 
                     // Phía dưới là Dòng tiền ròng (Thu – Chi)
@@ -910,7 +908,7 @@ private fun PrismReportsHeroBanner(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             ),
-                            color = Color.White.copy(alpha = 0.90f),
+                            color = tokens.onHero,
                         )
                         Text(
                             text = (if (net >= 0) "+" else "") + formatVndAmount(net),
@@ -918,7 +916,7 @@ private fun PrismReportsHeroBanner(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.ExtraBold,
                             ),
-                            color = if (net >= 0) Color(0xFF4ADE80) else Color(0xFFFCA5A5),
+                            color = if (net >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                         )
                     }
 
@@ -933,7 +931,7 @@ private fun PrismReportsHeroBanner(
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Normal,
                         ),
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = tokens.onHeroMuted,
                     )
 
                     Spacer(Modifier.height(3.dp))
@@ -944,63 +942,63 @@ private fun PrismReportsHeroBanner(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Column {
-                            Text("Tổng thu", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Tổng thu", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.75f))
                             Text(
                                 "+${formatVndAmount(income)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4ADE80), // Mint Green
+                                color = FinluxColors.IncomeGreen,
                             )
                         }
                         Column {
-                            Text("Tổng chi", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                            Text("Tổng chi", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.75f))
                             Text(
                                 "-${formatVndAmount(expense)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFDE047), // Golden Yellow
+                                color = FinluxColors.WarningAmber,
                             )
                         }
                         if (state.selectedWallet != null) {
                             if (state.totalTransferOut > 0) {
                                 Column {
-                                    Text("Chuyển đi", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                    Text("Chuyển đi", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.75f))
                                     Text(
                                         "-${formatVndAmount(state.totalTransferOut)}",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFFDBA74), // Orange
+                                        color = FinluxColors.WarningAmber,
                                     )
                                 }
                             }
                             if (state.totalTransferIn > 0) {
                                 Column {
-                                    Text("Nhận chuyển", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                    Text("Nhận chuyển", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.75f))
                                     Text(
                                         "+${formatVndAmount(state.totalTransferIn)}",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF93C5FD), // Light Blue
+                                        color = FinluxColors.TransferBlue,
                                     )
                                 }
                             }
                             Column {
-                                Text("Biến động ví", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                Text("Biến động ví", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.75f))
                                 Text(
                                     "${if (state.currentWalletNetChange >= 0) "+" else ""}${formatVndAmount(state.currentWalletNetChange)}",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (state.currentWalletNetChange >= 0) Color(0xFF4ADE80) else Color(0xFFFCA5A5),
+                                    color = if (state.currentWalletNetChange >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                                 )
                             }
                         } else if (state.totalTransferOut > 0) {
                             Column {
-                                Text("Luân chuyển ví", fontSize = 11.sp, color = Color.White.copy(alpha = 0.75f))
+                                Text("Luân chuyển ví", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.75f))
                                 Text(
                                     formatVndAmount(state.totalTransferOut),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF93C5FD),
+                                    color = FinluxColors.TransferBlue,
                                 )
                             }
                         }
@@ -1028,7 +1026,7 @@ private fun PrismReportsHeroBanner(
 
                         // Track
                         drawArc(
-                            color = Color.White.copy(alpha = 0.22f),
+                            color = tokens.onHero.copy(alpha = 0.22f),
                             startAngle = -90f,
                             sweepAngle = 360f,
                             useCenter = false,
@@ -1040,7 +1038,7 @@ private fun PrismReportsHeroBanner(
                         // Progress
                         val progressSweep = (rightCirclePct / 100f) * 360f
                         drawArc(
-                            color = Color.White,
+                            color = tokens.onHero,
                             startAngle = -90f,
                             sweepAngle = progressSweep,
                             useCenter = false,
@@ -1060,12 +1058,12 @@ private fun PrismReportsHeroBanner(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold,
                             ),
-                            color = Color.White,
+                            color = tokens.onHero,
                         )
                         Text(
                             text = rightCircleLabel,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = tokens.onHeroMuted,
                         )
                     }
                 }
@@ -1092,8 +1090,8 @@ private fun PrismOverviewMultiCards(
             // Card 1: Tài sản ròng (Net Worth)
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surface,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
@@ -1101,23 +1099,23 @@ private fun PrismOverviewMultiCards(
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Default.AccountBalance, null, tint = Color(0xFF0EA5E9), modifier = Modifier.size(16.dp))
-                        Text("Tài sản ròng", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
+                        Icon(Icons.Default.AccountBalance, null, tint = FinluxColors.TransferBlue, modifier = Modifier.size(16.dp))
+                        Text("Tài sản ròng", style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary)
                     }
                     Text(
                         formatVndAmount(state.totalNetWorth),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
                         color = tokens.onSurface,
                     )
-                    Text("${state.walletReportItems.size} ví hoạt động", fontSize = 11.sp, color = Color(0xFF0EA5E9))
+                    Text("${state.walletReportItems.size} ví hoạt động", fontSize = 11.sp, color = FinluxColors.TransferBlue)
                 }
             }
 
             // Card 2: Dư nợ (Debts)
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surface,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
@@ -1125,15 +1123,15 @@ private fun PrismOverviewMultiCards(
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Default.CreditCard, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
-                        Text("Tổng nợ còn lại", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
+                        Icon(Icons.Default.CreditCard, null, tint = FinluxColors.ExpenseRed, modifier = Modifier.size(16.dp))
+                        Text("Tổng nợ còn lại", style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary)
                     }
                     Text(
                         formatVndAmount(state.totalDebtRemaining),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                        color = if (state.totalDebtRemaining > 0) Color(0xFFEF4444) else tokens.onSurface,
+                        color = if (state.totalDebtRemaining > 0) FinluxColors.ExpenseRed else tokens.onSurface,
                     )
-                    Text("${state.debts.filter { !it.isSettled }.size} khoản nợ", fontSize = 11.sp, color = Color(0xFFEF4444))
+                    Text("${state.debts.filter { !it.isSettled }.size} khoản nợ", fontSize = 11.sp, color = FinluxColors.ExpenseRed)
                 }
             }
         }
@@ -1145,8 +1143,8 @@ private fun PrismOverviewMultiCards(
             // Card 3: Ngân sách (Budgets)
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surface,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
@@ -1154,18 +1152,18 @@ private fun PrismOverviewMultiCards(
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Default.AccountBalanceWallet, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(16.dp))
-                        Text("Hạn mức ngân sách", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
+                        Icon(Icons.Default.AccountBalanceWallet, null, tint = FinluxColors.WarningAmber, modifier = Modifier.size(16.dp))
+                        Text("Hạn mức ngân sách", style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary)
                     }
                     Text(
                         "${state.budgetUsagePercent}% đã dùng",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                        color = if (state.overBudgetCount > 0) Color(0xFFEF4444) else tokens.onSurface,
+                        color = if (state.overBudgetCount > 0) FinluxColors.ExpenseRed else tokens.onSurface,
                     )
                     Text(
                         if (state.overBudgetCount > 0) "${state.overBudgetCount} danh mục vượt mức" else "Đang trong tầm kiểm soát",
                         fontSize = 11.sp,
-                        color = if (state.overBudgetCount > 0) Color(0xFFEF4444) else Color(0xFF10B981),
+                        color = if (state.overBudgetCount > 0) FinluxColors.ExpenseRed else FinluxColors.IncomeGreen,
                     )
                 }
             }
@@ -1173,8 +1171,8 @@ private fun PrismOverviewMultiCards(
             // Card 4: Tiết kiệm (Goals)
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surface,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
@@ -1182,15 +1180,15 @@ private fun PrismOverviewMultiCards(
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Default.Savings, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
-                        Text("Mục tiêu tích lũy", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
+                        Icon(Icons.Default.Savings, null, tint = FinluxColors.IncomeGreen, modifier = Modifier.size(16.dp))
+                        Text("Mục tiêu tích lũy", style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary)
                     }
                     Text(
                         formatVndAmount(state.totalGoalSaved),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
                         color = tokens.onSurface,
                     )
-                    Text("${(state.overallGoalProgress * 100).roundToInt()}% tiến độ mục tiêu", fontSize = 11.sp, color = Color(0xFF10B981))
+                    Text("${(state.overallGoalProgress * 100).roundToInt()}% tiến độ mục tiêu", fontSize = 11.sp, color = FinluxColors.IncomeGreen)
                 }
             }
         }
@@ -1198,8 +1196,8 @@ private fun PrismOverviewMultiCards(
         // Row 3: Đầu tư & Cho vay (Deals)
         Surface(
             shape = RoundedCornerShape(18.dp),
-            color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+            color = tokens.surface,
+            border = BorderStroke(1.dp, tokens.border),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
@@ -1213,11 +1211,11 @@ private fun PrismOverviewMultiCards(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF6366F1).copy(alpha = 0.12f)) {
-                        Icon(Icons.Default.TrendingUp, null, tint = Color(0xFF6366F1), modifier = Modifier.padding(6.dp).size(18.dp))
+                    Surface(shape = RoundedCornerShape(10.dp), color = FinluxColors.BudgetViolet.copy(alpha = 0.12f)) {
+                        Icon(Icons.Default.TrendingUp, null, tint = FinluxColors.BudgetViolet, modifier = Modifier.padding(6.dp).size(18.dp))
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Vốn đầu tư & Cho vay", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
+                        Text("Vốn đầu tư & Cho vay", style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary)
                         Text(
                             formatVndAmount(state.dealsSummary.totalActiveCapitalOutlay),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
@@ -1227,13 +1225,13 @@ private fun PrismOverviewMultiCards(
                 }
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (state.dealsSummary.overallRoi >= 0) Color(0xFF10B981).copy(alpha = 0.12f) else Color(0xFFEF4444).copy(alpha = 0.12f),
+                    color = if (state.dealsSummary.overallRoi >= 0) FinluxColors.IncomeGreen.copy(alpha = 0.12f) else FinluxColors.ExpenseRed.copy(alpha = 0.12f),
                 ) {
                     Text(
                         text = "ROI: ${if (state.dealsSummary.overallRoi >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", state.dealsSummary.overallRoi)}%",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (state.dealsSummary.overallRoi >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                        color = if (state.dealsSummary.overallRoi >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
@@ -1255,14 +1253,14 @@ private fun PrismCategoryOverviewCard(
     val totalExpense = state.summary.expense.value
 
     val chartColors = listOf(
-        Color(0xFFEF4444),
-        Color(0xFF8B5CF6),
-        Color(0xFF3B82F6),
-        Color(0xFF10B981),
-        Color(0xFFF59E0B),
-        Color(0xFF06B6D4),
-        Color(0xFFEC4899),
-        Color(0xFF94A3B8),
+        FinluxColors.ExpenseRed,
+        FinluxColors.PrimaryViolet,
+        FinluxColors.TransferBlue,
+        FinluxColors.IncomeGreen,
+        FinluxColors.WarningAmber,
+        FinluxColors.PrimaryCyan,
+        FinluxColors.BudgetViolet,
+        tokens.textSecondary,
     )
 
     val displayCategories = remember(state.expensesByCategory) { state.expensesByCategory.take(8) }
@@ -1270,8 +1268,8 @@ private fun PrismCategoryOverviewCard(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -1326,7 +1324,7 @@ private fun PrismCategoryOverviewCard(
                     Text(
                         text = "Tổng chi",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                     Text(
                         text = formatVndAmount(totalExpense),
@@ -1396,7 +1394,7 @@ private fun PrismCategoryOverviewCard(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                 ),
-                                color = Color(0xFF6B7280),
+                                color = tokens.textSecondary,
                             )
                         }
                     }
@@ -1419,8 +1417,8 @@ private fun PrismIncomeCategoryCard(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -1461,12 +1459,12 @@ private fun PrismIncomeCategoryCard(
                         Text(
                             text = "+${formatVndAmount(item.amount)} ($pct%)",
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold),
-                            color = Color(0xFF10B981),
+                            color = FinluxColors.IncomeGreen,
                         )
                     }
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                        color = tokens.surfaceSoft,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp),
@@ -1475,7 +1473,7 @@ private fun PrismIncomeCategoryCard(
                             modifier = Modifier
                                 .fillMaxWidth(pct / 100f)
                                 .fillMaxHeight()
-                                .background(Color(0xFF10B981), RoundedCornerShape(4.dp)),
+                                .background(FinluxColors.IncomeGreen, RoundedCornerShape(4.dp)),
                         )
                     }
                 }
@@ -1489,12 +1487,13 @@ private fun PrismIncomeCategoryCard(
  */
 @Composable
 private fun PrismDebtsHeroCard(state: ReportsUiState) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFFEF4444).copy(alpha = 0.3f)),
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = FinluxColors.ExpenseRed.copy(alpha = 0.3f)),
     ) {
         Box(
             modifier = Modifier
@@ -1502,36 +1501,36 @@ private fun PrismDebtsHeroCard(state: ReportsUiState) {
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFFDC2626),
-                            Color(0xFFE11D48),
-                            Color(0xFFBE123C),
+                            FinluxColors.ExpenseRed,
+                            FinluxColors.ExpenseRed.copy(alpha = 0.85f),
+                            FinluxColors.ExpenseRed.copy(alpha = 0.70f),
                         ),
                     ),
                 )
                 .padding(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("BÁO CÁO DƯ NỢ & VAY NỢ", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                Text("BÁO CÁO DƯ NỢ & VAY NỢ", style = MaterialTheme.typography.labelSmall, color = tokens.onHero.copy(alpha = 0.8f))
                 Text(
                     text = formatVndAmount(state.totalDebtRemaining),
                     style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
-                Text("Tổng dư nợ gốc cần chi trả", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
+                Text("Tổng dư nợ gốc cần chi trả", style = MaterialTheme.typography.bodySmall, color = tokens.onHero.copy(alpha = 0.9f))
 
                 Spacer(Modifier.height(4.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("Tổng nợ ban đầu", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalDebtOriginal), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Tổng nợ ban đầu", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalDebtOriginal), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                     Column {
-                        Text("Đã thanh toán", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalDebtPaid), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4ADE80))
+                        Text("Đã thanh toán", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalDebtPaid), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinluxColors.IncomeGreen)
                     }
                     Column {
-                        Text("Lãi trả trong kỳ", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalDebtInterestPaidInPeriod), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                        Text("Lãi trả trong kỳ", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalDebtInterestPaidInPeriod), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinluxColors.WarningAmber)
                     }
                 }
             }
@@ -1552,8 +1551,8 @@ private fun PrismDebtItemCard(item: DebtReportItem) {
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1565,12 +1564,12 @@ private fun PrismDebtItemCard(item: DebtReportItem) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFEF4444).copy(alpha = 0.12f),
+                        color = FinluxColors.ExpenseRed.copy(alpha = 0.12f),
                     ) {
                         Text(
                             text = typeLabel,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
-                            color = Color(0xFFEF4444),
+                            color = FinluxColors.ExpenseRed,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         )
                     }
@@ -1578,21 +1577,21 @@ private fun PrismDebtItemCard(item: DebtReportItem) {
                 }
 
                 if (debt.isSettled) {
-                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF10B981).copy(alpha = 0.12f)) {
-                        Text("Đã tất toán", color = Color(0xFF10B981), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                    Surface(shape = RoundedCornerShape(8.dp), color = FinluxColors.IncomeGreen.copy(alpha = 0.12f)) {
+                        Text("Đã tất toán", color = FinluxColors.IncomeGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                     }
                 } else {
-                    Text("Đến hạn ngày ${debt.dueDate}", fontSize = 12.sp, color = Color(0xFF6B7280))
+                    Text("Đến hạn ngày ${debt.dueDate}", fontSize = 12.sp, color = tokens.textSecondary)
                 }
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Dư nợ hiện tại", fontSize = 11.sp, color = Color(0xFF6B7280))
-                    Text(formatVndAmount(item.remaining), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                    Text("Dư nợ hiện tại", fontSize = 11.sp, color = tokens.textSecondary)
+                    Text(formatVndAmount(item.remaining), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinluxColors.ExpenseRed)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Hạn mức / Nợ gốc", fontSize = 11.sp, color = Color(0xFF6B7280))
+                    Text("Hạn mức / Nợ gốc", fontSize = 11.sp, color = tokens.textSecondary)
                     Text(formatVndAmount(debt.totalAmount.value), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = tokens.onSurface)
                 }
             }
@@ -1600,12 +1599,12 @@ private fun PrismDebtItemCard(item: DebtReportItem) {
             // Progress bar
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Đã thanh toán: ${formatVndAmount(item.totalPaid)}", fontSize = 11.5.sp, color = Color(0xFF10B981))
+                    Text("Đã thanh toán: ${formatVndAmount(item.totalPaid)}", fontSize = 11.5.sp, color = FinluxColors.IncomeGreen)
                     Text("${(item.progress * 100).roundToInt()}%", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = tokens.onSurface)
                 }
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                    color = tokens.surfaceSoft,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp),
@@ -1614,7 +1613,7 @@ private fun PrismDebtItemCard(item: DebtReportItem) {
                         modifier = Modifier
                             .fillMaxWidth(item.progress)
                             .fillMaxHeight()
-                            .background(Color(0xFF10B981), RoundedCornerShape(4.dp)),
+                            .background(FinluxColors.IncomeGreen, RoundedCornerShape(4.dp)),
                     )
                 }
             }
@@ -1681,8 +1680,8 @@ private fun PrismGoalItemCard(item: GoalReportItem) {
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1692,31 +1691,31 @@ private fun PrismGoalItemCard(item: GoalReportItem) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF10B981).copy(alpha = 0.12f)) {
-                        Icon(Icons.Default.Savings, null, tint = Color(0xFF10B981), modifier = Modifier.padding(8.dp).size(20.dp))
+                    Surface(shape = RoundedCornerShape(10.dp), color = FinluxColors.IncomeGreen.copy(alpha = 0.12f)) {
+                        Icon(Icons.Default.Savings, null, tint = FinluxColors.IncomeGreen, modifier = Modifier.padding(8.dp).size(20.dp))
                     }
                     Column {
                         Text(goal.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
-                        Text(goal.category.ifBlank { "Mục tiêu tài chính" }, style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B7280))
+                        Text(goal.category.ifBlank { "Mục tiêu tài chính" }, style = MaterialTheme.typography.bodySmall, color = tokens.textSecondary)
                     }
                 }
-                Text("${(item.progress * 100).roundToInt()}%", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                Text("${(item.progress * 100).roundToInt()}%", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = FinluxColors.IncomeGreen)
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Đã tích lũy", fontSize = 11.sp, color = Color(0xFF6B7280))
-                    Text(formatVndAmount(item.saved), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                    Text("Đã tích lũy", fontSize = 11.sp, color = tokens.textSecondary)
+                    Text(formatVndAmount(item.saved), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinluxColors.IncomeGreen)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Mục tiêu cần đạt", fontSize = 11.sp, color = Color(0xFF6B7280))
+                    Text("Mục tiêu cần đạt", fontSize = 11.sp, color = tokens.textSecondary)
                     Text(formatVndAmount(item.target), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = tokens.onSurface)
                 }
             }
 
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                color = tokens.surfaceSoft,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),
@@ -1725,7 +1724,7 @@ private fun PrismGoalItemCard(item: GoalReportItem) {
                     modifier = Modifier
                         .fillMaxWidth(item.progress)
                         .fillMaxHeight()
-                        .background(Color(0xFF10B981), RoundedCornerShape(4.dp)),
+                        .background(FinluxColors.IncomeGreen, RoundedCornerShape(4.dp)),
                 )
             }
         }
@@ -1740,8 +1739,8 @@ private fun PrismSavingSpinReportCard(
     val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF261C38) else Color(0xFFFAF5FF),
-        border = BorderStroke(1.dp, Color(0xFFA855F7).copy(alpha = 0.3f)),
+        color = if (tokens.isDark) tokens.surfaceSoft else tokens.surface,
+        border = BorderStroke(1.dp, FinluxColors.BudgetViolet.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onViewDetails() },
@@ -1759,12 +1758,12 @@ private fun PrismSavingSpinReportCard(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFFA855F7).copy(alpha = 0.2f),
+                    color = FinluxColors.BudgetViolet.copy(alpha = 0.2f),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Savings,
                         contentDescription = null,
-                        tint = Color(0xFFA855F7),
+                        tint = FinluxColors.BudgetViolet,
                         modifier = Modifier
                             .padding(10.dp)
                             .size(24.dp),
@@ -1783,13 +1782,13 @@ private fun PrismSavingSpinReportCard(
                         if (summary.currentStreak > 0) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFF97316).copy(alpha = 0.15f),
+                                color = FinluxColors.WarningAmber.copy(alpha = 0.15f),
                             ) {
                                 Text(
                                     text = "🔥 ${summary.currentStreak} ngày",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFF97316),
+                                    color = FinluxColors.WarningAmber,
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                                 )
                             }
@@ -1798,7 +1797,7 @@ private fun PrismSavingSpinReportCard(
                     Text(
                         text = "Đã tích lũy: ${formatVndAmount(summary.totalSaved)} (${summary.completedCount} lượt)",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFA855F7),
+                        color = FinluxColors.BudgetViolet,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
@@ -1807,7 +1806,7 @@ private fun PrismSavingSpinReportCard(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = "Xem chi tiết",
-                tint = Color(0xFFA855F7),
+                tint = FinluxColors.BudgetViolet,
                 modifier = Modifier.size(16.dp),
             )
         }
@@ -1825,7 +1824,7 @@ private fun PrismDealsHeroCard(summary: com.finlux.app.presentation.reports.Deal
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF6366F1).copy(alpha = 0.3f)),
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = FinluxColors.PrimaryViolet.copy(alpha = 0.3f)),
     ) {
         Box(
             modifier = Modifier
@@ -1833,9 +1832,9 @@ private fun PrismDealsHeroCard(summary: com.finlux.app.presentation.reports.Deal
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF4F46E5),
-                            Color(0xFF6366F1),
-                            Color(0xFF4338CA),
+                            FinluxColors.PrimaryViolet,
+                            FinluxColors.BudgetViolet,
+                            FinluxColors.PrimaryBlue,
                         ),
                     ),
                 )
@@ -1847,15 +1846,15 @@ private fun PrismDealsHeroCard(summary: com.finlux.app.presentation.reports.Deal
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("BÁO CÁO ĐẦU TƯ & CHO VAY", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
+                    Text("BÁO CÁO ĐẦU TƯ & CHO VAY", style = MaterialTheme.typography.labelSmall, color = tokens.onHeroMuted)
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = Color.White.copy(alpha = 0.2f),
+                        color = tokens.onHero.copy(alpha = 0.2f),
                     ) {
                         Text(
                             text = "ROI: ${if (summary.overallRoi >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", summary.overallRoi)}%",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold),
-                            color = if (summary.overallRoi >= 0) Color(0xFF86EFAC) else Color(0xFFFCA5A5),
+                            color = if (summary.overallRoi >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         )
                     }
@@ -1863,28 +1862,28 @@ private fun PrismDealsHeroCard(summary: com.finlux.app.presentation.reports.Deal
                 Text(
                     text = formatVndAmount(summary.totalActiveCapitalOutlay),
                     style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
-                Text("Vốn đang lưu động ngoài thị trường", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
+                Text("Vốn đang lưu động ngoài thị trường", style = MaterialTheme.typography.bodySmall, color = tokens.onHero.copy(alpha = 0.9f))
 
                 Spacer(Modifier.height(4.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("Lãi ròng đã thu", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
+                        Text("Lãi ròng đã thu", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
                         Text(
                             formatVndAmount(summary.totalNetProfit),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (summary.totalNetProfit >= 0) Color(0xFF4ADE80) else Color(0xFFF87171),
+                            color = if (summary.totalNetProfit >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                         )
                     }
                     Column {
-                        Text("Gốc đã thu hồi", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(summary.totalRecovered), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Gốc đã thu hồi", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(summary.totalRecovered), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("Dư nợ cho vay", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(summary.totalLendingOutstanding), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                        Text("Dư nợ cho vay", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(summary.totalLendingOutstanding), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinluxColors.WarningAmber)
                     }
                 }
 
@@ -1893,12 +1892,12 @@ private fun PrismDealsHeroCard(summary: com.finlux.app.presentation.reports.Deal
                     Spacer(Modifier.height(2.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Phân bổ: ${(summary.investmentRatio * 100).roundToInt()}% Đầu tư", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
-                            Text("${((1f - summary.investmentRatio) * 100).roundToInt()}% Cho vay", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                            Text("Phân bổ: ${(summary.investmentRatio * 100).roundToInt()}% Đầu tư", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.8f))
+                            Text("${((1f - summary.investmentRatio) * 100).roundToInt()}% Cho vay", fontSize = 11.sp, color = tokens.onHero.copy(alpha = 0.8f))
                         }
                         Surface(
                             shape = RoundedCornerShape(3.dp),
-                            color = Color.White.copy(alpha = 0.2f),
+                            color = tokens.onHero.copy(alpha = 0.2f),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp),
@@ -1908,13 +1907,13 @@ private fun PrismDealsHeroCard(summary: com.finlux.app.presentation.reports.Deal
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .weight(summary.investmentRatio.coerceAtLeast(0.01f))
-                                        .background(Color(0xFF38BDF8)),
+                                        .background(FinluxColors.PrimaryCyan),
                                 )
                                 Box(
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .weight((1f - summary.investmentRatio).coerceAtLeast(0.01f))
-                                        .background(Color(0xFFFBBF24)),
+                                        .background(FinluxColors.WarningAmber),
                                 )
                             }
                         }
@@ -1931,7 +1930,7 @@ private fun PrismDealReportCard(item: com.finlux.app.presentation.reports.DealRe
     val deal = item.deal
     val isInvestment = deal.category == com.finlux.app.domain.model.DealCategory.INVESTMENT
     val categoryLabel = if (isInvestment) "ĐẦU TƯ" else "CHO VAY"
-    val categoryColor = if (isInvestment) Color(0xFF38BDF8) else Color(0xFFFBBF24)
+    val categoryColor = if (isInvestment) FinluxColors.PrimaryCyan else FinluxColors.WarningAmber
     val statusLabel = when (deal.status) {
         com.finlux.app.domain.model.DealStatus.ACTIVE -> "Đang chạy"
         com.finlux.app.domain.model.DealStatus.COMPLETED -> "Đã chốt"
@@ -1940,8 +1939,8 @@ private fun PrismDealReportCard(item: com.finlux.app.presentation.reports.DealRe
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1970,13 +1969,13 @@ private fun PrismDealReportCard(item: com.finlux.app.presentation.reports.DealRe
                 }
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (item.roiPercentage >= 0) Color(0xFF10B981).copy(alpha = 0.12f) else Color(0xFFEF4444).copy(alpha = 0.12f),
+                    color = if (item.roiPercentage >= 0) FinluxColors.IncomeGreen.copy(alpha = 0.12f) else FinluxColors.ExpenseRed.copy(alpha = 0.12f),
                 ) {
                     Text(
                         text = "${if (item.roiPercentage >= 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", item.roiPercentage)}% ROI",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (item.roiPercentage >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                        color = if (item.roiPercentage >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
                     )
                 }
@@ -1984,24 +1983,24 @@ private fun PrismDealReportCard(item: com.finlux.app.presentation.reports.DealRe
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Vốn xuất: ${formatVndAmount(item.capitalOutlay)}", fontSize = 12.sp, color = Color(0xFF6B7280))
+                    Text("Vốn xuất: ${formatVndAmount(item.capitalOutlay)}", fontSize = 12.sp, color = tokens.textSecondary)
                     Text("Còn lại: ${formatVndAmount(item.remainingCapital)}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = tokens.onSurface)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Đã thu hồi: ${formatVndAmount(item.recovered)}", fontSize = 12.sp, color = Color(0xFF10B981))
-                    Text("Lời ròng: ${formatVndAmount(item.netProfitLoss)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (item.netProfitLoss >= 0) Color(0xFF10B981) else Color(0xFFEF4444))
+                    Text("Đã thu hồi: ${formatVndAmount(item.recovered)}", fontSize = 12.sp, color = FinluxColors.IncomeGreen)
+                    Text("Lời ròng: ${formatVndAmount(item.netProfitLoss)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (item.netProfitLoss >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed)
                 }
             }
 
             // Tiến độ thu hồi vốn
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Tiến độ hoàn vốn: ${(item.recoveryProgress * 100).roundToInt()}%", fontSize = 11.sp, color = Color(0xFF6B7280))
-                    Text(statusLabel, fontSize = 11.sp, color = if (item.deal.status == com.finlux.app.domain.model.DealStatus.ACTIVE) Color(0xFF38BDF8) else Color(0xFF10B981))
+                    Text("Tiến độ hoàn vốn: ${(item.recoveryProgress * 100).roundToInt()}%", fontSize = 11.sp, color = tokens.textSecondary)
+                    Text(statusLabel, fontSize = 11.sp, color = if (item.deal.status == com.finlux.app.domain.model.DealStatus.ACTIVE) FinluxColors.PrimaryCyan else FinluxColors.IncomeGreen)
                 }
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                    color = tokens.surfaceSoft,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp),
@@ -2010,7 +2009,7 @@ private fun PrismDealReportCard(item: com.finlux.app.presentation.reports.DealRe
                         modifier = Modifier
                             .fillMaxWidth(item.recoveryProgress)
                             .fillMaxHeight()
-                            .background(if (item.isFullyRecovered) Color(0xFF10B981) else categoryColor, RoundedCornerShape(4.dp)),
+                            .background(if (item.isFullyRecovered) FinluxColors.IncomeGreen else categoryColor, RoundedCornerShape(4.dp)),
                     )
                 }
             }
@@ -2023,12 +2022,13 @@ private fun PrismDealReportCard(item: com.finlux.app.presentation.reports.DealRe
  */
 @Composable
 private fun PrismBudgetsHeroCard(state: ReportsUiState) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFFF59E0B).copy(alpha = 0.3f)),
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = FinluxColors.WarningAmber.copy(alpha = 0.3f)),
     ) {
         Box(
             modifier = Modifier
@@ -2036,40 +2036,40 @@ private fun PrismBudgetsHeroCard(state: ReportsUiState) {
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFFD97706),
-                            Color(0xFFF59E0B),
-                            Color(0xFFB45309),
+                            FinluxColors.WarningAmber,
+                            FinluxColors.WarningAmber.copy(alpha = 0.85f),
+                            FinluxColors.WarningAmber.copy(alpha = 0.70f),
                         ),
                     ),
                 )
                 .padding(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("BÁO CÁO NGÂN SÁCH CHI TIÊU", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                Text("BÁO CÁO NGÂN SÁCH CHI TIÊU", style = MaterialTheme.typography.labelSmall, color = tokens.onHero.copy(alpha = 0.8f))
                 Text(
                     text = "${state.budgetUsagePercent}%",
                     style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
                 Text(
                     if (state.overBudgetCount > 0) "Có ${state.overBudgetCount} danh mục đã vượt hạn mức" else "Tất cả danh mục trong tầm kiểm soát an toàn",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = tokens.onHero.copy(alpha = 0.9f),
                 )
 
                 Spacer(Modifier.height(4.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("Tổng hạn mức", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalBudgetLimit), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Tổng hạn mức", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalBudgetLimit), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                     Column {
-                        Text("Đã chi tiêu", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalBudgetSpent), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                        Text("Đã chi tiêu", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalBudgetSpent), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinluxColors.WarningAmber)
                     }
                     Column {
-                        Text("Hạn mức còn lại", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalBudgetRemaining), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4ADE80))
+                        Text("Hạn mức còn lại", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalBudgetRemaining), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinluxColors.IncomeGreen)
                     }
                 }
             }
@@ -2081,9 +2081,9 @@ private fun PrismBudgetsHeroCard(state: ReportsUiState) {
 private fun PrismBudgetItemCard(item: BudgetReportItem) {
     val tokens = LocalFinluxTokens.current
     val progressColor = when {
-        item.isOverBudget -> Color(0xFFEF4444)
-        item.percent >= 0.8f -> Color(0xFFF59E0B)
-        else -> Color(0xFF10B981)
+        item.isOverBudget -> FinluxColors.ExpenseRed
+        item.percent >= 0.8f -> FinluxColors.WarningAmber
+        else -> FinluxColors.IncomeGreen
     }
     val cat = item.category
     val catColor = cat?.colorHex?.let { colorFromHex(it) } ?: tokens.primary
@@ -2096,8 +2096,8 @@ private fun PrismBudgetItemCard(item: BudgetReportItem) {
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -2135,7 +2135,7 @@ private fun PrismBudgetItemCard(item: BudgetReportItem) {
                         Text(
                             text = "Hạn mức: ${formatVndAmount(item.limit)}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF6B7280),
+                            color = tokens.textSecondary,
                         )
                     }
                 }
@@ -2156,7 +2156,7 @@ private fun PrismBudgetItemCard(item: BudgetReportItem) {
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Đã chi", fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                    Text("Đã chi", fontSize = 11.5.sp, color = tokens.textSecondary)
                     Text(
                         formatVndAmount(item.spent),
                         fontSize = 13.5.sp,
@@ -2168,20 +2168,20 @@ private fun PrismBudgetItemCard(item: BudgetReportItem) {
                     Text(
                         if (item.isOverBudget) "Vượt quá" else "Còn lại",
                         fontSize = 11.5.sp,
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                     Text(
                         formatVndAmount(if (item.isOverBudget) item.spent - item.limit else item.remaining),
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (item.isOverBudget) progressColor else Color(0xFF10B981),
+                        color = if (item.isOverBudget) progressColor else FinluxColors.IncomeGreen,
                     )
                 }
             }
 
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                color = tokens.surfaceSoft,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),
@@ -2202,12 +2202,13 @@ private fun PrismBudgetItemCard(item: BudgetReportItem) {
  */
 @Composable
 private fun PrismWalletsHeroCard(state: ReportsUiState) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF0EA5E9).copy(alpha = 0.3f)),
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = FinluxColors.PrimaryCyan.copy(alpha = 0.3f)),
     ) {
         Box(
             modifier = Modifier
@@ -2215,33 +2216,33 @@ private fun PrismWalletsHeroCard(state: ReportsUiState) {
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF0284C7),
-                            Color(0xFF0EA5E9),
-                            Color(0xFF0369A1),
+                            FinluxColors.TransferBlue,
+                            FinluxColors.PrimaryCyan,
+                            FinluxColors.PrimaryBlue,
                         ),
                     ),
                 )
                 .padding(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("BÁO CÁO TÀI SẢN & VÍ", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                Text("BÁO CÁO TÀI SẢN & VÍ", style = MaterialTheme.typography.labelSmall, color = tokens.onHero.copy(alpha = 0.8f))
                 Text(
                     text = formatVndAmount(state.trueNetWorth),
                     style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
-                Text("Tài sản ròng thực tế (Ví + Vốn Deal - Nợ)", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
+                Text("Tài sản ròng thực tế (Ví + Vốn Deal - Nợ)", style = MaterialTheme.typography.bodySmall, color = tokens.onHero.copy(alpha = 0.9f))
 
                 if (state.dealsSummary.totalActiveCapitalOutlay > 0L) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = Color.White.copy(alpha = 0.18f),
+                        color = tokens.onHero.copy(alpha = 0.18f),
                     ) {
                         Text(
                             text = "+${formatVndAmount(state.dealsSummary.totalActiveCapitalOutlay)} Vốn Deal đang lưu động",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFDE047),
+                            color = FinluxColors.WarningAmber,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         )
                     }
@@ -2250,22 +2251,22 @@ private fun PrismWalletsHeroCard(state: ReportsUiState) {
                 Spacer(Modifier.height(4.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("Tổng tài sản ví", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalAssets), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4ADE80))
+                        Text("Tổng tài sản ví", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalAssets), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = FinluxColors.IncomeGreen)
                     }
                     if (state.dealsSummary.totalActiveCapitalOutlay > 0L) {
                         Column {
-                            Text("Vốn Deal", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                            Text(formatVndAmount(state.dealsSummary.totalActiveCapitalOutlay), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE047))
+                            Text("Vốn Deal", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                            Text(formatVndAmount(state.dealsSummary.totalActiveCapitalOutlay), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = FinluxColors.WarningAmber)
                         }
                     }
                     Column {
-                        Text("Tổng dư nợ", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text(formatVndAmount(state.totalDebtRemaining), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF87171))
+                        Text("Tổng dư nợ", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text(formatVndAmount(state.totalDebtRemaining), fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = FinluxColors.ExpenseRed)
                     }
                     Column {
-                        Text("Số lượng ví", fontSize = 11.5.sp, color = Color.White.copy(alpha = 0.75f))
-                        Text("${state.walletReportItems.size} ví", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Số lượng ví", fontSize = 11.5.sp, color = tokens.onHero.copy(alpha = 0.75f))
+                        Text("${state.walletReportItems.size} ví", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = tokens.onHero)
                     }
                 }
             }
@@ -2294,7 +2295,7 @@ private fun PrismWalletFilterSelector(
             Text(
                 "Lọc theo ví:",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF6B7280),
+                color = tokens.textSecondary,
                 fontWeight = FontWeight.SemiBold,
             )
             if (selectedWalletId != null) {
@@ -2317,10 +2318,10 @@ private fun PrismWalletFilterSelector(
                 val isSelected = selectedWalletId == null
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) tokens.primary.copy(alpha = 0.2f) else if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    color = if (isSelected) tokens.primary.copy(alpha = 0.2f) else tokens.surface,
                     border = BorderStroke(
                         if (isSelected) 1.5.dp else 1.dp,
-                        if (isSelected) tokens.primary else if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                        if (isSelected) tokens.primary else tokens.border,
                     ),
                     modifier = Modifier.clickable { onSelectWallet(null) },
                 ) {
@@ -2351,10 +2352,10 @@ private fun PrismWalletFilterSelector(
                 val accent = colorFromHex(wallet.colorHex)
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) accent.copy(alpha = 0.2f) else if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    color = if (isSelected) accent.copy(alpha = 0.2f) else tokens.surface,
                     border = BorderStroke(
                         if (isSelected) 1.5.dp else 1.dp,
-                        if (isSelected) accent else if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                        if (isSelected) accent else tokens.border,
                     ),
                     modifier = Modifier.clickable { onSelectWallet(wallet.id) },
                 ) {
@@ -2397,8 +2398,8 @@ private fun PrismWalletSpendingDistributionCard(
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -2415,7 +2416,7 @@ private fun PrismWalletSpendingDistributionCard(
                 Text(
                     formatVndAmount(totalExpense),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFFEF4444),
+                    color = FinluxColors.ExpenseRed,
                 )
             }
 
@@ -2450,7 +2451,7 @@ private fun PrismWalletSpendingDistributionCard(
                     val percent = (detail.expenseShareOfTotal * 100).roundToInt()
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) accent.copy(alpha = 0.2f) else if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF3F4F6),
+                        color = if (isSelected) accent.copy(alpha = 0.2f) else tokens.surfaceSoft,
                         border = BorderStroke(1.dp, if (isSelected) accent else Color.Transparent),
                         modifier = Modifier.clickable {
                             if (isSelected) onSelectWallet(null) else onSelectWallet(detail.wallet.id)
@@ -2501,14 +2502,10 @@ private fun PrismWalletReportCard(
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) {
-            if (isSelected) Color(0xFF28283E) else Color(0xFF1E1E2D)
-        } else {
-            if (isSelected) Color(0xFFEFF6FF) else Color.White
-        },
+        color = if (isSelected) tokens.surfaceSoft else tokens.surface,
         border = BorderStroke(
             if (isSelected) 1.5.dp else 1.dp,
-            if (isSelected) tokens.primary else if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+            if (isSelected) tokens.primary else tokens.border,
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -2548,7 +2545,7 @@ private fun PrismWalletReportCard(
                                 }
                             }
                         }
-                        Text(typeName, style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B7280))
+                        Text(typeName, style = MaterialTheme.typography.bodySmall, color = tokens.textSecondary)
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -2560,7 +2557,7 @@ private fun PrismWalletReportCard(
                     Text(
                         "${(item.percentageOfTotal * 100).roundToInt()}% tài sản",
                         fontSize = 11.sp,
-                        color = Color(0xFF0EA5E9),
+                        color = FinluxColors.TransferBlue,
                     )
                 }
             }
@@ -2572,20 +2569,20 @@ private fun PrismWalletReportCard(
                         Text(
                             "Chi tiêu trong kỳ",
                             fontSize = 11.5.sp,
-                            color = Color(0xFF6B7280),
+                            color = tokens.textSecondary,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
                                 "-${formatVndAmount(item.expenseInPeriod)}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFEF4444),
+                                color = FinluxColors.ExpenseRed,
                             )
                             if (item.expenseShareOfTotal > 0f) {
                                 Text(
                                     "(${(item.expenseShareOfTotal * 100).roundToInt()}% tổng chi)",
                                     fontSize = 11.sp,
-                                    color = Color(0xFFEF4444).copy(alpha = 0.8f),
+                                    color = FinluxColors.ExpenseRed.copy(alpha = 0.8f),
                                 )
                             }
                         }
@@ -2596,8 +2593,8 @@ private fun PrismWalletReportCard(
                             .fillMaxWidth()
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp)),
-                        color = Color(0xFFEF4444),
-                        trackColor = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFF3F4F6),
+                        color = FinluxColors.ExpenseRed,
+                        trackColor = tokens.surfaceSoft,
                     )
                 }
             }
@@ -2608,13 +2605,13 @@ private fun PrismWalletReportCard(
                     Text(
                         "Thu nhập nạp vào ví",
                         fontSize = 11.5.sp,
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                     Text(
                         "+${formatVndAmount(item.incomeInPeriod)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981),
+                        color = FinluxColors.IncomeGreen,
                     )
                 }
             }
@@ -2625,13 +2622,13 @@ private fun PrismWalletReportCard(
                     Text(
                         "Chuyển sang ví khác",
                         fontSize = 11.5.sp,
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                     Text(
                         "-${formatVndAmount(item.transferOutInPeriod)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFF97316),
+                        color = FinluxColors.WarningAmber,
                     )
                 }
             }
@@ -2642,13 +2639,13 @@ private fun PrismWalletReportCard(
                     Text(
                         "Nhận từ ví khác",
                         fontSize = 11.5.sp,
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                     Text(
                         "+${formatVndAmount(item.transferInInPeriod)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0EA5E9),
+                        color = FinluxColors.TransferBlue,
                     )
                 }
             }
@@ -2670,7 +2667,7 @@ private fun PrismWalletReportCard(
                         "${if (item.netWalletChange >= 0) "+" else ""}${formatVndAmount(item.netWalletChange)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (item.netWalletChange >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                        color = if (item.netWalletChange >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                     )
                 }
             }
@@ -2681,7 +2678,7 @@ private fun PrismWalletReportCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
+                            tokens.surfaceSoft,
                             RoundedCornerShape(10.dp),
                         )
                         .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -2719,7 +2716,7 @@ private fun PrismWalletReportCard(
                 Text(
                     "${detail?.transactionCount ?: 0} giao dịch trong kỳ",
                     fontSize = 11.sp,
-                    color = Color(0xFF6B7280),
+                    color = tokens.textSecondary,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
@@ -2752,8 +2749,8 @@ private fun PrismLargestTransactionsCard(state: ReportsUiState) {
     if (largest != null) {
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+            color = tokens.surface,
+            border = BorderStroke(1.dp, tokens.border),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
@@ -2762,14 +2759,14 @@ private fun PrismLargestTransactionsCard(state: ReportsUiState) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Giao dịch chi lớn nhất trong kỳ", fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                    Text("Giao dịch chi lớn nhất trong kỳ", fontSize = 11.5.sp, color = tokens.textSecondary)
                     Text(largest.note.ifBlank { "Khoản chi tiêu" }, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = tokens.onSurface)
                 }
                 Text(
                     "-${formatVndAmount(largest.amount.value)}",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFEF4444),
+                    color = FinluxColors.ExpenseRed,
                 )
             }
         }
@@ -2802,8 +2799,8 @@ private fun PrismTrendAnalysisCard(state: ReportsUiState) {
 
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -2847,8 +2844,8 @@ private fun PrismCashflowChartCard(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -2886,18 +2883,18 @@ private fun PrismCashflowChartCard(
                     Text(
                         text = monthLabel,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(8.dp).background(Color(0xFF10B981), CircleShape))
-                        Text("Thu", fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                        Box(Modifier.size(8.dp).background(FinluxColors.IncomeGreen, CircleShape))
+                        Text("Thu", fontSize = 11.5.sp, color = tokens.textSecondary)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(8.dp).background(Color(0xFF5B4DFF), CircleShape))
-                        Text("Chi", fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                        Box(Modifier.size(8.dp).background(tokens.primary, CircleShape))
+                        Text("Chi", fontSize = 11.5.sp, color = tokens.textSecondary)
                     }
                 }
             }
@@ -2908,7 +2905,7 @@ private fun PrismCashflowChartCard(
                 if (selectedPoint != null) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (tokens.isDark) Color(0xFF28293D) else Color(0xFFF3F4F6),
+                        color = tokens.surfaceSoft,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(
@@ -2928,13 +2925,13 @@ private fun PrismCashflowChartCard(
                                     text = "+${formatVndAmount(selectedPoint.income)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF10B981),
+                                    color = FinluxColors.IncomeGreen,
                                 )
                                 Text(
                                     text = "-${formatVndAmount(selectedPoint.expense)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF5B4DFF),
+                                    color = tokens.primary,
                                 )
                             }
                         }
@@ -2950,7 +2947,7 @@ private fun PrismCashflowChartCard(
             ) {
                 if (cashFlowPoints.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Không có dữ liệu biểu đồ", style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B7280))
+                        Text("Không có dữ liệu biểu đồ", style = MaterialTheme.typography.bodySmall, color = tokens.textSecondary)
                     }
                 } else {
                     val scrollState = rememberScrollState()
@@ -3018,7 +3015,7 @@ private fun PrismCashflowChartCard(
                                                 .width(if (isScrollable) 7.dp else 6.dp)
                                                 .fillMaxHeight(incomeFrac)
                                                 .background(
-                                                    if (isSelected) Color(0xFF10B981) else Color(0xFF10B981).copy(alpha = 0.85f),
+                                                    if (isSelected) FinluxColors.IncomeGreen else FinluxColors.IncomeGreen.copy(alpha = 0.85f),
                                                     RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
                                                 ),
                                         )
@@ -3030,7 +3027,7 @@ private fun PrismCashflowChartCard(
                                                 .width(if (isScrollable) 7.dp else 6.dp)
                                                 .fillMaxHeight(expenseFrac)
                                                 .background(
-                                                    if (isSelected) Color(0xFF5B4DFF) else Color(0xFF5B4DFF).copy(alpha = 0.85f),
+                                                    if (isSelected) tokens.primary else tokens.primary.copy(alpha = 0.85f),
                                                     RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
                                                 ),
                                         )
@@ -3046,9 +3043,9 @@ private fun PrismCashflowChartCard(
                                     text = labelText,
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                                     color = when {
-                                        isSelected -> Color(0xFF5B4DFF)
+                                        isSelected -> tokens.primary
                                         isToday -> tokens.primary
-                                        else -> Color(0xFF6B7280)
+                                        else -> tokens.textSecondary
                                     },
                                     fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
                                     maxLines = 1,
@@ -3083,8 +3080,8 @@ private fun PrismPeriodIndicatorBanner(
     val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onPickPeriod),
@@ -3122,7 +3119,7 @@ private fun PrismPeriodIndicatorBanner(
                     Text(
                         text = "${state.range.start.format(DateTimeFormatter.ofPattern("dd/MM"))} - ${state.range.end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                 }
             }
@@ -3167,8 +3164,8 @@ private fun PrismDailyAveragesRow(state: ReportsUiState) {
         // Average Income / Day
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+            color = tokens.surface,
+            border = BorderStroke(1.dp, tokens.border),
             modifier = Modifier.weight(1f),
         ) {
             Column(
@@ -3182,13 +3179,13 @@ private fun PrismDailyAveragesRow(state: ReportsUiState) {
                     Icon(
                         imageVector = Icons.Default.ArrowUpward,
                         contentDescription = null,
-                        tint = Color(0xFF10B981),
+                        tint = FinluxColors.IncomeGreen,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = "Thu nhập TB/ngày",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                 }
                 Text(
@@ -3197,7 +3194,7 @@ private fun PrismDailyAveragesRow(state: ReportsUiState) {
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                     ),
-                    color = Color(0xFF10B981),
+                    color = FinluxColors.IncomeGreen,
                 )
             }
         }
@@ -3205,8 +3202,8 @@ private fun PrismDailyAveragesRow(state: ReportsUiState) {
         // Average Expense / Day
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+            color = tokens.surface,
+            border = BorderStroke(1.dp, tokens.border),
             modifier = Modifier.weight(1f),
         ) {
             Column(
@@ -3220,13 +3217,13 @@ private fun PrismDailyAveragesRow(state: ReportsUiState) {
                     Icon(
                         imageVector = Icons.Default.ArrowDownward,
                         contentDescription = null,
-                        tint = Color(0xFFEF4444),
+                        tint = FinluxColors.ExpenseRed,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = "Chi tiêu TB/ngày",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                 }
                 Text(
@@ -3235,7 +3232,7 @@ private fun PrismDailyAveragesRow(state: ReportsUiState) {
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                     ),
-                    color = Color(0xFFEF4444),
+                    color = FinluxColors.ExpenseRed,
                 )
             }
         }
@@ -3258,7 +3255,7 @@ private fun PrismPeriodPickerBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        containerColor = tokens.surface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(
@@ -3283,8 +3280,8 @@ private fun PrismPeriodPickerBottomSheet(
 
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) Color(0xFF5B4DFF).copy(alpha = 0.12f) else Color.Transparent,
-                        border = if (isSelected) BorderStroke(1.5.dp, Color(0xFF5B4DFF)) else BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                        color = if (isSelected) tokens.primary.copy(alpha = 0.12f) else Color.Transparent,
+                        border = if (isSelected) BorderStroke(1.5.dp, tokens.primary) else BorderStroke(1.dp, tokens.border),
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
@@ -3301,13 +3298,13 @@ private fun PrismPeriodPickerBottomSheet(
                                     fontSize = 15.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 ),
-                                color = if (isSelected) Color(0xFF5B4DFF) else tokens.onSurface,
+                                color = if (isSelected) tokens.primary else tokens.onSurface,
                             )
                             if (isSelected) {
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = Color(0xFF5B4DFF),
+                                    tint = tokens.primary,
                                     modifier = Modifier.size(18.dp),
                                 )
                             }

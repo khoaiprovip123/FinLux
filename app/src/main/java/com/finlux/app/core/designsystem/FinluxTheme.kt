@@ -162,13 +162,13 @@ val LocalGlassTokens = staticCompositionLocalOf {
     )
 }
 
-val LocalAppUiStyle = staticCompositionLocalOf { AppUiStyle.CLASSIC_LIQUID }
+val LocalAppUiStyle = staticCompositionLocalOf { AppUiStyle.DEFAULT }
 val LocalUiPreferences = staticCompositionLocalOf { UiPreferences() }
 
 @Composable
 fun FinluxTheme(
     preference: ThemePreference,
-    uiStyle: AppUiStyle = AppUiStyle.CLASSIC_LIQUID,
+    uiStyle: AppUiStyle = AppUiStyle.DEFAULT,
     uiPreferences: UiPreferences = UiPreferences(),
     content: @Composable () -> Unit,
 ) {

@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.updater.AppUpdateInfo
 
 @Composable
@@ -81,7 +83,7 @@ fun AppUpdateDialog(
                 title = "Đã là bản mới nhất",
                 message = "Ứng dụng FinLux đang ở phiên bản mới nhất (${uiState.currentVersion}).",
                 icon = Icons.Rounded.CheckCircle,
-                iconColor = Color(0xFF10B981),
+                iconColor = FinluxColors.IncomeGreen,
                 onDismiss = onDismiss,
             )
         }
@@ -90,19 +92,20 @@ fun AppUpdateDialog(
                 title = "Không thể kiểm tra",
                 message = uiState.message,
                 icon = Icons.Rounded.ErrorOutline,
-                iconColor = Color(0xFFEF4444),
+                iconColor = FinluxColors.ExpenseRed,
                 onDismiss = onDismiss,
             )
         }
         is UpdateUiState.Checking -> {
+            val tokens = LocalFinluxTokens.current
             Dialog(
                 onDismissRequest = {},
                 properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             ) {
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                    tonalElevation = 8.dp,
+                    shape = RoundedCornerShape(tokens.radius.dialog),
+                    color = tokens.surface,
+                    tonalElevation = tokens.elevation,
                     modifier = Modifier.padding(16.dp),
                 ) {
                     Row(
@@ -110,11 +113,16 @@ fun AppUpdateDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            strokeWidth = 3.dp,
+                            color = tokens.primary,
+                        )
                         Text(
                             text = "Đang kiểm tra bản cập nhật...",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
+                            color = tokens.textPrimary,
                         )
                     }
                 }
@@ -130,14 +138,15 @@ private fun UpdateAvailableContent(
     onUpdate: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = false),
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-            tonalElevation = 12.dp,
+            shape = RoundedCornerShape(tokens.radius.dialog),
+            color = tokens.surface,
+            tonalElevation = tokens.elevation,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         ) {
             Column(
@@ -148,17 +157,13 @@ private fun UpdateAvailableContent(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6)),
-                            ),
-                        ),
+                        .background(tokens.primaryBrush),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.RocketLaunch,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = tokens.onHero,
                         modifier = Modifier.size(30.dp),
                     )
                 }
@@ -169,18 +174,19 @@ private fun UpdateAvailableContent(
                     text = "Bản cập nhật mới!",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
+                    color = tokens.textPrimary,
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    shape = RoundedCornerShape(tokens.radius.smallChip),
+                    color = tokens.primary.copy(alpha = 0.12f),
                 ) {
                     Text(
                         text = "Phiên bản: v${info.latestVersionName}",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = tokens.primary,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     )
@@ -193,6 +199,7 @@ private fun UpdateAvailableContent(
                         text = "Nội dung cập nhật:",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
+                        color = tokens.textPrimary,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(modifier = Modifier.height(6.dp))
@@ -200,15 +207,15 @@ private fun UpdateAvailableContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(max = 180.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            .clip(RoundedCornerShape(tokens.contentRadius))
+                            .background(tokens.surfaceSoft)
                             .padding(12.dp)
                             .verticalScroll(rememberScrollState()),
                     ) {
                         Text(
                             text = info.releaseNotes,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = tokens.textSecondary,
                             lineHeight = 18.sp,
                         )
                     }
@@ -223,17 +230,18 @@ private fun UpdateAvailableContent(
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(tokens.radius.input),
                     ) {
-                        Text("Để sau")
+                        Text("Để sau", color = tokens.textSecondary)
                     }
 
                     Button(
                         onClick = onUpdate,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(tokens.radius.input),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
+                            containerColor = tokens.primary,
+                            contentColor = tokens.onHero,
                         ),
                     ) {
                         Icon(
@@ -255,14 +263,15 @@ private fun DownloadingContent(
     info: AppUpdateInfo,
     progress: Float,
 ) {
+    val tokens = LocalFinluxTokens.current
     Dialog(
         onDismissRequest = {},
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-            tonalElevation = 12.dp,
+            shape = RoundedCornerShape(tokens.radius.dialog),
+            color = tokens.surface,
+            tonalElevation = tokens.elevation,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         ) {
             Column(
@@ -273,13 +282,13 @@ private fun DownloadingContent(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(tokens.primary.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.SystemUpdate,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = tokens.primary,
                         modifier = Modifier.size(30.dp),
                     )
                 }
@@ -290,6 +299,7 @@ private fun DownloadingContent(
                     text = "Đang tải bản cập nhật...",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = tokens.textPrimary,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -298,7 +308,7 @@ private fun DownloadingContent(
                 Text(
                     text = "$percent%",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = tokens.primary,
                     fontWeight = FontWeight.ExtraBold,
                 )
 
@@ -310,6 +320,8 @@ private fun DownloadingContent(
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(CircleShape),
+                    color = tokens.primary,
+                    trackColor = tokens.surfaceSoft,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -317,7 +329,7 @@ private fun DownloadingContent(
                 Text(
                     text = "Vui lòng giữ ứng dụng mở trong giây lát",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = tokens.textSecondary,
                 )
             }
         }
@@ -330,14 +342,15 @@ private fun ReadyToInstallContent(
     onInstall: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = false),
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-            tonalElevation = 12.dp,
+            shape = RoundedCornerShape(tokens.radius.dialog),
+            color = tokens.surface,
+            tonalElevation = tokens.elevation,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         ) {
             Column(
@@ -348,13 +361,13 @@ private fun ReadyToInstallContent(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF10B981)),
+                        .background(FinluxColors.IncomeGreen),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = tokens.onHero,
                         modifier = Modifier.size(32.dp),
                     )
                 }
@@ -365,6 +378,7 @@ private fun ReadyToInstallContent(
                     text = "Đã tải xong bản cập nhật",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
+                    color = tokens.textPrimary,
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -372,7 +386,7 @@ private fun ReadyToInstallContent(
                 Text(
                     text = "Bản v${info.latestVersionName} đã sẵn sàng để cài đặt.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = tokens.textSecondary,
                     textAlign = TextAlign.Center,
                 )
 
@@ -385,18 +399,21 @@ private fun ReadyToInstallContent(
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(tokens.radius.input),
                     ) {
-                        Text("Đóng")
+                        Text("Đóng", color = tokens.textSecondary)
                     }
 
                     Button(
                         onClick = onInstall,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(tokens.radius.input),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = FinluxColors.IncomeGreen,
+                            contentColor = tokens.onHero,
+                        ),
                     ) {
-                        Text("Cài đặt ngay", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Cài đặt ngay", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -412,11 +429,12 @@ private fun SimpleMessageDialog(
     iconColor: Color,
     onDismiss: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-            tonalElevation = 8.dp,
+            shape = RoundedCornerShape(tokens.radius.dialog),
+            color = tokens.surface,
+            tonalElevation = tokens.elevation,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         ) {
             Column(
@@ -435,14 +453,19 @@ private fun SimpleMessageDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.textPrimary,
+                )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = tokens.textSecondary,
                     textAlign = TextAlign.Center,
                 )
 
@@ -451,7 +474,11 @@ private fun SimpleMessageDialog(
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(tokens.radius.input),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = tokens.primary,
+                        contentColor = tokens.onHero,
+                    ),
                 ) {
                     Text("Đã hiểu")
                 }

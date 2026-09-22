@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.repository.BudgetRepository
@@ -25,7 +26,7 @@ class FirebaseBudgetRepository(
             close()
             return@callbackFlow
         }
-        val collection = firestore.collection("users").document(uid).collection("budgets")
+        val collection = firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS)
         val query = if (periodKey == "*" || periodKey.isBlank()) {
             collection
         } else {
@@ -35,7 +36,7 @@ class FirebaseBudgetRepository(
                 if (periodKey.startsWith("salary:")) periodKey.removePrefix("salary:") else null,
                 if (!periodKey.startsWith("month:") && !periodKey.startsWith("salary:") && periodKey.isNotBlank()) "month:$periodKey" else null,
             ).distinct()
-            collection.whereIn("periodKey", keysToMatch)
+            collection.whereIn(FirestoreSchema.Fields.PERIOD_KEY, keysToMatch)
         }
 
         val registration = query
@@ -49,7 +50,7 @@ class FirebaseBudgetRepository(
     override suspend fun upsertBudget(budget: Budget): AppResult<String> = firebaseResult("Không thể lưu ngân sách") {
         val uid = requireUid()
         val id = budget.id.ifBlank { "${budget.categoryId}_${budget.periodKey}" }
-        firestore.collection("users").document(uid).collection("budgets").document(id)
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS).document(id)
             .set(budget.copy(id = id).toBudgetMap()).await()
         id
     }
@@ -60,7 +61,7 @@ class FirebaseBudgetRepository(
         val batch = firestore.batch()
         for (budget in budgets) {
             val id = budget.id.ifBlank { "${budget.categoryId}_${budget.periodKey}" }
-            val docRef = firestore.collection("users").document(uid).collection("budgets").document(id)
+            val docRef = firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS).document(id)
             batch.set(docRef, budget.copy(id = id).toBudgetMap())
         }
         batch.commit().await()
@@ -69,7 +70,7 @@ class FirebaseBudgetRepository(
 
     override suspend fun deleteBudget(budget: Budget): AppResult<Unit> = firebaseResult("Không thể xóa ngân sách") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("budgets").document(budget.id).delete().await()
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS).document(budget.id).delete().await()
         Unit
     }
 

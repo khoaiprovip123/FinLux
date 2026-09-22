@@ -172,7 +172,7 @@ fun PrismTransactionsScreen(
                 // Nút chuyển chế độ Lịch / Danh sách
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.14f) else (if (tokens.isDark) tokens.surfaceSoft else Color.White),
+                    color = if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.14f) else tokens.surfaceSoft,
                     border = BorderStroke(
                         1.dp,
                         if (viewMode == TransactionViewMode.CALENDAR) tokens.primary.copy(alpha = 0.35f) else tokens.border.copy(alpha = 0.6f),
@@ -532,7 +532,7 @@ private fun PrismTransactionSearchBarWithFilter(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = tokens.onHero,
                                 ),
                             )
                         }
@@ -609,7 +609,7 @@ private fun PrismQuickSegmentedTabsWithIcons(
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.label,
-                        tint = if (isSelected) Color.White else item.accentColor,
+                        tint = if (isSelected) tokens.onHero else item.accentColor,
                         modifier = Modifier.size(15.dp),
                     )
                     Spacer(Modifier.width(4.5.dp))
@@ -619,7 +619,7 @@ private fun PrismQuickSegmentedTabsWithIcons(
                             fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                         ),
-                        color = if (isSelected) Color.White else tokens.onSurface,
+                        color = if (isSelected) tokens.onHero else tokens.onSurface,
                         maxLines = 1,
                     )
                 }
@@ -706,7 +706,7 @@ private fun PrismExplorerTransactionCard(
                 Icon(
                     imageVector = if (isTransfer) Icons.Default.SwapHoriz else categoryIcon(category?.icon.orEmpty()),
                     contentDescription = category?.name,
-                    tint = Color.White,
+                    tint = tokens.onHero,
                     modifier = Modifier.size(24.dp),
                 )
             }

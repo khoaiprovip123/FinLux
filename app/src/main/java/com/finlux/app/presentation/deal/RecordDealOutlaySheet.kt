@@ -26,6 +26,7 @@ import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
 import com.finlux.app.core.designsystem.component.form.FinluxNoteInput
 import com.finlux.app.core.designsystem.component.form.FinluxWalletSelector
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.FinancialDeal
@@ -125,7 +126,7 @@ fun RecordDealOutlaySheet(
                 label = if (isLending) "SỐ TIỀN CHO VAY THÊM" else "SỐ TIỀN XUẤT VỐN",
                 amountText = amountDigits,
                 onAmountChange = { amountDigits = it },
-                amountColor = if (isLending) Color(0xFFD97706) else tokens.primary,
+                amountColor = if (isLending) FinluxColors.WarningAmber else tokens.primary,
             )
 
             // 3. Ghi chú (Standard FinluxNoteInput)
@@ -135,8 +136,8 @@ fun RecordDealOutlaySheet(
                 onNoteChange = { note = it },
                 placeholder = if (isLending) "Ví dụ: Cho mượn thêm đợt 2, Góp vốn bổ sung..." else "Ví dụ: Đặt cọc lô hàng, Xuất vốn đợt 2...",
                 icon = Icons.Default.Description,
-                iconBgColor = (if (isLending) Color(0xFFD97706) else tokens.primary).copy(alpha = 0.12f),
-                iconTintColor = if (isLending) Color(0xFFD97706) else tokens.primary,
+                iconBgColor = (if (isLending) FinluxColors.WarningAmber else tokens.primary).copy(alpha = 0.12f),
+                iconTintColor = if (isLending) FinluxColors.WarningAmber else tokens.primary,
             )
 
             // 4. Thời gian giao dịch (Standard FinluxDateTimePicker)
@@ -144,8 +145,8 @@ fun RecordDealOutlaySheet(
                 label = if (isLending) "THỜI GIAN CHO VAY" else "THỜI GIAN XUẤT VỐN",
                 selectedDateTime = selectedDate,
                 onDateTimeChange = { selectedDate = it },
-                iconBgColor = (if (isLending) Color(0xFFD97706) else Color(0xFF6366F1)).copy(alpha = 0.14f),
-                iconTintColor = if (isLending) Color(0xFFD97706) else Color(0xFF6366F1),
+                iconBgColor = (if (isLending) FinluxColors.WarningAmber else FinluxColors.PrimaryViolet).copy(alpha = 0.14f),
+                iconTintColor = if (isLending) FinluxColors.WarningAmber else FinluxColors.PrimaryViolet,
             )
 
             Spacer(Modifier.height(8.dp))
@@ -163,12 +164,12 @@ fun RecordDealOutlaySheet(
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLending) Color(0xFFD97706) else tokens.primary,
-                    contentColor = Color.White,
+                    containerColor = if (isLending) FinluxColors.WarningAmber else tokens.primary,
+                    contentColor = tokens.onHero,
                 ),
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = tokens.onHero, strokeWidth = 2.dp)
                 } else {
                     Text(
                         text = if (isLending) "Xác Nhận Cho Vay" else "Xác Nhận Xuất Vốn",

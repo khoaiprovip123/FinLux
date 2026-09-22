@@ -54,9 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.finlux.app.core.designsystem.FinluxBlue
-import com.finlux.app.core.designsystem.FinluxCyan
-import com.finlux.app.core.designsystem.FinluxPurple
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxLazyColumn
 import com.finlux.app.core.designsystem.component.FinluxListType
@@ -219,7 +217,7 @@ fun DebtDashboardScreen(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp,
                                 ),
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = tokens.onSurface,
                             )
                         }
 
@@ -307,10 +305,10 @@ fun DebtDashboardScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f)),
+                        .background(tokens.background.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = FinluxBlue)
+                    CircularProgressIndicator(color = tokens.primary)
                 }
             }
         }
@@ -383,6 +381,7 @@ private fun DebtOverviewHeroCard(
     uiState: DebtUiState,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
     LiquidGlassSurface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
@@ -402,13 +401,13 @@ private fun DebtOverviewHeroCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Brush.linearGradient(listOf(Color(0xFFE11D48), Color(0xFF9333EA)))),
+                            .background(Brush.linearGradient(listOf(tokens.error, FinluxColors.PrimaryViolet))),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.CreditScore,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = tokens.onHero,
                             modifier = Modifier.size(22.dp),
                         )
                     }
@@ -417,7 +416,7 @@ private fun DebtOverviewHeroCard(
                         Text(
                             text = "Tổng dư nợ hiện tại",
                             style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = tokens.textSecondary,
                         )
                         Text(
                             text = uiState.totalRemainingDebt.value.toVnd(),
@@ -425,20 +424,20 @@ private fun DebtOverviewHeroCard(
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 24.sp,
                             ),
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = tokens.onSurface,
                         )
                     }
                 }
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFE11D48).copy(alpha = 0.12f),
+                    color = tokens.error.copy(alpha = 0.12f),
                 ) {
                     Text(
                         text = "${uiState.activeDebtsCount} khoản nợ",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE11D48),
+                            color = tokens.error,
                         ),
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                     )
@@ -454,8 +453,8 @@ private fun DebtOverviewHeroCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
-                color = Color(0xFF10B981),
-                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                color = FinluxColors.IncomeGreen,
+                trackColor = tokens.surfaceSoft,
             )
 
             Spacer(Modifier.height(8.dp))
@@ -469,14 +468,14 @@ private fun DebtOverviewHeroCard(
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF10B981),
+                        color = FinluxColors.IncomeGreen,
                     ),
                 )
                 Text(
                     text = "Tổng vay: ${uiState.totalOriginalDebt.value.toShortVnd()}",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 11.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = tokens.textSecondary,
                     ),
                 )
             }
@@ -490,10 +489,11 @@ private fun FilterChipItem(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) FinluxBlue else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        border = if (isSelected) BorderStroke(1.dp, FinluxBlue) else null,
+        color = if (isSelected) tokens.primary else tokens.surfaceSoft,
+        border = if (isSelected) BorderStroke(1.dp, tokens.primary) else null,
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
@@ -506,7 +506,7 @@ private fun FilterChipItem(
                 text = label,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isSelected) tokens.onHero else tokens.textSecondary,
                 ),
                 textAlign = TextAlign.Center,
             )

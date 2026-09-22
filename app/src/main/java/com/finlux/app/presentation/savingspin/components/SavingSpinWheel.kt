@@ -32,19 +32,22 @@ import com.finlux.app.domain.model.Money
 import kotlin.math.cos
 import kotlin.math.sin
 
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+
 private val DISTINCT_PALETTE = listOf(
-    Color(0xFF0EA5E9), // Sky Blue
-    Color(0xFF3B82F6), // Royal Blue
-    Color(0xFF8B5CF6), // Purple
-    Color(0xFFEC4899), // Pink
-    Color(0xFFF43F5E), // Rose
-    Color(0xFFF97316), // Orange
-    Color(0xFFEAB308), // Yellow Amber
-    Color(0xFF84CC16), // Lime
-    Color(0xFF10B981), // Emerald
-    Color(0xFF06B6D4), // Cyan
-    Color(0xFF6366F1), // Indigo
-    Color(0xFFA855F7), // Fuchsia
+    FinluxColors.PrimaryCyan,
+    FinluxColors.PrimaryBlue,
+    FinluxColors.PrimaryViolet,
+    FinluxColors.ExpenseRed,
+    FinluxColors.WarningAmber,
+    FinluxColors.IncomeGreen,
+    FinluxColors.TransferBlue,
+    FinluxColors.BudgetViolet,
+    FinluxColors.PrimaryCyan,
+    FinluxColors.PrimaryBlue,
+    FinluxColors.IncomeGreen,
+    FinluxColors.PrimaryViolet,
 )
 
 @Composable
@@ -56,6 +59,7 @@ fun SavingSpinWheel(
     onAnimationFinished: () -> Unit = {},
 ) {
     if (values.isEmpty()) return
+    val tokens = LocalFinluxTokens.current
     val animationsEnabled = LocalUiPreferences.current.animationsEnabled
     val labels = remember(values) { values.map { formatVndAmount(it.value, isCompact = true) } }
     val colors = remember(values.size) {
@@ -136,7 +140,7 @@ fun SavingSpinWheel(
 
                 // Đường viền phân cách giữa các múi
                 drawArc(
-                    color = Color.White.copy(alpha = 0.65f),
+                    color = tokens.onHero.copy(alpha = 0.65f),
                     startAngle = startAngle,
                     sweepAngle = sliceAngle,
                     useCenter = true,
@@ -164,12 +168,12 @@ fun SavingSpinWheel(
 
             // 2. Viền ngoài bằng vàng kim (Gold rim)
             drawCircle(
-                color = Color(0xFFF59E0B),
+                color = FinluxColors.WarningAmber,
                 radius = diameter / 2f + rimThickness / 2f,
                 style = Stroke(width = rimThickness),
             )
             drawCircle(
-                color = Color(0xFFFEF3C7),
+                color = FinluxColors.WarningAmber.copy(alpha = 0.35f),
                 radius = diameter / 2f,
                 style = Stroke(width = 2f),
             )
@@ -181,22 +185,22 @@ fun SavingSpinWheel(
                 val dotAngle = Math.toRadians((i * 360.0 / dotCount))
                 val dX = center.x + cos(dotAngle).toFloat() * (diameter / 2f + rimThickness / 2f)
                 val dY = center.y + sin(dotAngle).toFloat() * (diameter / 2f + rimThickness / 2f)
-                drawCircle(color = Color.White, radius = dotRadius, center = Offset(dX, dY))
+                drawCircle(color = tokens.onHero, radius = dotRadius, center = Offset(dX, dY))
             }
 
             // 3. Khối tròn trung tâm (Gold medallion + Star)
             val centerRadius = diameter * 0.17f
             drawCircle(
-                color = Color(0xFFFBBF24),
+                color = FinluxColors.WarningAmber.copy(alpha = 0.85f),
                 radius = centerRadius,
             )
             drawCircle(
-                color = Color(0xFFF59E0B),
+                color = FinluxColors.WarningAmber,
                 radius = centerRadius,
                 style = Stroke(width = minDim * 0.016f),
             )
             drawCircle(
-                color = Color(0xFFFEF08A),
+                color = FinluxColors.WarningAmber.copy(alpha = 0.40f),
                 radius = centerRadius * 0.78f,
             )
 
@@ -206,7 +210,7 @@ fun SavingSpinWheel(
                 cy = center.y,
                 radius = centerRadius * 0.55f,
                 innerRadius = centerRadius * 0.25f,
-                color = Color(0xFFD97706),
+                color = FinluxColors.WarningAmber,
             )
         }
 
@@ -236,7 +240,7 @@ fun SavingSpinWheel(
                     lineTo(size.width, 0f)
                     close()
                 },
-                color = Color(0xFFEF4444),
+                color = tokens.error,
             )
             // Viền kim trắng
             drawPath(
@@ -246,7 +250,7 @@ fun SavingSpinWheel(
                     lineTo(size.width, 0f)
                     close()
                 },
-                color = Color.White,
+                color = tokens.onHero,
                 style = Stroke(width = 2.5f),
             )
         }

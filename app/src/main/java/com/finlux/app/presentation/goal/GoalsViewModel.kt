@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.sync.DataSyncManager
+import com.finlux.app.domain.model.FinanceBusinessConstants
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Wallet
@@ -29,7 +30,7 @@ data class GoalEditorState(
     val name: String = "",
     val targetInput: String = "",
     val monthlyInput: String = "",
-    val deadline: Instant = Instant.now().plusSeconds(180L * 24 * 60 * 60),
+    val deadline: Instant = Instant.now().plusSeconds(FinanceBusinessConstants.Goals.DEFAULT_DEADLINE_DAYS * 86400L),
     val category: String = "Khác",
     val imageUri: String? = null,
     val saving: Boolean = false,

@@ -39,12 +39,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.finlux.app.core.designsystem.ExpenseRed
 import com.finlux.app.core.designsystem.FinluxTextStyles
-import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
 import com.finlux.app.core.designsystem.component.FinluxTransactionGroup
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.FinanceTransaction
@@ -230,15 +229,15 @@ fun PrismSpendingCalendarView(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(IncomeGreen))
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(FinluxColors.IncomeGreen))
                         Text("Tiết kiệm/Thu", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = tokens.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFF59E0B)))
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(FinluxColors.WarningAmber))
                         Text("Chi vừa phải", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = tokens.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(ExpenseRed))
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(FinluxColors.ExpenseRed))
                         Text("Chi nhiều", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = tokens.onSurfaceVariant)
                     }
                 }
@@ -287,7 +286,7 @@ fun PrismSpendingCalendarView(
                         style = FinluxTextStyles.CardTitle.copy(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (net >= 0) IncomeGreen else ExpenseRed,
+                            color = if (net >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                         ),
                     )
                 }
@@ -331,16 +330,16 @@ private fun CalendarDayCell(
     }
 
     val textColor = when {
-        isSelected -> Color.White
+        isSelected -> tokens.onHero
         isToday -> tokens.primary
         else -> tokens.onSurface
     }
 
     val dotColor: Color? = when {
         summary == null || summary.transactionCount == 0 -> null
-        summary.netAmount > 0 -> IncomeGreen
-        summary.totalExpense > 500_000L -> ExpenseRed
-        else -> Color(0xFFF59E0B)
+        summary.netAmount > 0 -> FinluxColors.IncomeGreen
+        summary.totalExpense > 500_000L -> FinluxColors.ExpenseRed
+        else -> FinluxColors.WarningAmber
     }
 
     Box(
@@ -382,7 +381,7 @@ private fun CalendarDayCell(
                     modifier = Modifier
                         .size(5.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) Color.White else dotColor),
+                        .background(if (isSelected) tokens.onHero else dotColor),
                 )
             } else {
                 Spacer(Modifier.size(5.dp))

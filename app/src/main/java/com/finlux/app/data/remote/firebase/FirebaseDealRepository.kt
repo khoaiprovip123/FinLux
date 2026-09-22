@@ -17,6 +17,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -26,6 +27,15 @@ class FirebaseDealRepository(
     private val firestore: FirebaseFirestore,
 ) : DealRepository {
 
+    private fun userDeals(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.DEALS)
+
+    private fun userWallets(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.WALLETS)
+
+    private fun userTransactions(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.TRANSACTIONS)
+
     override fun observeDeals(): Flow<List<FinancialDeal>> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) {
@@ -33,7 +43,7 @@ class FirebaseDealRepository(
             close()
             return@callbackFlow
         }
-        val registration = firestore.collection("users").document(uid).collection("deals")
+        val registration = userDeals(uid)
             .orderBy("startDate", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -53,7 +63,7 @@ class FirebaseDealRepository(
             close()
             return@callbackFlow
         }
-        val registration = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val registration = userDeals(uid).document(dealId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -67,7 +77,7 @@ class FirebaseDealRepository(
     override suspend fun upsertDeal(deal: FinancialDeal): AppResult<String> = firebaseResult("Không thể lưu thương vụ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
         val id = if (deal.id.isNotBlank()) deal.id else UUID.randomUUID().toString()
-        val dealDoc = firestore.collection("users").document(uid).collection("deals").document(id)
+        val dealDoc = userDeals(uid).document(id)
 
         val data = mapOf(
             "title" to deal.title,
@@ -90,9 +100,9 @@ class FirebaseDealRepository(
 
     override suspend fun deleteDeal(dealId: String): AppResult<Unit> = firebaseResult("Không thể xóa thương vụ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        val dealDocRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val dealDocRef = userDeals(uid).document(dealId)
 
-        val txSnapshot = firestore.collection("users").document(uid).collection("transactions")
+        val txSnapshot = userTransactions(uid)
             .whereEqualTo("dealId", dealId)
             .get()
             .await()
@@ -109,7 +119,7 @@ class FirebaseDealRepository(
                 .filter { it.isNotBlank() }
                 .toSet()
             val walletRefs = walletIds.associateWith {
-                firestore.collection("users").document(uid).collection("wallets").document(it)
+                userWallets(uid).document(it)
             }
             val walletDocs = walletRefs.mapValues { (_, ref) -> atomic.get(ref) }
 
@@ -159,10 +169,10 @@ class FirebaseDealRepository(
         require(amount > 0) { "Số tiền xuất vốn phải lớn hơn 0" }
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
 
-        val walletRef = firestore.collection("users").document(uid).collection("wallets").document(walletId)
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
+        val walletRef = userWallets(uid).document(walletId)
+        val dealRef = userDeals(uid).document(deal.id)
         val txId = UUID.randomUUID().toString()
-        val txRef = firestore.collection("users").document(uid).collection("transactions").document(txId)
+        val txRef = userTransactions(uid).document(txId)
 
         firestore.runTransaction { tx ->
             val walletDoc = tx.get(walletRef)
@@ -215,8 +225,8 @@ class FirebaseDealRepository(
         require(amount > 0) { "Số tiền thu hồi phải lớn hơn 0" }
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
 
-        val walletRef = firestore.collection("users").document(uid).collection("wallets").document(walletId)
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
+        val walletRef = userWallets(uid).document(walletId)
+        val dealRef = userDeals(uid).document(deal.id)
 
         firestore.runTransaction { tx ->
             val walletDoc = tx.get(walletRef)
@@ -251,7 +261,7 @@ class FirebaseDealRepository(
                 )
 
                 val txId = UUID.randomUUID().toString()
-                val txRef = firestore.collection("users").document(uid).collection("transactions").document(txId)
+                val txRef = userTransactions(uid).document(txId)
                 val txData = mapOf(
                     "type" to TransactionType.INCOME.name.lowercase(),
                     "amount" to amount,
@@ -282,7 +292,7 @@ class FirebaseDealRepository(
 
                 if (principalPortion > 0) {
                     val txId1 = UUID.randomUUID().toString()
-                    val txRef1 = firestore.collection("users").document(uid).collection("transactions").document(txId1)
+                    val txRef1 = userTransactions(uid).document(txId1)
                     val txData1 = mapOf(
                         "type" to TransactionType.INCOME.name.lowercase(),
                         "amount" to principalPortion,
@@ -301,7 +311,7 @@ class FirebaseDealRepository(
                 }
 
                 val txId2 = UUID.randomUUID().toString()
-                val txRef2 = firestore.collection("users").document(uid).collection("transactions").document(txId2)
+                val txRef2 = userTransactions(uid).document(txId2)
                 val txData2 = mapOf(
                     "type" to TransactionType.INCOME.name.lowercase(),
                     "amount" to gainPortion,
@@ -327,17 +337,17 @@ class FirebaseDealRepository(
         note: String,
     ): AppResult<Unit> = firebaseResult("Không thể chốt lỗ thương vụ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(deal.id)
+        val dealRef = userDeals(uid).document(deal.id)
 
         // Resolve outlay wallet from existing OUTLAY_CAPITAL transactions or user's first wallet
-        val outlaySnapshot = firestore.collection("users").document(uid).collection("transactions")
+        val outlaySnapshot = userTransactions(uid)
             .whereEqualTo("dealId", deal.id)
             .whereEqualTo("dealFlowType", DealFlowType.OUTLAY_CAPITAL.name.lowercase())
             .limit(1)
             .get()
             .await()
         val outlayWalletId = outlaySnapshot.documents.firstOrNull()?.getString("walletId")
-            ?: firestore.collection("users").document(uid).collection("wallets").limit(1).get().await().documents.firstOrNull()?.id
+            ?: userWallets(uid).limit(1).get().await().documents.firstOrNull()?.id
             ?: ""
 
         firestore.runTransaction { tx ->
@@ -363,7 +373,7 @@ class FirebaseDealRepository(
 
             if (lossAmount > 0) {
                 val txId = UUID.randomUUID().toString()
-                val txRef = firestore.collection("users").document(uid).collection("transactions").document(txId)
+                val txRef = userTransactions(uid).document(txId)
                 val txData = mapOf(
                     "type" to TransactionType.EXPENSE.name.lowercase(),
                     "amount" to lossAmount,
@@ -385,14 +395,14 @@ class FirebaseDealRepository(
 
     override suspend fun revertDealLoss(dealId: String): AppResult<Unit> = firebaseResult("Không thể thu hồi chốt lỗ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        val lossDocs = firestore.collection("users").document(uid).collection("transactions")
+        val lossDocs = userTransactions(uid)
             .whereEqualTo("dealId", dealId)
             .whereEqualTo("dealFlowType", DealFlowType.CAPITAL_LOSS.name.lowercase())
             .get()
             .await()
 
         val totalLossToRevert = lossDocs.documents.sumOf { it.getLong("amount") ?: 0L }
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val dealRef = userDeals(uid).document(dealId)
 
         firestore.runTransaction { tx ->
             val dealDoc = tx.get(dealRef)
@@ -417,7 +427,7 @@ class FirebaseDealRepository(
 
     override suspend fun reopenDeal(dealId: String): AppResult<Unit> = firebaseResult("Không thể mở lại thương vụ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val dealRef = userDeals(uid).document(dealId)
         dealRef.update(
             mapOf(
                 "status" to DealStatus.ACTIVE.name.lowercase(),
@@ -429,7 +439,7 @@ class FirebaseDealRepository(
 
     override suspend fun closeDeal(dealId: String, date: Instant): AppResult<Unit> = firebaseResult("Không thể tất toán thương vụ") {
         val uid = requireNotNull(auth.currentUser?.uid) { "Chưa đăng nhập" }
-        val dealRef = firestore.collection("users").document(uid).collection("deals").document(dealId)
+        val dealRef = userDeals(uid).document(dealId)
         dealRef.update(
             mapOf(
                 "status" to DealStatus.COMPLETED.name.lowercase(),

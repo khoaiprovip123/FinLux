@@ -29,7 +29,7 @@ class SavingSpinReportViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val selectedFilter = MutableStateFlow(SavingSpinReportFilter.SEVEN_DAYS)
-    private val zoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+    private val zoneId = com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<SavingSpinReportUiState> = combine(

@@ -102,7 +102,7 @@ fun StrategySelectorCard(
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = tokens.onHero,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -219,8 +219,8 @@ fun StrategySelectorCard(
                     val isChipSelected = extraMonthlyPayment == amount
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isChipSelected) FinluxColors.PrimaryBlue else tokens.surfaceSoft.copy(alpha = 0.7f),
-                        border = BorderStroke(0.6.dp, if (isChipSelected) FinluxColors.PrimaryBlue else tokens.border),
+                        color = if (isChipSelected) tokens.primary else tokens.surfaceSoft.copy(alpha = 0.7f),
+                        border = BorderStroke(0.6.dp, if (isChipSelected) tokens.primary else tokens.border),
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
@@ -231,7 +231,7 @@ fun StrategySelectorCard(
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = if (isChipSelected) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 11.sp,
-                                color = if (isChipSelected) Color.White else tokens.onSurfaceVariant,
+                                color = if (isChipSelected) tokens.onHero else tokens.textSecondary,
                             ),
                             modifier = Modifier.padding(vertical = 5.dp),
                             textAlign = TextAlign.Center,
@@ -663,14 +663,14 @@ private fun PaydayAllocationCard(
                                 if (!item.sponsorLabel.isNullOrBlank()) {
                                     Surface(
                                         shape = RoundedCornerShape(4.dp),
-                                        color = Color(0xFF10B981).copy(alpha = 0.12f),
+                                        color = FinluxColors.IncomeGreen.copy(alpha = 0.12f),
                                     ) {
                                         Text(
                                             text = item.sponsorLabel,
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Medium,
-                                                color = Color(0xFF10B981),
+                                                color = FinluxColors.IncomeGreen,
                                             ),
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                                         )

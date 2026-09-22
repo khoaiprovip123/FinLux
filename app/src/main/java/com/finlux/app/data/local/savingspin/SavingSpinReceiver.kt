@@ -41,7 +41,7 @@ class SavingSpinReceiver : BroadcastReceiver() {
         )
         val snoozeIntent = PendingIntent.getBroadcast(
             context,
-            SAVING_SPIN_ALARM_REQUEST_CODE + 1,
+            com.finlux.app.core.common.AppSystemConfig.AlarmRequestCodes.SAVING_SPIN_SNOOZE,
             Intent(context, SavingSpinReceiver::class.java).apply { action = ACTION_SAVING_SPIN_SNOOZE },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

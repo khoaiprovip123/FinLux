@@ -797,6 +797,8 @@ private fun Step3DoubleConfirmation(
             colors = ButtonDefaults.buttonColors(
                 containerColor = tokens.error,
                 disabledContainerColor = tokens.error.copy(alpha = 0.25f),
+                contentColor = tokens.onHero,
+                disabledContentColor = tokens.onHero.copy(alpha = 0.5f),
             ),
         ) {
             Row(
@@ -806,11 +808,11 @@ private fun Step3DoubleConfirmation(
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = null,
-                    tint = if (state.canExecuteDelete) Color.White else Color.White.copy(alpha = 0.5f),
+                    tint = if (state.canExecuteDelete) tokens.onHero else tokens.onHero.copy(alpha = 0.5f),
                 )
                 Text(
                     text = "XÓA VĨNH VIỄN TÀI KHOẢN",
-                    color = if (state.canExecuteDelete) Color.White else Color.White.copy(alpha = 0.5f),
+                    color = if (state.canExecuteDelete) tokens.onHero else tokens.onHero.copy(alpha = 0.5f),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                 )

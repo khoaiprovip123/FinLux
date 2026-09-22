@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.7 (versionCode 181)
-- **Trạng thái Build:** ✅ 100% PASS (514/514 unit tests)
+- **Phiên bản hiện tại:** v1.25.9 (versionCode 183)
+- **Trạng thái Build:** ✅ 100% PASS (521/521 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
 ### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
@@ -16,7 +16,300 @@
 - [x] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
-- [x] **Logcat check:** Không có exception/crash ngầm hoặc warning nghiêm trọng.
+
+### [Task-RELEASE-v1.25.9] — Phát Hành v1.25.9: Trục Kiến Trúc Quản Trị Phase 1, Chuẩn Hóa Tokens Phase 2 (10 Batches) & Khắc Phục Khẩn Cấp Splash Regression
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Bump version lên `v1.25.9` (`versionCode = 183`) trong `app/build.gradle.kts`.
+  2. Khắc phục regression màn hình Splash: Khôi phục Brand Hero Luxury Gradient (`Deep Midnight Navy -> Deep Indigo -> Royal Violet -> Deep Royal Purple`), chữ "Fin" sáng trắng (`tokens.onHero`), chữ "Lux" đổ dốc màu xanh tím, slogan và spinner tương phản cao, status bar icons sáng.
+  3. Tổng kết toàn diện Phase 1 (Governance, `FinanceBusinessConstants`, `AppSystemConfig`, `FirestoreSchema`, Rules II.11..II.16) và Phase 2 (Design Tokens Migration 10 Batches qua 40+ UI screens & components).
+  4. Đồng bộ 100% tài liệu liên quan: `CHANGELOG.md`, `HANDOVER_LOG.md`, `docs/BACKLOG.md`, `docs/RULE_MAPPING_MATRIX.md`.
+  5. Đạt 100% PASS 521/521 unit tests, nạp APK và kiểm thử trực tiếp trên điện thoại vật lý.
+- **Files đã sửa thực tế**:
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+  - `docs/BACKLOG.md`
+  - `docs/RULE_MAPPING_MATRIX.md`
+  - `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+  - `adb install -r`: **Success**, khởi chạy mượt mà trên thiết bị vật lý.
+
+### [Task-PHASE-2-BATCH-2.10] — Chuẩn Hóa Design System Tokens: Batch 2.10 Flagship Prism Screens (PrismReportsScreen & PrismHomeScreen) — CHỐT HẠ GIAI ĐOẠN 2
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 2 heavyweight flagship screens trong Batch 2.10 (`PrismReportsScreen.kt` & `PrismHomeScreen.kt`).
+  2. Chuẩn hóa 443 vị trí màu thô, màu tĩnh và bảng màu phân tích sang dynamic design tokens (`LocalFinluxTokens.current`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.border`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.heroGradient`, `tokens.primaryGradient`, `tokens.onHero`, `tokens.onHeroMuted`, `FinluxColors.IncomeGreen`, `FinluxColors.ExpenseRed`, `FinluxColors.TransferBlue`, `FinluxColors.WarningAmber`, `FinluxColors.PrimaryBlue`, `FinluxColors.PrimaryViolet`, `FinluxColors.PrimaryCyan`, `FinluxColors.BudgetViolet`).
+  3. Khai báo chặt chẽ scope `val tokens = LocalFinluxTokens.current` trong 100% private Composable functions và Canvas drawing lambdas (`PrismDonutChart`, `PrismReportsHeroBanner`, `PrismDebtsHeroCard`, `PrismBudgetsHeroCard`, `PrismWalletsHeroCard`).
+  4. Quy hoạch toàn bộ bảng màu biểu đồ (Chart & Analytics Palettes) và Bento Grid / Hero Cards sang hệ thống Design Tokens & FinluxColors nhất quán.
+  5. Bảo toàn 100% logic nghiệp vụ, UI StateFlow, animations và Canvas rendering.
+  6. Chạy `compileDebugKotlin` (Exit code 0), `testDebugUnitTest` (521/521 tests PASS 100%) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/home/prism/PrismHomeScreen.kt`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL** in 7s.
+
+### [Task-PHASE-2-BATCH-2.9] — Chuẩn Hóa Design System Tokens: Batch 2.9 Reports Detail Sheets & Reports Screens (5 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 5 files trong Batch 2.9 (`WalletDetailBottomSheet.kt`, `CategoryDetailBottomSheet.kt`, `PrismDailyStatementComponents.kt`, `ClassicReportsScreen.kt`, `ModernReportsScreen.kt`).
+  2. Chuẩn hóa 206 vị trí màu thô, màu tĩnh và các hằng số màu cũ sang dynamic design tokens (`LocalFinluxTokens.current`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.border`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.background`, `FinluxColors.IncomeGreen`, `FinluxColors.ExpenseRed`, `FinluxColors.TransferBlue`, `FinluxColors.WarningAmber`).
+  3. Dọn sạch các legacy color imports (`ExpenseRed`, `IncomeGreen`, `FinluxBlue`, `FinluxCyan`, `FinluxPurple`, `FinluxTextSecondary`), nâng cấp biểu đồ `ChartColors`, `CategoryBlock`, và `CashFlowChart` dots.
+  4. Bảo toàn 100% logic nghiệp vụ, UI StateFlow, và bottom sheet callbacks.
+  5. Chạy `compileDebugKotlin` (Exit code 0), `testDebugUnitTest` (521/521 tests PASS 100%) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/reports/WalletDetailBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/CategoryDetailBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/prism/PrismDailyStatementComponents.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/classic/ClassicReportsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reports/modern/ModernReportsScreen.kt`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL** in 5s.
+
+### [Task-PHASE-2-BATCH-2.8] — Chuẩn Hóa Design System Tokens: Batch 2.8 Transactions & Budgets (6 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 6 files trong Batch 2.8 (`PrismTransactionsScreen.kt`, `ClassicTransactionsScreen.kt`, `ModernTransactionsScreen.kt`, `PrismBudgetScreen.kt`, `ClassicBudgetScreen.kt`, `ModernBudgetScreen.kt`).
+  2. Chuẩn hóa 35 vị trí màu thô, màu tĩnh và các hằng số màu cũ sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.background`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.border`, `tokens.onHero`, `tokens.onHeroMuted`, `FinluxColors.IncomeGreen`, `FinluxColors.ExpenseRed`, `FinluxColors.WarningAmber`, `FinluxColors.BudgetViolet`).
+  3. Dọn sạch toàn bộ 14 legacy imports màu thô khỏi các file (`ExpenseRed`, `IncomeGreen`, `WarningAmber`, `FinluxTextSecondary`, `FinluxPurple`).
+  4. Bảo toàn 100% logic nghiệp vụ, UI StateFlow, và callbacks.
+  5. Chạy `compileDebugKotlin` (Exit code 0), `testDebugUnitTest` (521/521 tests PASS 100%) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/classic/ClassicTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/modern/ModernTransactionsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/prism/PrismBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/classic/ClassicBudgetScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/modern/ModernBudgetScreen.kt`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL** in 9s.
+
+### [Task-PHASE-2-BATCH-2.7] — Chuẩn Hóa Design System Tokens: Batch 2.7 Wallets & Transfer Screens (5 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 5 files trong Batch 2.7 (`PrismWalletsScreen.kt`, `ClassicWalletsScreen.kt`, `ModernWalletsScreen.kt`, `TransferMoneyScreen.kt`, `AuthScreens.kt`).
+  2. Chuẩn hóa 96 vị trí màu thô, màu tĩnh và các hằng số màu cũ sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.background`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.border`, `tokens.onHero`, `tokens.onHeroMuted`).
+  3. Bảo toàn 100% logic nghiệp vụ, UI StateFlow, và callbacks.
+  4. Chạy `compileDebugKotlin` (Exit code 0), `testDebugUnitTest` (521/521 tests PASS 100%) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/wallet/prism/PrismWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/classic/ClassicWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/modern/ModernWalletsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/auth/AuthScreens.kt`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL** in 5s.
+
+### [Task-PHASE-2-BATCH-2.6] — Chuẩn Hóa Design System Tokens: Batch 2.6 Notifications, Saving Spin & Goals (5 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 5 files trong Batch 2.6 (`NotificationsScreen.kt`, `SavingSpinWheel.kt`, `GoalsScreen.kt`, `IncomeScreen.kt`, `ExpenseScreen.kt`).
+  2. Chuẩn hóa sạch sẽ 122 vị trí màu thô, màu tĩnh và các hằng số màu cũ sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.onHero`, `tokens.onHeroMuted`, `tokens.heroGlassSurface`).
+  3. Xóa bỏ hoàn toàn các hằng số màu tĩnh cũ (`FinluxBlue`, `FinluxCyan`, `FinluxPurple`, `IncomeGreen`, `WarningAmber`, `ExpenseRed`).
+  4. Đảm bảo toàn vẹn logic, StateFlow và callbacks.
+  5. Chạy `compileDebugKotlin` (Exit code 0), `testDebugUnitTest` (521/521 tests PASS 100%) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/notifications/NotificationsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinWheel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/income/IncomeScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/expense/ExpenseScreen.kt`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL** in 14s.
+
+### [Task-PHASE-2-BATCH-2.5] — Chuẩn Hóa Design System Tokens: Batch 2.5 Debt Management Module (6 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 6 files trong Batch 2.5 (`DebtDashboardScreen.kt`, `DebtPaymentSheet.kt`, `AddEditDebtSheet.kt`, `DebtPaymentHistorySheet.kt`, `DebtCard.kt`, `StrategySelectorCard.kt`).
+  2. Thay thế toàn bộ 67 vị trí mã hex thô và màu tĩnh sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.onHero`).
+  3. Xóa bỏ hoàn toàn các phụ thuộc màu cứng `FinluxBlue`, `FinluxCyan`, `FinluxPurple` trong module Debt.
+  4. Bảo toàn logic nghiệp vụ, StateFlow và callbacks.
+  5. Chạy `testDebugUnitTest` (521/521 tests PASS) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtDashboardScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/DebtPaymentSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/AddEditDebtSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtPaymentHistorySheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/DebtCard.kt`
+  - `app/src/main/java/com/finlux/app/presentation/debt/components/StrategySelectorCard.kt`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+
+### [Task-PHASE-2-BATCH-2.4] — Chuẩn Hóa Design System Tokens: Batch 2.4 Deal Management Module (6 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 6 files trong Batch 2.4 (`DealsScreen.kt`, `DealDetailBottomSheet.kt`, `DealAllTransactionsBottomSheet.kt`, `CreateDealSheet.kt`, `RecordDealInflowSheet.kt`, `RecordDealOutlaySheet.kt`).
+  2. Thay thế toàn bộ 101 vị trí mã hex thô và màu tĩnh sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.onHero`).
+  3. Bảo toàn logic nghiệp vụ, StateFlow và callbacks.
+  4. Chạy `testDebugUnitTest` (521/521 tests PASS) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealDetailBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/DealAllTransactionsBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/CreateDealSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealInflowSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/deal/RecordDealOutlaySheet.kt`
+- **Verification Results**:
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+
+### [Task-PHASE-2-BATCH-2.3] — Chuẩn Hóa Design System Tokens: Batch 2.3 Settings & Utility Sheets (5 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 5 files trong Batch 2.3 (`SettingsScreen.kt`, `PrismSettingsScreen.kt`, `SalaryCycleSettingsSheet.kt`, `BackupRestoreSheet.kt`, `RemindersScreen.kt`).
+  2. Thay thế toàn bộ 37 vị trí mã hex thô và màu tĩnh sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.onHero`).
+  3. Bảo toàn logic nghiệp vụ, StateFlow và callbacks.
+  4. Chạy `testDebugUnitTest` (521/521 tests PASS) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/salary/SalaryCycleSettingsSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/backup/BackupRestoreSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/reminder/RemindersScreen.kt`
+- **Verification Results**:
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+
+### [Task-PHASE-2-BATCH-2.2] — Chuẩn Hóa Design System Tokens: Batch 2.2 Navigation & Common Views (4 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 4 files trong Batch 2.2 (`ClassicMainBottomBar.kt`, `ModernMainBottomBar.kt`, `PrismSpendingCalendarView.kt`, `ReceiptCaptureScreen.kt`).
+  2. Thay thế toàn bộ 23 vị trí mã hex thô và màu tĩnh sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.onHero`).
+  3. Bảo toàn logic nghiệp vụ, StateFlow và callbacks.
+  4. Chạy `testDebugUnitTest` (521/521 tests PASS) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt`
+  - `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/prism/PrismSpendingCalendarView.kt`
+  - `app/src/main/java/com/finlux/app/presentation/receipt/ReceiptCaptureScreen.kt`
+- **Verification Results**:
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+
+### [Task-PHASE-2-BATCH-2.1] — Chuẩn Hóa Design System Tokens: Batch 2.1 Core Sheets & Dialogs (5 Files)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Refactor 5 files trong Batch 2.1 (`AppUpdateDialog.kt`, `QuickAddSheet.kt`, `AddTransactionSheet.kt`, `WalletTransactionsBottomSheet.kt`, `DeleteAccountBottomSheet.kt`).
+  2. Thay thế toàn bộ 48 vị trí mã hex thô và màu tĩnh sang dynamic design tokens (`LocalFinluxTokens.current`, `FinluxColors`, `tokens.surface`, `tokens.surfaceSoft`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`, `tokens.onHero`).
+  3. Bảo toàn logic nghiệp vụ, StateFlow và callbacks.
+  4. Chạy `testDebugUnitTest` (521/521 tests PASS) và `assembleDebug` (BUILD SUCCESSFUL).
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/presentation/updater/AppUpdateDialog.kt`
+  - `app/src/main/java/com/finlux/app/presentation/components/QuickAddSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/wallet/WalletTransactionsBottomSheet.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/deleteaccount/DeleteAccountBottomSheet.kt`
+- **Verification Results**:
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+
+### [Task-CODIFY-CLEAN-CODE-GOVERNANCE-RULES] — Mã Hóa 5 Nguyên Tắc Cốt Lõi Vào Hiến Pháp AGENTS.md & Rule Mapping Matrix
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Cập nhật Điều II của `AGENTS.md` bổ sung và chuẩn hóa 5 điều luật kỹ thuật tối thượng: Zero Magic Numbers & Raw Literals (II.11), Anti-Code Defragmentation & SSoT (II.13), Strict DRY & Zero Redundancy / Anti Copy-Paste Screen (II.14), Dead Code & Zombie Logic Elimination (II.15), Strict Encapsulation & Visibility Scoping (II.16).
+  2. Đồng bộ tóm tắt các điều luật vào `docs/RULE_MAPPING_MATRIX.md` (Thứ bậc giải quyết xung đột Mục 1.2 & Ma trận dẫn chiếu Phần 2).
+  3. Kiểm thử xác thực: `.\gradlew.bat testDebugUnitTest` bảo toàn 521/521 tests PASS 100%.
+- **Files đã sửa thực tế**:
+  - `AGENTS.md` (Mã hóa Điều II.11 đến II.16)
+  - `docs/RULE_MAPPING_MATRIX.md` (Cập nhật Mục 1.2 và Phần 2 Rule Dependency Matrix)
+- **Verification Results**:
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures).
+
+### [Task-STAGE-1-CONSTANTS-AND-FIRESTORE-SCHEMA] — Giai đoạn 1: Chuẩn Hóa Hằng Số Nghiệp Vụ & Quy Hoạch Schema Firestore
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Tạo các file hằng số trung tâm: `FinanceBusinessConstants.kt`, `AppSystemConfig.kt`, `FirestoreSchema.kt`.
+  2. Refactor các repository và usecase loại bỏ magic numbers (80%, 100%, 180 ngày, 50.000 đ, 400 chunk size, Alarm request codes: 9925, 9926, 73091, 73092).
+  3. Refactor các Firestore repositories và `PurgeUserDataUseCase` chuyển sang dùng `FirestoreSchema.Collections` và `FirestoreSchema.ALL_USER_SUBCOLLECTIONS`.
+  4. Cập nhật quy chuẩn Hiến pháp `AGENTS.md` (Zero Magic Numbers & Firestore Schema Governance).
+  5. Đảm bảo toàn bộ 521 unit tests PASS 100% và assembleDebug thành công.
+- **Files tạo mới & sửa đổi thực tế**:
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceBusinessConstants.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/core/common/AppSystemConfig.kt` [NEW]
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/schema/FirestoreSchema.kt` [NEW]
+  - `AGENTS.md` (Bổ sung Điều II.11 Zero Magic Numbers & Điều II.12 Firestore Schema Governance)
+  - `app/src/main/java/com/finlux/app/domain/usecase/account/PurgeUserDataUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AddTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/EditTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetBudgetStatusUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/FinancialPeriodResolver.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/ResolveSavingSpinScheduleKeyUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/GetSavingSpinReportUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/repository/SalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/SalaryCycleModels.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/BudgetProrationCalculator.kt`
+  - `app/src/main/java/com/finlux/app/domain/model/backup/FinluxBackupParser.kt`
+  - `app/src/main/java/com/finlux/app/core/time/FinanceTime.kt`
+  - `app/src/main/java/com/finlux/app/data/local/salary/AlarmSalaryCycleScheduler.kt`
+  - `app/src/main/java/com/finlux/app/data/local/salary/SalaryCycleReceiver.kt`
+  - `app/src/main/java/com/finlux/app/data/local/savingspin/AlarmSavingSpinScheduler.kt`
+  - `app/src/main/java/com/finlux/app/data/local/savingspin/SavingSpinReceiver.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseBudgetRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseGoalRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseTransactionRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseWalletRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDebtRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseDealRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseNotificationRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseReminderRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSalaryCycleMapper.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseSavingSpinRepository.kt`
+  - `app/src/main/java/com/finlux/app/data/remote/firebase/FirebaseCategoryRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/report/SavingSpinReportViewModel.kt`
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/components/SavingSpinSnoozeSheet.kt`
+- **Verification Results**:
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+
+
+### [Task-STANDARDIZE-UI-STYLE-AND-FIX-BUDGET-DOUBLE-COUNTING] — Chuẩn Hóa UI Style & Triệt Tiêu Bug Double-Counting Ngân Sách
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Chuẩn hóa kiến trúc UI Style: Single Source of Truth `AppUiStyle.DEFAULT = PRISM`, loại bỏ prop-drilling `selectedUiStyle`.
+  2. Khắc phục bug Double-Counting thông báo ngân sách trong `AddTransactionUseCase` & `EditTransactionUseCase`: xóa bỏ phép tính cộng đúp, dùng trực tiếp `spentAmount` atomic từ repository, không ghi đè `spentAmount` vào Firestore khi cập nhật cờ cảnh báo. Đồng bộ `timeline` từ `SalaryCycleRepository.observeTimeline()`.
+  3. Cơ chế Self-Healing trong `BudgetViewModel`: Tự động reconcile và cập nhật lại Firestore nếu `budget.spentAmount` bị lệch so với `dynamicSpent`.
+  4. Unit testing kiểm tra không bị tính đúp, build `assembleDebug` và nạp APK lên điện thoại Xiaomi qua ADB.
+- **Files đã sửa thực tế**:
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceModels.kt`
+  - `app/src/main/java/com/finlux/app/data/local/datastore/DataStoreThemePreferenceRepository.kt`
+  - `app/src/main/java/com/finlux/app/presentation/RootViewModel.kt`
+  - `app/src/main/java/com/finlux/app/core/designsystem/FinluxTheme.kt`
+  - `app/src/main/java/com/finlux/app/core/navigation/FinluxNavHost.kt`
+  - `app/src/main/java/com/finlux/app/presentation/FinluxRoot.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/SettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/presentation/settings/prism/PrismSettingsScreen.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/AddTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/domain/usecase/EditTransactionUseCase.kt`
+  - `app/src/main/java/com/finlux/app/presentation/budget/BudgetViewModel.kt`
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt`
+  - `app/src/test/java/com/finlux/app/presentation/RootViewModelTest.kt`
+- **Kết quả thực thi (POST-EXECUTION):**
+  - ✅ **Unit Tests:** `521/521 PASSED — 0 FAILED` (đã bổ sung test chống double-counting và pass toàn bộ)
+  - ✅ **Build APK:** `assembleDebug` thành công 100% — `app/build/outputs/apk/debug/app-debug.apk`
+  - ✅ **Nạp APK & Nghiệm thu trên Thiết bị thật (Physical Device Verification):**
+    - Đã nạp thành công APK qua ADB lên thiết bị Xiaomi (`adb install -r app/build/outputs/apk/debug/app-debug.apk`).
+    - Khởi chạy thành công `com.finlux.app/.MainActivity` trên thiết bị.
+
+
+
 
 ### [Task-FIX-BACKUP-RESTORE-BUDGETS-GOALS] — Khắc phục Triệt để Lỗi Ngân sách & Mục tiêu trong Backup & Restore
 - **Status**: `[DONE]`

@@ -41,13 +41,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.FinluxPanel
-import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
-import com.finlux.app.core.designsystem.IncomeGreen
-import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.FinluxEmptyState
@@ -185,54 +181,56 @@ fun IncomeScreen(
 
 @Composable
 private fun PeriodPicker(label: String, previous: () -> Unit, next: () -> Unit, canNext: Boolean) {
+    val tokens = LocalFinluxTokens.current
     FinluxPanel(
         modifier = Modifier.fillMaxWidth().height(48.dp),
         cornerRadius = 24.dp,
         padding = PaddingValues(horizontal = 5.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Tháng trước") }
+            IconButton(previous) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Tháng trước", tint = tokens.onSurface) }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                Text(label, Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp), tint = tokens.primary)
+                Text(label, Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold, color = tokens.onSurface)
             }
-            IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Tháng sau") }
+            IconButton(next, enabled = canNext) { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, "Tháng sau", tint = if (canNext) tokens.onSurface else tokens.textSecondary) }
         }
     }
 }
 
 @Composable
 private fun IncomeHero(total: Long, changePercent: Int) {
+    val tokens = LocalFinluxTokens.current
     FinluxPanel(
         modifier = Modifier.fillMaxWidth().height(128.dp),
         containerColor = Color.Transparent,
-        borderColor = Color.White.copy(alpha = .30f),
+        borderColor = tokens.border,
         cornerRadius = 20.dp,
         padding = PaddingValues(0.dp),
     ) {
         Box(
             Modifier.fillMaxSize().background(
-                Brush.linearGradient(listOf(Color(0xFF5B50EC), Color(0xFF3B82F6), Color(0xFF06B6D4))),
+                Brush.linearGradient(listOf(FinluxColors.PrimaryViolet, FinluxColors.PrimaryBlue, FinluxColors.PrimaryCyan)),
                 RoundedCornerShape(20.dp),
             ).padding(16.dp),
         ) {
             Column(Modifier.align(Alignment.CenterStart), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Tổng thu nhập tháng này", color = Color.White.copy(alpha = .90f))
-                Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Tổng thu nhập tháng này", color = tokens.onHeroMuted)
+                Text(total.toVnd(), color = tokens.onHero, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
                     if (changePercent == 0) "▲ Dòng tiền vào trong tháng"
                     else "${if (changePercent >= 0) "▲" else "▼"} ${kotlin.math.abs(changePercent)}% so với kỳ trước",
-                    color = Color(0xFF77FFB3),
+                    color = FinluxColors.IncomeGreen,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
             Box(
-                Modifier.align(Alignment.CenterEnd).size(68.dp).background(Color.White.copy(alpha = .15f), CircleShape),
+                Modifier.align(Alignment.CenterEnd).size(68.dp).background(tokens.heroGlassSurface, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("${if (changePercent > 0) "+" else ""}$changePercent%", color = Color.White, fontWeight = FontWeight.Bold)
-                    Icon(Icons.Default.TrendingUp, null, Modifier.size(19.dp), tint = Color.White)
+                    Text("${if (changePercent > 0) "+" else ""}$changePercent%", color = tokens.onHero, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.TrendingUp, null, Modifier.size(19.dp), tint = tokens.onHero)
                 }
             }
         }
@@ -247,6 +245,7 @@ private fun IncomeStatistic(
     accent: Color,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
     FinluxPanel(
         modifier = modifier.height(86.dp),
         cornerRadius = 18.dp,
@@ -260,9 +259,9 @@ private fun IncomeStatistic(
                 Icon(icon, null, Modifier.size(20.dp), tint = accent)
             }
             Column(Modifier.padding(start = 10.dp), verticalArrangement = Arrangement.Center) {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                Text(label, style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary, maxLines = 1)
                 Spacer(Modifier.height(2.dp))
-                Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = tokens.onSurface, maxLines = 1)
             }
         }
     }
@@ -270,23 +269,24 @@ private fun IncomeStatistic(
 
 @Composable
 private fun IncomeCategoryCard(state: IncomeUiState) {
+    val tokens = LocalFinluxTokens.current
     FinluxPanel(Modifier.fillMaxWidth(), padding = PaddingValues(14.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Theo danh mục", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("${state.categoryStats.size} nguồn thu", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                Text("Theo danh mục", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = tokens.onSurface)
+                Text("${state.categoryStats.size} nguồn thu", color = tokens.primary, style = MaterialTheme.typography.labelLarge)
             }
             if (state.categoryStats.isEmpty()) {
-                Text("Chưa có nguồn thu trong tháng này", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Chưa có nguồn thu trong tháng này", color = tokens.textSecondary)
             } else {
                 state.categoryStats.forEach { item ->
-                    val accent = item.category?.let { colorFromHex(it.colorHex) } ?: IncomeGreen
+                    val accent = item.category?.let { colorFromHex(it.colorHex) } ?: FinluxColors.IncomeGreen
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(36.dp).background(accent.copy(alpha = .14f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
                             Icon(item.category?.let { categoryIcon(it.icon) } ?: Icons.Default.ArrowDownward, null, Modifier.size(18.dp), tint = accent)
                         }
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                            Text(item.category?.name ?: "Thu nhập khác", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                            Text(item.category?.name ?: "Thu nhập khác", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, color = tokens.onSurface)
                             LinearProgressIndicator(
                                 progress = { item.percent / 100f },
                                 modifier = Modifier.fillMaxWidth().height(5.dp),
@@ -295,8 +295,8 @@ private fun IncomeCategoryCard(state: IncomeUiState) {
                             )
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text(item.amount.toShortVnd(), fontWeight = FontWeight.Bold)
-                            Text("${item.percent}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(item.amount.toShortVnd(), fontWeight = FontWeight.Bold, color = tokens.onSurface)
+                            Text("${item.percent}%", style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary)
                         }
                     }
                 }

@@ -128,7 +128,7 @@ fun BackupRestoreSheet(
                     onClick = { viewModel.confirmAndRestore() },
                     colors = ButtonDefaults.buttonColors(containerColor = tokens.error),
                 ) {
-                    Text("Xóa sạch & Khôi phục", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text("Xóa sạch & Khôi phục", color = tokens.onHero, fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -348,13 +348,13 @@ fun BackupRestoreSheet(
                         colors = ButtonDefaults.buttonColors(containerColor = tokens.primary),
                     ) {
                         if (state.isExporting) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = tokens.onHero, strokeWidth = 2.dp)
                             Spacer(Modifier.width(8.dp))
-                            Text("Đang tạo bản sao lưu...", color = Color.White)
+                            Text("Đang tạo bản sao lưu...", color = tokens.onHero)
                         } else {
-                            Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+                            Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp), tint = tokens.onHero)
                             Spacer(Modifier.width(8.dp))
-                            Text("Tạo bản sao lưu & Chia sẻ", fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text("Tạo bản sao lưu & Chia sẻ", fontWeight = FontWeight.SemiBold, color = tokens.onHero)
                         }
                     }
                 }
@@ -586,16 +586,16 @@ private fun RestorePreviewCard(
                 ),
             ) {
                 if (isRestoring) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = tokens.onHero, strokeWidth = 2.dp)
                     Spacer(Modifier.width(8.dp))
-                    Text("Đang khôi phục...", color = Color.White)
+                    Text("Đang khôi phục...", color = tokens.onHero)
                 } else {
-                    Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+                    Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(18.dp), tint = tokens.onHero)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = if (selectedStrategy == RestoreStrategy.FULL_OVERWRITE) "Xóa & Khôi phục toàn bộ" else "Bắt đầu hợp nhất dữ liệu",
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
+                        color = tokens.onHero,
                     )
                 }
             }
@@ -688,7 +688,7 @@ private fun RestoreReportDialog(
                 onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(containerColor = tokens.primary),
             ) {
-                Text("Hoàn tất", color = Color.White)
+                Text("Hoàn tất", color = tokens.onHero)
             }
         },
         containerColor = tokens.surface,

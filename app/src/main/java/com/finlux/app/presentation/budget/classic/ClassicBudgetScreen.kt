@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -56,15 +57,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material.icons.filled.Category
-import com.finlux.app.core.designsystem.ExpenseRed
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassDialogSurface
 import com.finlux.app.core.designsystem.GlassTopBar
 import com.finlux.app.core.designsystem.GradientHeroCard
-import com.finlux.app.core.designsystem.IncomeGreen
-import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.component.FinluxAdvisoryBanner
 import com.finlux.app.core.designsystem.component.FinluxBottomSheet
 import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
@@ -92,6 +92,7 @@ fun ClassicBudgetScreen(
     onBack: (() -> Unit)? = null,
     viewModel: BudgetViewModel = hiltViewModel()
 ) {
+    val tokens = LocalFinluxTokens.current
     com.finlux.app.core.designsystem.NotificationPermissionHandler()
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val snackbar = remember { SnackbarHostState() }
@@ -154,11 +155,11 @@ fun ClassicBudgetScreen(
             item {
                 GradientHeroCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Tổng ngân sách", color = Color.White.copy(alpha = .8f))
-                        Text(limit.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium)
+                        Text("Tổng ngân sách", color = tokens.onHeroMuted)
+                        Text(limit.toVnd(), color = tokens.onHero, style = MaterialTheme.typography.headlineMedium)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Đã chi ${spent.toShortVnd()}", color = Color.White.copy(alpha = .84f))
-                            Text("Còn lại ${(limit - spent).toVnd()}", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Đã chi ${spent.toShortVnd()}", color = tokens.onHeroMuted)
+                            Text("Còn lại ${(limit - spent).toVnd()}", color = tokens.onHero, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -184,7 +185,7 @@ fun ClassicBudgetScreen(
                 }
             }
             items(state.items, key = { it.budget.id }) { item ->
-                val color = when (item.status.level) { BudgetLevel.SAFE -> IncomeGreen; BudgetLevel.WARNING -> WarningAmber; BudgetLevel.EXCEEDED -> ExpenseRed }
+                val color = when (item.status.level) { BudgetLevel.SAFE -> FinluxColors.IncomeGreen; BudgetLevel.WARNING -> FinluxColors.WarningAmber; BudgetLevel.EXCEEDED -> tokens.error }
                 GlassCard(
                     Modifier.fillMaxWidth(),
                     onClick = { viewingHistory = item },
@@ -360,7 +361,7 @@ private fun BudgetEditor(categories: List<Category>, period: com.finlux.app.doma
                             Text(
                                 text = if (warn80Amount > 0) com.finlux.app.core.designsystem.component.formatVndAmount(warn80Amount) else "0 đ",
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = WarningAmber,
+                                color = FinluxColors.WarningAmber,
                             )
                         }
 
@@ -377,7 +378,7 @@ private fun BudgetEditor(categories: List<Category>, period: com.finlux.app.doma
                             Text(
                                 text = if (limitValue > 0) com.finlux.app.core.designsystem.component.formatVndAmount(limitValue) else "0 đ",
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = ExpenseRed,
+                                color = FinluxColors.ExpenseRed,
                             )
                         }
 

@@ -105,6 +105,7 @@ import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.FinluxDialog
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.domain.model.Category
@@ -142,11 +143,9 @@ fun AddTransactionSheet(
     val tokens = LocalFinluxTokens.current
     val context = LocalContext.current
     val state = viewModel.state.collectAsStateWithLifecycle().value
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showWalletPicker by remember { mutableStateOf(false) }
-
     var showCreateCategoryDialog by remember { mutableStateOf(false) }
     var categoryToEdit by remember { mutableStateOf<Category?>(null) }
     var categoryToDelete by remember { mutableStateOf<Category?>(null) }
@@ -174,7 +173,7 @@ fun AddTransactionSheet(
     }
 
     val isExpense = state.type == TransactionType.EXPENSE
-    val amountColor = if (isExpense) Color(0xFFDC2626) else Color(0xFF16A34A)
+    val amountColor = if (isExpense) FinluxColors.ExpenseRed else FinluxColors.IncomeGreen
     val activeCategory = state.categories.firstOrNull { it.id == state.categoryId }
     val activeWallet = state.wallets.firstOrNull { it.id == state.walletId }
     val enteredAmountValue = state.amountInput.toLongOrNull() ?: 0L
@@ -282,7 +281,7 @@ fun AddTransactionSheet(
                 val canSave = !state.isSaving && !isInsufficientBalance && enteredAmountValue > 0L
                 Surface(
                     shape = CircleShape,
-                    color = if (canSave) Color(0xFF3B5DF8) else (if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0)),
+                    color = if (canSave) tokens.primary else tokens.surfaceSoft,
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
@@ -297,7 +296,7 @@ fun AddTransactionSheet(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Lưu",
-                            tint = if (canSave) Color.White else (if (tokens.isDark) Color(0xFF64748B) else Color(0xFF94A3B8)),
+                            tint = if (canSave) tokens.onHero else tokens.textSecondary,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -316,16 +315,16 @@ fun AddTransactionSheet(
                     TransactionTypePill(
                         label = "Chi tiêu",
                         isSelected = isExpense,
-                        activeBg = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
-                        activeText = Color(0xFFE11D48),
+                        activeBg = if (tokens.isDark) FinluxColors.ExpenseRed.copy(alpha = 0.18f) else FinluxColors.ExpenseRed.copy(alpha = 0.10f),
+                        activeText = FinluxColors.ExpenseRed,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.setType(TransactionType.EXPENSE) },
                     )
                     TransactionTypePill(
                         label = "Thu nhập",
                         isSelected = !isExpense,
-                        activeBg = if (tokens.isDark) Color(0xFF1E3A2B) else Color(0xFFDCFCE7),
-                        activeText = Color(0xFF16A34A),
+                        activeBg = if (tokens.isDark) FinluxColors.IncomeGreen.copy(alpha = 0.18f) else FinluxColors.IncomeGreen.copy(alpha = 0.10f),
+                        activeText = FinluxColors.IncomeGreen,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.setType(TransactionType.INCOME) },
                     )
@@ -373,14 +372,14 @@ fun AddTransactionSheet(
                         primaryValue = dealFlowTitle,
                         secondaryValue = "Dòng tiền độc lập (Quản lý tự động theo Deal)",
                         icon = Icons.AutoMirrored.Filled.TrendingUp,
-                        iconBgColor = Color(0xFF8B5CF6).copy(alpha = 0.14f),
-                        iconTintColor = Color(0xFF8B5CF6),
+                        iconBgColor = FinluxColors.BudgetViolet.copy(alpha = 0.14f),
+                        iconTintColor = FinluxColors.BudgetViolet,
                         onClick = {
                             android.widget.Toast.makeText(context, "Giao dịch thuộc về Thương vụ đầu tư, không áp dụng danh mục sinh hoạt.", android.widget.Toast.LENGTH_SHORT).show()
                         },
                     )
                 } else {
-                    val categoryAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: Color(0xFFF43F5E)
+                    val categoryAccent = activeCategory?.let { colorFromHex(it.colorHex) } ?: FinluxColors.ExpenseRed
                     ErgonomicFormRow(
                         label = "DANH MỤC",
                         primaryValue = activeCategory?.name ?: "Chưa chọn danh mục",
@@ -413,8 +412,8 @@ fun AddTransactionSheet(
                     primaryValue = if (state.receiptUri == null) "Chưa có hóa đơn" else "Đã đính kèm ảnh hóa đơn ✓",
                     secondaryValue = if (state.receiptUri == null) "Chạm để quét hoặc tải ảnh" else "Ảnh được lưu cùng giao dịch",
                     icon = Icons.Default.DocumentScanner,
-                    iconBgColor = Color(0xFF9333EA).copy(alpha = 0.14f),
-                    iconTintColor = Color(0xFF9333EA),
+                    iconBgColor = FinluxColors.PrimaryViolet.copy(alpha = 0.14f),
+                    iconTintColor = FinluxColors.PrimaryViolet,
                     onClick = { /* Scan receipt action */ },
                 )
             }
@@ -441,7 +440,7 @@ fun AddTransactionSheet(
                     text = if (state.isSaving) "Đang lưu..." else if (state.editingTransaction != null) "Cập nhật giao dịch" else "Lưu giao dịch",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
             }
         }
@@ -551,7 +550,7 @@ private fun TransactionTypePill(
 
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = if (isSelected) activeBg else if (tokens.isDark) Color(0xFF1E1E2D) else Color(0xFFF3F4F6),
+        color = if (isSelected) activeBg else tokens.surfaceSoft,
         border = if (isSelected) BorderStroke(1.dp, activeText.copy(alpha = 0.3f)) else null,
         modifier = modifier
             .heightIn(min = 42.dp)
@@ -574,18 +573,12 @@ private fun TransactionTypePill(
                     fontSize = 13.5.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 ),
-                color = if (isSelected) activeText else Color(0xFF6B7280),
+                color = if (isSelected) activeText else tokens.textSecondary,
                 textAlign = TextAlign.Center,
             )
         }
     }
 }
-
-
-
-
-
-
 
 /**
  * Category Editor Dialog for adding/editing a category
@@ -619,6 +612,7 @@ private fun CategoryEditorDialog(
                 Text(
                     text = if (category == null) "Tạo danh mục mới" else "Chỉnh sửa danh mục",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = tokens.textPrimary,
                 )
 
                 OutlinedTextField(
@@ -629,27 +623,27 @@ private fun CategoryEditorDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Text("Loại danh mục", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text("Loại danh mục", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = tokens.textSecondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TransactionTypePill(
                         label = "Chi tiêu",
                         isSelected = selectedType == CategoryType.EXPENSE,
-                        activeBg = Color(0xFFFFE4E6),
-                        activeText = Color(0xFFE11D48),
+                        activeBg = if (tokens.isDark) FinluxColors.ExpenseRed.copy(alpha = 0.18f) else FinluxColors.ExpenseRed.copy(alpha = 0.10f),
+                        activeText = FinluxColors.ExpenseRed,
                         modifier = Modifier.weight(1f),
                         onClick = { selectedType = CategoryType.EXPENSE },
                     )
                     TransactionTypePill(
                         label = "Thu nhập",
                         isSelected = selectedType == CategoryType.INCOME,
-                        activeBg = Color(0xFFDCFCE7),
-                        activeText = Color(0xFF16A34A),
+                        activeBg = if (tokens.isDark) FinluxColors.IncomeGreen.copy(alpha = 0.18f) else FinluxColors.IncomeGreen.copy(alpha = 0.10f),
+                        activeText = FinluxColors.IncomeGreen,
                         modifier = Modifier.weight(1f),
                         onClick = { selectedType = CategoryType.INCOME },
                     )
                 }
 
-                Text("Chọn biểu tượng", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text("Chọn biểu tượng", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = tokens.textSecondary)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(FinanceCategoryIcons) { iconOption ->
                         val isSelected = selectedIcon == iconOption.key
@@ -669,7 +663,7 @@ private fun CategoryEditorDialog(
                     }
                 }
 
-                Text("Chọn màu sắc", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text("Chọn màu sắc", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = tokens.textSecondary)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(FinanceAccentHexes) { colorHex: String ->
                         val isSelected = selectedColor == colorHex
@@ -693,7 +687,7 @@ private fun CategoryEditorDialog(
                 ) {
                     if (onDelete != null) {
                         TextButton(onClick = onDelete) {
-                            Text("Xóa", color = Color(0xFFEF4444))
+                            Text("Xóa", color = tokens.error)
                         }
                         Spacer(Modifier.weight(1f))
                     }

@@ -51,7 +51,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +69,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import android.app.Activity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -81,6 +86,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.R
 import com.finlux.app.core.designsystem.FinluxBrandMark
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import kotlinx.coroutines.delay
 
 @Composable
@@ -89,20 +96,42 @@ fun SplashScreen(
     onGuest: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel(),
 ) {
+    val tokens = LocalFinluxTokens.current
     val session = viewModel.session.collectAsStateWithLifecycle().value
     LaunchedEffect(session) {
         if (session == SessionState.CHECKING) return@LaunchedEffect
         delay(800)
         if (session == SessionState.AUTHENTICATED) onAuthenticated() else onGuest()
     }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        DisposableEffect(Unit) {
+            val window = (view.context as? Activity)?.window
+            val insetsController = window?.let { WindowCompat.getInsetsController(it, view) }
+            val originalAppearance = insetsController?.isAppearanceLightStatusBars
+            insetsController?.isAppearanceLightStatusBars = false
+            onDispose {
+                if (originalAppearance != null) {
+                    insetsController.isAppearanceLightStatusBars = originalAppearance
+                }
+            }
+        }
+    }
+
+    val splashBackgroundBrush = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF0E1630), // Deep Midnight Navy (đỉnh trên)
+            Color(0xFF171F4C), // Deep Indigo
+            Color(0xFF261D5C), // Royal Violet
+            Color(0xFF34175E), // Deep Royal Purple (đáy dưới)
+        )
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF311042))
-                )
-            ),
+            .background(splashBackgroundBrush),
     ) {
         Column(
             modifier = Modifier
@@ -116,7 +145,7 @@ fun SplashScreen(
             Spacer(Modifier.height(6.dp))
             Text(
                 "Quản lý tài chính thông minh",
-                color = Color.White.copy(alpha = 0.8f),
+                color = tokens.onHeroMuted,
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
@@ -126,9 +155,9 @@ fun SplashScreen(
                 .padding(bottom = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CircularProgressIndicator(Modifier.size(24.dp), color = Color(0xFF6366F1), strokeWidth = 2.5.dp)
+            CircularProgressIndicator(Modifier.size(24.dp), color = tokens.primary, strokeWidth = 2.5.dp)
             Spacer(Modifier.height(12.dp))
-            Text("Đang tải dữ liệu...", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+            Text("Đang tải dữ liệu...", color = tokens.onHeroMuted, fontSize = 13.sp)
         }
     }
 }
@@ -157,10 +186,12 @@ fun AuthScreen(
         }
     }
 
+    val tokens = LocalFinluxTokens.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(tokens.background)
     ) {
         Column(
             modifier = Modifier
@@ -183,11 +214,11 @@ fun AuthScreen(
                     .shadow(
                         elevation = if (mode == AuthMode.LOGIN) 0.dp else 16.dp,
                         shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                        ambientColor = Color(0x203B82F6),
-                        spotColor = Color(0x304F46E5)
+                        ambientColor = tokens.primary.copy(alpha = 0.12f),
+                        spotColor = tokens.primary.copy(alpha = 0.20f),
                     ),
                 shape = if (mode == AuthMode.LOGIN) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = tokens.surface,
             ) {
                 Column(
                     modifier = Modifier
@@ -211,11 +242,11 @@ fun AuthScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
+                    .background(FinluxColors.SurfacePrimaryDark.copy(alpha = 0.35f))
                     .clickable(enabled = false) {},
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color(0xFF4F46E5))
+                CircularProgressIndicator(color = tokens.primary)
             }
         }
     }
@@ -226,6 +257,7 @@ private fun AuthHeaderSection(
     mode: AuthMode,
     onBack: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     if (mode == AuthMode.LOGIN) {
         Box(
             modifier = Modifier
@@ -233,8 +265,8 @@ private fun AuthHeaderSection(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            MaterialTheme.colorScheme.background,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.045f),
+                            tokens.background,
+                            tokens.primary.copy(alpha = 0.045f),
                         ),
                     ),
                 )
@@ -271,7 +303,7 @@ private fun AuthHeaderSection(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Quản lý tài chính thông minh",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = tokens.textSecondary,
                     fontSize = 14.sp,
                 )
             }
@@ -284,7 +316,7 @@ private fun AuthHeaderSection(
             .fillMaxWidth()
             .background(
                 Brush.linearGradient(
-                    listOf(Color(0xFF312E81), Color(0xFF5B21B6), Color(0xFF7C3AED)),
+                    listOf(FinluxColors.PrimaryViolet, FinluxColors.PrimaryBlue, FinluxColors.PrimaryCyan),
                 ),
             )
             .statusBarsPadding()
@@ -299,7 +331,7 @@ private fun AuthHeaderSection(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Quay lại",
-                tint = Color.White,
+                tint = tokens.onHero,
             )
         }
 
@@ -312,14 +344,14 @@ private fun AuthHeaderSection(
                 text = mode.heading,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
+                color = tokens.onHero,
                 lineHeight = 36.sp,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = mode.description,
                 fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.88f),
+                color = tokens.onHeroMuted,
                 lineHeight = 20.sp,
             )
         }
@@ -344,6 +376,7 @@ private fun LoginFormContent(
     onNavigate: (AuthMode) -> Unit,
     onSocialSignIn: (SocialAuthProvider) -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Column {
         Text(
             text = "Đăng nhập",
@@ -351,31 +384,31 @@ private fun LoginFormContent(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             fontSize = 28.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = tokens.onSurface,
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
-            text = "Chào mừng bạn trở lại! Vui lòng đăng nhập để tiếp tục.",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+            text = "Nhập thông tin tài khoản của bạn để tiếp tục",
+            modifier = Modifier.fillMaxWidth(),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.5.sp,
+            color = tokens.textSecondary,
         )
-        Spacer(Modifier.height(26.dp))
 
+        Spacer(Modifier.height(24.dp))
+
+        // Email Field
         FinluxInput(
             value = state.email,
             onValueChange = viewModel::updateEmail,
-            placeholder = "Email hoặc số điện thoại",
+            placeholder = "Email của bạn",
             leadingIcon = Icons.Default.Email,
             keyboardType = KeyboardType.Email
         )
 
         Spacer(Modifier.height(14.dp))
 
+        // Password Field
         FinluxInput(
             value = state.password,
             onValueChange = viewModel::updatePassword,
@@ -394,7 +427,7 @@ private fun LoginFormContent(
         ) {
             TextButton(
                 onClick = { onNavigate(AuthMode.FORGOT) },
-                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF5B21B6)),
+                colors = ButtonDefaults.textButtonColors(contentColor = tokens.primary),
             ) {
                 Text(
                     text = "Quên mật khẩu?",
@@ -408,7 +441,7 @@ private fun LoginFormContent(
             Spacer(Modifier.height(8.dp))
             Text(
                 text = errorMsg,
-                color = Color(0xFFEF4444),
+                color = tokens.error,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -440,12 +473,12 @@ private fun LoginFormContent(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Chưa có tài khoản? ", fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Chưa có tài khoản? ", fontSize = 13.5.sp, color = tokens.textSecondary)
             Text(
                 text = "Đăng ký ngay",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF5B21B6),
+                color = tokens.primary,
                 modifier = Modifier.clickable { onNavigate(AuthMode.REGISTER) },
             )
         }
@@ -496,6 +529,7 @@ private fun RegisterFormContent(
     onNavigate: (AuthMode) -> Unit,
     onSocialSignIn: (SocialAuthProvider) -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Column {
         FinluxInput(
             value = state.displayName,
@@ -519,7 +553,7 @@ private fun RegisterFormContent(
         FinluxInput(
             value = state.email,
             onValueChange = viewModel::updateEmail,
-            placeholder = "Email",
+            placeholder = "Địa chỉ email",
             leadingIcon = Icons.Default.Email,
             keyboardType = KeyboardType.Email
         )
@@ -536,7 +570,7 @@ private fun RegisterFormContent(
 
         // Password Strength Indicator
         if (state.password.isNotEmpty()) {
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             PasswordStrengthBar(
                 score = state.passwordStrengthScore,
                 strengthText = state.passwordStrengthText
@@ -566,8 +600,8 @@ private fun RegisterFormContent(
                 checked = state.agreeTerms,
                 onCheckedChange = viewModel::toggleAgreeTerms,
                 colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFF4F46E5),
-                    uncheckedColor = Color(0xFFCBD5E1)
+                    checkedColor = tokens.primary,
+                    uncheckedColor = tokens.border,
                 ),
                 modifier = Modifier.size(20.dp)
             )
@@ -575,16 +609,16 @@ private fun RegisterFormContent(
             Text(
                 text = buildAnnotatedString {
                     append("Tôi đồng ý với ")
-                    withStyle(SpanStyle(color = Color(0xFF4F46E5), fontWeight = FontWeight.Bold)) {
+                    withStyle(SpanStyle(color = tokens.primary, fontWeight = FontWeight.Bold)) {
                         append("Điều khoản sử dụng")
                     }
                     append(" và ")
-                    withStyle(SpanStyle(color = Color(0xFF4F46E5), fontWeight = FontWeight.Bold)) {
+                    withStyle(SpanStyle(color = tokens.primary, fontWeight = FontWeight.Bold)) {
                         append("Chính sách bảo mật")
                     }
                 },
                 fontSize = 12.5.sp,
-                color = Color(0xFF475569),
+                color = tokens.textSecondary,
                 lineHeight = 17.sp
             )
         }
@@ -593,7 +627,7 @@ private fun RegisterFormContent(
             Spacer(Modifier.height(10.dp))
             Text(
                 text = errorMsg,
-                color = Color(0xFFEF4444),
+                color = tokens.error,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -624,12 +658,12 @@ private fun RegisterFormContent(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Đã có tài khoản? ", fontSize = 13.5.sp, color = Color(0xFF64748B))
+            Text("Đã có tài khoản? ", fontSize = 13.5.sp, color = tokens.textSecondary)
             Text(
                 text = "Đăng nhập ngay",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF4F46E5),
+                color = tokens.primary,
                 modifier = Modifier.clickable { onNavigate(AuthMode.LOGIN) }
             )
         }
@@ -642,6 +676,7 @@ private fun ForgotFormContent(
     viewModel: AuthViewModel,
     onNavigate: (AuthMode) -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Column {
         FinluxInput(
             value = state.email,
@@ -655,7 +690,7 @@ private fun ForgotFormContent(
             Spacer(Modifier.height(10.dp))
             Text(
                 text = errorMsg,
-                color = Color(0xFFEF4444),
+                color = tokens.error,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -679,7 +714,7 @@ private fun ForgotFormContent(
                 text = "Quay lại đăng nhập",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF4F46E5),
+                color = tokens.primary,
                 modifier = Modifier.clickable { onNavigate(AuthMode.LOGIN) }
             )
         }
@@ -691,6 +726,7 @@ private fun PasswordStrengthBar(
     score: Int,
     strengthText: String,
 ) {
+    val tokens = LocalFinluxTokens.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -699,7 +735,7 @@ private fun PasswordStrengthBar(
         Text(
             text = "Độ mạnh mật khẩu",
             fontSize = 12.sp,
-            color = Color(0xFF64748B)
+            color = tokens.textSecondary
         )
 
         Row(
@@ -709,18 +745,18 @@ private fun PasswordStrengthBar(
             repeat(4) { index ->
                 val active = index < score
                 val activeColor = when (score) {
-                    1 -> Color(0xFFEF4444)
-                    2 -> Color(0xFFF59E0B)
-                    3 -> Color(0xFF10B981)
-                    4 -> Color(0xFF059669)
-                    else -> Color(0xFFCBD5E1)
+                    1 -> tokens.error
+                    2 -> FinluxColors.WarningAmber
+                    3 -> FinluxColors.IncomeGreen
+                    4 -> FinluxColors.IncomeGreen
+                    else -> tokens.border
                 }
                 Box(
                     modifier = Modifier
                         .width(26.dp)
                         .height(5.dp)
                         .clip(RoundedCornerShape(3.dp))
-                        .background(if (active) activeColor else Color(0xFFE2E8F0))
+                        .background(if (active) activeColor else tokens.border.copy(alpha = 0.35f))
                 )
             }
 
@@ -731,11 +767,11 @@ private fun PasswordStrengthBar(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = when (score) {
-                    1 -> Color(0xFFEF4444)
-                    2 -> Color(0xFFF59E0B)
-                    3 -> Color(0xFF10B981)
-                    4 -> Color(0xFF059669)
-                    else -> Color(0xFF64748B)
+                    1 -> tokens.error
+                    2 -> FinluxColors.WarningAmber
+                    3 -> FinluxColors.IncomeGreen
+                    4 -> FinluxColors.IncomeGreen
+                    else -> tokens.textSecondary
                 }
             )
         }
@@ -751,6 +787,7 @@ private fun FinluxInput(
     keyboardType: KeyboardType = KeyboardType.Text,
     isPassword: Boolean = false,
 ) {
+    val tokens = LocalFinluxTokens.current
     var passwordVisible by remember { mutableStateOf(false) }
 
     OutlinedTextField(
@@ -762,7 +799,7 @@ private fun FinluxInput(
         placeholder = {
             Text(
                 text = placeholder,
-                color = Color(0xFF94A3B8),
+                color = tokens.textSecondary,
                 fontSize = 14.sp
             )
         },
@@ -770,7 +807,7 @@ private fun FinluxInput(
             Icon(
                 imageVector = leadingIcon,
                 contentDescription = null,
-                tint = Color(0xFF94A3B8),
+                tint = tokens.textSecondary,
                 modifier = Modifier.size(20.dp)
             )
         },
@@ -780,7 +817,7 @@ private fun FinluxInput(
                     Icon(
                         imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         contentDescription = "Hiển thị mật khẩu",
-                        tint = Color(0xFF94A3B8),
+                        tint = tokens.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -791,12 +828,12 @@ private fun FinluxInput(
         singleLine = true,
         shape = RoundedCornerShape(15.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color(0xFF4F46E5),
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            focusedBorderColor = tokens.primary,
+            unfocusedBorderColor = tokens.border,
+            focusedContainerColor = tokens.surface,
+            unfocusedContainerColor = tokens.surfaceSoft,
+            focusedTextColor = tokens.onSurface,
+            unfocusedTextColor = tokens.onSurface,
         )
     )
 }
@@ -807,6 +844,7 @@ private fun GradientButton(
     isLoading: Boolean,
     onClick: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -832,8 +870,8 @@ private fun GradientButton(
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(14.dp),
-                ambientColor = Color(0x307C3AED),
-                spotColor = Color(0x405B21B6),
+                ambientColor = tokens.primary.copy(alpha = 0.20f),
+                spotColor = tokens.primary.copy(alpha = 0.25f),
             ),
         enabled = !isLoading,
         shape = RoundedCornerShape(15.dp),
@@ -845,7 +883,7 @@ private fun GradientButton(
                 .fillMaxSize()
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color(0xFF5B2BFF), Color(0xFF7C2CFF)),
+                        listOf(FinluxColors.PrimaryBlue, FinluxColors.PrimaryViolet),
                     )
                 ),
             contentAlignment = Alignment.Center
@@ -853,7 +891,7 @@ private fun GradientButton(
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
-                    color = Color.White,
+                    color = tokens.onHero,
                     strokeWidth = 2.5.dp
                 )
             } else {
@@ -861,7 +899,7 @@ private fun GradientButton(
                     text = text,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = tokens.onHero,
                 )
             }
         }
@@ -870,7 +908,8 @@ private fun GradientButton(
 
 @Composable
 private fun LoginBottomWave() {
-    val waveColor = MaterialTheme.colorScheme.primary
+    val tokens = LocalFinluxTokens.current
+    val waveColor = tokens.primary
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
@@ -899,18 +938,19 @@ private fun LoginBottomWave() {
 
 @Composable
 private fun SocialDivider(text: String) {
+    val tokens = LocalFinluxTokens.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+        HorizontalDivider(Modifier.weight(1f), color = tokens.border)
         Text(
             text = text,
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = tokens.textSecondary,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
-        HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+        HorizontalDivider(Modifier.weight(1f), color = tokens.border)
     }
 }
 
@@ -942,13 +982,14 @@ private fun SocialCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         modifier = modifier
             .height(62.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(15.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = tokens.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, tokens.border),
         shadowElevation = 1.dp,
     ) {
         Row(
@@ -968,7 +1009,7 @@ private fun SocialCard(
                 text = title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = tokens.onSurface,
             )
         }
     }
@@ -979,18 +1020,27 @@ fun FinluxLogoHeader(
     fontSize: androidx.compose.ui.unit.TextUnit = 28.sp,
     isDark: Boolean = false,
 ) {
+    val tokens = LocalFinluxTokens.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = "Fin",
             fontSize = fontSize,
             fontWeight = FontWeight.ExtraBold,
-            color = if (isDark) Color.White else MaterialTheme.colorScheme.onSurface
+            color = if (isDark) tokens.onHero else tokens.onSurface,
         )
         Text(
             text = "Lux",
             fontSize = fontSize,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF3478F6)
+            style = LocalTextStyle.current.copy(
+                brush = Brush.linearGradient(
+                    listOf(
+                        FinluxColors.PrimaryBlue,
+                        FinluxColors.PrimaryViolet,
+                        FinluxColors.PrimaryCyan,
+                    )
+                ),
+            ),
         )
     }
 }

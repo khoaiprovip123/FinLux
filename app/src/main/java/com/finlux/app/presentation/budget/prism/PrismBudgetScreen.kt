@@ -266,11 +266,10 @@ fun PrismBudgetScreen(
                     val isExceeded = spent > limit
                     val progressFloat = if (limit > 0L) (spent.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
 
-                    // Dynamic Risk Palette (0-70% Green, 70-90% Amber, 90-100% Orange, >100% Red)
+                    // Dynamic Risk Palette (0-80% Green, 80-100% Amber, >100% Red)
                     val statusColor = when {
-                        isExceeded -> FinluxColors.ExpenseRed
-                        percent >= 90 -> Color(0xFFF97316)
-                        percent >= 70 -> FinluxColors.WarningAmber
+                        isExceeded -> tokens.error
+                        percent >= 80 -> FinluxColors.WarningAmber
                         else -> FinluxColors.IncomeGreen
                     }
                     val percentLabel = if (isExceeded) "Vượt ${percent - 100}%" else "Đã dùng $percent%"
@@ -579,7 +578,7 @@ fun PrismBudgetScreen(
                     shape = RoundedCornerShape(tokens.radius.input),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = tokens.primary,
-                        contentColor = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                        contentColor = tokens.onHero,
                     ),
                     enabled = (limitInput.toLongOrNull() ?: 0L) > 0L && selectedCategoryId.isNotBlank(),
                 ) {
@@ -698,7 +697,7 @@ fun PrismBudgetScreen(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                                .background(tokens.surfaceSoft),
                         ) {
                             Box(
                                 modifier = Modifier
@@ -735,7 +734,7 @@ fun PrismBudgetScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                     ),
-                    color = Color(0xFF9CA3AF),
+                    color = tokens.textSecondary,
                 )
 
                 if (categoryTransactions.isEmpty()) {

@@ -31,9 +31,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.finlux.app.core.designsystem.FinluxBlue
-import com.finlux.app.core.designsystem.FinluxPurple
-import com.finlux.app.core.designsystem.FinluxTextSecondary
 import com.finlux.app.core.designsystem.GlassBottomNav
 import com.finlux.app.core.designsystem.GlassFab
 import com.finlux.app.core.designsystem.LocalUiPreferences
@@ -108,6 +105,7 @@ private fun ThemedNavigationIcon(
     tint: Color,
     contentDescription: String,
 ) {
+    val tokens = LocalFinluxTokens.current
     val shape = when (style) {
         VisualStyle.MODERN_DARK -> RoundedCornerShape(10.dp)
         VisualStyle.GLASSMORPHISM -> CircleShape
@@ -115,30 +113,30 @@ private fun ThemedNavigationIcon(
     }
     val fill = when (style) {
         VisualStyle.MODERN_DARK -> Brush.linearGradient(
-            listOf(FinluxBlue.copy(alpha = if (selected) .22f else .04f), Color(0xFF08182B)),
+            listOf(tokens.primary.copy(alpha = if (selected) .22f else .04f), tokens.surfaceSoft),
         )
         VisualStyle.GLASSMORPHISM -> Brush.linearGradient(
-            listOf(Color.White.copy(alpha = if (selected) .28f else .06f), Color(0xFF8B5CFF).copy(alpha = if (selected) .30f else .04f)),
+            listOf(tokens.onHero.copy(alpha = if (selected) .28f else .06f), tokens.primary.copy(alpha = if (selected) .30f else .04f)),
         )
         VisualStyle.DYNAMIC_GRADIENT -> if (selected) {
-            Brush.linearGradient(listOf(Color(0xFF7C3CFF), Color(0xFF356DFF), Color(0xFF37C7F4)))
+            tokens.heroBrush
         } else {
-            Brush.linearGradient(listOf(FinluxPurple.copy(alpha = .07f), Color.Transparent))
+            Brush.linearGradient(listOf(tokens.primary.copy(alpha = .07f), Color.Transparent))
         }
     }
     val borderColor = when (style) {
-        VisualStyle.MODERN_DARK -> FinluxBlue.copy(alpha = if (selected) .58f else .12f)
-        VisualStyle.GLASSMORPHISM -> Color.White.copy(alpha = if (selected) .62f else .12f)
-        VisualStyle.DYNAMIC_GRADIENT -> FinluxPurple.copy(alpha = if (selected) .35f else .10f)
+        VisualStyle.MODERN_DARK -> tokens.primary.copy(alpha = if (selected) .58f else .12f)
+        VisualStyle.GLASSMORPHISM -> tokens.onHero.copy(alpha = if (selected) .62f else .12f)
+        VisualStyle.DYNAMIC_GRADIENT -> tokens.primary.copy(alpha = if (selected) .35f else .10f)
     }
     Box(
         modifier = Modifier.size(34.dp)
-            .then(if (selected && style == VisualStyle.GLASSMORPHISM) Modifier.shadow(8.dp, shape, ambientColor = Color.White) else Modifier)
+            .then(if (selected && style == VisualStyle.GLASSMORPHISM) Modifier.shadow(8.dp, shape, ambientColor = tokens.onHero) else Modifier)
             .clip(shape)
             .background(fill)
             .border(1.dp, borderColor, shape),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp), tint = if (selected && style == VisualStyle.DYNAMIC_GRADIENT) Color.White else tint)
+        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp), tint = if (selected && style == VisualStyle.DYNAMIC_GRADIENT) tokens.onHero else tint)
     }
 }

@@ -50,7 +50,7 @@ data class SalaryCycleConfig(
     val savingsWalletId: String? = null,
     val rolloverRule: CycleRolloverRule = CycleRolloverRule.KEEP_IN_WALLET,
     val budgetPeriodBasis: BudgetPeriodBasis = BudgetPeriodBasis.CALENDAR_MONTH,
-    val financeTimeZone: String = "Asia/Ho_Chi_Minh",
+    val financeTimeZone: String = FinanceBusinessConstants.Timezone.DEFAULT_ZONE_NAME,
 ) {
     val totalExpectedSalary: Money
         get() = when (scheduleType) {
@@ -160,7 +160,7 @@ fun List<SalaryCycleConfigRecord>.configAt(
     val sorted = sortedBy { it.effectiveFromDate }
     val earliest = sorted.first()
     val earliestFrom = runCatching { LocalDate.parse(earliest.effectiveFromDate) }.getOrNull()
-    val zone = runCatching { ZoneId.of(fallbackConfig.financeTimeZone) }.getOrDefault(ZoneId.of("Asia/Ho_Chi_Minh"))
+    val zone = runCatching { ZoneId.of(fallbackConfig.financeTimeZone) }.getOrDefault(FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID)
     val instantDate = instant.atZone(zone).toLocalDate()
 
     if (earliestFrom != null && instantDate.isBefore(earliestFrom)) {

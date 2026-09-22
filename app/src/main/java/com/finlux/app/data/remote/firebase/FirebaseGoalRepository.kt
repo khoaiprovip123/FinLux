@@ -1,6 +1,8 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
+import com.finlux.app.domain.model.FinanceBusinessConstants
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.SystemCategories
@@ -30,7 +32,7 @@ class FirebaseGoalRepository(
             close()
             return@callbackFlow
         }
-        val registration = firestore.collection("users").document(uid).collection("goals")
+        val registration = firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.GOALS)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
                 else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toGoal() })
@@ -41,14 +43,14 @@ class FirebaseGoalRepository(
     override suspend fun upsertGoal(goal: FinancialGoal): AppResult<String> = firebaseResult("Không thể lưu mục tiêu") {
         val uid = requireUid()
         val id = goal.id.ifBlank { UUID.randomUUID().toString() }
-        firestore.collection("users").document(uid).collection("goals").document(id)
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.GOALS).document(id)
             .set(goal.copy(id = id).toGoalMap()).await()
         id
     }
 
     override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = firebaseResult("Không thể xóa mục tiêu") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("goals").document(goal.id).delete().await()
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.GOALS).document(goal.id).delete().await()
         Unit
     }
 
@@ -60,12 +62,12 @@ class FirebaseGoalRepository(
         date: Instant,
     ): AppResult<Unit> = firebaseResult("Không thể nạp tiền vào mục tiêu") {
         val uid = requireUid()
-        val userDoc = firestore.collection("users").document(uid)
-        val walletRef = userDoc.collection("wallets").document(walletId)
-        val goalRef = userDoc.collection("goals").document(goalId)
-        val categoryRef = userDoc.collection("categories").document(SystemCategories.SAVINGS)
+        val userDoc = firestore.collection(FirestoreSchema.USERS).document(uid)
+        val walletRef = userDoc.collection(FirestoreSchema.Collections.WALLETS).document(walletId)
+        val goalRef = userDoc.collection(FirestoreSchema.Collections.GOALS).document(goalId)
+        val categoryRef = userDoc.collection(FirestoreSchema.Collections.CATEGORIES).document(SystemCategories.SAVINGS)
         val transactionId = UUID.randomUUID().toString()
-        val transactionRef = userDoc.collection("transactions").document(transactionId)
+        val transactionRef = userDoc.collection(FirestoreSchema.Collections.TRANSACTIONS).document(transactionId)
 
         firestore.runTransaction { tx ->
             val walletSnap = tx.get(walletRef)
@@ -135,12 +137,12 @@ class FirebaseGoalRepository(
         date: Instant,
     ): AppResult<Unit> = firebaseResult("Không thể rút tiền từ mục tiêu") {
         val uid = requireUid()
-        val userDoc = firestore.collection("users").document(uid)
-        val walletRef = userDoc.collection("wallets").document(walletId)
-        val goalRef = userDoc.collection("goals").document(goalId)
-        val categoryRef = userDoc.collection("categories").document(SystemCategories.SAVINGS)
+        val userDoc = firestore.collection(FirestoreSchema.USERS).document(uid)
+        val walletRef = userDoc.collection(FirestoreSchema.Collections.WALLETS).document(walletId)
+        val goalRef = userDoc.collection(FirestoreSchema.Collections.GOALS).document(goalId)
+        val categoryRef = userDoc.collection(FirestoreSchema.Collections.CATEGORIES).document(SystemCategories.SAVINGS)
         val transactionId = UUID.randomUUID().toString()
-        val transactionRef = userDoc.collection("transactions").document(transactionId)
+        val transactionRef = userDoc.collection(FirestoreSchema.Collections.TRANSACTIONS).document(transactionId)
 
         firestore.runTransaction { tx ->
             val goalSnap = tx.get(goalRef)
@@ -240,7 +242,7 @@ private fun parseMoneyField(raw: Any?): Money {
 
 internal fun DocumentSnapshot.toGoal(): FinancialGoal? = runCatching {
     val goalName = getString("name")?.takeIf { it.isNotBlank() } ?: return@runCatching null
-    val defaultDeadline = Instant.now().plusSeconds(180L * 86400)
+    val defaultDeadline = Instant.now().plusSeconds(FinanceBusinessConstants.Goals.DEFAULT_DEADLINE_DAYS * 86400L)
     FinancialGoal(
         id = id,
         name = goalName,

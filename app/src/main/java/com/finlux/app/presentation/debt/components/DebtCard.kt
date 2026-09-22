@@ -460,15 +460,15 @@ fun DebtCard(
                     if (!isSettled && sponsorTag != null) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFF10B981).copy(alpha = 0.12f),
-                            border = BorderStroke(0.6.dp, Color(0xFF10B981).copy(alpha = 0.30f)),
+                            color = FinluxColors.IncomeGreen.copy(alpha = 0.12f),
+                            border = BorderStroke(0.6.dp, FinluxColors.IncomeGreen.copy(alpha = 0.30f)),
                         ) {
                             Text(
                                 text = sponsorTag,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 10.sp,
-                                    color = Color(0xFF10B981),
+                                    color = FinluxColors.IncomeGreen,
                                 ),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )

@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
@@ -95,7 +96,7 @@ fun WalletDetailBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        containerColor = tokens.surface,
         dragHandle = {
             Surface(
                 modifier = Modifier.padding(vertical = 10.dp),
@@ -144,7 +145,7 @@ fun WalletDetailBottomSheet(
                         Text(
                             text = "$typeName • Số dư: ${formatVndAmount(detail.balance)}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF6B7280),
+                            color = tokens.textSecondary,
                         )
                     }
                 }
@@ -166,17 +167,17 @@ fun WalletDetailBottomSheet(
                     // Thu nhập
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF0FDF4),
-                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFDCFCE7)),
+                        color = tokens.surfaceSoft,
+                        border = BorderStroke(1.dp, FinluxColors.IncomeGreen.copy(alpha = 0.25f)),
                         modifier = Modifier.weight(1f),
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Tổng thu nhập", fontSize = 11.sp, color = Color(0xFF10B981))
+                            Text("Tổng thu nhập", fontSize = 11.sp, color = FinluxColors.IncomeGreen)
                             Text(
                                 "+${formatVndAmount(detail.incomeInPeriod)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF10B981),
+                                color = FinluxColors.IncomeGreen,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -186,17 +187,17 @@ fun WalletDetailBottomSheet(
                     // Chi tiêu
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFFEF2F2),
-                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFFEE2E2)),
+                        color = tokens.surfaceSoft,
+                        border = BorderStroke(1.dp, FinluxColors.ExpenseRed.copy(alpha = 0.25f)),
                         modifier = Modifier.weight(1f),
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Tổng chi tiêu", fontSize = 11.sp, color = Color(0xFFEF4444))
+                            Text("Tổng chi tiêu", fontSize = 11.sp, color = FinluxColors.ExpenseRed)
                             Text(
                                 "-${formatVndAmount(detail.expenseInPeriod)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFEF4444),
+                                color = FinluxColors.ExpenseRed,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -212,12 +213,12 @@ fun WalletDetailBottomSheet(
                     val hasTransfer = detail.transferOutInPeriod > 0 || detail.transferInInPeriod > 0
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF0F9FF),
-                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE0F2FE)),
+                        color = tokens.surfaceSoft,
+                        border = BorderStroke(1.dp, FinluxColors.TransferBlue.copy(alpha = 0.25f)),
                         modifier = Modifier.weight(1f),
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Chuyển tiền", fontSize = 11.sp, color = Color(0xFF0284C7))
+                            Text("Chuyển tiền", fontSize = 11.sp, color = FinluxColors.TransferBlue)
                             if (hasTransfer) {
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -228,7 +229,7 @@ fun WalletDetailBottomSheet(
                                             "-${formatVndAmount(detail.transferOutInPeriod)}",
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFF97316),
+                                            color = FinluxColors.WarningAmber,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
@@ -238,7 +239,7 @@ fun WalletDetailBottomSheet(
                                             "+${formatVndAmount(detail.transferInInPeriod)}",
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF0EA5E9),
+                                            color = FinluxColors.TransferBlue,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
@@ -257,19 +258,20 @@ fun WalletDetailBottomSheet(
 
                     // Biến động số dư ví
                     val isPositiveChange = detail.netWalletChange >= 0
+                    val changeColor = if (isPositiveChange) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else if (isPositiveChange) Color(0xFFF0FDF4) else Color(0xFFFEF2F2),
-                        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else if (isPositiveChange) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)),
+                        color = tokens.surfaceSoft,
+                        border = BorderStroke(1.dp, changeColor.copy(alpha = 0.25f)),
                         modifier = Modifier.weight(1f),
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Biến động ví", fontSize = 11.sp, color = if (isPositiveChange) Color(0xFF10B981) else Color(0xFFEF4444))
+                            Text("Biến động ví", fontSize = 11.sp, color = changeColor)
                             Text(
                                 "${if (isPositiveChange) "+" else ""}${formatVndAmount(detail.netWalletChange)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isPositiveChange) Color(0xFF10B981) else Color(0xFFEF4444),
+                                color = changeColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -281,8 +283,8 @@ fun WalletDetailBottomSheet(
             // Thẻ tóm tắt biến động số dư thực tế
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surfaceSoft,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -292,31 +294,31 @@ fun WalletDetailBottomSheet(
                         color = tokens.onSurface,
                     )
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Tiền vào (Thu nhập + Nhận chuyển)", fontSize = 12.sp, color = Color(0xFF6B7280))
+                        Text("Tiền vào (Thu nhập + Nhận chuyển)", fontSize = 12.sp, color = tokens.textSecondary)
                         Text(
                             "+${formatVndAmount(detail.totalMoneyIn)}",
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981),
+                            color = FinluxColors.IncomeGreen,
                         )
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Tiền ra (Chi tiêu + Chuyển đi)", fontSize = 12.sp, color = Color(0xFF6B7280))
+                        Text("Tiền ra (Chi tiêu + Chuyển đi)", fontSize = 12.sp, color = tokens.textSecondary)
                         Text(
                             "-${formatVndAmount(detail.totalMoneyOut)}",
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFEF4444),
+                            color = FinluxColors.ExpenseRed,
                         )
                     }
-                    HorizontalDivider(color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB))
+                    HorizontalDivider(color = tokens.border)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Biến động số dư ví trong kỳ", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = tokens.onSurface)
                         Text(
                             "${if (detail.netWalletChange >= 0) "+" else ""}${formatVndAmount(detail.netWalletChange)}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (detail.netWalletChange >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                            color = if (detail.netWalletChange >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                         )
                     }
                 }
@@ -325,13 +327,13 @@ fun WalletDetailBottomSheet(
             // Tỷ trọng chi tiêu card
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
-                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                color = tokens.surfaceSoft,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Tỷ trọng trên tổng chi toàn app", fontSize = 11.5.sp, color = Color(0xFF6B7280))
+                        Text("Tỷ trọng trên tổng chi toàn app", fontSize = 11.5.sp, color = tokens.textSecondary)
                         Text(
                             "${(detail.expenseShareOfTotal * 100).roundToInt()}%",
                             fontSize = 12.sp,
@@ -346,7 +348,7 @@ fun WalletDetailBottomSheet(
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
                         color = tokens.primary,
-                        trackColor = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                        trackColor = tokens.border,
                     )
                 }
             }
@@ -377,7 +379,7 @@ fun WalletDetailBottomSheet(
                 Text(
                     "Ví này chưa có khoản chi tiêu nào trong kỳ đã chọn.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6B7280),
+                    color = tokens.textSecondary,
                 )
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -389,10 +391,10 @@ fun WalletDetailBottomSheet(
 
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isCatSelected) tokens.primary.copy(alpha = 0.16f) else if (tokens.isDark) Color.White.copy(alpha = 0.03f) else Color(0xFFFAFAFA),
+                            color = if (isCatSelected) tokens.primary.copy(alpha = 0.16f) else tokens.surfaceSoft,
                             border = BorderStroke(
                                 if (isCatSelected) 1.5.dp else 1.dp,
-                                if (isCatSelected) tokens.primary else if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFEEEEEE),
+                                if (isCatSelected) tokens.primary else tokens.border,
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -440,12 +442,12 @@ fun WalletDetailBottomSheet(
                                             formatVndAmount(catExp.amount),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp,
-                                            color = Color(0xFFEF4444),
+                                            color = FinluxColors.ExpenseRed,
                                         )
                                         Text(
                                             "$catPercent% của ví",
                                             fontSize = 10.5.sp,
-                                            color = Color(0xFF6B7280),
+                                            color = tokens.textSecondary,
                                         )
                                     }
                                 }
@@ -456,7 +458,7 @@ fun WalletDetailBottomSheet(
                                         .height(3.dp)
                                         .clip(RoundedCornerShape(1.5.dp)),
                                     color = if (isCatSelected) tokens.primary else catColor,
-                                    trackColor = if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFE5E7EB),
+                                    trackColor = tokens.border,
                                 )
                             }
                         }
@@ -478,10 +480,10 @@ fun WalletDetailBottomSheet(
                         val isCatSelected = selectedCategoryFilterId == cat?.id
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isCatSelected) tokens.primary.copy(alpha = 0.16f) else if (tokens.isDark) Color.White.copy(alpha = 0.03f) else Color(0xFFFAFAFA),
+                            color = if (isCatSelected) tokens.primary.copy(alpha = 0.16f) else tokens.surfaceSoft,
                             border = BorderStroke(
                                 if (isCatSelected) 1.5.dp else 1.dp,
-                                if (isCatSelected) tokens.primary else if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFEEEEEE),
+                                if (isCatSelected) tokens.primary else tokens.border,
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -529,7 +531,7 @@ fun WalletDetailBottomSheet(
                                     "+${formatVndAmount(catInc.amount)}",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
-                                    color = Color(0xFF10B981),
+                                    color = FinluxColors.IncomeGreen,
                                 )
                             }
                         }
@@ -537,7 +539,7 @@ fun WalletDetailBottomSheet(
                 }
             }
 
-            HorizontalDivider(color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB))
+            HorizontalDivider(color = tokens.border)
 
             // Lịch sử giao dịch ví trong kỳ (Level 3 & 4)
             Row(
@@ -553,7 +555,7 @@ fun WalletDetailBottomSheet(
                 Text(
                     "Chạm để xem / sửa",
                     fontSize = 11.sp,
-                    color = Color(0xFF6B7280),
+                    color = tokens.textSecondary,
                 )
             }
 
@@ -561,7 +563,7 @@ fun WalletDetailBottomSheet(
                 Text(
                     "Không có giao dịch phát sinh từ ví này phù hợp với bộ lọc trong kỳ.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6B7280),
+                    color = tokens.textSecondary,
                 )
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -573,10 +575,10 @@ fun WalletDetailBottomSheet(
                         val txDateStr = FinanceTime.formatDateTime(tx.date, FinanceTime.VIETNAM_ZONE)
 
                         val amountColor = when {
-                            isIncome -> Color(0xFF10B981)
-                            isTransferIn -> Color(0xFF0EA5E9)
-                            isTransferOut -> Color(0xFFF97316)
-                            else -> Color(0xFFEF4444)
+                            isIncome -> FinluxColors.IncomeGreen
+                            isTransferIn -> FinluxColors.TransferBlue
+                            isTransferOut -> FinluxColors.WarningAmber
+                            else -> FinluxColors.ExpenseRed
                         }
                         val prefix = when {
                             isIncome || isTransferIn -> "+"
@@ -596,8 +598,8 @@ fun WalletDetailBottomSheet(
 
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (tokens.isDark) Color.White.copy(alpha = 0.025f) else Color(0xFFF9FAFB),
-                            border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFEEEEEE)),
+                            color = tokens.surfaceSoft,
+                            border = BorderStroke(1.dp, tokens.border),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onTransactionClick(tx) },
@@ -639,7 +641,7 @@ fun WalletDetailBottomSheet(
                                         Text(
                                             text = txDateStr,
                                             fontSize = 10.5.sp,
-                                            color = Color(0xFF6B7280),
+                                            color = tokens.textSecondary,
                                         )
                                     }
                                 }
@@ -676,14 +678,14 @@ fun WalletDetailBottomSheet(
                 if (isFilterActive) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFEF4444).copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.3f)),
+                        color = tokens.error.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.3f)),
                         modifier = Modifier
                             .weight(1f)
                             .clickable { onClearFilter() },
                     ) {
                         Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                            Text("Bỏ lọc ví này", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFEF4444))
+                            Text("Bỏ lọc ví này", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = tokens.error)
                         }
                     }
                 } else {

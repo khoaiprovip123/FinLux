@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DailyFinancialStatement
 import com.finlux.app.presentation.reports.ReportsUiState
@@ -72,8 +73,8 @@ fun PrismDailyStatementCard(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -94,13 +95,13 @@ fun PrismDailyStatementCard(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF5B4DFF).copy(alpha = 0.12f)),
+                            .background(tokens.primary.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Today,
                             contentDescription = null,
-                            tint = Color(0xFF5B4DFF),
+                            tint = tokens.primary,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -116,7 +117,7 @@ fun PrismDailyStatementCard(
                         Text(
                             text = todayStatement.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = Color(0xFF6B7280),
+                            color = tokens.textSecondary,
                         )
                     }
                 }
@@ -127,13 +128,13 @@ fun PrismDailyStatementCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF10B981).copy(alpha = 0.12f))
+                        .background(FinluxColors.IncomeGreen.copy(alpha = 0.12f))
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = Color(0xFF10B981),
+                        tint = FinluxColors.IncomeGreen,
                         modifier = Modifier.size(13.dp),
                     )
                     Text(
@@ -142,7 +143,7 @@ fun PrismDailyStatementCard(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                         ),
-                        color = Color(0xFF10B981),
+                        color = FinluxColors.IncomeGreen,
                     )
                 }
             }
@@ -161,7 +162,7 @@ fun PrismDailyStatementCard(
                     Text(
                         text = "Số dư đầu ngày",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                     Text(
                         text = formatVndAmount(opening),
@@ -176,7 +177,7 @@ fun PrismDailyStatementCard(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.CompareArrows,
                     contentDescription = null,
-                    tint = Color(0xFF6B7280).copy(alpha = 0.6f),
+                    tint = tokens.textSecondary.copy(alpha = 0.6f),
                     modifier = Modifier.size(20.dp),
                 )
 
@@ -187,7 +188,7 @@ fun PrismDailyStatementCard(
                     Text(
                         text = "Số dư cuối ngày",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                     Text(
                         text = formatVndAmount(closing),
@@ -195,7 +196,7 @@ fun PrismDailyStatementCard(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                         ),
-                        color = Color(0xFF5B4DFF),
+                        color = tokens.primary,
                     )
                 }
             }
@@ -210,14 +211,14 @@ fun PrismDailyStatementCard(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF10B981).copy(alpha = 0.08f))
+                        .background(FinluxColors.IncomeGreen.copy(alpha = 0.08f))
                         .padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                 ) {
                     Text(
                         text = "Thu trong ngày",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF10B981),
+                        color = FinluxColors.IncomeGreen,
                     )
                     Text(
                         text = "+${formatVndAmount(income)}",
@@ -225,7 +226,7 @@ fun PrismDailyStatementCard(
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                         ),
-                        color = Color(0xFF10B981),
+                        color = FinluxColors.IncomeGreen,
                     )
                 }
 
@@ -234,14 +235,14 @@ fun PrismDailyStatementCard(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFFEF4444).copy(alpha = 0.08f))
+                        .background(FinluxColors.ExpenseRed.copy(alpha = 0.08f))
                         .padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                 ) {
                     Text(
                         text = "Chi trong ngày",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = Color(0xFFEF4444),
+                        color = FinluxColors.ExpenseRed,
                     )
                     Text(
                         text = "-${formatVndAmount(expense)}",
@@ -249,12 +250,12 @@ fun PrismDailyStatementCard(
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                         ),
-                        color = Color(0xFFEF4444),
+                        color = FinluxColors.ExpenseRed,
                     )
                 }
 
                 // Ròng hôm nay
-                val netColor = if (operatingNet >= 0) Color(0xFF10B981) else Color(0xFFEF4444)
+                val netColor = if (operatingNet >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -282,7 +283,7 @@ fun PrismDailyStatementCard(
             // So sánh Hôm qua vs Hôm nay
             val yesterdayComp = state.yesterdayComparison
             val diff = yesterdayComp.netDifference
-            val diffColor = if (diff >= 0) Color(0xFF10B981) else Color(0xFFEF4444)
+            val diffColor = if (diff >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -295,7 +296,7 @@ fun PrismDailyStatementCard(
                 Text(
                     text = "So với hôm qua (${formatVndAmount(yesterdayComp.yesterdayNet)}):",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                    color = Color(0xFF6B7280),
+                    color = tokens.textSecondary,
                 )
                 Text(
                     text = (if (diff >= 0) "Tăng +" else "Giảm -") + formatVndAmount(kotlin.math.abs(diff)),
@@ -324,8 +325,8 @@ fun PrismCumulativeMetricsCard(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -347,7 +348,7 @@ fun PrismCumulativeMetricsCard(
                 before = cm.incomeBefore,
                 current = cm.incomeCurrent,
                 total = cm.totalCumulativeIncome,
-                accentColor = Color(0xFF10B981),
+                accentColor = FinluxColors.IncomeGreen,
             )
 
             HorizontalDivider(color = tokens.border.copy(alpha = 0.2f))
@@ -358,7 +359,7 @@ fun PrismCumulativeMetricsCard(
                 before = cm.expenseBefore,
                 current = cm.expenseCurrent,
                 total = cm.totalCumulativeExpense,
-                accentColor = Color(0xFFEF4444),
+                accentColor = FinluxColors.ExpenseRed,
             )
 
             HorizontalDivider(color = tokens.border.copy(alpha = 0.2f))
@@ -369,7 +370,7 @@ fun PrismCumulativeMetricsCard(
                 before = cm.netBefore,
                 current = cm.netCurrent,
                 total = cm.totalCumulativeNet,
-                accentColor = if (cm.totalCumulativeNet >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                accentColor = if (cm.totalCumulativeNet >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
             )
         }
     }
@@ -402,7 +403,7 @@ private fun CumulativeRow(
             Text(
                 text = "Trước đó: ${formatVndAmount(before)}  |  Hôm nay: +${formatVndAmount(current)}",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                color = Color(0xFF6B7280),
+                color = tokens.textSecondary,
             )
         }
 
@@ -433,8 +434,8 @@ fun PrismDailyStatementsTable(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -461,7 +462,7 @@ fun PrismDailyStatementsTable(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                         ),
-                        color = Color(0xFF5B4DFF),
+                        color = tokens.primary,
                         modifier = Modifier.clickable { isExpanded = !isExpanded },
                     )
                 }
@@ -476,10 +477,10 @@ fun PrismDailyStatementsTable(
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Ngày", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), modifier = Modifier.weight(1.2f))
-                Text("Đầu ngày", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), modifier = Modifier.weight(1.5f))
-                Text("Thu/Chi", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), modifier = Modifier.weight(1.5f))
-                Text("Cuối ngày", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), modifier = Modifier.weight(1.5f))
+                Text("Ngày", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = tokens.textSecondary, modifier = Modifier.weight(1.2f))
+                Text("Đầu ngày", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = tokens.textSecondary, modifier = Modifier.weight(1.5f))
+                Text("Thu/Chi", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = tokens.textSecondary, modifier = Modifier.weight(1.5f))
+                Text("Cuối ngày", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = tokens.textSecondary, modifier = Modifier.weight(1.5f))
             }
 
             // Table Rows
@@ -505,14 +506,14 @@ fun PrismDailyStatementsTable(
                         modifier = Modifier.weight(1.5f),
                     )
                     Column(modifier = Modifier.weight(1.5f)) {
-                        Text("+${formatVndAmount(st.totalIncome)}", fontSize = 11.5.sp, color = Color(0xFF10B981))
-                        Text("-${formatVndAmount(st.totalExpense)}", fontSize = 11.5.sp, color = Color(0xFFEF4444))
+                        Text("+${formatVndAmount(st.totalIncome)}", fontSize = 11.5.sp, color = FinluxColors.IncomeGreen)
+                        Text("-${formatVndAmount(st.totalExpense)}", fontSize = 11.5.sp, color = FinluxColors.ExpenseRed)
                     }
                     Text(
                         text = formatVndAmount(st.closingBalance),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF5B4DFF),
+                        color = tokens.primary,
                         modifier = Modifier.weight(1.5f),
                     )
                 }

@@ -115,7 +115,7 @@ fun QuickAddSheet(
                     Text(
                         text = "Chọn loại giao dịch bạn muốn thực hiện",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                 }
 
@@ -146,10 +146,10 @@ fun QuickAddSheet(
                     title = "Thêm thu",
                     subtitle = "Dòng tiền vào",
                     icon = Icons.AutoMirrored.Filled.CallReceived,
-                    iconBgColor = Color(0xFFDCFCE7),
-                    iconTintColor = Color(0xFF10B981),
-                    cardBgColor = if (tokens.isDark) Color(0xFF1E2E2A) else Color(0xFFF0FDF4),
-                    borderColor = Color(0xFF10B981).copy(alpha = 0.20f),
+                    iconBgColor = FinluxColors.IncomeGreen.copy(alpha = if (tokens.isDark) 0.22f else 0.14f),
+                    iconTintColor = FinluxColors.IncomeGreen,
+                    cardBgColor = if (tokens.isDark) FinluxColors.IncomeGreen.copy(alpha = 0.12f) else FinluxColors.IncomeGreen.copy(alpha = 0.06f),
+                    borderColor = FinluxColors.IncomeGreen.copy(alpha = 0.25f),
                     modifier = Modifier.weight(1f),
                     onClick = onIncome,
                 )
@@ -159,10 +159,10 @@ fun QuickAddSheet(
                     title = "Thêm chi",
                     subtitle = "Dòng tiền ra",
                     icon = Icons.Default.CallMade,
-                    iconBgColor = Color(0xFFFFE4E6),
-                    iconTintColor = Color(0xFFF43F5E),
-                    cardBgColor = if (tokens.isDark) Color(0xFF2E1E24) else Color(0xFFFFF1F2),
-                    borderColor = Color(0xFFF43F5E).copy(alpha = 0.20f),
+                    iconBgColor = FinluxColors.ExpenseRed.copy(alpha = if (tokens.isDark) 0.22f else 0.14f),
+                    iconTintColor = FinluxColors.ExpenseRed,
+                    cardBgColor = if (tokens.isDark) FinluxColors.ExpenseRed.copy(alpha = 0.12f) else FinluxColors.ExpenseRed.copy(alpha = 0.06f),
+                    borderColor = FinluxColors.ExpenseRed.copy(alpha = 0.25f),
                     modifier = Modifier.weight(1f),
                     onClick = onExpense,
                 )
@@ -177,10 +177,10 @@ fun QuickAddSheet(
                     title = "Chuyển tiền",
                     subtitle = "Giữa các ví",
                     icon = Icons.Default.SwapHoriz,
-                    iconBgColor = Color(0xFFDBEAFE),
-                    iconTintColor = Color(0xFF3B82F6),
-                    cardBgColor = if (tokens.isDark) Color(0xFF1E2438) else Color(0xFFEFF6FF),
-                    borderColor = Color(0xFF3B82F6).copy(alpha = 0.20f),
+                    iconBgColor = FinluxColors.TransferBlue.copy(alpha = if (tokens.isDark) 0.22f else 0.14f),
+                    iconTintColor = FinluxColors.TransferBlue,
+                    cardBgColor = if (tokens.isDark) FinluxColors.TransferBlue.copy(alpha = 0.12f) else FinluxColors.TransferBlue.copy(alpha = 0.06f),
+                    borderColor = FinluxColors.TransferBlue.copy(alpha = 0.25f),
                     modifier = Modifier.weight(1f),
                     onClick = onTransfer,
                 )
@@ -190,10 +190,10 @@ fun QuickAddSheet(
                     title = "Scan hóa đơn",
                     subtitle = "Nhập khoản chi",
                     icon = Icons.Default.DocumentScanner,
-                    iconBgColor = Color(0xFFF3E8FF),
-                    iconTintColor = Color(0xFF9333EA),
-                    cardBgColor = if (tokens.isDark) Color(0xFF261E38) else Color(0xFFFAF5FF),
-                    borderColor = Color(0xFF9333EA).copy(alpha = 0.20f),
+                    iconBgColor = FinluxColors.PrimaryViolet.copy(alpha = if (tokens.isDark) 0.22f else 0.14f),
+                    iconTintColor = FinluxColors.PrimaryViolet,
+                    cardBgColor = if (tokens.isDark) FinluxColors.PrimaryViolet.copy(alpha = 0.12f) else FinluxColors.PrimaryViolet.copy(alpha = 0.06f),
+                    borderColor = FinluxColors.PrimaryViolet.copy(alpha = 0.25f),
                     modifier = Modifier.weight(1f),
                     onClick = onReceipt,
                 )
@@ -204,10 +204,10 @@ fun QuickAddSheet(
                 title = "Thêm mục tiêu",
                 subtitle = "Lập kế hoạch tích lũy",
                 icon = Icons.Default.TrackChanges,
-                iconBgColor = Color(0xFFEDE9FE),
-                iconTintColor = Color(0xFF7C3AED),
-                cardBgColor = if (tokens.isDark) Color(0xFF201B3E) else Color(0xFFF5F3FF),
-                borderColor = Color(0xFF7C3AED).copy(alpha = 0.18f),
+                iconBgColor = FinluxColors.BudgetViolet.copy(alpha = if (tokens.isDark) 0.22f else 0.14f),
+                iconTintColor = FinluxColors.BudgetViolet,
+                cardBgColor = if (tokens.isDark) FinluxColors.BudgetViolet.copy(alpha = 0.12f) else FinluxColors.BudgetViolet.copy(alpha = 0.06f),
+                borderColor = FinluxColors.BudgetViolet.copy(alpha = 0.25f),
                 onClick = onGoal,
             )
 
@@ -235,7 +235,7 @@ fun QuickAddSheet(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                         ),
-                        color = Color(0xFF3B5DF8),
+                        color = tokens.primary,
                         modifier = Modifier.clickable {
                             onDismiss()
                             onViewAllTransactions?.invoke()
@@ -261,8 +261,8 @@ fun QuickAddSheet(
             // 5. Footer Lightbulb Tip
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = if (tokens.isDark) Color(0xFF201B3E) else Color(0xFFF5F3FF),
-                border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.12f)),
+                color = tokens.surfaceSoft,
+                border = BorderStroke(1.dp, tokens.border),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
@@ -273,13 +273,13 @@ fun QuickAddSheet(
                     Icon(
                         imageVector = Icons.Default.Lightbulb,
                         contentDescription = null,
-                        tint = Color(0xFF7C3AED),
+                        tint = FinluxColors.WarningAmber,
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = "Bạn cũng có thể nhấn giữ nút + để tạo nhanh",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = if (tokens.isDark) Color(0xFFDDD6FE) else Color(0xFF6D28D9),
+                        color = tokens.textSecondary,
                     )
                 }
             }
@@ -350,7 +350,7 @@ private fun QuickActionBentoCard(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                    color = Color(0xFF6B7280),
+                    color = tokens.textSecondary,
                 )
             }
         }
@@ -424,7 +424,7 @@ private fun QuickActionFullBanner(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                    color = Color(0xFF6B7280),
+                    color = tokens.textSecondary,
                 )
             }
         }
@@ -465,8 +465,8 @@ private fun QuickAddRecentTransactionRow(
 
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
-        border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFF3F4F6)),
+        color = tokens.surface,
+        border = BorderStroke(1.dp, tokens.border),
         shadowElevation = 1.dp,
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -538,7 +538,7 @@ private fun QuickAddRecentTransactionRow(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                     contentDescription = null,
-                    tint = Color(0xFF9CA3AF),
+                    tint = tokens.textSecondary,
                     modifier = Modifier.size(11.dp),
                 )
             }

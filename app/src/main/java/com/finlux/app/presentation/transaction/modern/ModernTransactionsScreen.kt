@@ -51,13 +51,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.finlux.app.core.designsystem.ExpenseRed
-import com.finlux.app.core.designsystem.FinluxTextSecondary
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
-import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.TransactionType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.home.toVnd
@@ -80,6 +78,7 @@ fun ModernTransactionsScreen(
     onEditTransaction: ((FinanceTransaction) -> Unit)? = null,
     viewModel: TransactionsViewModel = hiltViewModel(),
 ) {
+    val tokens = LocalFinluxTokens.current
     val transactions = viewModel.transactions.collectAsStateWithLifecycle().value
     val categories = viewModel.categories.collectAsStateWithLifecycle().value
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
@@ -172,7 +171,7 @@ fun ModernTransactionsScreen(
                                                 style = MaterialTheme.typography.labelSmall.copy(
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
+                                                    color = tokens.onHero,
                                                 ),
                                             )
                                         }
@@ -277,12 +276,12 @@ fun ModernTransactionsScreen(
                                         text = headerTitle,
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current.onSurface,
+                                        color = tokens.onSurface,
                                     )
                                     Text(
                                         text = "(${txList.size})",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = com.finlux.app.core.designsystem.theme.LocalFinluxTokens.current.onSurfaceVariant,
+                                        color = tokens.textSecondary,
                                     )
                                 }
 
@@ -291,7 +290,7 @@ fun ModernTransactionsScreen(
                                         text = if (dayNet >= 0) "+${dayNet.toVnd()}" else "-${(-dayNet).toVnd()}",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (dayNet >= 0) IncomeGreen else ExpenseRed,
+                                        color = if (dayNet >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed,
                                     )
                                 }
                             }

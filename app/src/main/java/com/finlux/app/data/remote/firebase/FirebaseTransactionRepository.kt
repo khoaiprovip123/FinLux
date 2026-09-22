@@ -2,6 +2,7 @@ package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.time.FinanceTime
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import com.finlux.app.domain.model.DealFlowType
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.domain.model.Money
@@ -175,7 +176,7 @@ class FirebaseTransactionRepository(
             } else null
 
             val dealRef = if (!stored.dealId.isNullOrBlank()) {
-                firestore.collection("users").document(uid).collection("deals").document(stored.dealId)
+                firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.DEALS).document(stored.dealId)
             } else null
             val dealDoc = if (dealRef != null) atomic.get(dealRef) else null
 
@@ -341,7 +342,7 @@ class FirebaseTransactionRepository(
                 } else null
 
                 val dealRef = if (!stored.dealId.isNullOrBlank()) {
-                    firestore.collection("users").document(uid).collection("deals").document(stored.dealId)
+                    firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.DEALS).document(stored.dealId)
                 } else null
                 val dealDoc = if (dealRef != null) atomic.get(dealRef) else null
 
@@ -473,7 +474,7 @@ class FirebaseTransactionRepository(
         val uid = requireUid()
         val sourceRef = firestore.userWallets(uid).document(sourceWalletId)
         val destinationRef = firestore.userWallets(uid).document(destinationWalletId)
-        val rolloverRef = firestore.collection("users").document(uid).collection("salaryRollovers").document(cycleKey.replace(":", "_").replace("/", "_").replace(".", "_"))
+        val rolloverRef = firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.SALARY_ROLLOVERS).document(cycleKey.replace(":", "_").replace("/", "_").replace(".", "_"))
         val pairId = UUID.randomUUID().toString()
         val outRef = firestore.userTransactions(uid).document("${pairId}_out")
         val inRef = firestore.userTransactions(uid).document("${pairId}_in")
@@ -578,7 +579,7 @@ internal fun FinanceTransaction.budgetRef(
             "month:$month"
         }
     val budgetId = "${catId}_${periodKey}"
-    return firestore.collection("users").document(uid).collection("budgets").document(budgetId)
+    return firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS).document(budgetId)
 }
 
 internal fun FinanceTransaction.budgetRef(
@@ -598,10 +599,10 @@ internal suspend inline fun <T> firebaseResult(message: String, block: () -> T):
     )
 
 internal fun FirebaseFirestore.userTransactions(uid: String) =
-    collection("users").document(uid).collection("transactions")
+    collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.TRANSACTIONS)
 
 internal fun FirebaseFirestore.userWallets(uid: String) =
-    collection("users").document(uid).collection("wallets")
+    collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.WALLETS)
 
 private fun FinanceTransaction.balanceDelta(): Long = when (type) {
     TransactionType.INCOME, TransactionType.TRANSFER_IN -> amount.value

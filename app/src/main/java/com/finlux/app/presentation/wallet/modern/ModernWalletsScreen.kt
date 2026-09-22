@@ -158,25 +158,27 @@ fun ModernWalletsScreen(
         }
     }
 
+    val tokens = LocalFinluxTokens.current
+
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
         Scaffold(
             topBar = {
                 GlassTopBar(
-                    title = { Text("Ví của tôi", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
+                    title = { Text("Ví của tôi", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = tokens.onSurface) },
                     navigationIcon = {
                         if (onBack != null) {
-                            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") }
+                            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại", tint = tokens.onSurface) }
                         }
                     },
                     actions = {
                         if (wallets.size > 1) {
                             IconButton(onClick = { showTransfer = true }) {
-                                Icon(Icons.Default.SwapHoriz, "Chuyển tiền", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.SwapHoriz, "Chuyển tiền", tint = tokens.primary)
                             }
                         }
                         IconButton(onClick = { editing = null; showEditor = true }) {
-                            Icon(Icons.Default.Add, "Thêm ví mới")
+                            Icon(Icons.Default.Add, "Thêm ví mới", tint = tokens.onSurface)
                         }
                     },
                 )
@@ -196,9 +198,9 @@ fun ModernWalletsScreen(
                     Box(Modifier.padding(horizontal = 16.dp)) {
                         GradientHeroCard(Modifier.fillMaxWidth()) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Tổng số dư", color = Color.White.copy(alpha = .85f), style = MaterialTheme.typography.bodySmall)
-                                Text(total.toVnd(), color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                                Text("${wallets.size} ví · quản lý tập trung và an toàn", color = Color.White.copy(alpha = .78f), style = MaterialTheme.typography.labelSmall)
+                                Text("Tổng số dư", color = tokens.onHeroMuted, style = MaterialTheme.typography.bodySmall)
+                                Text(total.toVnd(), color = tokens.onHero, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                Text("${wallets.size} ví · quản lý tập trung và an toàn", color = tokens.onHeroMuted, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -556,14 +558,14 @@ private fun WalletEditor(
                                 .background(colorFromHex(hex))
                                 .border(
                                     width = if (isSelected) 3.dp else 1.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else tokens.border.copy(alpha = 0.35f),
+                                    color = if (isSelected) tokens.onSurface else tokens.border,
                                     shape = CircleShape,
                                 )
                                 .clickable { color = hex },
                             contentAlignment = Alignment.Center,
                         ) {
                             if (isSelected) {
-                                Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Check, null, tint = tokens.onHero, modifier = Modifier.size(20.dp))
                             }
                         }
                     }
@@ -575,7 +577,7 @@ private fun WalletEditor(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                    .background(tokens.surfaceSoft)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -585,14 +587,14 @@ private fun WalletEditor(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Icon(Icons.Default.Star, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Star, null, tint = tokens.primary, modifier = Modifier.size(24.dp))
                     Column {
-                        Text("Đặt làm ví mặc định", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                        Text("Đặt làm ví mặc định", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, color = tokens.onSurface)
                         Text(
                             if (isDefaultWallet) "Ví này đang là ví mặc định của bạn"
                             else "Tự động chọn cho các giao dịch mới",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = tokens.textSecondary,
                         )
                     }
                 }
@@ -620,11 +622,13 @@ private fun WalletEditor(
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = name.isNotBlank() && !busy,
                 shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = tokens.primary, contentColor = tokens.onHero),
             ) {
                 Text(
                     if (busy) "Đang lưu…" else (if (!isEditing) "Tạo ví mới" else "Lưu thay đổi"),
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
+                    color = tokens.onHero,
                 )
             }
 
@@ -634,17 +638,17 @@ private fun WalletEditor(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            .background(tokens.surfaceSoft)
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Info, null, tint = tokens.primary, modifier = Modifier.size(20.dp))
                         Text(
                             if (isDefaultWallet) "Không thể xóa ví mặc định. Vui lòng đặt ví khác làm mặc định trước khi xóa!"
                             else "Không thể xóa ví duy nhất còn lại trong ứng dụng.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = tokens.textSecondary,
                         )
                     }
                 } else {

@@ -54,55 +54,21 @@ class PurgeUserDataUseCase @Inject constructor(
 
     private suspend fun purgeFirestore(uid: String) {
         val f = firestore ?: return
-        val userDoc = f.collection("users").document(uid)
+        val userDoc = f.collection(com.finlux.app.data.remote.firebase.schema.FirestoreSchema.USERS).document(uid)
 
-        // Step 1: Deals
-        deleteCollectionInBatches(userDoc.collection("deals"))
-
-        // Step 2: Debts & Payments
-        val debtsCollection = userDoc.collection("debts")
+        // Leaf collections under debts (e.g. debt payments)
+        val debtsCollection = userDoc.collection(com.finlux.app.data.remote.firebase.schema.FirestoreSchema.Collections.DEBTS)
         val debtDocs = debtsCollection.get().await()
         for (debtDoc in debtDocs) {
-            deleteCollectionInBatches(debtDoc.reference.collection("payments"))
+            deleteCollectionInBatches(debtDoc.reference.collection(com.finlux.app.data.remote.firebase.schema.FirestoreSchema.Collections.DEBT_PAYMENTS))
         }
-        deleteInBatches(debtDocs.map { it.reference })
 
-        // Step 3: Transactions
-        deleteCollectionInBatches(userDoc.collection("transactions"))
+        // Delete all standard user subcollections from leaf to root
+        for (collectionName in com.finlux.app.data.remote.firebase.schema.FirestoreSchema.ALL_USER_SUBCOLLECTIONS) {
+            deleteCollectionInBatches(userDoc.collection(collectionName))
+        }
 
-        // Step 4: Budgets
-        deleteCollectionInBatches(userDoc.collection("budgets"))
-
-        // Step 5: Goals
-        deleteCollectionInBatches(userDoc.collection("goals"))
-
-        // Step 6: Reminders
-        deleteCollectionInBatches(userDoc.collection("reminders"))
-
-        // Step 7: Notifications
-        deleteCollectionInBatches(userDoc.collection("notifications"))
-
-        // Step 8: Salary Rollovers
-        deleteCollectionInBatches(userDoc.collection("salaryRollovers"))
-
-        // Step 9: Salary Cycle Timeline
-        deleteCollectionInBatches(userDoc.collection("salaryCycleTimeline"))
-
-        // Step 10: Financial Preferences
-        deleteCollectionInBatches(userDoc.collection("financialPreferences"))
-
-        // Step 11: Saving Spin (configs, destinations, sessions)
-        deleteCollectionInBatches(userDoc.collection("savingSpinConfigs"))
-        deleteCollectionInBatches(userDoc.collection("savingSpinDestinations"))
-        deleteCollectionInBatches(userDoc.collection("savingSpinSessions"))
-
-        // Step 12: Categories
-        deleteCollectionInBatches(userDoc.collection("categories"))
-
-        // Step 13: Wallets
-        deleteCollectionInBatches(userDoc.collection("wallets"))
-
-        // Step 14: Root user profile document
+        // Root user profile document
         userDoc.delete().await()
     }
 
@@ -113,8 +79,7 @@ class PurgeUserDataUseCase @Inject constructor(
 
     private suspend fun deleteInBatches(refs: List<DocumentReference>) {
         if (refs.isEmpty()) return
-        // Chunk by 400 (Firestore maximum batch size is 500)
-        refs.chunked(400).forEach { chunk ->
+        refs.chunked(com.finlux.app.core.common.AppSystemConfig.Firestore.BATCH_WRITE_CHUNK_SIZE).forEach { chunk ->
             val batch = firestore?.batch() ?: return
             chunk.forEach { ref -> batch.delete(ref) }
             batch.commit().await()

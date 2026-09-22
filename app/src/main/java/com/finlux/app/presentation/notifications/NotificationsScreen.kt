@@ -76,13 +76,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.finlux.app.core.designsystem.ExpenseRed
-import com.finlux.app.core.designsystem.FinluxBlue
-import com.finlux.app.core.designsystem.FinluxCyan
-import com.finlux.app.core.designsystem.FinluxPurple
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.GlassTopBar
-import com.finlux.app.core.designsystem.IncomeGreen
-import com.finlux.app.core.designsystem.WarningAmber
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
@@ -349,7 +344,7 @@ fun NotificationsScreen(
                                 val isSwiping = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
                                 Surface(
                                     shape = RoundedCornerShape(18.dp),
-                                    color = if (isSwiping) ExpenseRed else Color.Transparent,
+                                    color = if (isSwiping) tokens.error else Color.Transparent,
                                     modifier = Modifier.fillMaxSize(),
                                 ) {
                                     Row(
@@ -362,7 +357,7 @@ fun NotificationsScreen(
                                         Icon(
                                             imageVector = Icons.Default.Delete,
                                             contentDescription = "Xóa",
-                                            tint = Color.White,
+                                            tint = tokens.onHero,
                                             modifier = Modifier.size(24.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
@@ -372,7 +367,7 @@ fun NotificationsScreen(
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 15.sp,
                                             ),
-                                            color = Color.White,
+                                            color = tokens.onHero,
                                         )
                                     }
                                 }
@@ -462,12 +457,12 @@ private fun NotificationItemCard(
     val tokens = LocalFinluxTokens.current
 
     val (badgeIcon, badgeColor, typeLabel) = when (notification.type) {
-        NotificationType.REMINDER -> Triple(Icons.Default.ReceiptLong, FinluxPurple, "Nhắc hóa đơn")
-        NotificationType.BUDGET_ALERT -> Triple(Icons.Default.Warning, ExpenseRed, "Cảnh báo ngân sách")
-        NotificationType.GOAL_MILESTONE -> Triple(Icons.Default.EmojiEvents, WarningAmber, "Cột mốc mục tiêu")
-        NotificationType.TRANSACTION_SUMMARY -> Triple(Icons.Default.Insights, FinluxCyan, "Báo cáo")
-        NotificationType.DEBT_DUE_ALERT -> Triple(Icons.Default.CreditScore, ExpenseRed, "Hạn nợ / Thẻ")
-        NotificationType.SYSTEM -> Triple(Icons.Default.Campaign, FinluxBlue, "Hệ thống")
+        NotificationType.REMINDER -> Triple(Icons.Default.ReceiptLong, FinluxColors.BudgetViolet, "Nhắc hóa đơn")
+        NotificationType.BUDGET_ALERT -> Triple(Icons.Default.Warning, tokens.error, "Cảnh báo ngân sách")
+        NotificationType.GOAL_MILESTONE -> Triple(Icons.Default.EmojiEvents, FinluxColors.WarningAmber, "Cột mốc mục tiêu")
+        NotificationType.TRANSACTION_SUMMARY -> Triple(Icons.Default.Insights, FinluxColors.PrimaryCyan, "Báo cáo")
+        NotificationType.DEBT_DUE_ALERT -> Triple(Icons.Default.CreditScore, tokens.error, "Hạn nợ / Thẻ")
+        NotificationType.SYSTEM -> Triple(Icons.Default.Campaign, tokens.primary, "Hệ thống")
     }
 
     Surface(
@@ -574,14 +569,14 @@ private fun NotificationItemCard(
                             text = "Số tiền: ${formatVndAmount(notification.amount.value)}",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                            color = if (notification.isPaid) IncomeGreen else tokens.primary,
+                            color = if (notification.isPaid) FinluxColors.IncomeGreen else tokens.primary,
                         )
 
                         if (notification.isPaid) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = IncomeGreen.copy(alpha = if (tokens.isDark) 0.20f else 0.12f),
-                                border = BorderStroke(1.dp, IncomeGreen.copy(alpha = 0.35f)),
+                                color = FinluxColors.IncomeGreen.copy(alpha = if (tokens.isDark) 0.20f else 0.12f),
+                                border = BorderStroke(1.dp, FinluxColors.IncomeGreen.copy(alpha = 0.35f)),
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -591,7 +586,7 @@ private fun NotificationItemCard(
                                     Icon(
                                         Icons.Default.Check,
                                         contentDescription = null,
-                                        tint = IncomeGreen,
+                                        tint = FinluxColors.IncomeGreen,
                                         modifier = Modifier.size(15.dp),
                                     )
                                     Text(
@@ -600,7 +595,7 @@ private fun NotificationItemCard(
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                         ),
-                                        color = IncomeGreen,
+                                        color = FinluxColors.IncomeGreen,
                                     )
                                 }
                             }
@@ -622,7 +617,7 @@ private fun NotificationItemCard(
                                     Icon(
                                         imageVector = Icons.Default.Payments,
                                         contentDescription = null,
-                                        tint = Color.White,
+                                        tint = tokens.onHero,
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Text(
@@ -631,7 +626,7 @@ private fun NotificationItemCard(
                                             fontSize = 12.5.sp,
                                             fontWeight = FontWeight.Bold,
                                         ),
-                                        color = Color.White,
+                                        color = tokens.onHero,
                                     )
                                 }
                             }
@@ -666,7 +661,7 @@ private fun PaidNotificationDetailSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (tokens.isDark) Color(0xFF181824) else Color.White,
+        containerColor = tokens.surface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(
@@ -699,8 +694,8 @@ private fun PaidNotificationDetailSheet(
             // Success Hero Badge Card
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = IncomeGreen.copy(alpha = if (tokens.isDark) 0.16f else 0.10f),
-                border = BorderStroke(1.dp, IncomeGreen.copy(alpha = 0.30f)),
+                color = FinluxColors.IncomeGreen.copy(alpha = if (tokens.isDark) 0.16f else 0.10f),
+                border = BorderStroke(1.dp, FinluxColors.IncomeGreen.copy(alpha = 0.30f)),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
@@ -712,13 +707,13 @@ private fun PaidNotificationDetailSheet(
                         modifier = Modifier
                             .size(52.dp)
                             .clip(CircleShape)
-                            .background(IncomeGreen.copy(alpha = 0.20f)),
+                            .background(FinluxColors.IncomeGreen.copy(alpha = 0.20f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = IncomeGreen,
+                            tint = FinluxColors.IncomeGreen,
                             modifier = Modifier.size(28.dp),
                         )
                     }
@@ -726,7 +721,7 @@ private fun PaidNotificationDetailSheet(
                     Text(
                         text = "Đã thanh toán thành công",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = IncomeGreen,
+                        color = FinluxColors.IncomeGreen,
                     )
 
                     Text(
@@ -735,7 +730,7 @@ private fun PaidNotificationDetailSheet(
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 26.sp,
                         ),
-                        color = IncomeGreen,
+                        color = FinluxColors.IncomeGreen,
                     )
                 }
             }
@@ -757,7 +752,7 @@ private fun PaidNotificationDetailSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Khoản chi", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                        Text("Khoản chi", style = MaterialTheme.typography.bodyMedium, color = tokens.textSecondary)
                         Text(notification.title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
                     }
 
@@ -768,7 +763,7 @@ private fun PaidNotificationDetailSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("Danh mục", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                            Text("Danh mục", style = MaterialTheme.typography.bodyMedium, color = tokens.textSecondary)
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(catIcon, null, tint = catColor, modifier = Modifier.size(16.dp))
                                 Text(category.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
@@ -783,7 +778,7 @@ private fun PaidNotificationDetailSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("Ví thanh toán", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                            Text("Ví thanh toán", style = MaterialTheme.typography.bodyMedium, color = tokens.textSecondary)
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(walletIcon, null, tint = walletColor, modifier = Modifier.size(16.dp))
                                 Text(wallet.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = tokens.onSurface)
@@ -800,7 +795,7 @@ private fun PaidNotificationDetailSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Thời gian", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                        Text("Thời gian", style = MaterialTheme.typography.bodyMedium, color = tokens.textSecondary)
                         Text(timeStr, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = tokens.onSurface)
                     }
 
@@ -810,7 +805,7 @@ private fun PaidNotificationDetailSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Ghi chú sổ cái", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9CA3AF))
+                        Text("Ghi chú sổ cái", style = MaterialTheme.typography.bodyMedium, color = tokens.textSecondary)
                         Text("Thanh toán: ${notification.title}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = tokens.primary)
                     }
                 }
@@ -831,7 +826,7 @@ private fun PaidNotificationDetailSheet(
                 Text(
                     text = "Đóng",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (tokens.isDark) Color(0xFF002B3D) else Color.White,
+                    color = tokens.onHero,
                 )
             }
 
@@ -911,13 +906,13 @@ private fun QuickPayBottomSheet(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(FinluxPurple.copy(alpha = 0.15f)),
+                            .background(tokens.primary.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Payments,
                             contentDescription = null,
-                            tint = FinluxPurple,
+                            tint = tokens.primary,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -985,8 +980,8 @@ private fun QuickPayBottomSheet(
             if (isInsufficientBalance) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = ExpenseRed.copy(alpha = if (tokens.isDark) 0.20f else 0.10f),
-                    border = BorderStroke(1.dp, ExpenseRed.copy(alpha = 0.35f)),
+                    color = tokens.error.copy(alpha = if (tokens.isDark) 0.20f else 0.10f),
+                    border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
@@ -997,13 +992,13 @@ private fun QuickPayBottomSheet(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = null,
-                            tint = ExpenseRed,
+                            tint = tokens.error,
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
                             text = "Số dư ví [${activeWallet.name}] không đủ (${formatVndAmount(activeWallet.balance.value)}). Hãy chọn ví khác.",
                             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                            color = ExpenseRed,
+                            color = tokens.error,
                         )
                     }
                 }
@@ -1046,13 +1041,13 @@ private fun QuickPayBottomSheet(
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = tokens.primary,
-                        disabledContainerColor = if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0),
+                        disabledContainerColor = tokens.surfaceSoft,
                     ),
                 ) {
                     Text(
                         text = if (parsedAmount > 0) "Ghi nhận • ${formatVndAmount(parsedAmount)}" else "Ghi nhận thanh toán",
                         fontWeight = FontWeight.Bold,
-                        color = if (canConfirm) (if (tokens.isDark) Color(0xFF002B3D) else Color.White) else Color(0xFF94A3B8),
+                        color = if (canConfirm) tokens.onHero else tokens.textSecondary,
                     )
                 }
             }

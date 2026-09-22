@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.25.9] - 2026-09-22
+### Added
+- **Khởi Tạo Trục Quy Chuẩn Kiến Trúc & Triệt Tiêu Số Ma Thuật (Phase 1 Governance & Zero Magic Numbers)**:
+  * Khởi tạo `FinanceBusinessConstants.kt`: Quản lý tập trung 100% ngưỡng cảnh báo ngân sách (80%, 100%), tỷ lệ trả nợ thẻ tín dụng tối thiểu (3%), số tiền thanh toán nợ tối thiểu (50.000 đ), số ngày mặc định mục tiêu (180 ngày).
+  * Khởi tạo `AppSystemConfig.kt`: Quản lý tập trung các hằng số kỹ thuật & hạ tầng (Firestore batch chunk size 400 docs, giới hạn backup warning 50.000 tx, Alarm Request Codes `9925`, `9926`, `73091`, `73092`, múi giờ mặc định `"Asia/Ho_Chi_Minh"`).
+  * Khởi tạo `FirestoreSchema.kt`: Quản lý tập trung strongly-typed collection paths (`users`, `transactions`, `wallets`, `budgets`, `debts`, `goals`, `reminders`, `deals`, `saving_spins`, `notifications`) và common field keys (`spentAmount`, `balance`, `updatedAt`, `createdAt`, `userId`), triệt tiêu 100% string literal thô trong Data Layer.
+  * Mở rộng `AGENTS.md` và `docs/RULE_MAPPING_MATRIX.md` với 5 điều khoản quản trị mới (Điều II.11: Zero Magic Numbers, Điều II.12: Firestore Schema Governance, Điều II.13: Anti-Code Defragmentation & SSoT, Điều II.14: Strict DRY & Chống Clone Màn Hình, Điều II.15 & II.16: Dead Code Elimination & Strict Encapsulation).
+
+- **Chuẩn Hóa Toàn Diện Design System Dynamic Tokens (Phase 2 Master Refactor - Batches 2.1 Đến 2.10)**:
+  * Rà soát và chuẩn hóa hơn 1.000 vị trí màu thô, màu tĩnh và các hằng số legacy trên hơn 40 màn hình và bottom sheets.
+  * Đưa 100% giao diện kế thừa trực tiếp từ `LocalFinluxTokens.current` và `FinluxColors`:
+    - `tokens.surface`, `tokens.surfaceSoft`, `tokens.border`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`.
+    - `tokens.onHero`, `tokens.onHeroMuted`, `tokens.heroGradient`, `tokens.primaryGradient`, `tokens.heroGlassSurface`.
+    - Bảng màu ngữ nghĩa tài chính: `FinluxColors.IncomeGreen`, `FinluxColors.ExpenseRed`, `FinluxColors.TransferBlue`, `FinluxColors.WarningAmber`, `FinluxColors.BudgetViolet`, `FinluxColors.PrimaryBlue`, `FinluxColors.PrimaryViolet`, `FinluxColors.PrimaryCyan`.
+  * Khai báo chặt chẽ scope `val tokens = LocalFinluxTokens.current` trong 100% private Composable functions và Canvas drawing lambdas (`PrismDonutChart`, `PrismReportsHeroBanner`, `PrismDebtsHeroCard`, `PrismBudgetsHeroCard`, `PrismWalletsHeroCard`).
+  * Quy hoạch toàn bộ bảng màu biểu đồ (Chart & Analytics Palettes) và Bento Grid / Hero Cards sang hệ thống Design Tokens & FinluxColors nhất quán.
+
+### Fixed
+- **Khắc Phục Regression Màn Hình Splash (Brand Hero Luxury Gradient)**:
+  * Khôi phục dải gradient thương hiệu sâu sắc sang trọng `Brush.verticalGradient(listOf(Color(0xFF0E1630), Color(0xFF171F4C), Color(0xFF261D5C), Color(0xFF34175E)))` (Deep Midnight Navy -> Deep Indigo -> Royal Violet -> Deep Royal Purple).
+  * Chữ **Fin** màu trắng sáng sắc nét (`tokens.onHero`), chữ **Lux** đổ dốc màu xanh tím thương hiệu, slogan và spinner loading màu trắng mờ tương phản cao.
+  * Đồng bộ icon thanh trạng thái (Status Bar) sáng trên nền tối (`isAppearanceLightStatusBars = false`).
+
+### Changed
+- Cập nhật `versionCode = 183` và `versionName = "1.25.9"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md`, `docs/BACKLOG.md` và `docs/RULE_MAPPING_MATRIX.md`.
+- Toàn bộ 521/521 unit tests PASS 100% (0 failures, 0 skipped).
+
 ## [1.25.8] - 2026-09-21
 ### Added
 - **Tính Năng Xóa Tài Khoản Vĩnh Viễn & Dọn Dẹp Dữ Liệu Toàn Diện (Account Deletion & Data Purge - Phase 1 & 2)**:

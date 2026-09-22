@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
@@ -51,7 +52,7 @@ class FirebaseWalletRepository(
             firestore.runBatch { batch ->
                 allWalletsSnapshot.documents.forEach { doc ->
                     if (doc.id != id) {
-                        batch.update(doc.reference, "isDefault", false)
+                        batch.update(doc.reference, FirestoreSchema.Fields.IS_DEFAULT, false)
                     }
                 }
                 if (exists) {

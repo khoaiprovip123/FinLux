@@ -42,17 +42,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.finlux.app.core.designsystem.FinluxBlue
-import com.finlux.app.core.designsystem.FinluxCyan
-import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.LocalUiPreferences
 import com.finlux.app.core.designsystem.modern.GlassBottomNav
 import com.finlux.app.core.designsystem.modern.GlassFab
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.navigation.Route
 import com.finlux.app.domain.model.VisualStyle
 
 @Composable
 fun ModernMainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, onAdd: () -> Unit) {
+    val tokens = LocalFinluxTokens.current
     GlassBottomNav(Modifier.fillMaxWidth()) {
         DestinationItem(Route.Home, "Trang chủ", selectedRoute, onNavigate, Icons.Filled.Home, Icons.Outlined.Home)
         DestinationItem(Route.Transactions, "Giao dịch", selectedRoute, onNavigate, Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong)
@@ -65,7 +64,7 @@ fun ModernMainBottomBar(selectedRoute: String, onNavigate: (String) -> Unit, onA
                     Icons.Default.Add,
                     contentDescription = "Thêm giao dịch",
                     modifier = Modifier.size(28.dp),
-                    tint = Color.White,
+                    tint = tokens.onHero,
                 )
             }
         }
@@ -90,18 +89,12 @@ private fun RowScope.DestinationItem(
     selectedIcon: ImageVector,
     unselectedIcon: ImageVector,
 ) {
-    val preferences = LocalUiPreferences.current
-    val style = preferences.visualStyle
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.4f
+    val tokens = LocalFinluxTokens.current
     val selected = selectedRoute == route.value
     val interactionSource = remember { MutableInteractionSource() }
 
-    val selectedColor = when (style) {
-        VisualStyle.MODERN_DARK -> if (dark) Color(0xFF38BDF8) else Color(0xFF176BDF)
-        VisualStyle.GLASSMORPHISM -> if (dark) Color(0xFFC4B5FD) else FinluxPurple
-        VisualStyle.DYNAMIC_GRADIENT -> if (dark) FinluxCyan else FinluxBlue
-    }
-    val unselectedColor = if (dark) Color(0xFF8E9EB5) else Color(0xFF64748B)
+    val selectedColor = tokens.primary
+    val unselectedColor = tokens.onSurfaceVariant.copy(alpha = if (tokens.isDark) 0.7f else 0.85f)
 
     val scale by animateFloatAsState(
         targetValue = if (selected) 1.05f else 1f,

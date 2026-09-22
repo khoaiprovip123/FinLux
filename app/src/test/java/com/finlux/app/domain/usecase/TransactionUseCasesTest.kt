@@ -156,6 +156,7 @@ class TransactionUseCasesTest {
                 )
             )
         )
+        repository.budgetRepo = fakeBudgetRepo
         val fakeNotiRepo = FakeNotificationRepository()
         val useCase = AddTransactionUseCase(
             repository = repository,
@@ -189,6 +190,7 @@ class TransactionUseCasesTest {
                 )
             )
         )
+        repository.budgetRepo = fakeBudgetRepo
         val fakeNotiRepo = FakeNotificationRepository()
         val useCase = AddTransactionUseCase(
             repository = repository,
@@ -207,6 +209,48 @@ class TransactionUseCasesTest {
     }
 
     @Test
+    fun `add expense does not double count budget spent amount in alert calculation`() = runTest {
+        // Hạn mức: 60.000 đ. Đã tiêu: 26.395 đ.
+        // Ngưỡng 80%: 48.000 đ. Ngưỡng 100%: 60.000 đ.
+        val fakeBudgetRepo = FakeBudgetRepository(
+            mutableListOf(
+                com.finlux.app.domain.model.Budget(
+                    id = "food_month:2026-08",
+                    categoryId = "food",
+                    periodKey = "month:2026-08",
+                    limitAmount = Money(60_000),
+                    spentAmount = Money(26_395),
+                    notified80 = false,
+                    notified100 = false,
+                )
+            )
+        )
+        repository.budgetRepo = fakeBudgetRepo
+        val fakeNotiRepo = FakeNotificationRepository()
+        val useCase = AddTransactionUseCase(
+            repository = repository,
+            walletRepository = walletRepository,
+            budgetRepository = fakeBudgetRepo,
+            notificationRepository = fakeNotiRepo,
+        )
+
+        // Tạo giao dịch 30.000 đ -> Tổng chi tiêu thực tế sau khi repository ghi sổ là 56.395 đ
+        // 56.395 >= 48.000 (vượt 80%) -> BẮT BUỘC chỉ kích hoạt thông báo 80%.
+        // NẾU BỊ DOUBLE-COUNTING: 56.395 + 30.000 = 86.395 >= 60.000 -> sẽ kích hoạt sai thông báo 100%!
+        val tx = validTransaction().copy(amount = Money(30_000))
+        val result = useCase(tx)
+
+        assertEquals(AppResult.Success("generated-id"), result)
+        assertEquals(1, fakeNotiRepo.savedNotifications.size)
+        val noti = fakeNotiRepo.savedNotifications.first()
+        assertEquals(com.finlux.app.domain.model.NotificationType.BUDGET_ALERT, noti.type)
+        assertEquals(Money(56_395), noti.amount)
+        assertEquals(true, fakeBudgetRepo.budgets.first().notified80)
+        assertEquals(false, fakeBudgetRepo.budgets.first().notified100)
+        assertEquals(Money(56_395), fakeBudgetRepo.budgets.first().spentAmount)
+    }
+
+    @Test
     fun `edit expense triggers budget alert when amount increased across 80 percent threshold`() = runTest {
         val fakeBudgetRepo = FakeBudgetRepository(
             mutableListOf(
@@ -221,6 +265,7 @@ class TransactionUseCasesTest {
                 )
             )
         )
+        repository.budgetRepo = fakeBudgetRepo
         val fakeNotiRepo = FakeNotificationRepository()
         val useCase = EditTransactionUseCase(
             repository = repository,
@@ -327,6 +372,7 @@ private class RecordingTransactionRepository : TransactionRepository {
     var editCalls = 0
     var deleteCalls = 0
     var transferCalls = 0
+    var budgetRepo: FakeBudgetRepository? = null
 
     override fun observeRecent(limit: Int): Flow<List<FinanceTransaction>> = flowOf(emptyList())
 
@@ -345,6 +391,13 @@ private class RecordingTransactionRepository : TransactionRepository {
 
     override suspend fun addWithBalanceUpdate(transaction: FinanceTransaction): AppResult<String> {
         addCalls++
+        budgetRepo?.let { repo ->
+            val b = repo.budgets.firstOrNull { it.categoryId == transaction.categoryId }
+            if (b != null) {
+                repo.budgets.remove(b)
+                repo.budgets.add(b.copy(spentAmount = Money(b.spentAmount.value + transaction.amount.value)))
+            }
+        }
         return AppResult.Success("generated-id")
     }
 
@@ -353,6 +406,18 @@ private class RecordingTransactionRepository : TransactionRepository {
         updated: FinanceTransaction,
     ): AppResult<Unit> {
         editCalls++
+        budgetRepo?.let { repo ->
+            val b = repo.budgets.firstOrNull { it.categoryId == updated.categoryId }
+            if (b != null) {
+                val delta = if (original.categoryId == updated.categoryId) {
+                    updated.amount.value - original.amount.value
+                } else {
+                    updated.amount.value
+                }
+                repo.budgets.remove(b)
+                repo.budgets.add(b.copy(spentAmount = Money(b.spentAmount.value + delta)))
+            }
+        }
         return AppResult.Success(Unit)
     }
 

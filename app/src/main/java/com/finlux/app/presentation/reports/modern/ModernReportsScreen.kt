@@ -54,14 +54,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.finlux.app.core.designsystem.ExpenseRed
-import com.finlux.app.core.designsystem.FinluxBlue
-import com.finlux.app.core.designsystem.FinluxCyan
-import com.finlux.app.core.designsystem.FinluxPurple
-import com.finlux.app.core.designsystem.FinluxTextSecondary
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.modern.GlassTopBar
 import com.finlux.app.core.designsystem.FinluxPanel
-import com.finlux.app.core.designsystem.IncomeGreen
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.walletIcon
 import com.finlux.app.core.navigation.Route
@@ -77,7 +73,14 @@ import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.FinanceTransaction
 import com.finlux.app.presentation.transaction.TransactionDetailSheet
 
-private val ChartColors = listOf(FinluxBlue, FinluxPurple, FinluxCyan, IncomeGreen, Color(0xFFFFB347), ExpenseRed)
+private val ChartColors = listOf(
+    FinluxColors.PrimaryBlue,
+    FinluxColors.PrimaryViolet,
+    FinluxColors.PrimaryCyan,
+    FinluxColors.IncomeGreen,
+    FinluxColors.WarningAmber,
+    FinluxColors.ExpenseRed,
+)
 
 @Composable
 fun ModernReportsScreen(
@@ -181,11 +184,11 @@ fun ModernReportsScreen(
                             )
                         }
                         Row(Modifier.fillMaxWidth().height(70.dp), verticalAlignment = Alignment.CenterVertically) {
-                            ReportAmount("Thu nhập", state.summary.income.value, state.previousIncome, IncomeGreen, Modifier.weight(1f))
+                            ReportAmount("Thu nhập", state.summary.income.value, state.previousIncome, FinluxColors.IncomeGreen, Modifier.weight(1f))
                             VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .40f), modifier = Modifier.height(44.dp))
-                            ReportAmount("Chi tiêu", state.summary.expense.value, state.previousExpense, ExpenseRed, Modifier.weight(1f))
+                            ReportAmount("Chi tiêu", state.summary.expense.value, state.previousExpense, FinluxColors.ExpenseRed, Modifier.weight(1f))
                             VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .40f), modifier = Modifier.height(44.dp))
-                            ReportAmount("Dòng tiền", state.summary.net, state.previousIncome - state.previousExpense, if (state.summary.net >= 0) IncomeGreen else ExpenseRed, Modifier.weight(1f))
+                            ReportAmount("Dòng tiền", state.summary.net, state.previousIncome - state.previousExpense, if (state.summary.net >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed, Modifier.weight(1f))
                         }
                         if (state.selectedWallet != null && (state.totalTransferOut > 0 || state.totalTransferIn > 0)) {
                             Row(
@@ -199,13 +202,13 @@ fun ModernReportsScreen(
                                 Text(
                                     text = "Chuyển tiền: -${formatVndAmount(state.totalTransferOut)}" + if (state.totalTransferIn > 0) " | Nhận: +${formatVndAmount(state.totalTransferIn)}" else "",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFFF97316)
+                                    color = FinluxColors.WarningAmber
                                 )
                                 Text(
                                     text = "Biến động ví: ${if (state.currentWalletNetChange >= 0) "+" else ""}${formatVndAmount(state.currentWalletNetChange)}",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (state.currentWalletNetChange >= 0) IncomeGreen else ExpenseRed
+                                    color = if (state.currentWalletNetChange >= 0) FinluxColors.IncomeGreen else FinluxColors.ExpenseRed
                                 )
                             }
                         }
@@ -314,7 +317,7 @@ fun ModernReportsScreen(
         DatePickerDialog(
             onDismissRequest = { showRangePicker = false },
             colors = androidx.compose.material3.DatePickerDefaults.colors(
-                containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                containerColor = tokens.surface,
             ),
             shape = RoundedCornerShape(28.dp),
             confirmButton = {
@@ -335,7 +338,7 @@ fun ModernReportsScreen(
             DateRangePicker(
                 state = rangeState,
                 colors = androidx.compose.material3.DatePickerDefaults.colors(
-                    containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+                    containerColor = tokens.surface,
                     titleContentColor = tokens.onSurface,
                     headlineContentColor = tokens.onSurface,
                     weekdayContentColor = tokens.onSurfaceVariant,
@@ -458,7 +461,7 @@ private fun ReportAmount(label: String, amount: Long, previous: Long, color: Col
         Text(amount.toShortVnd(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, maxLines = 1)
         Text(
             "${if (change >= 0) "▲" else "▼"} ${kotlin.math.abs(change)}%",
-            color = if (change >= 0) color else ExpenseRed,
+            color = if (change >= 0) color else FinluxColors.ExpenseRed,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
         )
@@ -510,6 +513,7 @@ private fun CategoryBlock(
     modifier: Modifier,
     onCategoryClick: ((Category) -> Unit)? = null,
 ) {
+    val tokens = LocalFinluxTokens.current
     val accent = ChartColors[index % ChartColors.size]
     val isSmall = index >= 3
     val percent = (item.amount * 100 / total).coerceAtLeast(1)
@@ -526,13 +530,13 @@ private fun CategoryBlock(
             Icon(
                 imageVector = com.finlux.app.core.designsystem.categoryIcon(item.category?.icon.orEmpty()),
                 contentDescription = item.category?.name,
-                tint = Color.White,
+                tint = tokens.onHero,
                 modifier = Modifier.size(16.dp),
             )
         } else {
             Text(
                 text = item.category?.name ?: "Khác",
-                color = Color.White,
+                color = tokens.onHero,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -542,14 +546,14 @@ private fun CategoryBlock(
         Column {
             Text(
                 text = "$percent%",
-                color = Color.White,
+                color = tokens.onHero,
                 style = if (index == 0) MaterialTheme.typography.titleLarge else if (isSmall) MaterialTheme.typography.labelMedium else MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
             if (!isSmall) {
                 Text(
                     text = item.amount.toShortVnd(),
-                    color = Color.White.copy(alpha = .88f),
+                    color = tokens.onHeroMuted,
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                 )
@@ -560,6 +564,7 @@ private fun CategoryBlock(
 
 @Composable
 private fun CashFlowChart(items: List<CashFlowPoint>) {
+    val tokens = LocalFinluxTokens.current
     val visible = if (items.size <= 31) items else items.takeLast(31)
     val max = visible.maxOfOrNull { maxOf(it.income, it.expense) }?.coerceAtLeast(1) ?: 1
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .36f)
@@ -568,8 +573,8 @@ private fun CashFlowChart(items: List<CashFlowPoint>) {
     val focus = visible.getOrNull(focusIndex)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("— Thu nhập", color = FinluxBlue, style = MaterialTheme.typography.bodyMedium)
-            Text("— Chi tiêu", color = ExpenseRed, style = MaterialTheme.typography.bodyMedium)
+            Text("— Thu nhập", color = FinluxColors.PrimaryBlue, style = MaterialTheme.typography.bodyMedium)
+            Text("— Chi tiêu", color = FinluxColors.ExpenseRed, style = MaterialTheme.typography.bodyMedium)
         }
         BoxWithConstraints(Modifier.fillMaxWidth().height(205.dp)) {
             Canvas(Modifier.fillMaxSize()) {
@@ -588,17 +593,17 @@ private fun CashFlowChart(items: List<CashFlowPoint>) {
                         if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
                     }
                 }
-                drawPath(linePath { it.income }, FinluxBlue, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
-                drawPath(linePath { it.expense }, ExpenseRed, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(linePath { it.income }, FinluxColors.PrimaryBlue, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(linePath { it.expense }, FinluxColors.ExpenseRed, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
                 visible.forEachIndexed { index, item ->
                     val income = point(index, item.income); val expense = point(index, item.expense)
-                    drawCircle(FinluxBlue, 3.dp.toPx(), income); drawCircle(ExpenseRed, 3.dp.toPx(), expense)
+                    drawCircle(FinluxColors.PrimaryBlue, 3.dp.toPx(), income); drawCircle(FinluxColors.ExpenseRed, 3.dp.toPx(), expense)
                 }
                 if (focus != null) {
                     val x = focusIndex * step
                     drawLine(focusLineColor, Offset(x, chartTop), Offset(x, chartBottom), 1.dp.toPx())
-                    drawCircle(Color.White, 5.dp.toPx(), point(focusIndex, focus.income)); drawCircle(FinluxBlue, 3.dp.toPx(), point(focusIndex, focus.income))
-                    drawCircle(Color.White, 5.dp.toPx(), point(focusIndex, focus.expense)); drawCircle(ExpenseRed, 3.dp.toPx(), point(focusIndex, focus.expense))
+                    drawCircle(tokens.surface, 5.dp.toPx(), point(focusIndex, focus.income)); drawCircle(FinluxColors.PrimaryBlue, 3.dp.toPx(), point(focusIndex, focus.income))
+                    drawCircle(tokens.surface, 5.dp.toPx(), point(focusIndex, focus.expense)); drawCircle(FinluxColors.ExpenseRed, 3.dp.toPx(), point(focusIndex, focus.expense))
                 }
             }
             focus?.let { point ->
@@ -613,15 +618,15 @@ private fun CashFlowChart(items: List<CashFlowPoint>) {
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(point.date.format(DateTimeFormatter.ofPattern("dd/MM")), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                        Text("● Thu: ${point.income.toShortVnd()}", color = FinluxBlue, style = MaterialTheme.typography.labelSmall)
-                        Text("● Chi: ${point.expense.toShortVnd()}", color = ExpenseRed, style = MaterialTheme.typography.labelSmall)
+                        Text("● Thu: ${point.income.toShortVnd()}", color = FinluxColors.PrimaryBlue, style = MaterialTheme.typography.labelSmall)
+                        Text("● Chi: ${point.expense.toShortVnd()}", color = FinluxColors.ExpenseRed, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            visible.firstOrNull()?.let { Text(it.date.format(DateTimeFormatter.ofPattern("dd/MM")), style = MaterialTheme.typography.bodyMedium, color = FinluxTextSecondary) }
-            visible.lastOrNull()?.let { Text(it.date.format(DateTimeFormatter.ofPattern("dd/MM")), style = MaterialTheme.typography.bodyMedium, color = FinluxTextSecondary) }
+            visible.firstOrNull()?.let { Text(it.date.format(DateTimeFormatter.ofPattern("dd/MM")), style = MaterialTheme.typography.bodyMedium, color = tokens.textSecondary) }
+            visible.lastOrNull()?.let { Text(it.date.format(DateTimeFormatter.ofPattern("dd/MM")), style = MaterialTheme.typography.bodyMedium, color = tokens.textSecondary) }
         }
     }
 }
@@ -641,7 +646,7 @@ private fun WalletReport(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items.take(5).forEach { item ->
             val wallet = item.wallet
-            val accent = wallet?.let { colorFromHex(it.colorHex) } ?: FinluxBlue
+            val accent = wallet?.let { colorFromHex(it.colorHex) } ?: FinluxColors.PrimaryBlue
             val percent = (item.total * 100 / total).toInt()
             val isSelected = wallet != null && wallet.id == selectedWalletId
             val spending = spendingDetails.find { it.wallet.id == wallet?.id }
@@ -679,14 +684,14 @@ private fun WalletReport(
                                     Text(
                                         "Chi: ${spending.expenseInPeriod.toShortVnd()}",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = ExpenseRed
+                                        color = FinluxColors.ExpenseRed
                                     )
                                 }
                                 if (spending.transferOutInPeriod > 0L) {
                                     Text(
                                         "Chuyển: -${spending.transferOutInPeriod.toShortVnd()}",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFFF97316)
+                                        color = FinluxColors.WarningAmber
                                     )
                                 }
                             }
@@ -710,5 +715,6 @@ private fun WalletReport(
 
 @Composable
 private fun EmptyChartText() {
-    Text("Chưa có dữ liệu trong khoảng thời gian này", color = FinluxTextSecondary, modifier = Modifier.padding(vertical = 34.dp))
+    val tokens = LocalFinluxTokens.current
+    Text("Chưa có dữ liệu trong khoảng thời gian này", color = tokens.textSecondary, modifier = Modifier.padding(vertical = 34.dp))
 }

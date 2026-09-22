@@ -28,7 +28,7 @@ class SystemFinanceClock @Inject constructor() : FinanceClock {
  * budgets, reports, dashboards, and salary cycles.
  */
 object FinanceTime {
-    val VIETNAM_ZONE: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+    val VIETNAM_ZONE: ZoneId = com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID
 
     /** Stable default used by all financial calculations unless an explicit user zone is supplied. */
     val defaultZone: ZoneId

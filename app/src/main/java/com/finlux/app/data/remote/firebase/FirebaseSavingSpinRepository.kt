@@ -17,6 +17,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -244,15 +245,15 @@ class FirebaseSavingSpinRepository(
     private fun configRef(uid: String) = userRef(uid).collection(CONFIGS).document(DEFAULT_CONFIG)
     private fun sessionRef(uid: String, scheduleKey: String): DocumentReference =
         userRef(uid).collection(SESSIONS).document(sanitizeKey(scheduleKey))
-    private fun userRef(uid: String) = firestore.collection("users").document(uid)
+    private fun userRef(uid: String) = firestore.collection(FirestoreSchema.USERS).document(uid)
     private fun requireUid(): String = auth.currentUser?.uid ?: error("Phiên đăng nhập đã hết hạn")
     private fun sanitizeKey(key: String) = key.replace(':', '_').replace('/', '_').replace('.', '_')
     private fun Instant.toTimestamp() = Timestamp(Date.from(this))
 
     companion object {
-        private const val CONFIGS = "savingSpinConfigs"
-        private const val DESTINATIONS = "savingSpinDestinations"
-        private const val SESSIONS = "savingSpinSessions"
-        private const val DEFAULT_CONFIG = "default"
+        private const val CONFIGS = FirestoreSchema.Collections.SAVING_SPIN_CONFIGS
+        private const val DESTINATIONS = FirestoreSchema.Collections.SAVING_SPIN_DESTINATIONS
+        private const val SESSIONS = FirestoreSchema.Collections.SAVING_SPIN_SESSIONS
+        private const val DEFAULT_CONFIG = FirestoreSchema.Documents.DEFAULT
     }
 }

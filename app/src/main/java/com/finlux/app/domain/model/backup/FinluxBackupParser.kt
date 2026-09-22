@@ -271,7 +271,7 @@ object FinluxBackupParser {
             savingsWalletId = if (obj.has("savingsWalletId") && !obj.isNull("savingsWalletId")) obj.getString("savingsWalletId") else null,
             rolloverRule = obj.optString("rolloverRule", "KEEP_IN_WALLET"),
             budgetPeriodBasis = obj.optString("budgetPeriodBasis", "CALENDAR_MONTH"),
-            financeTimeZone = obj.optString("financeTimeZone", "Asia/Ho_Chi_Minh"),
+            financeTimeZone = obj.optString("financeTimeZone", com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_NAME),
             updatedAt = obj.optString("updatedAt", ""),
         )
     }

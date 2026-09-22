@@ -86,7 +86,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.navigationBarsPadding
-import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.FinluxTextStyles
 import com.finlux.app.core.designsystem.GlassCard
@@ -118,6 +117,7 @@ fun GoalsScreen(onBack: () -> Unit, viewModel: GoalsViewModel = hiltViewModel())
     val wallets by viewModel.wallets.collectAsStateWithLifecycle()
     val transactionSheetState by viewModel.transactionSheet.collectAsStateWithLifecycle()
     var showEditor by remember { mutableStateOf(false) }
+    val tokens = LocalFinluxTokens.current
 
     Box(Modifier.fillMaxSize()) {
         FinluxStyleBackdrop(Modifier.fillMaxSize())
@@ -148,9 +148,9 @@ fun GoalsScreen(onBack: () -> Unit, viewModel: GoalsViewModel = hiltViewModel())
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Icon(Icons.Default.Savings, null, Modifier.size(58.dp), tint = FinluxPurple)
+                    Icon(Icons.Default.Savings, null, Modifier.size(58.dp), tint = tokens.primary)
                     Text("Chưa có mục tiêu", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Tạo kế hoạch tích lũy đầu tiên của anh.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Tạo kế hoạch tích lũy đầu tiên của anh.", color = tokens.textSecondary)
                     Button({ showEditor = true }, Modifier.padding(top = 18.dp)) {
                         Icon(Icons.Default.Add, null)
                         Spacer(Modifier.width(4.dp))
@@ -207,9 +207,11 @@ private fun GoalCard(
     val percentInt = (progress * 100).toInt()
     val isCompleted = goal.savedAmount.value >= goal.targetAmount.value && goal.targetAmount.value > 0L
 
+    val goalAccent = if (isCompleted) FinluxColors.IncomeGreen else tokens.primary
+
     WaterGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        tint = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+        tint = goalAccent,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -224,7 +226,7 @@ private fun GoalCard(
                     modifier = Modifier
                         .size(42.dp)
                         .background(
-                            (if (isCompleted) Color(0xFF10B981) else FinluxPurple).copy(alpha = 0.16f),
+                            goalAccent.copy(alpha = 0.16f),
                             CircleShape,
                         ),
                     contentAlignment = Alignment.Center,
@@ -232,7 +234,7 @@ private fun GoalCard(
                     Icon(
                         imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.Savings,
                         contentDescription = null,
-                        tint = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+                        tint = goalAccent,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -276,7 +278,7 @@ private fun GoalCard(
                     Text(
                         text = "Tiến độ: $percentInt%",
                         style = FinluxTextStyles.Caption.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
-                        color = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+                        color = goalAccent,
                     )
                     Text(
                         text = "${formatVndAmount(goal.savedAmount.value)} / ${formatVndAmount(goal.targetAmount.value)}",
@@ -291,7 +293,7 @@ private fun GoalCard(
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(CircleShape),
-                    color = if (isCompleted) Color(0xFF10B981) else FinluxPurple,
+                    color = goalAccent,
                     trackColor = tokens.surfaceSoft,
                 )
             }
@@ -316,8 +318,8 @@ private fun GoalCard(
                         .height(40.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = FinluxPurple,
-                        contentColor = Color.White,
+                        containerColor = tokens.primary,
+                        contentColor = tokens.onHero,
                     ),
                     contentPadding = PaddingValues(horizontal = 12.dp),
                 ) {
@@ -452,7 +454,7 @@ private fun GoalDepositWithdrawSheet(
             state.error?.let {
                 Text(
                     text = it,
-                    color = MaterialTheme.colorScheme.error,
+                    color = tokens.error,
                     style = FinluxTextStyles.Caption,
                 )
             }
@@ -467,7 +469,7 @@ private fun GoalDepositWithdrawSheet(
                 enabled = !state.isSubmitting,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isDeposit) tokens.primary else FinluxColors.ExpenseRed,
-                    contentColor = Color.White,
+                    contentColor = tokens.onHero,
                 ),
             ) {
                 Text(
@@ -496,6 +498,7 @@ private fun GoalDepositWithdrawSheet(
 
 @Composable
 fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel()) {
+    val tokens = LocalFinluxTokens.current
     val state by viewModel.editor.collectAsStateWithLifecycle()
     val imagePicker = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> viewModel.setImage(uri?.toString()) }
     BackHandler(onBack = onDismiss)
@@ -511,7 +514,7 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Box(Modifier.size(78.dp).background(FinluxPurple.copy(alpha = .18f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Savings, null, Modifier.size(40.dp), tint = FinluxPurple) } } }
+                item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Box(Modifier.size(78.dp).background(tokens.primary.copy(alpha = .18f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Savings, null, Modifier.size(40.dp), tint = tokens.primary) } } }
                 item { OutlinedTextField(state.name, viewModel::setName, Modifier.fillMaxWidth(), label = { Text("Tên mục tiêu") }, placeholder = { Text("VD: Mua ô tô") }, singleLine = true) }
                 item {
                     ErgonomicCompactAmountCard(
@@ -519,7 +522,7 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
                         amountText = state.targetInput,
                         onAmountChange = viewModel::setTarget,
                         placeholder = "0",
-                        amountColor = FinluxPurple,
+                        amountColor = tokens.primary,
                         showSuggestions = true,
                     )
                 }
@@ -543,8 +546,8 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
                     )
                 }
                 item { Text("Ảnh mục tiêu", fontWeight = FontWeight.Bold) }
-                item { WaterGlassCard(Modifier.fillMaxWidth().height(108.dp), tint = FinluxPurple, onClick = { imagePicker.launch("image/*") }) { Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(Icons.Default.Image, null, tint = FinluxPurple); Text(if (state.imageUri == null) "Chọn ảnh minh họa" else "Đã chọn ảnh mục tiêu", fontWeight = FontWeight.Medium); if (state.imageUri != null) Text("Chạm để đổi ảnh", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } } }
-                state.error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
+                item { WaterGlassCard(Modifier.fillMaxWidth().height(108.dp), tint = tokens.primary, onClick = { imagePicker.launch("image/*") }) { Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(Icons.Default.Image, null, tint = tokens.primary); Text(if (state.imageUri == null) "Chọn ảnh minh họa" else "Đã chọn ảnh mục tiêu", fontWeight = FontWeight.Medium); if (state.imageUri != null) Text("Chạm để đổi ảnh", style = MaterialTheme.typography.labelSmall, color = tokens.textSecondary) } } }
+                state.error?.let { item { Text(it, color = tokens.error) } }
                 item { Button(viewModel::save, Modifier.fillMaxWidth().height(54.dp), enabled = !state.saving) { Text(if (state.saving) "Đang lưu…" else "Lưu mục tiêu", fontWeight = FontWeight.Bold) } }
             }
         }
@@ -553,10 +556,11 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
 
 @Composable
 private fun GoalCategoryChip(option: GoalCategory, selected: Boolean, onClick: () -> Unit) {
+    val tokens = LocalFinluxTokens.current
     GlassCard(Modifier.size(width = 74.dp, height = 74.dp), onClick = onClick) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Icon(option.icon, null, tint = if (selected) FinluxPurple else MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(option.label, style = MaterialTheme.typography.labelSmall, color = if (selected) FinluxPurple else MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(option.icon, null, tint = if (selected) tokens.primary else tokens.textSecondary)
+            Text(option.label, style = MaterialTheme.typography.labelSmall, color = if (selected) tokens.primary else tokens.textSecondary)
         }
     }
 }

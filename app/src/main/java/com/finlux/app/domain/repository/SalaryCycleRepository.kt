@@ -1,6 +1,7 @@
 package com.finlux.app.domain.repository
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.FinanceBusinessConstants
 import com.finlux.app.domain.model.SalaryCycleConfig
 import com.finlux.app.domain.model.SalaryCycleConfigRecord
 import java.time.Instant
@@ -17,7 +18,7 @@ interface SalaryCycleRepository {
 
     fun observeTimeline(): Flow<List<SalaryCycleConfigRecord>> = kotlinx.coroutines.flow.flowOf(emptyList())
     suspend fun getConfigAt(instant: Instant): SalaryCycleConfig = SalaryCycleConfig()
-    suspend fun getConfigAt(date: LocalDate, zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")): SalaryCycleConfig {
+    suspend fun getConfigAt(date: LocalDate, zoneId: ZoneId = FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID): SalaryCycleConfig {
         val instant = date.atStartOfDay(zoneId).toInstant()
         return getConfigAt(instant)
     }
