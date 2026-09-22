@@ -6,6 +6,16 @@ import java.time.YearMonth
 enum class TransactionType { INCOME, EXPENSE, TRANSFER_OUT, TRANSFER_IN }
 enum class CategoryType { INCOME, EXPENSE }
 enum class WalletType { CASH, BANK, EWALLET, CARD, INVESTMENT, OTHER }
+
+val WalletType.label: String get() = when (this) {
+    WalletType.CASH -> "Tiền mặt"
+    WalletType.BANK -> "Ngân hàng"
+    WalletType.EWALLET -> "Ví điện tử"
+    WalletType.CARD -> "Thẻ tín dụng"
+    WalletType.INVESTMENT -> "Đầu tư"
+    WalletType.OTHER -> "Ví khác"
+}
+
 enum class ThemePreference { LIGHT, DARK, SYSTEM }
 enum class AppUiStyle {
     CLASSIC_LIQUID, MODERN_LUXURY, PRISM;

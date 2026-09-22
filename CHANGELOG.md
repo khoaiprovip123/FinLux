@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.25.11] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm WalletsScreen (Phase 3 - Batch 3.1: Adaptive Wallets Architecture)**:
+  * Tái cấu trúc `WalletsScreen.kt` thành Composable Screen hoàn chỉnh duy nhất, hợp nhất toàn bộ ViewModel state collection, Dialogs, BottomSheet và các luồng quản lý ví.
+  * Tự động thích ứng bề mặt qua `FinluxAdaptiveCard`, `FinluxAdaptiveTopBar`, `GradientHeroCard` và `FinluxHeroCard` theo `LocalAppUiStyle`.
+  * Trích xuất tập trung `WalletType.label` vào `FinanceModels.kt`, loại bỏ toàn bộ duplicate label mapping.
+  * Xóa sổ hoàn toàn 3 file màn hình trùng lặp: `ClassicWalletsScreen.kt`, `ModernWalletsScreen.kt`, `PrismWalletsScreen.kt` (giảm hơn 110 KB mã nguồn dư thừa).
+
+### Changed
+- Cập nhật `versionCode = 185` và `versionName = "1.25.11"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
 ## [1.25.10] - 2026-09-22
 ### Added
 - **Xây Dựng Bộ Adaptive Components Cơ Sở (Phase 3 - Batch 3.0: Design System Core)**:
