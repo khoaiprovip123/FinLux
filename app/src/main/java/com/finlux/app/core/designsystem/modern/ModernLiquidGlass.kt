@@ -212,19 +212,6 @@ fun LiquidGlassSurface(
     }
 }
 
-/** Blur the scrolling background layer that sits behind glass chrome on Android 12+. */
-fun Modifier.finluxBackgroundBlur(radius: Dp = 18.dp): Modifier =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        graphicsLayer {
-            renderEffect = RenderEffect.createBlurEffect(
-                radius.toPx(),
-                radius.toPx(),
-                Shader.TileMode.CLAMP,
-            ).asComposeRenderEffect()
-        }
-    } else {
-        this
-    }
 
 /**
  * Interactive Liquid Glass Card with spring physics haptic feel.

@@ -1,7 +1,7 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.9 (versionCode 183)
+- **Phiên bản hiện tại:** v1.25.10 (versionCode 184)
 - **Trạng thái Build:** ✅ 100% PASS (521/521 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
@@ -16,6 +16,28 @@
 - [x] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
+
+### [Task-PHASE-3-BATCH-3.0] — Xây Dựng Bộ Adaptive Components Cơ Sở (Design System Core)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Tạo `FinluxAdaptiveCard.kt` và `FinluxAdaptiveTopBar.kt` tự động render bề mặt kính theo `LocalAppUiStyle.current` (Classic, Modern, Prism).
+  2. Sáp nhập `ClassicMainBottomBar.kt` và `ModernMainBottomBar.kt` vào `MainBottomBar.kt`, xóa bỏ 2 file cũ riêng lẻ để triệt tiêu trùng lặp.
+  3. Deduplicate `Modifier.finluxBackgroundBlur` trong `ModernLiquidGlass.kt`.
+  4. Đạt 521/521 unit tests PASS 100% và build APK thành công.
+- **Files đã sửa/tạo thực tế**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAdaptiveCard.kt` (mới)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/FinluxAdaptiveTopBar.kt` (mới)
+  - `app/src/main/java/com/finlux/app/presentation/components/MainBottomBar.kt` (cập nhật sáp nhập)
+  - `app/src/main/java/com/finlux/app/core/designsystem/modern/ModernLiquidGlass.kt` (deduplicate)
+  - `app/src/main/java/com/finlux/app/presentation/components/classic/ClassicMainBottomBar.kt` (đã xóa)
+  - `app/src/main/java/com/finlux/app/presentation/components/modern/ModernMainBottomBar.kt` (đã xóa)
+  - `app/build.gradle.kts`
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **521/521 unit tests PASS 100%** (0 failures, 0 skipped).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
 
 ### [Task-RELEASE-v1.25.9] — Phát Hành v1.25.9: Trục Kiến Trúc Quản Trị Phase 1, Chuẩn Hóa Tokens Phase 2 (10 Batches) & Khắc Phục Khẩn Cấp Splash Regression
 - **Status**: `[DONE]`

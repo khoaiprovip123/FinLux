@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.25.10] - 2026-09-22
+### Added
+- **Xây Dựng Bộ Adaptive Components Cơ Sở (Phase 3 - Batch 3.0: Design System Core)**:
+  * Khởi tạo `FinluxAdaptiveCard.kt`: Component thẻ thích ứng tự động render bề mặt kính chuẩn mực theo `LocalAppUiStyle` (`CLASSIC_LIQUID`: LiquidGlass đổ bóng sâu; `MODERN_LUXURY`: ModernLiquidGlass viền quang học; `PRISM`: Bento Frosted Surface).
+  * Khởi tạo `FinluxAdaptiveTopBar.kt`: Component thanh tiêu đề thích ứng cho cả 3 phong cách giao diện.
+  * Sáp nhập thanh điều hướng dưới vào `MainBottomBar.kt`: Tích hợp `FinluxAdaptiveLiquidBottomNav` cho Classic/Modern và `FinluxBottomDock` cho Prism.
+  * Xóa bỏ hoàn toàn 2 file cũ trùng lặp: `ClassicMainBottomBar.kt` và `ModernMainBottomBar.kt`.
+  * Khử trùng lặp `Modifier.finluxBackgroundBlur` trong `ModernLiquidGlass.kt`.
+
+### Changed
+- Cập nhật `versionCode = 184` và `versionName = "1.25.10"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
 ## [1.25.9] - 2026-09-22
 ### Added
 - **Khởi Tạo Trục Quy Chuẩn Kiến Trúc & Triệt Tiêu Số Ma Thuật (Phase 1 Governance & Zero Magic Numbers)**:
