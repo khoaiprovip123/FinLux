@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import com.finlux.app.domain.model.Budget
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.repository.BudgetRepository
@@ -11,6 +12,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.time.Instant
 import java.time.YearMonth
 
 class FirebaseBudgetRepository(
@@ -24,15 +26,20 @@ class FirebaseBudgetRepository(
             close()
             return@callbackFlow
         }
-        val keysToMatch = listOfNotNull(
-            periodKey,
-            if (periodKey.startsWith("month:")) periodKey.removePrefix("month:") else null,
-            if (periodKey.startsWith("salary:")) periodKey.removePrefix("salary:") else null,
-            if (!periodKey.startsWith("month:") && !periodKey.startsWith("salary:") && periodKey.isNotBlank()) "month:$periodKey" else null,
-        ).distinct()
+        val collection = firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS)
+        val query = if (periodKey == "*" || periodKey.isBlank()) {
+            collection
+        } else {
+            val keysToMatch = listOfNotNull(
+                periodKey,
+                if (periodKey.startsWith("month:")) periodKey.removePrefix("month:") else null,
+                if (periodKey.startsWith("salary:")) periodKey.removePrefix("salary:") else null,
+                if (!periodKey.startsWith("month:") && !periodKey.startsWith("salary:") && periodKey.isNotBlank()) "month:$periodKey" else null,
+            ).distinct()
+            collection.whereIn(FirestoreSchema.Fields.PERIOD_KEY, keysToMatch)
+        }
 
-        val registration = firestore.collection("users").document(uid).collection("budgets")
-            .whereIn("periodKey", keysToMatch)
+        val registration = query
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
                 else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toBudget() })
@@ -43,7 +50,7 @@ class FirebaseBudgetRepository(
     override suspend fun upsertBudget(budget: Budget): AppResult<String> = firebaseResult("Không thể lưu ngân sách") {
         val uid = requireUid()
         val id = budget.id.ifBlank { "${budget.categoryId}_${budget.periodKey}" }
-        firestore.collection("users").document(uid).collection("budgets").document(id)
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS).document(id)
             .set(budget.copy(id = id).toBudgetMap()).await()
         id
     }
@@ -54,7 +61,7 @@ class FirebaseBudgetRepository(
         val batch = firestore.batch()
         for (budget in budgets) {
             val id = budget.id.ifBlank { "${budget.categoryId}_${budget.periodKey}" }
-            val docRef = firestore.collection("users").document(uid).collection("budgets").document(id)
+            val docRef = firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS).document(id)
             batch.set(docRef, budget.copy(id = id).toBudgetMap())
         }
         batch.commit().await()
@@ -63,7 +70,7 @@ class FirebaseBudgetRepository(
 
     override suspend fun deleteBudget(budget: Budget): AppResult<Unit> = firebaseResult("Không thể xóa ngân sách") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("budgets").document(budget.id).delete().await()
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.BUDGETS).document(budget.id).delete().await()
         Unit
     }
 
@@ -92,6 +99,12 @@ internal fun DocumentSnapshot.toBudget(): Budget? = runCatching {
         !legacyMonthString.isNullOrBlank() -> "month:$legacyMonthString"
         else -> ""
     }
+    val startMillis = getLong("periodStart")
+    val endMillis = getLong("periodEndExclusive")
+    val pStart = startMillis?.let { Instant.ofEpochMilli(it) }
+    val pEnd = endMillis?.let { Instant.ofEpochMilli(it) }
+    val pBasis = getString("periodBasis")
+
     Budget(
         id = id,
         categoryId = requireNotNull(getString("categoryId")),
@@ -101,5 +114,8 @@ internal fun DocumentSnapshot.toBudget(): Budget? = runCatching {
         spentAmount = Money(getLong("spentAmount") ?: 0L),
         notified80 = getBoolean("notified80") ?: false,
         notified100 = getBoolean("notified100") ?: false,
+        periodStart = pStart,
+        periodEndExclusive = pEnd,
+        periodBasis = pBasis,
     )
 }.getOrNull()

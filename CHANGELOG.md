@@ -1,5 +1,143 @@
 # Changelog
 
+## [1.25.15] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Màn Hình Chủ HomeScreen Master (Phase 3 - Batch 3.5: Master Adaptive Home Architecture)**:
+  * Tái cấu trúc `HomeScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  * Tích hợp toàn diện Bento Grid layout, Financial Overview Card (Tài sản ròng Net Worth, Tổng tài sản thô, Tổng nợ, carousel Thu / Chi / Dòng tiền tự động), Action Toolbar nhanh và Quick Insights Bento.
+  * Tích hợp trực quan Budget Card, Wallets Overview, Vòng quay may mắn tiết kiệm `SavingSpinHomeCard` và danh sách giao dịch gần đây thông minh.
+  * Di chuyển và quy hoạch lại `HomeLayoutTest.kt` vào package dùng chung `com.finlux.app.presentation.home`.
+  * XÓA BỎ HOÀN TOÀN các file màn hình trùng lặp cũ: `ClassicHomeScreen.kt`, `ModernHomeScreen.kt`, `PrismHomeScreen.kt` (giảm hơn 50 KB mã nguồn thừa).
+  * **HOÀN TẤT TOÀN BỘ 6/6 BATCHES CỦA PHASE 3: ADAPTIVE UI CONSOLIDATION**.
+
+### Changed
+- Cập nhật `versionCode = 189` và `versionName = "1.25.15"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
+## [1.25.14] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm ReportsScreen (Phase 3 - Batch 3.4: Adaptive Reports Architecture)**:
+  * Tái cấu trúc `ReportsScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  * Tích hợp toàn bộ hệ thống báo cáo: 4 Primary Tabs (Tổng quan | Thu & Chi | Danh mục | Chuyên sâu), Donut chart trực quan, Hero Banner đa lớp, bộ lọc kỳ báo cáo và xuất báo cáo CSV/PDF.
+  * Tích hợp 6 Deep-Dive Sub Tabs: Vay nợ, Tiết kiệm mục tiêu, Đầu tư thương vụ, Ngân sách danh mục, Phân bổ tài sản ví và Xu hướng dòng tiền (Cashflow Trend Chart).
+  * Di chuyển và quy hoạch tập trung `DailyStatementComponents.kt` (DailyStatementCard, CumulativeMetricsCard, DailyStatementsTable) vào package `com.finlux.app.presentation.reports`.
+  * XÓA BỎ HOÀN TOÀN các file trùng lặp: `ClassicReportsScreen.kt`, `ModernReportsScreen.kt`, `PrismReportsScreen.kt`, `PrismDailyStatementComponents.kt` (giảm hơn 230 KB mã nguồn thừa).
+
+### Changed
+- Cập nhật `versionCode = 188` và `versionName = "1.25.14"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
+## [1.25.13] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm TransactionsScreen (Phase 3 - Batch 3.3: Adaptive Transactions Architecture)**:
+  * Tái cấu trúc `TransactionsScreen.kt` thành Composable Screen thống nhất duy nhất theo Component-driven Adaptive Architecture.
+  * Tích hợp thanh tiêu đề `FinluxAdaptiveTopBar`, bề mặt thẻ `FinluxAdaptiveCard`, thanh tìm kiếm và bộ lọc nhanh phân đoạn [ Tất cả | Thu | Chi | Chuyển ].
+  * Chuyển đổi mượt mà giữa 2 chế độ hiển thị: Danh sách theo ngày (Explorer view) và Bản đồ nhiệt chi tiêu (Spending Calendar Heatmap).
+  * Di chuyển và quy hoạch tập trung `SpendingCalendarView.kt` vào package `presentation/transaction`.
+  * XÓA BỎ HOÀN TOÀN 3 file: `ClassicTransactionsScreen.kt`, `ModernTransactionsScreen.kt`, `PrismTransactionsScreen.kt` (giảm hơn 90 KB mã nguồn trùng lặp).
+
+### Changed
+- Cập nhật `versionCode = 187` và `versionName = "1.25.13"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
+## [1.25.12] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm BudgetScreen (Phase 3 - Batch 3.2: Adaptive Budget Architecture)**:
+  * Tái cấu trúc `BudgetScreen.kt` thành Composable Screen thống nhất duy nhất, tích hợp quản lý hạn mức theo chu kỳ, bộ chọn tháng, smart threshold alerts (80% vàng, 100% đỏ theo BR-09).
+  * Tích hợp thanh điều hướng `FinluxAdaptiveTopBar`, bề mặt thẻ `FinluxAdaptiveCard`, `GradientHeroCard` và `FinluxHeroCard` tự động thích ứng với 3 phong cách UI.
+  * Hợp nhất BottomSheet xem lịch sử giao dịch theo danh mục và Sheet thiết lập ngân sách mới / chỉnh sửa.
+  * XÓA BỎ HOÀN TOÀN 3 file: `ClassicBudgetScreen.kt`, `ModernBudgetScreen.kt`, `PrismBudgetScreen.kt` (giảm hơn 80 KB mã nguồn trùng lặp).
+
+### Changed
+- Cập nhật `versionCode = 186` và `versionName = "1.25.12"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
+## [1.25.11] - 2026-09-22
+### Added
+- **Sáp Nhập Toàn Diện Cụm WalletsScreen (Phase 3 - Batch 3.1: Adaptive Wallets Architecture)**:
+  * Tái cấu trúc `WalletsScreen.kt` thành Composable Screen hoàn chỉnh duy nhất, hợp nhất toàn bộ ViewModel state collection, Dialogs, BottomSheet và các luồng quản lý ví.
+  * Tự động thích ứng bề mặt qua `FinluxAdaptiveCard`, `FinluxAdaptiveTopBar`, `GradientHeroCard` và `FinluxHeroCard` theo `LocalAppUiStyle`.
+  * Trích xuất tập trung `WalletType.label` vào `FinanceModels.kt`, loại bỏ toàn bộ duplicate label mapping.
+  * Xóa sổ hoàn toàn 3 file màn hình trùng lặp: `ClassicWalletsScreen.kt`, `ModernWalletsScreen.kt`, `PrismWalletsScreen.kt` (giảm hơn 110 KB mã nguồn dư thừa).
+
+### Changed
+- Cập nhật `versionCode = 185` và `versionName = "1.25.11"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
+## [1.25.10] - 2026-09-22
+### Added
+- **Xây Dựng Bộ Adaptive Components Cơ Sở (Phase 3 - Batch 3.0: Design System Core)**:
+  * Khởi tạo `FinluxAdaptiveCard.kt`: Component thẻ thích ứng tự động render bề mặt kính chuẩn mực theo `LocalAppUiStyle` (`CLASSIC_LIQUID`: LiquidGlass đổ bóng sâu; `MODERN_LUXURY`: ModernLiquidGlass viền quang học; `PRISM`: Bento Frosted Surface).
+  * Khởi tạo `FinluxAdaptiveTopBar.kt`: Component thanh tiêu đề thích ứng cho cả 3 phong cách giao diện.
+  * Sáp nhập thanh điều hướng dưới vào `MainBottomBar.kt`: Tích hợp `FinluxAdaptiveLiquidBottomNav` cho Classic/Modern và `FinluxBottomDock` cho Prism.
+  * Xóa bỏ hoàn toàn 2 file cũ trùng lặp: `ClassicMainBottomBar.kt` và `ModernMainBottomBar.kt`.
+  * Khử trùng lặp `Modifier.finluxBackgroundBlur` trong `ModernLiquidGlass.kt`.
+
+### Changed
+- Cập nhật `versionCode = 184` và `versionName = "1.25.10"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và bảo toàn 521/521 unit tests PASS 100%.
+
+## [1.25.9] - 2026-09-22
+### Added
+- **Khởi Tạo Trục Quy Chuẩn Kiến Trúc & Triệt Tiêu Số Ma Thuật (Phase 1 Governance & Zero Magic Numbers)**:
+  * Khởi tạo `FinanceBusinessConstants.kt`: Quản lý tập trung 100% ngưỡng cảnh báo ngân sách (80%, 100%), tỷ lệ trả nợ thẻ tín dụng tối thiểu (3%), số tiền thanh toán nợ tối thiểu (50.000 đ), số ngày mặc định mục tiêu (180 ngày).
+  * Khởi tạo `AppSystemConfig.kt`: Quản lý tập trung các hằng số kỹ thuật & hạ tầng (Firestore batch chunk size 400 docs, giới hạn backup warning 50.000 tx, Alarm Request Codes `9925`, `9926`, `73091`, `73092`, múi giờ mặc định `"Asia/Ho_Chi_Minh"`).
+  * Khởi tạo `FirestoreSchema.kt`: Quản lý tập trung strongly-typed collection paths (`users`, `transactions`, `wallets`, `budgets`, `debts`, `goals`, `reminders`, `deals`, `saving_spins`, `notifications`) và common field keys (`spentAmount`, `balance`, `updatedAt`, `createdAt`, `userId`), triệt tiêu 100% string literal thô trong Data Layer.
+  * Mở rộng `AGENTS.md` và `docs/RULE_MAPPING_MATRIX.md` với 5 điều khoản quản trị mới (Điều II.11: Zero Magic Numbers, Điều II.12: Firestore Schema Governance, Điều II.13: Anti-Code Defragmentation & SSoT, Điều II.14: Strict DRY & Chống Clone Màn Hình, Điều II.15 & II.16: Dead Code Elimination & Strict Encapsulation).
+
+- **Chuẩn Hóa Toàn Diện Design System Dynamic Tokens (Phase 2 Master Refactor - Batches 2.1 Đến 2.10)**:
+  * Rà soát và chuẩn hóa hơn 1.000 vị trí màu thô, màu tĩnh và các hằng số legacy trên hơn 40 màn hình và bottom sheets.
+  * Đưa 100% giao diện kế thừa trực tiếp từ `LocalFinluxTokens.current` và `FinluxColors`:
+    - `tokens.surface`, `tokens.surfaceSoft`, `tokens.border`, `tokens.onSurface`, `tokens.textSecondary`, `tokens.primary`, `tokens.error`.
+    - `tokens.onHero`, `tokens.onHeroMuted`, `tokens.heroGradient`, `tokens.primaryGradient`, `tokens.heroGlassSurface`.
+    - Bảng màu ngữ nghĩa tài chính: `FinluxColors.IncomeGreen`, `FinluxColors.ExpenseRed`, `FinluxColors.TransferBlue`, `FinluxColors.WarningAmber`, `FinluxColors.BudgetViolet`, `FinluxColors.PrimaryBlue`, `FinluxColors.PrimaryViolet`, `FinluxColors.PrimaryCyan`.
+  * Khai báo chặt chẽ scope `val tokens = LocalFinluxTokens.current` trong 100% private Composable functions và Canvas drawing lambdas (`PrismDonutChart`, `PrismReportsHeroBanner`, `PrismDebtsHeroCard`, `PrismBudgetsHeroCard`, `PrismWalletsHeroCard`).
+  * Quy hoạch toàn bộ bảng màu biểu đồ (Chart & Analytics Palettes) và Bento Grid / Hero Cards sang hệ thống Design Tokens & FinluxColors nhất quán.
+
+### Fixed
+- **Khắc Phục Regression Màn Hình Splash (Brand Hero Luxury Gradient)**:
+  * Khôi phục dải gradient thương hiệu sâu sắc sang trọng `Brush.verticalGradient(listOf(Color(0xFF0E1630), Color(0xFF171F4C), Color(0xFF261D5C), Color(0xFF34175E)))` (Deep Midnight Navy -> Deep Indigo -> Royal Violet -> Deep Royal Purple).
+  * Chữ **Fin** màu trắng sáng sắc nét (`tokens.onHero`), chữ **Lux** đổ dốc màu xanh tím thương hiệu, slogan và spinner loading màu trắng mờ tương phản cao.
+  * Đồng bộ icon thanh trạng thái (Status Bar) sáng trên nền tối (`isAppearanceLightStatusBars = false`).
+
+### Changed
+- Cập nhật `versionCode = 183` và `versionName = "1.25.9"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md`, `docs/BACKLOG.md` và `docs/RULE_MAPPING_MATRIX.md`.
+- Toàn bộ 521/521 unit tests PASS 100% (0 failures, 0 skipped).
+
+## [1.25.8] - 2026-09-21
+### Added
+- **Tính Năng Xóa Tài Khoản Vĩnh Viễn & Dọn Dẹp Dữ Liệu Toàn Diện (Account Deletion & Data Purge - Phase 1 & 2)**:
+  * **Kiến trúc Dọn Dẹp Đảo Ngược 11 Subcollections**: `PurgeUserDataUseCase` dọn dẹp Firestore sạch 100% theo thứ tự phụ thuộc (Transactions -> Deals -> Goals -> Reminders -> Debts -> Budgets -> Categories -> Wallets -> Saving Spin -> User Root Document).
+  * **Hàng Rào Bảo Mật 3 Bước Tối Cao (3-Step Safety Shield)**:
+    - *Bước 1: Damage Preview* — Thống kê trực quan số lượng bản ghi tài chính sắp bị xóa (số ví, giao dịch, nợ, mục tiêu, ngân sách, nhắc nhở).
+    - *Bước 2: Offline Emergency Backup* — Tích hợp `ExportBackupUseCase` cho phép người dùng xuất file sao lưu mã hóa `.finlux` về máy trước khi xóa.
+    - *Bước 3: Re-authentication Bảo Mật & Xác Nhận Bằng Chữ* — Tự động nhận diện Auth Provider (`google.com` hoặc `password`), yêu cầu xác thực lại và gõ chính xác cụm từ `"XÓA TÀI KHOẢN"`.
+  * **Xóa Triệt Để Dữ Liệu Cục Bộ & Firebase Auth**: Xóa DataStore preferences (`ThemePreferenceRepository`, `DebtPreferenceRepository`), hủy Firebase User vĩnh viễn và phát xung dọn sạch backstack (`popUpTo(0)`) quay về màn hình Chào mừng/Đăng nhập.
+  * **Bảo Mật Firestore Rules**: Bổ sung quyền `delete` cho chủ sở hữu tài khoản (`isOwner(userId)`) trên tài liệu root `/users/{userId}`.
+  * **Giao Diện Liquid Glass Vùng Nguy Hiểm (Danger Zone)**: Bổ sung Card kính viền đỏ cảnh báo tại đáy `PrismSettingsScreen.kt` kết hợp BottomSheet Liquid Glass kính mờ và Full-screen Purging Overlay theo dõi tiến trình 6 giai đoạn dọn dẹp.
+  * **Bộ Kiểm Thử Đơn Vị Tự Động**: Bổ sung `PurgeUserDataUseCaseTest` (4 tests), `DeleteAccountUseCaseTest` (5 tests), `DeleteAccountViewModelTest` (6 tests), nâng tổng số test suite toàn dự án lên **514/514 unit tests PASS 100%**.
+
+### Changed
+- Cập nhật `versionCode = 182` và `versionName = "1.25.8"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và hoàn thiện đặc tả kỹ thuật `docs/account_deletion_spec.md`.
+
+## [1.25.7] - 2026-09-21
+### Added
+- **Tính Năng Sao Lưu & Phục Hồi Dữ Liệu Toàn Diện (Backup & Restore - Phase 1 & 2)**:
+  * Kiến trúc JSON Snapshot 10 module độc lập: Wallets, Categories, Budgets, Transactions, Debts, Debt Payments, Goals, Reminders, Deals, Saving Spin Config.
+  * Hỗ trợ 2 chiến lược phục hồi dữ liệu:
+    - `FULL_OVERWRITE` (True Wipe & Replace): Xóa sạch dữ liệu cũ theo thứ tự đảo ngược phụ thuộc (Reverse Dependency Order) bằng `deleteWalletRaw` / `deleteTransactionRaw`, nạp snapshot nguyên bản bảo toàn 100% ID gốc.
+    - `SMART_MERGE` (Hợp nhất thông minh): Nhận diện thông minh ví Tiền mặt (chống tạo ví thứ 2), khử trùng lặp giao dịch theo Content Signature (`walletId_amount_date_type_note`), giải quyết xung đột dựa trên `updatedAt`.
+  * **Điều hòa số dư Tổng lực (Full Ledger Balance Reconciliation)**: Tự động điều hòa và sửa sai số dư mọi ví dựa trên toàn bộ sổ cái giao dịch trong cơ sở dữ liệu và seed khởi tạo, triệt tiêu tình trạng lệch số dư sau khi merge.
+  * **Kiểm toán số dư tự động (WalletBalanceAudit)**: Tự động đối soát và phát hiện sai lệch số dư ngay khi kết thúc quá trình khôi phục.
+  * **Đồng bộ UI phản ứng tức thì (DataSyncManager)**: Phát xung reactive reload cho `HomeViewModel`, `WalletsViewModel`, `TransactionsViewModel` khi nạp dữ liệu hoàn tất.
+  * **Bộ Kiểm Thử Độc Lập**: Bổ sung `RestoreBackupUseCaseTest` (14 test cases T-RST-01 đến T-RST-14) và `BackupRestoreViewModelTest` (6 test cases), nâng tổng số test suite toàn dự án lên **499/499 unit tests PASS 100%**.
+
+### Changed
+- Cập nhật `versionCode = 181` và `versionName = "1.25.7"` trong `app/build.gradle.kts`.
+- Đồng bộ `HANDOVER_LOG.md` và đặc tả `docs/backup_restore_spec.md`.
+
 ## [1.25.6] - 2026-09-14
 ### Added
 - **Bảo Vệ Tính Toàn Vẹn Tiền Tệ (Financial Integrity & Shared Validation - Phase 1)**:

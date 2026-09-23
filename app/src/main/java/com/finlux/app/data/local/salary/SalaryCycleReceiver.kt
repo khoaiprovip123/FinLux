@@ -92,9 +92,9 @@ class SalaryCycleReceiver : BroadcastReceiver() {
                     title = welcomeTitle,
                     body = welcomeBody,
                     targetRoute = "reports",
-                    notificationId = 9925,
+                    notificationId = com.finlux.app.core.common.AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_PRIMARY,
                 )
-                Log.d(TAG, "Dispatched system push notification (id=9925)")
+                Log.d(TAG, "Dispatched system push notification (id=${com.finlux.app.core.common.AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_PRIMARY})")
 
                 // 2. Process Rollover Rules
                 val wallets = walletRepository.observeWallets().firstOrNull().orEmpty()
@@ -121,9 +121,9 @@ class SalaryCycleReceiver : BroadcastReceiver() {
                                 title = rolloverTitle,
                                 body = rolloverBody,
                                 targetRoute = "wallets",
-                                notificationId = 9926,
+                                notificationId = com.finlux.app.core.common.AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_SECONDARY,
                             )
-                            Log.d(TAG, "Dispatched rollover transfer notification (id=9926, amount=$amountStr)")
+                            Log.d(TAG, "Dispatched rollover transfer notification (id=${com.finlux.app.core.common.AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_SECONDARY}, amount=$amountStr)")
                         }
                     }
                     CycleRolloverRule.ASK_EACH_CYCLE -> {
@@ -143,9 +143,9 @@ class SalaryCycleReceiver : BroadcastReceiver() {
                             title = askTitle,
                             body = askBody,
                             targetRoute = "wallets",
-                            notificationId = 9926,
+                            notificationId = com.finlux.app.core.common.AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_SECONDARY,
                         )
-                        Log.d(TAG, "Dispatched rollover reminder notification (id=9926)")
+                        Log.d(TAG, "Dispatched rollover reminder notification (id=${com.finlux.app.core.common.AppSystemConfig.AlarmRequestCodes.SALARY_PAYDAY_SECONDARY})")
                     }
                     CycleRolloverRule.KEEP_IN_WALLET -> {
                         Log.d(TAG, "Rollover rule is KEEP_IN_WALLET. No rollover action needed.")

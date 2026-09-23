@@ -196,7 +196,7 @@ fun DebtPaymentSheet(
                                 text = formatVndAmount(debt.minimumPayment.value),
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFEF4444),
+                                    color = tokens.error,
                                 ),
                             )
                         }
@@ -267,8 +267,8 @@ fun DebtPaymentSheet(
                 onValueChange = { note = it },
                 placeholder = "vd: Thanh toán sao kê thẻ tín dụng",
                 icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                iconBgColor = Color(0xFF6366F1).copy(alpha = 0.14f),
-                iconTintColor = Color(0xFF6366F1),
+                iconBgColor = tokens.primary.copy(alpha = 0.14f),
+                iconTintColor = tokens.primary,
                 onClear = { note = "" },
             )
 
@@ -301,8 +301,8 @@ fun DebtPaymentSheet(
             if (effectiveError != null) {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (tokens.isDark) Color(0xFF3B1E2B) else Color(0xFFFFE4E6),
-                    border = BorderStroke(1.dp, Color(0xFFF43F5E).copy(alpha = 0.35f)),
+                    color = tokens.error.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
@@ -313,7 +313,7 @@ fun DebtPaymentSheet(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = null,
-                            tint = Color(0xFFE11D48),
+                            tint = tokens.error,
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
@@ -322,7 +322,7 @@ fun DebtPaymentSheet(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                            color = Color(0xFFE11D48),
+                            color = tokens.error,
                         )
                     }
                 }
@@ -363,15 +363,20 @@ fun DebtPaymentSheet(
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = tokens.primary,
-                    disabledContainerColor = if (tokens.isDark) Color(0xFF2A2A3C) else Color(0xFFE2E8F0),
+                    disabledContainerColor = tokens.surfaceSoft,
                 ),
             ) {
-                Icon(imageVector = Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(
+                    imageVector = Icons.Default.Payments,
+                    contentDescription = null,
+                    tint = if (canConfirm) tokens.onHero else tokens.textSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = if (currentAmount > 0L) "Xác nhận thanh toán • ${formatVndAmount(currentAmount)}" else "Xác nhận thanh toán",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (canConfirm) Color.White else (if (tokens.isDark) Color(0xFF64748B) else Color(0xFF94A3B8)),
+                    color = if (canConfirm) tokens.onHero else tokens.textSecondary,
                 )
             }
 

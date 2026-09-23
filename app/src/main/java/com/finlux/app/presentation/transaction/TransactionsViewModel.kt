@@ -17,9 +17,12 @@ import com.finlux.app.domain.usecase.FinancialPeriodResolver
 import com.finlux.app.core.common.AppResult
 import com.finlux.app.core.time.FinanceTime
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -101,6 +104,7 @@ private data class TransactionSearchContext(
     val salaryConfig: com.finlux.app.domain.model.SalaryCycleConfig,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
     repository: TransactionRepository,
@@ -110,6 +114,7 @@ class TransactionsViewModel @Inject constructor(
     private val financialPeriodResolver: FinancialPeriodResolver,
     private val deleteTransaction: DeleteTransactionUseCase,
     private val addTransaction: AddTransactionUseCase,
+    private val dataSyncManager: com.finlux.app.core.sync.DataSyncManager? = null,
 ) : ViewModel() {
     val filter = MutableStateFlow(TransactionFilter.ALL)
     val periodFilter = MutableStateFlow(TimePeriodFilter.ALL)
@@ -121,17 +126,25 @@ class TransactionsViewModel @Inject constructor(
     val viewMode = MutableStateFlow(TransactionViewMode.LIST)
     val selectedCalendarDate = MutableStateFlow<LocalDate?>(null)
 
-    private val lookups = combine(
-        categoryRepository.observeCategories(),
-        walletRepository.observeWallets(),
-    ) { categoryList, walletList ->
-        TransactionLookup(categoryList.associateBy(Category::id), walletList.associateBy(Wallet::id))
+    private val refreshFlow = dataSyncManager?.refreshTrigger ?: flowOf(0L)
+
+    private val lookups = refreshFlow.flatMapLatest {
+        combine(
+            categoryRepository.observeCategories(),
+            walletRepository.observeWallets(),
+        ) { categoryList, walletList ->
+            TransactionLookup(categoryList.associateBy(Category::id), walletList.associateBy(Wallet::id))
+        }
     }
 
     private val amountRange = combine(minimumAmount, maximumAmount, ::AmountRange)
 
+    private val recentTransactionsFlow = refreshFlow.flatMapLatest {
+        repository.observeRecent(500)
+    }
+
     val transactions = combine(
-        repository.observeRecent(500),
+        recentTransactionsFlow,
         filter,
         periodFilter,
         combine(walletFilter, categoryFilter) { wallet, category -> wallet to category },

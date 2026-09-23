@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.CameraAlt
+import com.finlux.app.presentation.settings.backup.BackupRestoreSheet
+import com.finlux.app.presentation.settings.deleteaccount.DeleteAccountBottomSheet
 import com.finlux.app.presentation.settings.salary.SalaryCycleSettingsSheet
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
@@ -52,6 +54,7 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -97,6 +100,7 @@ import com.finlux.app.core.designsystem.FinluxUserAvatar
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.component.FinluxHeroCard
 import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.LocalAppUiStyle
 import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.AppUiStyle
@@ -134,7 +138,6 @@ private data class InfoDialogContent(val title: String, val message: String)
 fun PrismSettingsScreen(
     selectedTheme: ThemePreference,
     onThemeSelected: (ThemePreference) -> Unit,
-    selectedUiStyle: AppUiStyle = AppUiStyle.PRISM,
     onUiStyleSelected: (AppUiStyle) -> Unit = {},
     uiPreferences: UiPreferences,
     onUiPreferencesChanged: (UiPreferences) -> Unit,
@@ -144,6 +147,7 @@ fun PrismSettingsScreen(
     onCheckUpdate: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
+    val selectedUiStyle = LocalAppUiStyle.current
     val tokens = LocalFinluxTokens.current
     val user = viewModel.user.collectAsStateWithLifecycle().value
     val wallets = viewModel.wallets.collectAsStateWithLifecycle().value
@@ -159,6 +163,8 @@ fun PrismSettingsScreen(
     var showAppearance by remember { mutableStateOf(false) }
     var showBiometricTimeoutDialog by remember { mutableStateOf(false) }
     var showSalaryCycleSheet by remember { mutableStateOf(false) }
+    var showBackupRestoreSheet by remember { mutableStateOf(false) }
+    var showDeleteAccountSheet by remember { mutableStateOf(false) }
     var infoDialog by remember { mutableStateOf<InfoDialogContent?>(null) }
     var amountVisible by remember { mutableStateOf(true) }
     var nameDraft by remember(user?.uid) { mutableStateOf(user?.displayName.orEmpty()) }
@@ -247,7 +253,7 @@ fun PrismSettingsScreen(
                     shape = RoundedCornerShape(tokens.radius.input),
                 ) {
                     if (nameState.isLoading) {
-                        CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(18.dp), color = tokens.onHero, strokeWidth = 2.dp)
                     } else {
                         Text("Lưu tên", fontWeight = FontWeight.Bold)
                     }
@@ -302,6 +308,22 @@ fun PrismSettingsScreen(
         )
     }
 
+    if (showBackupRestoreSheet) {
+        BackupRestoreSheet(
+            onDismiss = { showBackupRestoreSheet = false },
+        )
+    }
+
+    if (showDeleteAccountSheet) {
+        DeleteAccountBottomSheet(
+            onDismiss = { showDeleteAccountSheet = false },
+            onAccountDeleted = {
+                showDeleteAccountSheet = false
+                onSignedOut()
+            },
+        )
+    }
+
     LaunchedEffect(nameState.message, nameState.isError) {
         if (nameState.message != null && !nameState.isError) {
             delay(650)
@@ -343,7 +365,7 @@ fun PrismSettingsScreen(
                         Text(
                             "${wallets.size} ví và tài khoản đang được tổng hợp",
                             style = FinluxTextStyles.Caption,
-                            color = Color.White.copy(alpha = 0.82f),
+                            color = tokens.onHeroMuted,
                         )
                     },
                 )
@@ -352,10 +374,10 @@ fun PrismSettingsScreen(
             item {
                 SettingsGroupCard(
                     listOf(
-                        SettingsMenuItem(Icons.Default.PersonOutline, "Tài khoản", Color(0xFF2563EB), onClick = ::openNameEditor),
-                        SettingsMenuItem(Icons.Default.AccountBalanceWallet, "Ví & tài khoản", Color(0xFF7C3AED), onClick = { navigateTo(PrismSettingsAction.WALLETS) }),
-                        SettingsMenuItem(Icons.Default.Savings, "Ngân sách", Color(0xFF059669), onClick = { navigateTo(PrismSettingsAction.BUDGET) }),
-                        SettingsMenuItem(Icons.Default.Palette, "Giao diện", Color(0xFFF97316), onClick = { showAppearance = true }),
+                        SettingsMenuItem(Icons.Default.PersonOutline, "Tài khoản", tokens.primary, onClick = ::openNameEditor),
+                        SettingsMenuItem(Icons.Default.AccountBalanceWallet, "Ví & tài khoản", FinluxColors.BudgetViolet, onClick = { navigateTo(PrismSettingsAction.WALLETS) }),
+                        SettingsMenuItem(Icons.Default.Savings, "Ngân sách", FinluxColors.IncomeGreen, onClick = { navigateTo(PrismSettingsAction.BUDGET) }),
+                        SettingsMenuItem(Icons.Default.Palette, "Giao diện", FinluxColors.WarningAmber, onClick = { showAppearance = true }),
                     ),
                 )
             }
@@ -368,14 +390,14 @@ fun PrismSettingsScreen(
                         SettingsMenuItem(
                             Icons.Default.CreditCard,
                             "Quản lý nợ & Tín dụng",
-                            Color(0xFFE11D48),
+                            tokens.error,
                             subtitle = "Kế hoạch thoát nợ Snowball & Avalanche",
                             onClick = { navigateTo(PrismSettingsAction.DEBT) },
                         ),
                         SettingsMenuItem(
                             Icons.Default.TrendingUp,
                             "Thương vụ & Đầu tư sinh lời",
-                            Color(0xFF10B981),
+                            FinluxColors.IncomeGreen,
                             subtitle = "Theo dõi vốn xuất, hoàn vốn & lợi nhuận ROI",
                             badge = "Mới",
                             onClick = { navigateTo(PrismSettingsAction.DEALS) },
@@ -383,7 +405,7 @@ fun PrismSettingsScreen(
                         SettingsMenuItem(
                             Icons.Default.CalendarMonth,
                             "Tháng tài chính & Chu kỳ lương",
-                            Color(0xFF059669),
+                            tokens.primary,
                             subtitle = "Tính toán thu chi theo ngày nhận lương",
                             onClick = { showSalaryCycleSheet = true },
                         ),
@@ -395,8 +417,8 @@ fun PrismSettingsScreen(
                             badge = "Mới",
                             onClick = { navigateTo(PrismSettingsAction.SAVING_SPIN) },
                         ),
-                        SettingsMenuItem(Icons.Default.Category, "Danh mục thu chi", Color(0xFF8B5CF6), onClick = { navigateTo(PrismSettingsAction.CATEGORIES) }),
-                        SettingsMenuItem(Icons.Default.Alarm, "Nhắc nhở thanh toán", Color(0xFFF59E0B), onClick = { navigateTo(PrismSettingsAction.REMINDERS) }),
+                        SettingsMenuItem(Icons.Default.Category, "Danh mục thu chi", FinluxColors.BudgetViolet, onClick = { navigateTo(PrismSettingsAction.CATEGORIES) }),
+                        SettingsMenuItem(Icons.Default.Alarm, "Nhắc nhở thanh toán", FinluxColors.WarningAmber, onClick = { navigateTo(PrismSettingsAction.REMINDERS) }),
                     ),
                 )
             }
@@ -406,23 +428,18 @@ fun PrismSettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 SettingsGroupCard(
                     listOf(
-                        SettingsMenuItem(Icons.Default.NotificationsNone, "Thông báo", Color(0xFF4F46E5), onClick = { navigateTo(PrismSettingsAction.NOTIFICATIONS) }),
+                        SettingsMenuItem(Icons.Default.NotificationsNone, "Thông báo", tokens.primary, onClick = { navigateTo(PrismSettingsAction.NOTIFICATIONS) }),
                         SettingsMenuItem(
                             Icons.Default.Backup,
                             "Sao lưu dữ liệu",
-                            Color(0xFF2563EB),
-                            subtitle = "Đồng bộ tự động qua tài khoản FinLux",
-                            onClick = {
-                                infoDialog = InfoDialogContent(
-                                    "Sao lưu & đồng bộ",
-                                    "Dữ liệu tài chính được Firestore lưu và đồng bộ tự động giữa các thiết bị đăng nhập cùng tài khoản. Khi có mạng, thay đổi sẽ được cập nhật theo thời gian thực.",
-                                )
-                            },
+                            tokens.primary,
+                            subtitle = "Sao lưu ngoại tuyến .finlux & đồng bộ đám mây",
+                            onClick = { showBackupRestoreSheet = true },
                         ),
                         SettingsMenuItem(
                             Icons.Default.Fingerprint,
                             "Bảo mật",
-                            Color(0xFF4F46E5),
+                            tokens.primary,
                             subtitle = "Khóa ứng dụng bằng sinh trắc học",
                             trailing = {
                                 Switch(
@@ -441,7 +458,7 @@ fun PrismSettingsScreen(
                                         }
                                     },
                                     colors = SwitchDefaults.colors(
-                                        checkedThumbColor = Color.White,
+                                        checkedThumbColor = tokens.onHero,
                                         checkedTrackColor = tokens.primary,
                                     ),
                                 )
@@ -465,7 +482,7 @@ fun PrismSettingsScreen(
                             items + SettingsMenuItem(
                                 Icons.Default.Alarm,
                                 "Thời gian tự động khóa",
-                                Color(0xFF0284C7),
+                                tokens.primary,
                                 subtitle = uiPreferences.biometricTimeout.label,
                                 onClick = { showBiometricTimeoutDialog = true },
                             )
@@ -481,7 +498,7 @@ fun PrismSettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 SettingsGroupCard(
                     listOf(
-                        SettingsMenuItem(Icons.Default.HeadsetMic, "Hỗ trợ", Color(0xFF4F46E5)) {
+                        SettingsMenuItem(Icons.Default.HeadsetMic, "Hỗ trợ", tokens.primary) {
                             infoDialog = InfoDialogContent(
                                 "Trung tâm hỗ trợ",
                                 "Nếu dữ liệu chưa cập nhật, hãy kiểm tra kết nối mạng và đăng nhập đúng tài khoản. Với thông báo, hãy kiểm tra quyền thông báo của FinLux trong Cài đặt Android.",
@@ -496,7 +513,7 @@ fun PrismSettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 SettingsGroupCard(
                     listOf(
-                        SettingsMenuItem(Icons.Default.Info, "Giới thiệu FinLux", Color(0xFF4F46E5)) {
+                        SettingsMenuItem(Icons.Default.Info, "Giới thiệu FinLux", tokens.primary) {
                             infoDialog = InfoDialogContent(
                                 "FinLux",
                                 "Tài chính rõ ràng, cuộc sống nhẹ nhàng. FinLux giúp quản lý thu chi, ví, ngân sách, mục tiêu và báo cáo trong một trải nghiệm thống nhất.\n\nPhiên bản ${BuildConfig.VERSION_NAME}",
@@ -505,7 +522,7 @@ fun PrismSettingsScreen(
                         SettingsMenuItem(
                             Icons.Default.NotificationsNone,
                             "Tự động nhận bản cập nhật",
-                            Color(0xFF4F46E5),
+                            tokens.primary,
                             subtitle = "Kiểm tra và nhắc nhở khi có phiên bản mới",
                             trailing = {
                                 Switch(
@@ -514,7 +531,7 @@ fun PrismSettingsScreen(
                                         onUiPreferencesChanged(uiPreferences.copy(autoCheckUpdates = isEnabled))
                                     },
                                     colors = SwitchDefaults.colors(
-                                        checkedThumbColor = Color.White,
+                                        checkedThumbColor = tokens.onHero,
                                         checkedTrackColor = tokens.primary,
                                     ),
                                 )
@@ -526,13 +543,63 @@ fun PrismSettingsScreen(
                         SettingsMenuItem(
                             Icons.Default.SystemUpdate,
                             "Kiểm tra cập nhật",
-                            Color(0xFF4F46E5),
+                            tokens.primary,
                             subtitle = "Phiên bản ${BuildConfig.VERSION_NAME}",
                             badge = "Kiểm tra",
                             onClick = onCheckUpdate,
                         ),
                     ),
                 )
+            }
+
+            item {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(tokens.radius.standardCard))
+                        .clickable { showDeleteAccountSheet = true },
+                    shape = RoundedCornerShape(tokens.radius.standardCard),
+                    color = tokens.error.copy(alpha = if (tokens.isDark) 0.10f else 0.05f),
+                    border = BorderStroke(1.dp, tokens.error.copy(alpha = 0.35f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(tokens.error.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.WarningAmber,
+                                contentDescription = null,
+                                tint = tokens.error,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "VÙNG NGUY HIỂM",
+                                style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.error,
+                            )
+                            Text(
+                                text = "Xóa tài khoản & Toàn bộ dữ liệu",
+                                style = FinluxTextStyles.Body.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.textPrimary,
+                            )
+                            Text(
+                                text = "Xóa vĩnh viễn dữ liệu đám mây, ví, giao dịch và tài khoản",
+                                style = FinluxTextStyles.Caption,
+                                color = tokens.textSecondary,
+                            )
+                        }
+                    }
+                }
             }
 
             item {
@@ -620,9 +687,9 @@ private fun ProfileCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         if (isAvatarLoading) {
-                            CircularProgressIndicator(Modifier.size(13.dp), color = Color.White, strokeWidth = 2.dp)
+                            CircularProgressIndicator(Modifier.size(13.dp), color = tokens.onHero, strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Default.CameraAlt, contentDescription = "Đổi ảnh đại diện", tint = Color.White, modifier = Modifier.size(13.dp))
+                            Icon(Icons.Default.CameraAlt, contentDescription = "Đổi ảnh đại diện", tint = tokens.onHero, modifier = Modifier.size(13.dp))
                         }
                     }
                 }
@@ -647,10 +714,10 @@ private fun ProfileCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFF5B32F4), Color(0xFF1749D9))))
+                        .background(tokens.primaryBrush)
                         .padding(horizontal = 10.dp, vertical = 5.dp),
                 ) {
-                    Text("◆  FinLux Premium", color = Color.White, style = FinluxTextStyles.Caption, fontWeight = FontWeight.Bold)
+                    Text("◆  FinLux Premium", color = tokens.onHero, style = FinluxTextStyles.Caption, fontWeight = FontWeight.Bold)
                 }
             }
             Icon(Icons.Default.ChevronRight, contentDescription = "Mở hồ sơ", tint = tokens.onSurfaceVariant, modifier = Modifier.size(26.dp))
@@ -839,7 +906,7 @@ private fun StyleChoice(title: String, subtitle: String, selected: Boolean, onCl
                     .background(if (selected) tokens.primary else tokens.onSurface.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center,
             ) {
-                if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = tokens.onHero, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {

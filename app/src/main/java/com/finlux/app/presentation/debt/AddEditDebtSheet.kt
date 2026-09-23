@@ -60,7 +60,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.FinanceAccentHexes
-import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.theme.FinluxColors
@@ -170,7 +169,7 @@ fun AddEditDebtSheet(
                             Icon(
                                 imageVector = debtTypeIcon(itemType),
                                 contentDescription = null,
-                                tint = if (isSelected) Color.White else tokens.onSurfaceVariant,
+                                tint = if (isSelected) tokens.onHero else tokens.textSecondary,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(Modifier.height(4.dp))
@@ -179,7 +178,7 @@ fun AddEditDebtSheet(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color.White else tokens.onSurfaceVariant,
+                                    color = if (isSelected) tokens.onHero else tokens.textSecondary,
                                 ),
                                 maxLines = 1,
                             )
@@ -409,7 +408,7 @@ fun AddEditDebtSheet(
             Text(
                 text = "Màu nhận diện",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = tokens.onSurface,
             )
             Spacer(Modifier.height(8.dp))
             Row(
@@ -426,7 +425,7 @@ fun AddEditDebtSheet(
                             .background(color)
                             .border(
                                 width = if (isColorSelected) 3.dp else 1.dp,
-                                color = if (isColorSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                color = if (isColorSelected) tokens.onSurface else Color.Transparent,
                                 shape = CircleShape,
                             )
                             .clickable { selectedColor = hex },
@@ -489,7 +488,7 @@ fun AddEditDebtSheet(
                             checked = isReminderEnabled,
                             onCheckedChange = { isReminderEnabled = it },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
+                                checkedThumbColor = tokens.onHero,
                                 checkedTrackColor = tokens.primary,
                             ),
                         )
@@ -518,7 +517,7 @@ fun AddEditDebtSheet(
                                             fontSize = 11.5.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         ),
-                                        color = if (isSelected) Color.White else tokens.onSurface,
+                                        color = if (isSelected) tokens.onHero else tokens.onSurface,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(vertical = 8.dp),
                                     )
@@ -572,7 +571,7 @@ fun AddEditDebtSheet(
                 Text(
                     text = validationError!!,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.error,
+                        color = tokens.error,
                         fontWeight = FontWeight.SemiBold,
                     ),
                 )
@@ -650,7 +649,7 @@ fun AddEditDebtSheet(
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = tokens.error),
                 ) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
@@ -685,9 +684,9 @@ fun AddEditDebtSheet(
                         showDeleteConfirmDialog = false
                         onDelete(debt)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    colors = ButtonDefaults.buttonColors(containerColor = tokens.error),
                 ) {
-                    Text("Xóa", color = Color.White)
+                    Text("Xóa", color = tokens.onHero)
                 }
             },
             dismissButton = {

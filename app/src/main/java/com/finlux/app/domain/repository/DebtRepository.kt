@@ -38,4 +38,10 @@ interface DebtRepository {
         note: String = "",
         paymentDate: Instant = Instant.now(),
     ): AppResult<Unit>
+
+    /** Thêm mới hoặc cập nhật lịch sử thanh toán nợ (sử dụng trong Restore Engine). */
+    suspend fun upsertPaymentHistory(payment: DebtPaymentHistory): AppResult<String> = AppResult.Success(payment.id)
+
+    /** Xóa lịch sử thanh toán nợ (sử dụng trong Restore Engine khi Full Overwrite). */
+    suspend fun deletePaymentHistory(debtId: String, paymentId: String): AppResult<Unit> = AppResult.Success(Unit)
 }

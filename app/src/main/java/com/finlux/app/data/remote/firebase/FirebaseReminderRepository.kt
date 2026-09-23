@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import java.util.Date
 import java.util.UUID
 
@@ -21,13 +22,16 @@ class FirebaseReminderRepository(
     private val firestore: FirebaseFirestore,
 ) : ReminderRepository {
 
+    private fun userReminders(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.REMINDERS)
+
     override fun observeReminders(): Flow<List<Reminder>> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) {
             close()
             return@callbackFlow
         }
-        val registration = firestore.collection("users").document(uid).collection("reminders")
+        val registration = userReminders(uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
                 else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toReminder() })
@@ -38,14 +42,14 @@ class FirebaseReminderRepository(
     override suspend fun upsertReminder(reminder: Reminder): AppResult<String> = firebaseResult("Không thể lưu nhắc nhở") {
         val uid = requireUid()
         val id = reminder.id.ifBlank { UUID.randomUUID().toString() }
-        firestore.collection("users").document(uid).collection("reminders").document(id)
+        userReminders(uid).document(id)
             .set(reminder.copy(id = id).toReminderMap()).await()
         id
     }
 
     override suspend fun deleteReminder(reminder: Reminder): AppResult<Unit> = firebaseResult("Không thể xóa nhắc nhở") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("reminders").document(reminder.id).delete().await()
+        userReminders(uid).document(reminder.id).delete().await()
         Unit
     }
 

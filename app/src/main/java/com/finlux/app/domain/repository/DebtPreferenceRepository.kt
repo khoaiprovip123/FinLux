@@ -12,4 +12,5 @@ interface DebtPreferenceRepository {
 
     fun observeExtraMonthlyPayment(): Flow<Long>
     suspend fun saveExtraMonthlyPayment(amount: Long)
+    suspend fun resetPreferences() {}
 }

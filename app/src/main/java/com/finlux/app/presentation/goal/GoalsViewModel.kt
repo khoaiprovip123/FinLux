@@ -3,6 +3,8 @@ package com.finlux.app.presentation.goal
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.core.sync.DataSyncManager
+import com.finlux.app.domain.model.FinanceBusinessConstants
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Wallet
@@ -13,9 +15,11 @@ import com.finlux.app.domain.usecase.DepositToGoalUseCase
 import com.finlux.app.domain.usecase.SaveGoalUseCase
 import com.finlux.app.domain.usecase.WithdrawFromGoalUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -26,7 +30,7 @@ data class GoalEditorState(
     val name: String = "",
     val targetInput: String = "",
     val monthlyInput: String = "",
-    val deadline: Instant = Instant.now().plusSeconds(180L * 24 * 60 * 60),
+    val deadline: Instant = Instant.now().plusSeconds(FinanceBusinessConstants.Goals.DEFAULT_DEADLINE_DAYS * 86400L),
     val category: String = "Khác",
     val imageUri: String? = null,
     val saving: Boolean = false,
@@ -48,6 +52,7 @@ data class GoalTransactionSheetState(
     val isSuccess: Boolean = false,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class GoalsViewModel @Inject constructor(
     repository: GoalRepository,
@@ -56,10 +61,16 @@ class GoalsViewModel @Inject constructor(
     private val deleteGoal: DeleteGoalUseCase,
     private val depositToGoalUseCase: DepositToGoalUseCase,
     private val withdrawFromGoalUseCase: WithdrawFromGoalUseCase,
+    private val dataSyncManager: DataSyncManager = DataSyncManager(),
 ) : ViewModel() {
 
-    val goals = repository.observeGoals().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val wallets = walletRepository.observeWallets().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val goals = dataSyncManager.refreshTrigger.flatMapLatest {
+        repository.observeGoals()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val wallets = dataSyncManager.refreshTrigger.flatMapLatest {
+        walletRepository.observeWallets()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val mutableEditor = MutableStateFlow(GoalEditorState())
     val editor = mutableEditor.asStateFlow()

@@ -303,7 +303,7 @@ fun TransferMoneyScreen(
                         text = if (actionState.busy) "Đang thực hiện chuyển tiền..." else "Xác nhận chuyển tiền",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = tokens.onHero,
                     )
                 }
             }

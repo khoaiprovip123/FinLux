@@ -45,7 +45,7 @@ fun SavingSpinSnoozeSheet(
     onDismiss: () -> Unit,
     onSelectPreset: (Instant) -> Unit,
     modifier: Modifier = Modifier,
-    zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh"),
+    zoneId: ZoneId = com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID,
     now: Instant = Instant.now(),
 ) {
     if (!isOpen) return

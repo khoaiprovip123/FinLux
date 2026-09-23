@@ -52,12 +52,30 @@ interface TransactionRepository {
         note: String,
         date: Instant,
     ): AppResult<Unit>
+
+    /** Restore / Raw import of a transaction without recalculating or altering wallet.balance. */
+    suspend fun restoreTransaction(transaction: FinanceTransaction): AppResult<String> = restoreTransactionRaw(transaction)
+
+    /** Raw restore of a transaction writing directly to remote storage without altering wallet.balance. */
+    suspend fun restoreTransactionRaw(transaction: FinanceTransaction): AppResult<String> = addWithBalanceUpdate(transaction)
+
+    /** Raw deletion of a transaction by ID without altering wallet.balance (used in Full Overwrite before wallet wipe). */
+    suspend fun deleteTransactionRaw(transactionId: String): AppResult<Unit> = AppResult.Success(Unit)
+
+    /** Raw deletion of a transaction without altering wallet.balance (used in Full Overwrite before wallet wipe). */
+    suspend fun deleteTransactionRaw(transaction: FinanceTransaction): AppResult<Unit> = deleteTransactionRaw(transaction.id)
 }
 
 interface WalletRepository {
     fun observeWallets(): Flow<List<Wallet>>
     suspend fun upsertWallet(wallet: Wallet): AppResult<String>
     suspend fun deleteWallet(wallet: Wallet): AppResult<Unit>
+
+    /** Raw deletion of a wallet by ID without default checks or archiving (used in Full Overwrite wipe). */
+    suspend fun deleteWalletRaw(walletId: String): AppResult<Unit> = AppResult.Success(Unit)
+
+    /** Raw restore of a wallet writing all fields including balance directly (used in Restore). */
+    suspend fun restoreWalletRaw(wallet: Wallet): AppResult<String> = upsertWallet(wallet)
 }
 
 interface CategoryRepository {

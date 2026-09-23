@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
 import com.finlux.app.core.designsystem.component.form.ErgonomicInputRow
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.DealCategory
 import com.finlux.app.domain.model.DealStatus
@@ -205,7 +206,7 @@ fun CreateDealSheet(
                             Icon(
                                 imageVector = Icons.Default.Handshake,
                                 contentDescription = null,
-                                tint = if (category == DealCategory.LENDING) Color(0xFFF59E0B) else tokens.onSurfaceVariant,
+                                tint = if (category == DealCategory.LENDING) FinluxColors.WarningAmber else tokens.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(6.dp))
@@ -214,7 +215,7 @@ fun CreateDealSheet(
                                 style = MaterialTheme.typography.labelLarge.copy(
                                     fontWeight = if (category == DealCategory.LENDING) FontWeight.Bold else FontWeight.Normal,
                                 ),
-                                color = if (category == DealCategory.LENDING) Color(0xFFD97706) else tokens.onSurfaceVariant,
+                                color = if (category == DealCategory.LENDING) FinluxColors.WarningAmber else tokens.onSurfaceVariant,
                             )
                         }
                     }
@@ -228,8 +229,8 @@ fun CreateDealSheet(
                 onValueChange = { title = it },
                 placeholder = titlePlaceholder,
                 icon = if (isLending) Icons.Default.Handshake else Icons.AutoMirrored.Filled.TrendingUp,
-                iconBgColor = if (isLending) Color(0xFFF59E0B).copy(alpha = 0.12f) else tokens.primary.copy(alpha = 0.12f),
-                iconTintColor = if (isLending) Color(0xFFD97706) else tokens.primary,
+                iconBgColor = if (isLending) FinluxColors.WarningAmber.copy(alpha = 0.12f) else tokens.primary.copy(alpha = 0.12f),
+                iconTintColor = if (isLending) FinluxColors.WarningAmber else tokens.primary,
                 onClear = { title = "" },
             )
 
@@ -240,8 +241,8 @@ fun CreateDealSheet(
                 onValueChange = { description = it },
                 placeholder = descriptionPlaceholder,
                 icon = Icons.Default.Description,
-                iconBgColor = Color(0xFF8B5CF6).copy(alpha = 0.12f),
-                iconTintColor = Color(0xFF8B5CF6),
+                iconBgColor = FinluxColors.PrimaryViolet.copy(alpha = 0.12f),
+                iconTintColor = FinluxColors.PrimaryViolet,
                 onClear = { description = "" },
             )
 
@@ -250,7 +251,7 @@ fun CreateDealSheet(
                 label = targetLabel,
                 amountText = targetAmountText,
                 onAmountChange = { targetAmountText = it },
-                amountColor = if (isLending) Color(0xFFD97706) else tokens.primary,
+                amountColor = if (isLending) FinluxColors.WarningAmber else tokens.primary,
             )
 
             if (initialDeal != null) {
@@ -319,7 +320,7 @@ fun CreateDealSheet(
                                     style = MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = if (status == DealStatus.COMPLETED) FontWeight.Bold else FontWeight.Normal,
                                     ),
-                                    color = if (status == DealStatus.COMPLETED) Color(0xFF10B981) else tokens.onSurfaceVariant,
+                                    color = if (status == DealStatus.COMPLETED) FinluxColors.IncomeGreen else tokens.onSurfaceVariant,
                                 )
                             }
                         }
@@ -355,12 +356,12 @@ fun CreateDealSheet(
                     .height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLending) Color(0xFFD97706) else tokens.primary,
-                    contentColor = Color.White,
+                    containerColor = if (isLending) FinluxColors.WarningAmber else tokens.primary,
+                    contentColor = tokens.onHero,
                 ),
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = tokens.onHero, strokeWidth = 2.dp)
                 } else {
                     Text(
                         text = buttonLabel,

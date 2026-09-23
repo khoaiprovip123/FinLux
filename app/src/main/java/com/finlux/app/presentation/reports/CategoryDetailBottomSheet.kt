@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.finlux.app.core.designsystem.theme.FinluxColors
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.designsystem.categoryIcon
 import com.finlux.app.core.designsystem.colorFromHex
@@ -77,7 +78,7 @@ fun CategoryDetailBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = if (tokens.isDark) Color(0xFF1E1E2D) else Color.White,
+        containerColor = tokens.surface,
         dragHandle = {
             Surface(
                 modifier = Modifier.padding(vertical = 10.dp),
@@ -129,7 +130,7 @@ fun CategoryDetailBottomSheet(
                         Text(
                             text = (if (isExpense) "Khoản chi tiêu" else "Khoản thu nhập") + " • ${detail.transactionCount} giao dịch",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF6B7280),
+                            color = tokens.textSecondary,
                         )
                     }
                 }
@@ -143,6 +144,7 @@ fun CategoryDetailBottomSheet(
             }
 
             // 1. KPI Cards (Tổng số tiền, Tỷ trọng, Trung bình / gd)
+            val totalCardColor = if (isExpense) FinluxColors.ExpenseRed else FinluxColors.IncomeGreen
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -150,17 +152,17 @@ fun CategoryDetailBottomSheet(
                 // Tổng số tiền
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else if (isExpense) Color(0xFFFEF2F2) else Color(0xFFF0FDF4),
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else if (isExpense) Color(0xFFFEE2E2) else Color(0xFFDCFCE7)),
+                    color = tokens.surfaceSoft,
+                    border = BorderStroke(1.dp, totalCardColor.copy(alpha = 0.25f)),
                     modifier = Modifier.weight(1f),
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(if (isExpense) "Tổng chi tiêu" else "Tổng thu nhập", fontSize = 11.sp, color = if (isExpense) Color(0xFFEF4444) else Color(0xFF10B981))
+                        Text(if (isExpense) "Tổng chi tiêu" else "Tổng thu nhập", fontSize = 11.sp, color = totalCardColor)
                         Text(
                             "${if (isExpense) "-" else "+"}${formatVndAmount(detail.totalAmount)}",
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isExpense) Color(0xFFEF4444) else Color(0xFF10B981),
+                            color = totalCardColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -170,17 +172,17 @@ fun CategoryDetailBottomSheet(
                 // Tỷ trọng %
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF0F9FF),
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE0F2FE)),
+                    color = tokens.surfaceSoft,
+                    border = BorderStroke(1.dp, FinluxColors.TransferBlue.copy(alpha = 0.25f)),
                     modifier = Modifier.weight(1f),
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Tỷ trọng cơ cấu", fontSize = 11.sp, color = Color(0xFF0284C7))
+                        Text("Tỷ trọng cơ cấu", fontSize = 11.sp, color = FinluxColors.TransferBlue)
                         Text(
                             "${(detail.shareOfTotal * 100).roundToInt()}% tổng kỳ",
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0284C7),
+                            color = FinluxColors.TransferBlue,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -191,12 +193,12 @@ fun CategoryDetailBottomSheet(
                 val avgTx = if (detail.transactionCount > 0) detail.totalAmount / detail.transactionCount else 0L
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color(0xFFF9FAFB),
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                    color = tokens.surfaceSoft,
+                    border = BorderStroke(1.dp, tokens.border),
                     modifier = Modifier.weight(1f),
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Bình quân / gd", fontSize = 11.sp, color = Color(0xFF6B7280))
+                        Text("Bình quân / gd", fontSize = 11.sp, color = tokens.textSecondary)
                         Text(
                             formatVndAmount(avgTx),
                             fontSize = 13.5.sp,
@@ -213,8 +215,8 @@ fun CategoryDetailBottomSheet(
             detail.budgetItem?.let { budgetItem ->
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
-                    border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB)),
+                    color = tokens.surfaceSoft,
+                    border = BorderStroke(1.dp, tokens.border),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -231,19 +233,19 @@ fun CategoryDetailBottomSheet(
                             if (budgetItem.isOverBudget) {
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
-                                    color = Color(0xFFEF4444).copy(alpha = 0.15f),
+                                    color = tokens.error.copy(alpha = 0.15f),
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     ) {
-                                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp))
+                                        Icon(Icons.Default.Warning, contentDescription = null, tint = tokens.error, modifier = Modifier.size(12.dp))
                                         Text(
                                             "Vượt ${formatVndAmount(budgetItem.spent - budgetItem.limit)}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFEF4444),
+                                            color = tokens.error,
                                         )
                                     }
                                 }
@@ -252,7 +254,7 @@ fun CategoryDetailBottomSheet(
                                     "Còn lại ${formatVndAmount(budgetItem.remaining)}",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF10B981),
+                                    color = FinluxColors.IncomeGreen,
                                 )
                             }
                         }
@@ -261,13 +263,13 @@ fun CategoryDetailBottomSheet(
                             Text(
                                 "Đã chi ${formatVndAmount(budgetItem.spent)} / ${formatVndAmount(budgetItem.limit)}",
                                 fontSize = 12.sp,
-                                color = Color(0xFF6B7280),
+                                color = tokens.textSecondary,
                             )
                             Text(
                                 "${(budgetItem.percent * 100).roundToInt()}%",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (budgetItem.isOverBudget) Color(0xFFEF4444) else tokens.primary,
+                                color = if (budgetItem.isOverBudget) tokens.error else tokens.primary,
                             )
                         }
 
@@ -277,8 +279,8 @@ fun CategoryDetailBottomSheet(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
-                            color = if (budgetItem.isOverBudget) Color(0xFFEF4444) else tokens.primary,
-                            trackColor = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                            color = if (budgetItem.isOverBudget) tokens.error else tokens.primary,
+                            trackColor = tokens.border,
                         )
                     }
                 }
@@ -311,7 +313,7 @@ fun CategoryDetailBottomSheet(
                     Text(
                         "Chưa có phân bổ ví ghi nhận trong kỳ.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                 } else {
                     FlowRow(
@@ -324,10 +326,10 @@ fun CategoryDetailBottomSheet(
                             val wAccent = colorFromHex(share.wallet.colorHex)
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) tokens.primary.copy(alpha = 0.18f) else if (tokens.isDark) Color.White.copy(alpha = 0.04f) else Color(0xFFF9FAFB),
+                                color = if (isSelected) tokens.primary.copy(alpha = 0.18f) else tokens.surfaceSoft,
                                 border = BorderStroke(
                                     if (isSelected) 1.5.dp else 1.dp,
-                                    if (isSelected) tokens.primary else if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB),
+                                    if (isSelected) tokens.primary else tokens.border,
                                 ),
                                 modifier = Modifier.clickable {
                                     onSelectWalletFilter(if (isSelected) null else share.wallet.id)
@@ -363,7 +365,7 @@ fun CategoryDetailBottomSheet(
                                         text = "${formatVndAmount(share.amount)} (${(share.percentage * 100).roundToInt()}%)",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (isSelected) tokens.primary else Color(0xFF6B7280),
+                                        color = if (isSelected) tokens.primary else tokens.textSecondary,
                                     )
                                 }
                             }
@@ -372,7 +374,7 @@ fun CategoryDetailBottomSheet(
                 }
             }
 
-            HorizontalDivider(color = if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color(0xFFE5E7EB))
+            HorizontalDivider(color = tokens.border)
 
             // 4. Danh sách giao dịch cấu thành trong kỳ (Level 3 & 4)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -389,7 +391,7 @@ fun CategoryDetailBottomSheet(
                     Text(
                         "Chạm để xem / sửa",
                         fontSize = 11.sp,
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                     )
                 }
 
@@ -397,7 +399,7 @@ fun CategoryDetailBottomSheet(
                     Text(
                         "Không có giao dịch nào phù hợp với bộ lọc trong kỳ.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF6B7280),
+                        color = tokens.textSecondary,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 } else {
@@ -408,8 +410,8 @@ fun CategoryDetailBottomSheet(
 
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = if (tokens.isDark) Color.White.copy(alpha = 0.025f) else Color(0xFFF9FAFB),
-                                border = BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.06f) else Color(0xFFEEEEEE)),
+                                color = tokens.surfaceSoft,
+                                border = BorderStroke(1.dp, tokens.border),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { onTransactionClick(tx) },
@@ -450,7 +452,7 @@ fun CategoryDetailBottomSheet(
                                             Text(
                                                 text = "$txDateStr • $wName",
                                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                                color = Color(0xFF6B7280),
+                                                color = tokens.textSecondary,
                                             )
                                         }
                                     }
@@ -463,7 +465,7 @@ fun CategoryDetailBottomSheet(
                                             text = "${if (isExpense) "-" else "+"}${formatVndAmount(tx.amount.value)}",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.5.sp,
-                                            color = if (isExpense) Color(0xFFEF4444) else Color(0xFF10B981),
+                                            color = totalCardColor,
                                         )
                                         Icon(
                                             Icons.AutoMirrored.Filled.ArrowForwardIos,

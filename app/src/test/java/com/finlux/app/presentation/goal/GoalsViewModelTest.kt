@@ -2,6 +2,7 @@ package com.finlux.app.presentation.goal
 
 import app.cash.turbine.test
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.core.sync.DataSyncManager
 import com.finlux.app.domain.model.FinancialGoal
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Wallet
@@ -15,6 +16,8 @@ import com.finlux.app.domain.usecase.WithdrawFromGoalUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -149,6 +152,52 @@ class GoalsViewModelTest {
         assertEquals(2_000_000L, goalRepository.lastDepositAmount)
         assertFalse(viewModel.transactionSheet.value.isOpen)
     }
+    @Test
+    fun `T-SYNC-GOL-VM DataSyncManager notifyDataRestored triggers goals reload`() = runTest(testDispatcher) {
+        // Use a DataSyncManager and reactive goal repository backed by MutableStateFlow
+        val syncManager = DataSyncManager()
+        val reactiveGoalRepo = ReactiveGoalRepository()
+
+        val testViewModel = GoalsViewModel(
+            repository = reactiveGoalRepo,
+            walletRepository = walletRepository,
+            saveGoal = SaveGoalUseCase(reactiveGoalRepo),
+            deleteGoal = DeleteGoalUseCase(reactiveGoalRepo),
+            depositToGoalUseCase = DepositToGoalUseCase(reactiveGoalRepo),
+            withdrawFromGoalUseCase = WithdrawFromGoalUseCase(reactiveGoalRepo),
+            dataSyncManager = syncManager,
+        )
+
+        testViewModel.goals.test {
+            // Initial emission: empty
+            val initial = awaitItem()
+            assertTrue(initial.isEmpty(), "Initial goals should be empty")
+
+            // Simulate: user imported data into repository (e.g., after restore)
+            val restoredGoal = FinancialGoal(
+                id = "goal-restored",
+                name = "Mua nhà",
+                targetAmount = Money(500_000_000L),
+                savedAmount = Money(100_000_000L),
+                deadline = Instant.now().plusSeconds(365L * 86400),
+                category = "savings",
+                monthlyContribution = Money(10_000_000L),
+            )
+            reactiveGoalRepo.emitGoals(listOf(restoredGoal))
+
+            // Simulate: DataSyncManager notifies all ViewModels that data was restored
+            syncManager.notifyDataRestored()
+            advanceUntilIdle()
+
+            // Goals flow must now contain the restored goal
+            val updated = awaitItem()
+            assertEquals(1, updated.size, "Goals must reload after notifyDataRestored()")
+            assertEquals("goal-restored", updated.first().id)
+            assertEquals("Mua nhà", updated.first().name)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }
 
 private class FakeGoalRepository : GoalRepository {
@@ -190,4 +239,19 @@ private class FakeWalletRepository : WalletRepository {
     )
     override suspend fun upsertWallet(wallet: Wallet): AppResult<String> = AppResult.Success(wallet.id)
     override suspend fun deleteWallet(wallet: Wallet): AppResult<Unit> = AppResult.Success(Unit)
+}
+
+/** Fake repository dùng MutableStateFlow để test reactive reload khi DataSyncManager bắn tín hiệu. */
+private class ReactiveGoalRepository : GoalRepository {
+    private val goalsState = MutableStateFlow<List<FinancialGoal>>(emptyList())
+
+    fun emitGoals(goals: List<FinancialGoal>) {
+        goalsState.value = goals
+    }
+
+    override fun observeGoals(): Flow<List<FinancialGoal>> = goalsState.asStateFlow()
+    override suspend fun upsertGoal(goal: FinancialGoal): AppResult<String> = AppResult.Success(goal.id)
+    override suspend fun deleteGoal(goal: FinancialGoal): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun depositToGoal(goalId: String, walletId: String, amount: Long, note: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
+    override suspend fun withdrawFromGoal(goalId: String, walletId: String, amount: Long, note: String, date: Instant): AppResult<Unit> = AppResult.Success(Unit)
 }

@@ -41,7 +41,7 @@ object BudgetProrationCalculator {
     fun calculateDaysBetween(
         start: Instant,
         endExclusive: Instant,
-        zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh"),
+        zoneId: ZoneId = FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID,
     ): Long {
         val startDate = start.atZone(zoneId).toLocalDate()
         val endDate = endExclusive.atZone(zoneId).toLocalDate()
@@ -55,7 +55,7 @@ object BudgetProrationCalculator {
         standardLimit: Money,
         period: FinancialPeriod,
         standardDays: Long = DEFAULT_STANDARD_CYCLE_DAYS,
-        zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh"),
+        zoneId: ZoneId = FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID,
     ): Money {
         val actualDays = calculateDaysBetween(period.start, period.endExclusive, zoneId)
         return calculateProratedLimit(standardLimit, actualDays, standardDays)

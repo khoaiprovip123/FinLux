@@ -68,29 +68,34 @@ class AddTransactionUseCase @Inject constructor(
             val notiRepo = notificationRepository ?: return
 
             val config = salaryCycleRepository?.observeConfig()?.firstOrNull() ?: SalaryCycleConfig()
-            val period = financialPeriodResolver?.resolvePeriodContaining(transaction.date, config)
+            val timeline = salaryCycleRepository?.observeTimeline()?.firstOrNull().orEmpty()
+            val period = if (timeline.isNotEmpty()) {
+                financialPeriodResolver?.resolvePeriodContaining(transaction.date, timeline, config)
+            } else {
+                financialPeriodResolver?.resolvePeriodContaining(transaction.date, config)
+            }
             val periodKey = period?.key ?: "month:${FinanceTime.financialMonth(transaction.date)}"
 
             val budgets = budgetRepo.observeBudgets(periodKey).firstOrNull().orEmpty()
             val budget = budgets.firstOrNull { it.categoryId == catId } ?: return
             if (budget.limitAmount.value <= 0) return
 
-            val newSpent = budget.spentAmount.value + transaction.amount.value
+            val currentSpent = budget.spentAmount.value
             val limit = budget.limitAmount.value
-            val reached100 = newSpent >= limit
-            val reached80 = newSpent >= (limit * 80) / 100
+            val reached100 = currentSpent >= (limit * com.finlux.app.domain.model.FinanceBusinessConstants.Budget.EXCEEDED_PERCENT) / 100
+            val reached80 = currentSpent >= (limit * com.finlux.app.domain.model.FinanceBusinessConstants.Budget.WARNING_PERCENT) / 100
 
             val categories = categoryRepository?.observeCategories()?.firstOrNull().orEmpty()
             val categoryName = categories.firstOrNull { it.id == catId }?.name ?: "Danh mục"
 
             if (reached100 && !budget.notified100) {
                 val title = "Đã vượt ngân sách"
-                val body = "Danh mục [$categoryName] đã chi ${formatVnd(newSpent)} trên hạn mức ${formatVnd(limit)}."
+                val body = "Danh mục [$categoryName] đã chi ${formatVnd(currentSpent)} trên hạn mức ${formatVnd(limit)}."
 
                 systemNotificationHelper?.postBudgetAlertNotification(
                     categoryId = catId,
                     categoryName = categoryName,
-                    spentAmount = newSpent,
+                    spentAmount = currentSpent,
                     limitAmount = limit,
                     isExceeded = true,
                 )
@@ -101,7 +106,7 @@ class AddTransactionUseCase @Inject constructor(
                         title = title,
                         body = body,
                         type = NotificationType.BUDGET_ALERT,
-                        amount = Money(newSpent),
+                        amount = Money(currentSpent),
                         categoryId = catId,
                         targetRoute = "budget",
                         timestamp = Instant.now(),
@@ -112,20 +117,19 @@ class AddTransactionUseCase @Inject constructor(
 
                 budgetRepo.upsertBudget(
                     budget.copy(
-                        spentAmount = Money(newSpent),
                         notified80 = true,
                         notified100 = true,
                     )
                 )
             } else if (reached80 && !budget.notified80) {
-                val percent = (newSpent * 100) / limit
+                val percent = (currentSpent * 100) / limit
                 val title = "Sắp chạm hạn mức ngân sách"
-                val body = "Danh mục [$categoryName] đã sử dụng ${percent}% hạn mức (${formatVnd(newSpent)} / ${formatVnd(limit)})."
+                val body = "Danh mục [$categoryName] đã sử dụng ${percent}% hạn mức (${formatVnd(currentSpent)} / ${formatVnd(limit)})."
 
                 systemNotificationHelper?.postBudgetAlertNotification(
                     categoryId = catId,
                     categoryName = categoryName,
-                    spentAmount = newSpent,
+                    spentAmount = currentSpent,
                     limitAmount = limit,
                     isExceeded = false,
                 )
@@ -136,7 +140,7 @@ class AddTransactionUseCase @Inject constructor(
                         title = title,
                         body = body,
                         type = NotificationType.BUDGET_ALERT,
-                        amount = Money(newSpent),
+                        amount = Money(currentSpent),
                         categoryId = catId,
                         targetRoute = "budget",
                         timestamp = Instant.now(),
@@ -147,7 +151,6 @@ class AddTransactionUseCase @Inject constructor(
 
                 budgetRepo.upsertBudget(
                     budget.copy(
-                        spentAmount = Money(newSpent),
                         notified80 = true,
                     )
                 )

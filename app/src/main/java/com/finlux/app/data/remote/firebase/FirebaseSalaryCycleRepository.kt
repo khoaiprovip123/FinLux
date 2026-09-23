@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import java.time.Instant
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,16 @@ class FirebaseSalaryCycleRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
 ) : SalaryCycleRepository {
+
+    private fun userFinancialPrefs(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.FINANCIAL_PREFERENCES)
+
+    private fun userSalaryRollovers(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.SALARY_ROLLOVERS)
+
+    private fun userSalaryTimeline(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.SALARY_TIMELINE)
+
     override fun observeConfig(): Flow<SalaryCycleConfig> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) {
@@ -27,8 +38,7 @@ class FirebaseSalaryCycleRepository(
             return@callbackFlow
         }
 
-        val document = firestore.collection("users").document(uid)
-            .collection("financialPreferences").document("salaryCycle")
+        val document = userFinancialPrefs(uid).document(FirestoreSchema.Documents.SALARY_CYCLE)
         val registration = document.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
@@ -50,8 +60,7 @@ class FirebaseSalaryCycleRepository(
             val uid = requireUid()
             val payload = SalaryCycleFirestoreMapper.toMap(config).toMutableMap()
             payload["updatedAt"] = FieldValue.serverTimestamp()
-            firestore.collection("users").document(uid)
-                .collection("financialPreferences").document("salaryCycle")
+            userFinancialPrefs(uid).document(FirestoreSchema.Documents.SALARY_CYCLE)
                 .set(payload, SetOptions.merge())
                 .await()
             Unit
@@ -60,8 +69,7 @@ class FirebaseSalaryCycleRepository(
     override suspend fun isRolloverProcessed(cycleKey: String): Boolean = runCatching {
         val uid = auth.currentUser?.uid ?: return false
         val docId = sanitizeKey(cycleKey)
-        val snapshot = firestore.collection("users").document(uid)
-            .collection("salaryRollovers").document(docId).get().await()
+        val snapshot = userSalaryRollovers(uid).document(docId).get().await()
         snapshot.exists()
     }.getOrDefault(false)
 
@@ -73,8 +81,7 @@ class FirebaseSalaryCycleRepository(
                 "cycleKey" to cycleKey,
                 "processedAt" to FieldValue.serverTimestamp(),
             )
-            firestore.collection("users").document(uid)
-                .collection("salaryRollovers").document(docId)
+            userSalaryRollovers(uid).document(docId)
                 .set(data, SetOptions.merge())
                 .await()
             Unit
@@ -88,8 +95,7 @@ class FirebaseSalaryCycleRepository(
             return@callbackFlow
         }
 
-        val collection = firestore.collection("users").document(uid)
-            .collection("salaryCycleTimeline")
+        val collection = userSalaryTimeline(uid)
         val registration = collection.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
@@ -117,8 +123,7 @@ class FirebaseSalaryCycleRepository(
             val payload = SalaryCycleFirestoreMapper.recordToMap(recordToSave).toMutableMap()
             payload["updatedAt"] = FieldValue.serverTimestamp()
 
-            firestore.collection("users").document(uid)
-                .collection("salaryCycleTimeline").document(docId)
+            userSalaryTimeline(uid).document(docId)
                 .set(payload, SetOptions.merge())
                 .await()
 

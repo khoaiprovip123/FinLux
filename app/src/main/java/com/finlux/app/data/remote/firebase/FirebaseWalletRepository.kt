@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import com.finlux.app.domain.model.Money
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.model.WalletType
@@ -51,7 +52,7 @@ class FirebaseWalletRepository(
             firestore.runBatch { batch ->
                 allWalletsSnapshot.documents.forEach { doc ->
                     if (doc.id != id) {
-                        batch.update(doc.reference, "isDefault", false)
+                        batch.update(doc.reference, FirestoreSchema.Fields.IS_DEFAULT, false)
                     }
                 }
                 if (exists) {
@@ -89,6 +90,19 @@ class FirebaseWalletRepository(
             firestore.userWallets(uid).document(wallet.id).delete().await()
         }
         Unit
+    }
+
+    override suspend fun deleteWalletRaw(walletId: String): AppResult<Unit> = firebaseResult("Không thể xóa ví") {
+        val uid = requireUid()
+        firestore.userWallets(uid).document(walletId).delete().await()
+        Unit
+    }
+
+    override suspend fun restoreWalletRaw(wallet: Wallet): AppResult<String> = firebaseResult("Không thể phục hồi ví") {
+        val uid = requireUid()
+        val id = wallet.id.ifBlank { UUID.randomUUID().toString() }
+        firestore.userWallets(uid).document(id).set(wallet.copy(id = id).toWalletMap()).await()
+        id
     }
 
     private fun requireUid(): String = auth.currentUser?.uid ?: error("Phiên đăng nhập đã hết hạn")

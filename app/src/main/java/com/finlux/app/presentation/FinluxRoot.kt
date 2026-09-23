@@ -97,7 +97,6 @@ fun FinluxRoot(
                 FinluxNavHost(
                     selectedTheme = theme,
                     onThemeSelected = viewModel::setTheme,
-                    selectedUiStyle = uiStyle,
                     onUiStyleSelected = viewModel::setUiStyle,
                     uiPreferences = uiPreferences,
                     onUiPreferencesChanged = viewModel::setUiPreferences,

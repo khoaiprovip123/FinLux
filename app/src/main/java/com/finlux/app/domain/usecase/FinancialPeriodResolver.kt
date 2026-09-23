@@ -180,5 +180,5 @@ class DefaultFinancialPeriodResolver @Inject constructor(
 
     private fun resolveZone(config: SalaryCycleConfig): ZoneId =
         runCatching { ZoneId.of(config.financeTimeZone) }
-            .getOrDefault(ZoneId.of("Asia/Ho_Chi_Minh"))
+            .getOrDefault(com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID)
 }

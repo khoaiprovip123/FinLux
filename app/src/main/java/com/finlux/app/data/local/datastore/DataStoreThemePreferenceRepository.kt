@@ -49,11 +49,15 @@ class DataStoreThemePreferenceRepository @Inject constructor(
     override val uiStyle: Flow<AppUiStyle> = context.finluxDataStore.data.map { preferences ->
         preferences[UiStyleKey]
             ?.let { stored -> AppUiStyle.entries.firstOrNull { it.name == stored } }
-            ?: AppUiStyle.CLASSIC_LIQUID
+            ?: AppUiStyle.DEFAULT
     }
 
     override suspend fun setUiStyle(uiStyle: AppUiStyle) {
         context.finluxDataStore.edit { it[UiStyleKey] = uiStyle.name }
+    }
+
+    override suspend fun resetPreferences() {
+        context.finluxDataStore.edit { it.clear() }
     }
 
     override val preferences: Flow<UiPreferences> = context.finluxDataStore.data.map { stored ->

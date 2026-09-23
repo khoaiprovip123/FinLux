@@ -40,8 +40,8 @@ android {
         applicationId = "com.finlux.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 180
-        versionName = "1.25.6"
+        versionCode = 189
+        versionName = "1.25.15"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -97,7 +97,8 @@ android {
         unitTests.isReturnDefaultValues = true
         unitTests.all {
             it.useJUnitPlatform()
-            it.jvmArgs("-Xmx2g", "-XX:MaxMetaspaceSize=512m")
+            it.jvmArgs("-Xmx3g", "-XX:MaxMetaspaceSize=512m")
+            it.forkEvery = 100
         }
     }
 }
@@ -164,6 +165,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
+    testImplementation(libs.json)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

@@ -98,13 +98,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.finlux.app.BuildConfig
 import com.finlux.app.core.designsystem.FinluxBlue
 import com.finlux.app.core.designsystem.FinluxBrandMark
-import com.finlux.app.core.designsystem.FinluxCyan
-import com.finlux.app.core.designsystem.FinluxPurple
 import com.finlux.app.core.designsystem.FinluxStyleBackdrop
 import com.finlux.app.core.designsystem.FinluxUserAvatar
 import com.finlux.app.core.designsystem.GlassBottomSheet
 import com.finlux.app.core.designsystem.GlassCard
 import com.finlux.app.core.designsystem.GlassTopBar
+import com.finlux.app.core.designsystem.LocalAppUiStyle
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.core.navigation.Route
 import com.finlux.app.domain.model.AppUiStyle
 import com.finlux.app.domain.model.CardDensity
@@ -126,7 +127,6 @@ import com.finlux.app.presentation.settings.prism.PrismSettingsScreen
 fun SettingsScreen(
     selectedTheme: ThemePreference,
     onThemeSelected: (ThemePreference) -> Unit,
-    selectedUiStyle: AppUiStyle = AppUiStyle.CLASSIC_LIQUID,
     onUiStyleSelected: (AppUiStyle) -> Unit = {},
     uiPreferences: UiPreferences,
     onUiPreferencesChanged: (UiPreferences) -> Unit,
@@ -136,11 +136,11 @@ fun SettingsScreen(
     onCheckUpdate: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
+    val selectedUiStyle = LocalAppUiStyle.current
     if (selectedUiStyle == AppUiStyle.PRISM) {
         PrismSettingsScreen(
             selectedTheme = selectedTheme,
             onThemeSelected = onThemeSelected,
-            selectedUiStyle = selectedUiStyle,
             onUiStyleSelected = onUiStyleSelected,
             uiPreferences = uiPreferences,
             onUiPreferencesChanged = onUiPreferencesChanged,
@@ -544,6 +544,7 @@ fun SettingsScreen(
 
             if (showUiStyleSheet) {
                 GlassBottomSheet(onDismiss = { showUiStyleSheet = false }) {
+                    val tokens = LocalFinluxTokens.current
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -560,15 +561,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .size(46.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(
-                                                Color(0xFF3478F6),
-                                                Color(0xFF7758F6),
-                                                Color(0xFF47C8FF),
-                                            )
-                                        )
-                                    ),
+                                    .background(brush = tokens.heroBrush),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text("🎨", fontSize = 22.sp)
@@ -578,23 +571,23 @@ fun SettingsScreen(
                                     "Phong cách giao diện",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = tokens.onSurface,
                                 )
                                 Text(
                                     "Tùy biến động lực học & hiệu ứng kính",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = tokens.onSurfaceVariant,
                                 )
                             }
                         }
 
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                        HorizontalDivider(color = tokens.border)
 
                         // Option 1: FinLux Prism (Data-first + Spatial + Bento)
                         UiStyleCard(
                             title = "FinLux Prism",
                             badge = "Prism 2026",
-                            badgeColors = listOf(Color(0xFF3A7BFF), Color(0xFF6F52F5), Color(0xFF23C7E8)),
+                            badgeColors = listOf(FinluxColors.PrimaryBlue, FinluxColors.PrimaryViolet, FinluxColors.PrimaryCyan),
                             description = "Data-first, bố cục Bento, bề mặt Soft Surface mượt mà, tối giản hiệu ứng kính để tập trung dữ liệu.",
                             icon = "💎",
                             tags = listOf("📊 Data-First", "🍱 Bento Layout", "✨ Soft Surface", "⚡ Mượt mà"),
@@ -609,7 +602,7 @@ fun SettingsScreen(
                         UiStyleCard(
                             title = "Modern Luxury",
                             badge = "NextGen 2026",
-                            badgeColors = listOf(Color(0xFF3478F6), Color(0xFF7758F6)),
+                            badgeColors = listOf(FinluxColors.PrimaryBlue, FinluxColors.PrimaryViolet),
                             description = "Kính lỏng đa tầng, bo tròn sang trọng, chuyển động sống động và công nghệ hiện đại.",
                             icon = "✨",
                             tags = listOf("💎 Kính lỏng 3D", "⚡ 120 FPS", "🌌 Hiệu ứng Aurora"),
@@ -624,7 +617,7 @@ fun SettingsScreen(
                         UiStyleCard(
                             title = "Liquid Glass",
                             badge = "Classic v1.5",
-                            badgeColors = listOf(Color(0xFF0284C7), Color(0xFF0D9488)),
+                            badgeColors = listOf(FinluxColors.PrimaryCyan, FinluxColors.IncomeGreen),
                             description = "Thiết kế thanh lịch, độ tương phản cao, tối ưu trực quan và tập trung hiệu năng.",
                             icon = "💧",
                             tags = listOf("🎯 Trực quan", "📊 Tương phản cao", "⚡ Siêu nhẹ"),
@@ -653,23 +646,16 @@ private fun ProfileHero(
     onAvatar: () -> Unit,
     onEditName: () -> Unit,
 ) {
+    val tokens = LocalFinluxTokens.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
         color = Color.Transparent,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
+        border = BorderStroke(1.dp, tokens.onHero.copy(alpha = 0.25f)),
     ) {
         Column(
             modifier = Modifier
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            Color(0xFF2563EB),
-                            Color(0xFF4F46E5),
-                            Color(0xFF06B6D4),
-                        ),
-                    ),
-                )
+                .background(tokens.heroBrush)
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -690,7 +676,7 @@ private fun ProfileHero(
                     ) {
                         Text(
                             text = name.ifBlank { "Người dùng" },
-                            color = Color.White,
+                            color = tokens.onHero,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
@@ -700,17 +686,17 @@ private fun ProfileHero(
                         Text(
                             text = "Premium",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFFFD700),
+                            color = FinluxColors.WarningAmber,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
-                                .background(Color(0xFFFFD700).copy(alpha = 0.22f), RoundedCornerShape(8.dp))
+                                .background(FinluxColors.WarningAmber.copy(alpha = 0.22f), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
                     if (email.isNotBlank()) {
                         Text(
                             text = email,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = tokens.onHeroMuted,
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -719,13 +705,13 @@ private fun ProfileHero(
                     }
                     Text(
                         text = "Chạm để chỉnh sửa thông tin",
-                        color = Color.White.copy(alpha = 0.72f),
+                        color = tokens.onHero.copy(alpha = 0.72f),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
                 IconButton(onClick = onEditName) {
-                    Icon(Icons.Default.Edit, "Đổi tên người dùng", tint = Color.White)
+                    Icon(Icons.Default.Edit, "Đổi tên người dùng", tint = tokens.onHero)
                 }
             }
 
@@ -733,8 +719,8 @@ private fun ProfileHero(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White.copy(alpha = 0.16f))
-                    .border(1.dp, Color.White.copy(alpha = 0.24f), RoundedCornerShape(18.dp))
+                    .background(tokens.heroGlassSurface)
+                    .border(1.dp, tokens.onHero.copy(alpha = 0.24f), RoundedCornerShape(18.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Row(
@@ -743,21 +729,21 @@ private fun ProfileHero(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Tổng tài sản", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall)
-                        Text(totalAssets.toVnd(), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text("Quản lý tập trung và an toàn", color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelSmall)
+                        Text("Tổng tài sản", color = tokens.onHero.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall)
+                        Text(totalAssets.toVnd(), color = tokens.onHero, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("Quản lý tập trung và an toàn", color = tokens.onHero.copy(alpha = 0.75f), style = MaterialTheme.typography.labelSmall)
                     }
                     Box(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.20f)),
+                            .background(tokens.onHero.copy(alpha = 0.20f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             Icons.Default.AccountBalanceWallet,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = tokens.onHero,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -771,13 +757,13 @@ private fun ProfileHero(
 private fun ProfileFeatureTiles(walletCount: Int, onNavigate: (String) -> Unit) {
     val savingSpinAccent = MaterialTheme.colorScheme.primary
     val items = listOf(
-        ProfileTile("Ví của tôi", "$walletCount ví", Icons.Default.AccountBalanceWallet, FinluxBlue, Route.Wallets.value),
-        ProfileTile("Thương vụ", "Đầu tư / ROI", Icons.Default.TrendingUp, Color(0xFF10B981), Route.Deals.value),
-        ProfileTile("Ngân sách", "Theo dõi", Icons.Default.Savings, FinluxPurple, Route.Budget.value),
-        ProfileTile("Nợ & Tín dụng", "Thoát nợ", Icons.Default.CreditCard, Color(0xFFE11D48), Route.Debt.value),
-        ProfileTile("Danh mục", "Tùy chỉnh", Icons.Default.Category, FinluxCyan, Route.Categories.value),
-        ProfileTile("Nhắc nhở", "Định kỳ", Icons.Default.Alarm, Color(0xFFFF8A42), Route.Reminders.value),
-        ProfileTile("Mục tiêu", "Tích lũy", Icons.Default.Savings, FinluxPurple, Route.Goals.value),
+        ProfileTile("Ví của tôi", "$walletCount ví", Icons.Default.AccountBalanceWallet, FinluxColors.PrimaryBlue, Route.Wallets.value),
+        ProfileTile("Thương vụ", "Đầu tư / ROI", Icons.Default.TrendingUp, FinluxColors.IncomeGreen, Route.Deals.value),
+        ProfileTile("Ngân sách", "Theo dõi", Icons.Default.Savings, FinluxColors.BudgetViolet, Route.Budget.value),
+        ProfileTile("Nợ & Tín dụng", "Thoát nợ", Icons.Default.CreditCard, FinluxColors.ExpenseRed, Route.Debt.value),
+        ProfileTile("Danh mục", "Tùy chỉnh", Icons.Default.Category, FinluxColors.PrimaryCyan, Route.Categories.value),
+        ProfileTile("Nhắc nhở", "Định kỳ", Icons.Default.Alarm, FinluxColors.WarningAmber, Route.Reminders.value),
+        ProfileTile("Mục tiêu", "Tích lũy", Icons.Default.Savings, FinluxColors.BudgetViolet, Route.Goals.value),
         ProfileTile("Vòng quay", "Tiết kiệm", Icons.Default.Casino, savingSpinAccent, Route.SavingSpinSettings.value),
     )
     LazyRow(
@@ -871,6 +857,7 @@ private fun AboutFinluxCard(
     onCheckUpdate: () -> Unit,
 ) {
     GlassCard(Modifier.fillMaxWidth()) {
+        val tokens = LocalFinluxTokens.current
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FinluxBrandMark(size = 64.dp)
@@ -915,7 +902,7 @@ private fun AboutFinluxCard(
                     checked = autoCheckUpdates,
                     onCheckedChange = onAutoCheckUpdatesChanged,
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
+                        checkedThumbColor = tokens.onHero,
                         checkedTrackColor = MaterialTheme.colorScheme.primary,
                     ),
                 )
@@ -961,27 +948,28 @@ private fun createCameraUri(context: Context): Uri {
 
 @Composable
 private fun VisualStylePreview(option: VisualStyle, selected: Boolean, onClick: () -> Unit) {
+    val tokens = LocalFinluxTokens.current
     val colors = when (option) {
-        VisualStyle.MODERN_DARK -> listOf(Color(0xFF020D1E), Color(0xFF0B2848), Color(0xFF087FE6))
-        VisualStyle.GLASSMORPHISM -> listOf(Color(0xFF264990), Color(0xFF7457CE), Color(0xFF54B5E8))
-        VisualStyle.DYNAMIC_GRADIENT -> listOf(Color(0xFF8B28F7), Color(0xFF4E56FF), Color(0xFF14D1D0))
+        VisualStyle.MODERN_DARK -> listOf(FinluxColors.BackgroundDark, FinluxColors.SurfacePrimaryDark, FinluxColors.PrimaryBlue)
+        VisualStyle.GLASSMORPHISM -> listOf(FinluxColors.PrimaryViolet, FinluxColors.PrimaryBlue, FinluxColors.PrimaryCyan)
+        VisualStyle.DYNAMIC_GRADIENT -> listOf(FinluxColors.PrimaryViolet, FinluxColors.PrimaryBlue, FinluxColors.PrimaryCyan)
     }
     Surface(
         modifier = Modifier.width(150.dp).height(116.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         color = Color.Transparent,
-        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) tokens.primary else tokens.border),
     ) {
         Box(Modifier.background(Brush.linearGradient(colors)).padding(12.dp)) {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     repeat(3) { index ->
-                        Box(Modifier.weight(1f).height(if (index == 0) 31.dp else 23.dp).background(Color.White.copy(alpha = if (option == VisualStyle.MODERN_DARK) .08f else .20f), RoundedCornerShape(7.dp)))
+                        Box(Modifier.weight(1f).height(if (index == 0) 31.dp else 23.dp).background(tokens.onHero.copy(alpha = if (option == VisualStyle.MODERN_DARK) .08f else .20f), RoundedCornerShape(7.dp)))
                     }
                 }
                 Column {
-                    Text(option.label, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
-                    Text(option.description, color = Color.White.copy(alpha = .78f), style = MaterialTheme.typography.labelSmall)
+                    Text(option.label, color = tokens.onHero, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                    Text(option.description, color = tokens.onHeroMuted, style = MaterialTheme.typography.labelSmall)
                 }
             }
             if (selected) {
@@ -989,13 +977,13 @@ private fun VisualStylePreview(option: VisualStyle, selected: Boolean, onClick: 
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .size(20.dp)
-                        .background(Color.White, CircleShape),
+                        .background(tokens.onHero, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Đang chọn",
-                        tint = Color(0xFF3478F6),
+                        tint = tokens.primary,
                         modifier = Modifier.size(14.dp),
                     )
                 }
@@ -1015,15 +1003,9 @@ private fun UiStyleCard(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.4f
-    val activeBorderBrush = Brush.horizontalGradient(
-        listOf(
-            Color(0xFF3478F6),
-            Color(0xFF7758F6),
-            Color(0xFF47C8FF),
-        )
-    )
-    val inactiveBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    val tokens = LocalFinluxTokens.current
+    val activeBorderBrush = tokens.heroBrush
+    val inactiveBorder = BorderStroke(1.dp, tokens.border)
 
     Surface(
         modifier = Modifier
@@ -1031,11 +1013,7 @@ private fun UiStyleCard(
             .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) {
-            if (isDark) Color(0xFF1E293B).copy(alpha = 0.85f) else Color(0xFFF0F6FF)
-        } else {
-            if (isDark) Color(0xFF131D2E).copy(alpha = 0.65f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        },
+        color = if (isSelected) tokens.surfaceSoft else tokens.surface,
         border = if (isSelected) BorderStroke(1.8.dp, activeBorderBrush) else inactiveBorder,
         shadowElevation = if (isSelected) 4.dp else 0.dp,
     ) {
@@ -1059,7 +1037,7 @@ private fun UiStyleCard(
                             if (isSelected) {
                                 Brush.linearGradient(badgeColors).copyColorAlpha(0.20f)
                             } else {
-                                Brush.linearGradient(listOf(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f), MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)))
+                                Brush.linearGradient(listOf(tokens.surfaceSoft, tokens.surfaceSoft))
                             }
                         ),
                     contentAlignment = Alignment.Center,
@@ -1076,7 +1054,7 @@ private fun UiStyleCard(
                             text = title,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            color = if (isSelected) tokens.primary else tokens.onSurface,
                         )
                         Box(
                             modifier = Modifier
@@ -1088,7 +1066,7 @@ private fun UiStyleCard(
                                 text = badge,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
+                                color = tokens.onHero,
                                 maxLines = 1,
                                 softWrap = false,
                             )
@@ -1100,8 +1078,8 @@ private fun UiStyleCard(
                     selected = isSelected,
                     onClick = onClick,
                     colors = RadioButtonDefaults.colors(
-                        selectedColor = Color(0xFF3478F6),
-                        unselectedColor = MaterialTheme.colorScheme.outlineVariant,
+                        selectedColor = tokens.primary,
+                        unselectedColor = tokens.border,
                     ),
                 )
             }
@@ -1110,7 +1088,7 @@ private fun UiStyleCard(
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = tokens.onSurfaceVariant,
                 lineHeight = 18.sp,
             )
 
@@ -1124,15 +1102,15 @@ private fun UiStyleCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(
-                                if (isSelected) Color(0xFF3478F6).copy(alpha = 0.12f)
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                if (isSelected) tokens.primary.copy(alpha = 0.12f)
+                                else tokens.surfaceSoft
                             )
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
                             text = tag,
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (isSelected) Color(0xFF3478F6) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (isSelected) tokens.primary else tokens.onSurfaceVariant,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             maxLines = 1,
                         )

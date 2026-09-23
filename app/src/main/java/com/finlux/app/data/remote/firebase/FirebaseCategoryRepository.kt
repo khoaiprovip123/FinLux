@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -21,13 +22,16 @@ class FirebaseCategoryRepository(
     private val firestore: FirebaseFirestore,
 ) : CategoryRepository {
 
+    private fun userCategories(uid: String) =
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.CATEGORIES)
+
     override fun observeCategories(): Flow<List<Category>> = callbackFlow {
         val uid = auth.currentUser?.uid
         if (uid == null) {
             close()
             return@callbackFlow
         }
-        val registration = firestore.collection("users").document(uid).collection("categories")
+        val registration = userCategories(uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
                 else trySend(snapshot?.documents.orEmpty().mapNotNull { it.toCategory() })
@@ -38,7 +42,7 @@ class FirebaseCategoryRepository(
     override suspend fun upsertCategory(category: Category): AppResult<String> = firebaseResult("Không thể lưu danh mục") {
         val uid = requireUid()
         val id = category.id.ifBlank { UUID.randomUUID().toString() }
-        firestore.collection("users").document(uid).collection("categories").document(id)
+        userCategories(uid).document(id)
             .set(category.copy(id = id).toCategoryMap()).await()
         id
     }
@@ -48,7 +52,7 @@ class FirebaseCategoryRepository(
         val uid = requireUid()
         val used = firestore.userTransactions(uid).whereEqualTo("categoryId", category.id).limit(1).get().await()
         require(used.isEmpty) { "Danh mục đã phát sinh giao dịch, không thể xóa" }
-        firestore.collection("users").document(uid).collection("categories").document(category.id).delete().await()
+        userCategories(uid).document(category.id).delete().await()
         Unit
     }
 

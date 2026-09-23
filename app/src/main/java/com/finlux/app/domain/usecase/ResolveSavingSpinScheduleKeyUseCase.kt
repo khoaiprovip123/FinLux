@@ -49,10 +49,10 @@ class ResolveSavingSpinScheduleKeyUseCase @Inject constructor(
     }
 
     private fun resolveZone(raw: String): ZoneId = runCatching { ZoneId.of(raw) }
-        .getOrDefault(ZoneId.of(DEFAULT_TIME_ZONE))
+        .getOrDefault(com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID)
 
     companion object {
-        private const val DEFAULT_TIME_ZONE = "Asia/Ho_Chi_Minh"
+        private const val DEFAULT_TIME_ZONE = com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_NAME
         private val DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE
     }
 }

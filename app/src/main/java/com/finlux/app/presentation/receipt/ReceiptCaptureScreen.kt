@@ -98,7 +98,7 @@ fun ReceiptCaptureScreen(onDismiss: () -> Unit, onCaptured: (String) -> Unit) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                 WaterGlassCard(Modifier.size(60.dp), tint = tokens.primary, onClick = { gallery.launch("image/*") }, padding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.PhotoLibrary, "Thư viện", tint = tokens.primary) } }
                 Box(Modifier.size(82.dp).background(Brush.linearGradient(listOf(tokens.primary, tokens.primary.copy(alpha = 0.8f))), CircleShape).border(3.dp, tokens.border, CircleShape), contentAlignment = Alignment.Center) {
-                    IconButton(onClick = { if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera() else permission.launch(Manifest.permission.CAMERA) }, modifier = Modifier.fillMaxSize()) { Icon(Icons.Default.CameraAlt, "Chụp", Modifier.size(36.dp), tint = Color.White) }
+                    IconButton(onClick = { if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera() else permission.launch(Manifest.permission.CAMERA) }, modifier = Modifier.fillMaxSize()) { Icon(Icons.Default.CameraAlt, "Chụp", Modifier.size(36.dp), tint = tokens.onHero) }
                 }
                 Box(Modifier.size(60.dp))
             }

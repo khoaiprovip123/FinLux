@@ -1,6 +1,7 @@
 package com.finlux.app.data.remote.firebase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.data.remote.firebase.schema.FirestoreSchema
 import com.finlux.app.domain.model.DebtAccount
 import com.finlux.app.domain.model.DebtPaymentHistory
 import com.finlux.app.domain.model.DebtType
@@ -38,7 +39,7 @@ class FirebaseDebtRepository(
             close()
             return@callbackFlow
         }
-        val registration = firestore.collection("users").document(uid).collection("debts")
+        val registration = firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.DEBTS)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -67,9 +68,9 @@ class FirebaseDebtRepository(
             close()
             return@callbackFlow
         }
-        val registration = firestore.collection("users").document(uid)
-            .collection("debts").document(debtId)
-            .collection("payments")
+        val registration = firestore.collection(FirestoreSchema.USERS).document(uid)
+            .collection(FirestoreSchema.Collections.DEBTS).document(debtId)
+            .collection(FirestoreSchema.Collections.DEBT_PAYMENTS)
             .orderBy("paymentDate", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) close(error)
@@ -93,14 +94,14 @@ class FirebaseDebtRepository(
     override suspend fun upsertDebt(debt: DebtAccount): AppResult<String> = firebaseResult("Không thể lưu khoản nợ") {
         val uid = requireUid()
         val id = debt.id.ifBlank { UUID.randomUUID().toString() }
-        firestore.collection("users").document(uid).collection("debts").document(id)
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.DEBTS).document(id)
             .set(debt.copy(id = id, userId = uid).toDebtMap()).await()
         id
     }
 
     override suspend fun deleteDebt(debt: DebtAccount): AppResult<Unit> = firebaseResult("Không thể xóa khoản nợ") {
         val uid = requireUid()
-        firestore.collection("users").document(uid).collection("debts").document(debt.id).delete().await()
+        firestore.collection(FirestoreSchema.USERS).document(uid).collection(FirestoreSchema.Collections.DEBTS).document(debt.id).delete().await()
         Unit
     }
 
@@ -114,11 +115,11 @@ class FirebaseDebtRepository(
         paymentDate: Instant,
     ): AppResult<Unit> = firebaseResult("Không thể thực hiện thanh toán nợ") {
         val uid = requireUid()
-        val userDoc = firestore.collection("users").document(uid)
-        val walletRef = userDoc.collection("wallets").document(walletId)
-        val debtRef = userDoc.collection("debts").document(debtId)
+        val userDoc = firestore.collection(FirestoreSchema.USERS).document(uid)
+        val walletRef = userDoc.collection(FirestoreSchema.Collections.WALLETS).document(walletId)
+        val debtRef = userDoc.collection(FirestoreSchema.Collections.DEBTS).document(debtId)
         val paymentId = UUID.randomUUID().toString()
-        val paymentRef = debtRef.collection("payments").document(paymentId)
+        val paymentRef = debtRef.collection(FirestoreSchema.Collections.DEBT_PAYMENTS).document(paymentId)
 
         firestore.runTransaction { tx ->
             val walletSnap = tx.get(walletRef)
@@ -171,7 +172,7 @@ class FirebaseDebtRepository(
 
             if (isLinkedCard && linkedWalletId != null) {
                 // VÒNG ĐỜI THẺ TÍN DỤNG: Chuyển tiền (TRANSFER) từ ví thanh toán sang ví thẻ để hoàn hạn mức
-                val linkedWalletRef = userDoc.collection("wallets").document(linkedWalletId)
+                val linkedWalletRef = userDoc.collection(FirestoreSchema.Collections.WALLETS).document(linkedWalletId)
                 val linkedWalletSnap = tx.get(linkedWalletRef)
                 if (linkedWalletSnap.exists()) {
                     val currentCardBalance = linkedWalletSnap.getLong("balance") ?: 0L
@@ -179,8 +180,8 @@ class FirebaseDebtRepository(
                     tx.update(linkedWalletRef, "balance", currentCardBalance + amount)
 
                     val pairId = UUID.randomUUID().toString()
-                    val outRef = userDoc.collection("transactions").document("${pairId}_out")
-                    val inRef = userDoc.collection("transactions").document("${pairId}_in")
+                    val outRef = userDoc.collection(FirestoreSchema.Collections.TRANSACTIONS).document("${pairId}_out")
+                    val inRef = userDoc.collection(FirestoreSchema.Collections.TRANSACTIONS).document("${pairId}_in")
                     val transferNote = if (note.isNotBlank()) note else "Thanh toán sao kê thẻ: $debtName"
 
                     tx.set(
@@ -224,7 +225,7 @@ class FirebaseDebtRepository(
                 val txNote = if (note.isNotBlank()) note else defaultNote
                 val categoryId = SystemCategories.DEBT_PAYMENT
 
-                val transactionRef = userDoc.collection("transactions").document(UUID.randomUUID().toString())
+                val transactionRef = userDoc.collection(FirestoreSchema.Collections.TRANSACTIONS).document(UUID.randomUUID().toString())
                 tx.set(
                     transactionRef,
                     mapOf(

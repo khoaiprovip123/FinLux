@@ -95,6 +95,38 @@ Trước khi chạm vào bất kỳ file code (`.kt`) nào, agent bắt buộc p
 - Mọi logic ánh xạ và chuyển đổi dữ liệu hiển thị BẮT BUỘC phải quy hoạch tập trung tại `core/common` (ví dụ `CategoryIconHelper`, `FinanceTime`) hoặc `core/designsystem` (`TransactionSemantics`, `FinluxTokens`).
 - Khi phát hiện cùng một logic mapping/formatting xuất hiện từ 2 vị trí trở lên, agent BẮT BUỘC phải trích xuất thành Shared Helper/Extension trước khi implement tính năng mới.
 
+### 11. QUY TẮC ZERO MAGIC NUMBERS & RAW LITERALS (CẤM SỐ MA THUẬT & CHUỖI THÔ)
+- Cấm tuyệt đối viết số nguyên, float, hoặc chuỗi literal trực tiếp trong thân hàm để mô tả:
+  + *Ngưỡng nghiệp vụ:* Ngưỡng cảnh báo ngân sách (80%, 100%, tỷ lệ 0.8f, 1.0f), tỷ lệ trả nợ tối thiểu (3%), số tiền trả tối thiểu (50.000 đ).
+  + *Kỹ thuật & Hạ tầng:* Chunk size batch write (400 docs của Firestore), giới hạn cảnh báo backup (50.000 tx), RequestCode của `AlarmManager` (9925, 9926, 73091, 73092).
+  + *Thời gian & Múi giờ:* Deadline mục tiêu mặc định (180 ngày), chuỗi múi giờ `"Asia/Ho_Chi_Minh"`.
+- Bắt buộc kế thừa 100% từ các file trung tâm: `FinanceBusinessConstants`, `AppSystemConfig`, hoặc `FirestoreSchema`.
+
+### 12. QUY HOẠCH SCHEMA FIRESTORE (FIRESTORE SCHEMA GOVERNANCE)
+- Tuyệt đối CẤM viết chuỗi tên collection hoặc field thô trong tầng Repository, UseCase và Services (`"users"`, `"transactions"`, `"wallets"`, `"spentAmount"`...).
+- 100% tên collection, documents, và fields dùng chung BẮT BUỘC phải đi qua `FirestoreSchema` (`FirestoreSchema.USERS`, `FirestoreSchema.Collections.*`, `FirestoreSchema.Fields.*`).
+
+### 13. QUY TẮC ANTI-CODE DEFRAGMENTATION & SSoT (CHỐNG PHÂN MẢNH MÃ NGUỒN)
+- Mọi cấu hình, trạng thái, định tuyến (Theme, UI Style, Fallback, Date Ranges) BẮT BUỘC phải có **Single Source of Truth (SSoT)** duy nhất.
+- Cấm triệt để việc sửa đổi 1 tính năng/style mà phải đi vá víu thủ công qua 5-10 file khác nhau.
+- Cấm prop-drilling các trạng thái đã có `CompositionLocal` hoặc Singleton Provider.
+
+### 14. QUY TẮC STRICT DRY & ZERO REDUNDANCY (CHỐNG TRÙNG LẶP & CẤM COPY-PASTE MÀN HÌNH)
+- Tuân thủ triệt để nguyên lý Don't Repeat Yourself (DRY):
+  + CẤM sao chép nguyên màn hình để phục vụ các phong cách giao diện khác nhau (nhân bản `Classic*Screen`, `Modern*Screen`, `Prism*Screen`).
+  + Bắt buộc chuyển đổi sang mô hình **Component-driven Adaptive Architecture**: Chỉ giữ 1 Screen duy nhất quản lý State/ViewModel, các phần tử hiển thị (Card, Header, Bar) tự động đổi bề mặt theo `LocalFinluxTokens`.
+- Bất kỳ logic xử lý toán học hoặc dữ liệu nào lặp lại từ 2 nơi trở lên bắt buộc phải trích xuất thành Shared Domain UseCase hoặc Extension Function.
+
+### 15. QUY TẮC DEAD CODE & ZOMBIE LOGIC ELIMINATION (QUÉT SẠCH CODE CHẾT)
+- Không được để tồn tại bất kỳ đoạn code thừa, hàm không ai gọi (unused functions), biến zombie, import rác, hoặc code bị comment-out trong mã nguồn.
+- Mọi logic cũ sau khi refactor phải được xóa sạch hoàn toàn, không lưu luyến giữ lại dạng "dự phòng".
+- Mã nguồn sau mỗi task phải qua kiểm tra Lint / Unused Inspection để giữ repo sạch sẽ 100%.
+
+### 16. QUY TẮC STRICT ENCAPSULATION & VISIBILITY SCOPING (ĐÓNG GÓI NGHIÊM NGẶT)
+- Áp dụng nguyên tắc Minimum Privilege cho phạm vi truy cập:
+  + Mọi hàm, thuộc tính, class mặc định phải là `private`. Chỉ mở rộng sang `internal` khi cần dùng trong cùng module, và chỉ `public` đối với API thực sự của tầng Domain/Presentation.
+  + Cấm tuyệt đối expose `MutableStateFlow`, `MutableSharedFlow`, `MutableList` ra bên ngoài ViewModel hoặc Repository. Luôn đóng gói và chỉ expose dạng read-only (`StateFlow`, `SharedFlow`, `List`).
+
 ---
 
 ## 📋 PHẦN III: QUY TRÌNH QUẢN LÝ TÀI LIỆU (DOCUMENTATION SOP)

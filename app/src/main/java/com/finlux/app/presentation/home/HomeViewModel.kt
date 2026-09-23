@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.YearMonth
@@ -100,14 +101,18 @@ class HomeViewModel @Inject constructor(
     private val uiPreferencesRepository: UiPreferencesRepository,
     dealRepository: DealRepository,
     private val getTrueNetWorthUseCase: GetTrueNetWorthUseCase = GetTrueNetWorthUseCase(walletRepository, debtRepository, dealRepository),
+    private val dataSyncManager: com.finlux.app.core.sync.DataSyncManager? = null,
 ) : ViewModel() {
 
-    private val financialOverviewFlow = combine(
-        salaryCycleRepository.observeConfig(),
-        salaryCycleRepository.observeTimeline(),
-    ) { cycleConfig, timeline ->
-        cycleConfig to timeline
-    }.flatMapLatest { (cycleConfig, timeline) ->
+    private val refreshFlow = dataSyncManager?.refreshTrigger ?: flowOf(0L)
+
+    private val financialOverviewFlow = refreshFlow.flatMapLatest {
+        combine(
+            salaryCycleRepository.observeConfig(),
+            salaryCycleRepository.observeTimeline(),
+        ) { cycleConfig, timeline ->
+            cycleConfig to timeline
+        }.flatMapLatest { (cycleConfig, timeline) ->
         val now = clock.now()
         val zone = FinanceTime.zoneOf(cycleConfig.financeTimeZone)
 
@@ -209,6 +214,7 @@ class HomeViewModel @Inject constructor(
             )
         }
     }
+}
 
     private data class AssetsAndDebtsOverview(
         val wallets: List<Wallet>,
@@ -217,20 +223,26 @@ class HomeViewModel @Inject constructor(
         val breakdown: TrueNetWorth,
     )
 
-    private val assetsAndDebtsFlow = combine(
-        walletRepository.observeWallets(),
-        debtRepository.observeDebts(),
-        dealRepository.observeDeals(),
-    ) { wallets, debts, deals ->
-        val breakdown = getTrueNetWorthUseCase.calculate(wallets, debts, deals)
-        AssetsAndDebtsOverview(wallets, debts, deals, breakdown)
+    private val assetsAndDebtsFlow = refreshFlow.flatMapLatest {
+        combine(
+            walletRepository.observeWallets(),
+            debtRepository.observeDebts(),
+            dealRepository.observeDeals(),
+        ) { wallets, debts, deals ->
+            val breakdown = getTrueNetWorthUseCase.calculate(wallets, debts, deals)
+            AssetsAndDebtsOverview(wallets, debts, deals, breakdown)
+        }
+    }
+
+    private val recentTransactionsFlow = refreshFlow.flatMapLatest {
+        transactionRepository.observeRecent()
     }
 
     val state = combine(
         authRepository.currentUser,
         financialOverviewFlow,
         assetsAndDebtsFlow,
-        transactionRepository.observeRecent(),
+        recentTransactionsFlow,
         combine(categoryRepository.observeCategories(), uiPreferencesRepository.preferences) { categories, uiPrefs ->
             categories to uiPrefs
         },

@@ -1,13 +1,101 @@
 package com.finlux.app.presentation.budget
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.finlux.app.core.designsystem.FinluxStyleBackdrop
+import com.finlux.app.core.designsystem.FinluxTextStyles
+import com.finlux.app.core.designsystem.GradientHeroCard
 import com.finlux.app.core.designsystem.LocalAppUiStyle
+import com.finlux.app.core.designsystem.NotificationPermissionHandler
+import com.finlux.app.core.designsystem.categoryIcon
+import com.finlux.app.core.designsystem.colorFromHex
+import com.finlux.app.core.designsystem.component.FinluxAdaptiveCard
+import com.finlux.app.core.designsystem.component.FinluxAdaptiveTopBar
+import com.finlux.app.core.designsystem.component.FinluxAdvisoryBanner
+import com.finlux.app.core.designsystem.component.FinluxBottomSheet
+import com.finlux.app.core.designsystem.component.FinluxDialog
+import com.finlux.app.core.designsystem.component.FinluxEmptyState
+import com.finlux.app.core.designsystem.component.FinluxHeroCard
+import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import com.finlux.app.core.designsystem.component.FinluxTransactionRow
+import com.finlux.app.core.designsystem.component.formatVndAmount
+import com.finlux.app.core.designsystem.component.form.ErgonomicCompactAmountCard
+import com.finlux.app.core.designsystem.component.form.ErgonomicFormRow
+import com.finlux.app.core.designsystem.component.form.FinluxCategoryPickerBottomSheet
+import com.finlux.app.core.designsystem.theme.FinluxColors
+import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
 import com.finlux.app.domain.model.AppUiStyle
-import com.finlux.app.presentation.budget.classic.ClassicBudgetScreen
-import com.finlux.app.presentation.budget.modern.ModernBudgetScreen
-import com.finlux.app.presentation.budget.prism.PrismBudgetScreen
+import com.finlux.app.domain.model.Budget
+import com.finlux.app.domain.model.CategoryType
+import com.finlux.app.presentation.home.toShortVnd
+import com.finlux.app.presentation.home.toVnd
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(
     onNavigate: (String) -> Unit,
@@ -15,24 +103,832 @@ fun BudgetScreen(
     onBack: (() -> Unit)? = null,
     viewModel: BudgetViewModel = hiltViewModel(),
 ) {
-    when (LocalAppUiStyle.current) {
-        AppUiStyle.CLASSIC_LIQUID -> ClassicBudgetScreen(
-            onNavigate = onNavigate,
-            onAdd = onAdd,
-            onBack = onBack,
-            viewModel = viewModel,
+    NotificationPermissionHandler()
+    val state = viewModel.state.collectAsStateWithLifecycle().value
+    val snackbar = remember { SnackbarHostState() }
+    val tokens = LocalFinluxTokens.current
+    val uiStyle = LocalAppUiStyle.current
+
+    var editingBudget by remember { mutableStateOf<BudgetItemUi?>(null) }
+    var viewingHistoryBudget by remember { mutableStateOf<BudgetItemUi?>(null) }
+    var isCreatingBudget by remember { mutableStateOf(false) }
+    var showCopyConfirmDialog by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<Budget?>(null) }
+
+    val totalLimit = state.items.sumOf { it.budget.limitAmount.value }
+    val totalSpent = state.items.sumOf { it.budget.spentAmount.value }
+    val totalRemaining = (totalLimit - totalSpent).coerceAtLeast(0L)
+    val overallPercent = if (totalLimit > 0L) ((totalSpent * 100L) / totalLimit).toInt() else 0
+
+    LaunchedEffect(state.message) {
+        state.message?.let {
+            snackbar.showSnackbar(it)
+            viewModel.consumeMessage()
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .then(
+                if (uiStyle == AppUiStyle.PRISM) Modifier.background(tokens.background)
+                else Modifier
+            ),
+    ) {
+        if (uiStyle != AppUiStyle.PRISM) {
+            FinluxStyleBackdrop(Modifier.fillMaxSize())
+        }
+
+        Scaffold(
+            topBar = {
+                FinluxAdaptiveTopBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "Ngân sách chi tiêu",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = tokens.onSurface,
+                            )
+                            Text(
+                                text = state.period?.displayLabel ?: "Đang tải...",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = tokens.textSecondary,
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Quay lại",
+                                    tint = tokens.onSurface,
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        if (state.items.isNotEmpty()) {
+                            IconButton(onClick = { showCopyConfirmDialog = true }) {
+                                Icon(
+                                    Icons.Default.ContentCopy,
+                                    contentDescription = "Sao chép sang kỳ sau",
+                                    tint = tokens.primary,
+                                )
+                            }
+                        }
+                        IconButton(onClick = {
+                            editingBudget = null
+                            isCreatingBudget = true
+                        }) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Thêm ngân sách",
+                                tint = tokens.onSurface,
+                            )
+                        }
+                    },
+                )
+            },
+            snackbarHost = { FinluxSnackbarHost(snackbar, hasBottomBar = onBack == null) },
+            containerColor = Color.Transparent,
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(
+                    start = if (uiStyle == AppUiStyle.PRISM) tokens.spacing.lg else 16.dp,
+                    end = if (uiStyle == AppUiStyle.PRISM) tokens.spacing.lg else 16.dp,
+                    top = 12.dp,
+                    bottom = 24.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Month Selector Bar
+                item {
+                    FinluxAdaptiveCard(
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            IconButton(onClick = { viewModel.previousMonth() }) {
+                                Icon(Icons.Default.ChevronLeft, contentDescription = "Tháng trước", tint = tokens.onSurface)
+                            }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = state.period?.displayLabel ?: "Đang tải...",
+                                    style = FinluxTextStyles.SectionTitle,
+                                    fontWeight = FontWeight.Bold,
+                                    color = tokens.onSurface,
+                                )
+                                val isPast = state.period?.let { it.endExclusive <= Instant.now() } == true
+                                if (isPast) {
+                                    Text(
+                                        text = "Chạm để về kỳ hiện tại",
+                                        modifier = Modifier
+                                            .clickable { viewModel.currentMonth() }
+                                            .padding(top = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = tokens.primary,
+                                    )
+                                }
+                            }
+
+                            IconButton(onClick = { viewModel.nextMonth() }) {
+                                Icon(Icons.Default.ChevronRight, contentDescription = "Tháng sau", tint = tokens.onSurface)
+                            }
+                        }
+                    }
+                }
+
+                // Quick jump to current month if in past
+                val isPast = state.period?.let { it.endExclusive <= Instant.now() } == true
+                if (isPast) {
+                    item {
+                        Button(
+                            onClick = { viewModel.currentMonth() },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(tokens.radius.input),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = tokens.surfaceSoft,
+                                contentColor = tokens.primary,
+                            ),
+                            border = BorderStroke(1.dp, tokens.border),
+                        ) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Về kỳ hiện tại", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+
+                // Transition Advisory Banner
+                state.transitionAdvisoryBanner?.let { banner ->
+                    item {
+                        FinluxAdvisoryBanner(message = banner)
+                    }
+                }
+
+                // Overview Hero Card
+                item {
+                    val daysRemaining = state.period?.let { p ->
+                        val now = Instant.now()
+                        if (now.isBefore(p.endExclusive)) {
+                            ChronoUnit.DAYS.between(
+                                LocalDate.now(),
+                                p.endExclusive.atZone(ZoneId.systemDefault()).toLocalDate(),
+                            ).coerceAtLeast(1)
+                        } else 0L
+                    }
+
+                    val periodDaysInfo = when {
+                        daysRemaining != null && daysRemaining > 0 -> " • Còn $daysRemaining ngày"
+                        daysRemaining == 0L -> " • Ngày cuối kỳ"
+                        else -> ""
+                    }
+
+                    if (uiStyle == AppUiStyle.PRISM) {
+                        FinluxHeroCard(
+                            title = "Còn lại trong ngân sách",
+                            amountText = formatVndAmount(totalRemaining),
+                            deltaText = "$overallPercent% đã dùng (${formatVndAmount(totalSpent, isCompact = true)} / ${formatVndAmount(totalLimit, isCompact = true)})$periodDaysInfo",
+                            isPositiveDelta = overallPercent < 90,
+                        )
+                    } else {
+                        GradientHeroCard(Modifier.fillMaxWidth()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Tổng ngân sách", color = tokens.onHeroMuted)
+                                Text(totalLimit.toVnd(), color = tokens.onHero, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Đã chi ${totalSpent.toShortVnd()}", color = tokens.onHeroMuted)
+                                    Text("Còn lại ${(totalLimit - totalSpent).coerceAtLeast(0L).toVnd()}", color = tokens.onHero, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Add Budget & Copy Action Row
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Button(
+                            onClick = { isCreatingBudget = true },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(tokens.radius.input),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = tokens.primary,
+                                contentColor = tokens.onHero,
+                            ),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.size(6.dp))
+                            Text("Thiết lập mới", style = FinluxTextStyles.CardTitle.copy(fontSize = 14.sp), maxLines = 1)
+                        }
+
+                        if (state.items.isNotEmpty()) {
+                            Button(
+                                onClick = { showCopyConfirmDialog = true },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(tokens.radius.input),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = tokens.surface,
+                                    contentColor = tokens.textPrimary,
+                                ),
+                                border = BorderStroke(1.dp, tokens.onSurface.copy(alpha = tokens.borderAlpha)),
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp), tint = tokens.primary)
+                                Spacer(Modifier.size(6.dp))
+                                Text("Sao chép kỳ sau", style = FinluxTextStyles.CardTitle.copy(fontSize = 14.sp), maxLines = 1)
+                            }
+                        }
+                    }
+                }
+
+                // Budget list
+                if (state.items.isEmpty()) {
+                    item {
+                        FinluxEmptyState(
+                            title = "Chưa có ngân sách",
+                            description = "Tạo ngân sách theo từng danh mục hoặc sao chép nhanh định mức từ kỳ trước.",
+                            actionLabel = "Sao chép từ kỳ trước",
+                            onActionClick = {
+                                viewModel.copyBudgetsFromPreviousPeriod()
+                            },
+                        )
+                    }
+                } else {
+                    items(state.items, key = { it.budget.id }) { item ->
+                        val budget = item.budget
+                        val cat = item.category
+                        val spent = budget.spentAmount.value
+                        val limit = budget.limitAmount.value
+                        val percent = if (limit > 0L) ((spent * 100L) / limit).toInt() else 0
+                        val isExceeded = spent > limit
+                        val progressFloat = if (limit > 0L) (spent.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
+
+                        val statusColor = when {
+                            isExceeded -> tokens.error
+                            percent >= 80 -> FinluxColors.WarningAmber
+                            else -> FinluxColors.IncomeGreen
+                        }
+                        val percentLabel = if (isExceeded) "Vượt ${percent - 100}%" else "Đã dùng $percent%"
+
+                        var showMenu by remember { mutableStateOf(false) }
+
+                        FinluxAdaptiveCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            border = if (isExceeded) BorderStroke(1.dp, FinluxColors.ExpenseRed.copy(alpha = 0.5f)) else null,
+                            onClick = { viewingHistoryBudget = item },
+                            onLongClick = { editingBudget = item },
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        val catIcon = cat?.icon ?: "Category"
+                                        val catColor = cat?.colorHex?.let { colorFromHex(it) } ?: FinluxColors.PrimaryBlue
+
+                                        Box(
+                                            modifier = Modifier
+                                                .size(42.dp)
+                                                .clip(CircleShape)
+                                                .background(catColor.copy(alpha = 0.12f)),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                imageVector = categoryIcon(catIcon),
+                                                contentDescription = null,
+                                                tint = catColor,
+                                                modifier = Modifier.size(22.dp),
+                                            )
+                                        }
+
+                                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            Text(
+                                                text = cat?.name ?: "Khác",
+                                                style = FinluxTextStyles.CardTitle.copy(fontWeight = FontWeight.Bold),
+                                                color = tokens.onSurface,
+                                            )
+                                            Text(
+                                                text = if (isExceeded) "Vượt ${formatVndAmount(spent - limit, isCompact = true)}" else "Còn lại ${formatVndAmount(limit - spent, isCompact = true)}",
+                                                style = FinluxTextStyles.Caption.copy(
+                                                    color = statusColor,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                ),
+                                            )
+                                        }
+                                    }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = statusColor.copy(alpha = if (tokens.isDark) 0.20f else 0.12f),
+                                        ) {
+                                            Text(
+                                                text = percentLabel,
+                                                style = FinluxTextStyles.MicroLabel.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp,
+                                                ),
+                                                color = statusColor,
+                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                            )
+                                        }
+                                        Box {
+                                            IconButton(onClick = { showMenu = true }) {
+                                                Icon(Icons.Default.MoreVert, contentDescription = "Tùy chọn", tint = tokens.textSecondary)
+                                            }
+                                            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Lịch sử chi tiêu") },
+                                                    leadingIcon = { Icon(Icons.Default.History, contentDescription = null) },
+                                                    onClick = {
+                                                        showMenu = false
+                                                        viewingHistoryBudget = item
+                                                    },
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("Chỉnh sửa") },
+                                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                                    onClick = {
+                                                        showMenu = false
+                                                        editingBudget = item
+                                                    },
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("Xóa ngân sách", color = FinluxColors.ExpenseRed) },
+                                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = FinluxColors.ExpenseRed) },
+                                                    onClick = {
+                                                        showMenu = false
+                                                        pendingDelete = budget
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Progress Bar
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(tokens.surfaceSoft),
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(fraction = progressFloat)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(statusColor),
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        text = "Đã chi: ${formatVndAmount(spent)}",
+                                        style = FinluxTextStyles.MicroLabel,
+                                        color = tokens.textSecondary,
+                                    )
+                                    Text(
+                                        text = "Hạn mức: ${formatVndAmount(limit)}",
+                                        style = FinluxTextStyles.MicroLabel,
+                                        color = tokens.textSecondary,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Add / Edit Budget Bottom Sheet
+    if (isCreatingBudget || editingBudget != null) {
+        val target = editingBudget
+        val expenseCategories = state.categories.filter { it.type == CategoryType.EXPENSE }
+        var selectedCategoryId by remember(target) {
+            mutableStateOf(target?.budget?.categoryId ?: expenseCategories.firstOrNull()?.id ?: "")
+        }
+        var limitInput by remember(target) {
+            mutableStateOf(target?.budget?.limitAmount?.value?.toString() ?: "")
+        }
+        var showCategoryPicker by remember { mutableStateOf(false) }
+
+        FinluxBottomSheet(
+            onDismissRequest = {
+                isCreatingBudget = false
+                editingBudget = null
+            },
+            title = if (target == null) "Thêm ngân sách" else "Sửa ngân sách",
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = tokens.spacing.lg, vertical = tokens.spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(tokens.spacing.md),
+            ) {
+                val activeCategory = expenseCategories.firstOrNull { it.id == selectedCategoryId }
+                val catAccent = activeCategory?.let { colorFromHex(it.colorHex, tokens.primary) } ?: tokens.primary
+                val catIcon = activeCategory?.let { categoryIcon(it.icon) } ?: Icons.Default.Category
+
+                ErgonomicFormRow(
+                    label = "DANH MỤC CHI TIÊU",
+                    primaryValue = activeCategory?.name ?: "Chưa chọn danh mục",
+                    secondaryValue = "Khoản chi tiêu ngân sách",
+                    icon = catIcon,
+                    iconBgColor = catAccent.copy(alpha = 0.14f),
+                    iconTintColor = catAccent,
+                    onClick = { showCategoryPicker = true },
+                )
+
+                ErgonomicCompactAmountCard(
+                    label = "HẠN MỨC CHI TIÊU THÁNG",
+                    amountText = limitInput,
+                    onAmountChange = { limitInput = it },
+                    placeholder = "0",
+                    amountColor = tokens.primary,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                // Smart Threshold Alert Info Card
+                val limitValue = limitInput.toLongOrNull() ?: 0L
+                val warn80Amount = if (limitValue > 0L) (limitValue * 80L) / 100L else 0L
+
+                FinluxAdaptiveCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, tokens.primary.copy(alpha = 0.25f)),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = null,
+                                tint = tokens.primary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = "Cảnh Báo Vượt Ngưỡng Tự Động",
+                                style = FinluxTextStyles.Caption.copy(fontWeight = FontWeight.Bold),
+                                color = tokens.onSurface,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(FinluxColors.WarningAmber),
+                                )
+                                Text(
+                                    text = "Cảnh báo vàng (80%)",
+                                    style = FinluxTextStyles.MicroLabel,
+                                    color = tokens.textSecondary,
+                                )
+                            }
+                            Text(
+                                text = if (warn80Amount > 0) formatVndAmount(warn80Amount) else "0 đ",
+                                style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.SemiBold),
+                                color = FinluxColors.WarningAmber,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(FinluxColors.ExpenseRed),
+                                )
+                                Text(
+                                    text = "Cảnh báo đỏ (100%)",
+                                    style = FinluxTextStyles.MicroLabel,
+                                    color = tokens.textSecondary,
+                                )
+                            }
+                            Text(
+                                text = if (limitValue > 0) formatVndAmount(limitValue) else "0 đ",
+                                style = FinluxTextStyles.MicroLabel.copy(fontWeight = FontWeight.SemiBold),
+                                color = FinluxColors.ExpenseRed,
+                            )
+                        }
+
+                        Text(
+                            text = "Hệ thống sẽ tự động gửi thông báo đến bạn khi chi tiêu chạm các mốc cảnh báo trên (theo chuẩn BR-09).",
+                            style = FinluxTextStyles.MicroLabel.copy(fontSize = 11.sp),
+                            color = tokens.textSecondary.copy(alpha = 0.85f),
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        val limit = limitInput.toLongOrNull() ?: 0L
+                        if (limit > 0L && selectedCategoryId.isNotBlank()) {
+                            viewModel.save(
+                                categoryId = selectedCategoryId,
+                                limit = limit,
+                                existing = target?.budget,
+                                onSaved = {
+                                    isCreatingBudget = false
+                                    editingBudget = null
+                                },
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(tokens.radius.input),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = tokens.primary,
+                        contentColor = tokens.onHero,
+                    ),
+                    enabled = (limitInput.toLongOrNull() ?: 0L) > 0L && selectedCategoryId.isNotBlank(),
+                ) {
+                    Text("Lưu ngân sách", fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+
+        if (showCategoryPicker) {
+            FinluxCategoryPickerBottomSheet(
+                categories = expenseCategories,
+                selectedCategoryId = selectedCategoryId,
+                onSelectCategory = { cat ->
+                    selectedCategoryId = cat.id
+                    showCategoryPicker = false
+                },
+                onDismiss = { showCategoryPicker = false },
+            )
+        }
+    }
+
+    // Category Transactions History Bottom Sheet
+    viewingHistoryBudget?.let { itemUi ->
+        val cat = itemUi.category
+        val catId = itemUi.budget.categoryId
+        val catNameLower = cat?.name?.lowercase()?.trim()
+        val catIcon = cat?.icon ?: "Category"
+        val catColor = cat?.colorHex?.let { colorFromHex(it) } ?: tokens.primary
+        val limit = itemUi.budget.limitAmount.value
+        val spent = itemUi.budget.spentAmount.value
+        val isExceeded = spent > limit
+        val progressFloat = if (limit > 0L) (spent.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
+        val percent = if (limit > 0L) ((spent * 100L) / limit).toInt() else 0
+        val statusColor = when {
+            isExceeded -> FinluxColors.ExpenseRed
+            percent >= 80 -> FinluxColors.WarningAmber
+            else -> FinluxColors.PrimaryBlue
+        }
+
+        val categoryTransactions = state.transactions.filter { tx ->
+            tx.categoryId == catId || (catNameLower != null && tx.categoryId?.lowercase()?.trim() == catNameLower)
+        }.sortedByDescending { it.date }
+
+        FinluxBottomSheet(
+            onDismissRequest = { viewingHistoryBudget = null },
+            title = "Lịch sử chi tiêu: ${cat?.name ?: "Danh mục"}",
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = tokens.spacing.lg, vertical = tokens.spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                // Header summary card
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = tokens.surfaceSoft,
+                    border = BorderStroke(1.dp, tokens.border),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(catColor.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = categoryIcon(catIcon),
+                                        contentDescription = null,
+                                        tint = catColor,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = cat?.name ?: "Khác",
+                                        style = FinluxTextStyles.CardTitle.copy(fontWeight = FontWeight.Bold),
+                                        color = tokens.onSurface,
+                                    )
+                                    Text(
+                                        text = state.period?.displayLabel ?: "Kỳ này",
+                                        style = FinluxTextStyles.MicroLabel,
+                                        color = tokens.textSecondary,
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "$percent%",
+                                style = FinluxTextStyles.CardTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                ),
+                                color = statusColor,
+                            )
+                        }
+
+                        // Progress bar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(tokens.surfaceSoft),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(fraction = progressFloat)
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(statusColor),
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = "Đã chi: ${formatVndAmount(spent)}",
+                                style = FinluxTextStyles.MicroLabel,
+                                color = tokens.textSecondary,
+                            )
+                            Text(
+                                text = "Hạn mức: ${formatVndAmount(limit)}",
+                                style = FinluxTextStyles.MicroLabel,
+                                color = tokens.textSecondary,
+                            )
+                        }
+                    }
+                }
+
+                // Transaction list header
+                Text(
+                    text = "CÁC KHOẢN GIAO DỊCH (${categoryTransactions.size})",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                    ),
+                    color = tokens.textSecondary,
+                )
+
+                if (categoryTransactions.isEmpty()) {
+                    FinluxEmptyState(
+                        title = "Chưa có giao dịch",
+                        description = "Chưa có giao dịch chi tiêu nào trong danh mục ${cat?.name ?: ""} vào ${state.period?.displayLabel ?: "kỳ này"}.",
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 280.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(categoryTransactions, key = { it.id }) { tx ->
+                            FinluxTransactionRow(
+                                transaction = tx,
+                                category = cat,
+                                onClick = null,
+                            )
+                        }
+                    }
+                }
+
+                // Bottom Edit Budget Quick Button
+                Button(
+                    onClick = {
+                        viewingHistoryBudget = null
+                        editingBudget = itemUi
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(tokens.radius.input),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = tokens.surfaceSoft,
+                        contentColor = tokens.primary,
+                    ),
+                    border = BorderStroke(1.dp, tokens.border),
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Chỉnh sửa ngân sách này", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    }
+
+    // Delete confirmation dialog
+    pendingDelete?.let { budget ->
+        FinluxDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = "Xóa ngân sách?",
+            message = "Ngân sách hạn mức ${formatVndAmount(budget.limitAmount.value)} sẽ bị gỡ bỏ khỏi ${state.period?.displayLabel ?: "kỳ này"}.",
+            confirmLabel = "Xác nhận xóa",
+            dismissLabel = "Hủy",
+            onConfirm = {
+                viewModel.delete(budget)
+                pendingDelete = null
+            },
         )
-        AppUiStyle.MODERN_LUXURY -> ModernBudgetScreen(
-            onNavigate = onNavigate,
-            onAdd = onAdd,
-            onBack = onBack,
-            viewModel = viewModel,
-        )
-        AppUiStyle.PRISM -> PrismBudgetScreen(
-            onNavigate = onNavigate,
-            onAdd = onAdd,
-            onBack = onBack,
-            viewModel = viewModel,
+    }
+
+    // Copy to next period confirmation dialog
+    if (showCopyConfirmDialog) {
+        FinluxDialog(
+            onDismissRequest = { showCopyConfirmDialog = false },
+            title = "Sao chép sang kỳ tiếp theo?",
+            message = "Định mức ${state.items.size} danh mục của kỳ hiện tại (${state.period?.displayLabel ?: ""}) sẽ được sao chép sang kỳ tiếp theo với số tiền đã chi khởi tạo là 0đ.",
+            confirmLabel = "Sao chép ngay",
+            dismissLabel = "Hủy",
+            onConfirm = {
+                showCopyConfirmDialog = false
+                viewModel.copyBudgetsToNextPeriod { _, _ ->
+                    viewModel.nextMonth()
+                }
+            },
         )
     }
 }

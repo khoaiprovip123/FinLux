@@ -137,6 +137,46 @@ class FirebaseAuthRepository(
 
     override suspend fun signOut() = auth.signOut()
 
+    override fun getAuthProviderId(): String {
+        val user = auth.currentUser ?: return "password"
+        return if (user.providerData.any { it.providerId == com.google.firebase.auth.GoogleAuthProvider.PROVIDER_ID }) {
+            com.google.firebase.auth.GoogleAuthProvider.PROVIDER_ID
+        } else {
+            com.google.firebase.auth.EmailAuthProvider.PROVIDER_ID
+        }
+    }
+
+    override suspend fun reauthenticateWithPassword(password: String): AppResult<Unit> = runCatching {
+        val user = auth.currentUser ?: error("Chưa đăng nhập")
+        val email = user.email ?: error("Không tìm thấy email tài khoản")
+        val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
+        user.reauthenticate(credential).await()
+        Unit
+    }.fold(
+        onSuccess = { AppResult.Success(Unit) },
+        onFailure = { AppResult.Error(it.localizedMessage ?: "Xác thực lại bằng mật khẩu thất bại", it) },
+    )
+
+    override suspend fun reauthenticateWithGoogle(idToken: String): AppResult<Unit> = runCatching {
+        val user = auth.currentUser ?: error("Chưa đăng nhập")
+        val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+        user.reauthenticate(credential).await()
+        Unit
+    }.fold(
+        onSuccess = { AppResult.Success(Unit) },
+        onFailure = { AppResult.Error(it.localizedMessage ?: "Xác thực lại bằng Google thất bại", it) },
+    )
+
+    override suspend fun deleteAuthAccount(): AppResult<Unit> = runCatching {
+        val user = auth.currentUser ?: error("Chưa đăng nhập")
+        user.delete().await()
+        profileUpdates.tryEmit(null)
+        Unit
+    }.fold(
+        onSuccess = { AppResult.Success(Unit) },
+        onFailure = { AppResult.Error(it.localizedMessage ?: "Không thể xóa tài khoản xác thực", it) },
+    )
+
     /** BR-02: profile, default wallet and categories are committed together ONLY for new users. */
     private suspend fun seedNewUser(uid: String, displayName: String, email: String) {
         val user = firestore.collection("users").document(uid)

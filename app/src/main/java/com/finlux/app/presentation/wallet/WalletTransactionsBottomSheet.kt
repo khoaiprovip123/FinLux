@@ -527,7 +527,7 @@ private fun WalletTransactionCard(
                         else -> Icons.AutoMirrored.Filled.TrendingDown
                     },
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = tokens.onHero,
                     modifier = Modifier.size(20.dp),
                 )
             }

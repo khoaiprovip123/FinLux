@@ -10,6 +10,7 @@ interface ThemePreferenceRepository {
     suspend fun setPreference(preference: ThemePreference)
     val uiStyle: Flow<AppUiStyle>
     suspend fun setUiStyle(uiStyle: AppUiStyle)
+    suspend fun resetPreferences() {}
 }
 
 interface UiPreferencesRepository {

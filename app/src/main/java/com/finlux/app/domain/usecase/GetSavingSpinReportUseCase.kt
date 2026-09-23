@@ -19,7 +19,7 @@ class GetSavingSpinReportUseCase @Inject constructor(
 ) {
     operator fun invoke(
         range: SavingSpinReportRange,
-        zoneId: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh"),
+        zoneId: ZoneId = com.finlux.app.domain.model.FinanceBusinessConstants.Timezone.DEFAULT_ZONE_ID,
         activeScheduleKey: String? = null,
     ): Flow<SavingSpinReport> = combine(
         repository.observeSessions(range.fromInclusive, range.toExclusive),
