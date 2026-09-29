@@ -408,126 +408,20 @@ fun SavingSpinSettingsScreen(
         }
     }
 
-    // Modal Sheet: Chọn Giờ nhắc
+    // Modal Sheet: Chọn Giờ nhắc (Standard FinluxTimePickerSheet)
     if (showTimePickerSheet) {
-        var tempHour by remember { mutableIntStateOf(state.config.reminderHour) }
-        var tempMinute by remember { mutableIntStateOf(state.config.reminderMinute) }
-
-        FinluxBottomSheet(
-            onDismissRequest = { showTimePickerSheet = false },
+        com.finlux.app.core.designsystem.component.form.FinluxTimePickerSheet(
+            initialHour = state.config.reminderHour,
+            initialMinute = state.config.reminderMinute,
+            onTimeSelected = { hour, minute ->
+                viewModel.setReminderHour(hour)
+                viewModel.setReminderMinute(minute)
+            },
+            onDismiss = { showTimePickerSheet = false },
             title = "Giờ nhắc nhở",
             subtitle = "Hẹn giờ thông báo quay tiết kiệm hàng ngày",
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // Quick preset pills
-                Text("Gợi ý khung giờ:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = tokens.onSurfaceVariant)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val presets = listOf("08:00" to (8 to 0), "12:00" to (12 to 0), "18:00" to (18 to 0), "20:00" to (20 to 0), "21:30" to (21 to 30))
-                    presets.forEach { (label, pair) ->
-                        val isPreset = tempHour == pair.first && tempMinute == pair.second
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isPreset) tokens.primary else tokens.surfaceSoft,
-                            border = BorderStroke(1.dp, if (isPreset) tokens.primary else tokens.border),
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                                    tempHour = pair.first
-                                    tempMinute = pair.second
-                                },
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center,
-                                color = if (isPreset) tokens.onHero else tokens.onSurface,
-                                modifier = Modifier.padding(vertical = 8.dp),
-                            )
-                        }
-                    }
-                }
-
-                // Time adjustment controls
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = tokens.surfaceSoft,
-                    border = BorderStroke(1.dp, tokens.border),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        // Hour
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            IconButton(onClick = { tempHour = (tempHour + 1) % 24 }) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = tokens.primary)
-                            }
-                            Text(
-                                text = String.format("%02d", tempHour),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = tokens.onSurface,
-                            )
-                            IconButton(onClick = { tempHour = (tempHour - 1 + 24) % 24 }) {
-                                Icon(Icons.Default.Remove, contentDescription = null, tint = tokens.primary)
-                            }
-                        }
-
-                        Text(
-                            text = " : ",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = tokens.primary,
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                        )
-
-                        // Minute
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            IconButton(onClick = { tempMinute = (tempMinute + 5) % 60 }) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = tokens.primary)
-                            }
-                            Text(
-                                text = String.format("%02d", tempMinute),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = tokens.onSurface,
-                            )
-                            IconButton(onClick = { tempMinute = (tempMinute - 5 + 60) % 60 }) {
-                                Icon(Icons.Default.Remove, contentDescription = null, tint = tokens.primary)
-                            }
-                        }
-                    }
-                }
-
-                Button(
-                    onClick = {
-                        viewModel.setReminderHour(tempHour)
-                        viewModel.setReminderMinute(tempMinute)
-                        showTimePickerSheet = false
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = tokens.primary, contentColor = tokens.onHero),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                ) {
-                    Text("Xác nhận giờ nhắc", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
-                }
-            }
-        }
+            accentColor = tokens.primary,
+        )
     }
 
     Surface(

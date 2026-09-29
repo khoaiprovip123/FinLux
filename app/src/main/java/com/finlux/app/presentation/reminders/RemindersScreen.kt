@@ -40,8 +40,6 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,11 +49,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import com.finlux.app.core.designsystem.component.FinluxSnackbarHost
+import com.finlux.app.core.designsystem.component.form.FinluxDatePickerSheet
+import com.finlux.app.core.designsystem.component.form.FinluxTimePickerSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -441,6 +440,7 @@ private fun ReminderEditorSheet(
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showWalletPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     val activeCategory = categories.firstOrNull { it.id == categoryId }
     val catIcon = activeCategory?.let { categoryIcon(it.icon) } ?: Icons.Default.Category
@@ -634,7 +634,7 @@ private fun ReminderEditorSheet(
                         }
                     }
 
-                    // Time Picker Box (Triggers Android Native TimePickerDialog)
+                    // Time Picker Box (Triggers FinluxTimePickerSheet)
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = tokens.surfaceSoft,
@@ -642,18 +642,7 @@ private fun ReminderEditorSheet(
                         modifier = Modifier
                             .weight(0.9f)
                             .clip(RoundedCornerShape(16.dp))
-                            .clickable {
-                                val timePickerDialog = android.app.TimePickerDialog(
-                                    context,
-                                    { _, hourOfDay, minute ->
-                                        selectedTime = LocalTime.of(hourOfDay, minute)
-                                    },
-                                    selectedTime.hour,
-                                    selectedTime.minute,
-                                    true, // 24-hour format
-                                )
-                                timePickerDialog.show()
-                            },
+                            .clickable { showTimePicker = true },
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -771,35 +760,35 @@ private fun ReminderEditorSheet(
         )
     }
 
-    // Date Picker Dialog
+    // Standard Liquid Glass Date & Time Sheets
     if (showDatePicker) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        FinluxDatePickerSheet(
+            selectedDate = selectedDate,
+            onDateSelected = { date ->
+                selectedDate = date
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false },
+            title = "Ngày bắt đầu nhắc",
+            allowFutureDates = true,
+            accentColor = tokens.primary,
         )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pickerState.selectedDateMillis?.let { millis ->
-                            selectedDate = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneOffset.UTC)
-                                .toLocalDate()
-                        }
-                        showDatePicker = false
-                    },
-                ) {
-                    Text("Chọn", fontWeight = FontWeight.Bold)
-                }
+    }
+
+    if (showTimePicker) {
+        FinluxTimePickerSheet(
+            initialHour = selectedTime.hour,
+            initialMinute = selectedTime.minute,
+            onTimeSelected = { hour, minute ->
+                selectedTime = LocalTime.of(hour, minute)
+                showTimePicker = false
             },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy")
-                }
-            },
-        ) {
-            DatePicker(pickerState)
-        }
+            onDismiss = { showTimePicker = false },
+            title = "Giờ thông báo",
+            subtitle = "Thời điểm gửi nhắc nhở trong ngày",
+            accentColor = FinluxColors.WarningAmber,
+            allowFutureTime = true,
+        )
     }
 }
 

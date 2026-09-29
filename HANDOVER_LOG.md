@@ -1,8 +1,8 @@
 # HANDOVER LOG - FINLUX APP
 
 ## Trạng Thái Dự Án (Project Status)
-- **Phiên bản hiện tại:** v1.25.15 (versionCode 189)
-- **Trạng thái Build:** ✅ 100% PASS (521/521 unit tests)
+- **Phiên bản hiện tại:** v1.25.17 (versionCode 191)
+- **Trạng thái Build:** ✅ 100% PASS (525/525 unit tests)
 
 ## 📋 Quy Chuẩn Vận Hành Tech Lead & Checklist Nghiệm Thu (SOP Mandate)
 ### 1. Quy Trình Khởi Động Task 4 Bước (4-Step Kickoff Protocol)
@@ -16,6 +16,68 @@
 - [x] **Large Number check:** Tiền từ trăm triệu đến chục tỷ tự co font, không tràn viền, không che inline `₫`.
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
+
+### [Task-FINLUX-MODULAR-DATETIME-SUITE] — Module Hóa Bộ Chọn Thời Gian, Mở Rộng Dải Chip & Nâng Cấp Bảng Màu Thích Ứng
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Module hóa bộ chọn thời gian từ Atomic Core `FinluxWheelPicker` thành 3 Sheet độc lập: `FinluxDateTimePickerSheet` (Ngày+Giờ), `FinluxTimePickerSheet` (Giờ:Phút), `FinluxDatePickerSheet` (Chỉ Ngày).
+  2. Mở rộng dải Quick Date Chips (`LazyRow`: `[ Hôm nay ]`, `[ Hôm qua ]`, `[ 2 ngày trước ]`, `[ 3 ngày trước ]`, `[ Đầu tháng ]` / tương lai) & Quick Time Chips (`LazyRow`: `[ Bây giờ ]`, `[ Sáng 07:30 ]`, `[ Trưa 12:00 ]`, `[ Chiều 14:30 ]`, `[ Tối 19:30 ]`, `[ Đêm 22:00 ]`).
+  3. Bổ sung tham số `accentColor: Color? = null` thích ứng theo ngữ cảnh (ExpenseRed, IncomeGreen, WarningAmber, tokens.primary).
+  4. Đồng bộ màn hình:
+     - `SavingSpinSettingsScreen.kt`: Thay thế stepper +/- thủ công bằng `FinluxTimePickerSheet`.
+     - `RemindersScreen.kt`: Thay thế TimePickerDialog native bằng `FinluxTimePickerSheet` và DatePickerDialog M3 bằng `FinluxDatePickerSheet`.
+     - `AddTransactionSheet.kt`: Truyền `accentColor = amountColor` (ExpenseRed / IncomeGreen).
+  5. Quét sạch Zombie Imports (`DatePickerDialog`, `rememberDatePickerState`, `android.app.TimePickerDialog`) tại `AddTransactionSheet.kt`, `TransferMoneyScreen.kt`, `GoalsScreen.kt`, `RemindersScreen.kt`, `FinluxFormControls.kt`.
+  6. Đặc tả đầy đủ Form Control tiêu chuẩn vào `docs/FORM_COMPONENTS_SPEC.md` và `docs/plan_custom_datetime_picker_sheet.md`.
+  7. Quality Gate: Compile sạch, Unit Test 100% PASS (525/525), build APK v1.25.17 (191), nạp máy thật qua ADB thành công.
+- **Files đã sửa/tạo thực tế**:
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxDateTimePickerSheet.kt` (Module hóa 3 sheet + Atomic WheelPicker)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt` (Thêm accentColor, FinluxDatePickerField, FinluxTimePickerField, xóa zombie imports)
+  - `app/src/main/java/com/finlux/app/presentation/savingspin/settings/SavingSpinSettingsScreen.kt` (Kế thừa FinluxTimePickerSheet)
+  - `app/src/main/java/com/finlux/app/presentation/reminders/RemindersScreen.kt` (Kế thừa FinluxDatePickerSheet & FinluxTimePickerSheet)
+  - `app/src/main/java/com/finlux/app/presentation/transaction/AddTransactionSheet.kt` (Truyền accentColor, xóa zombie imports)
+  - `app/src/main/java/com/finlux/app/presentation/wallet/TransferMoneyScreen.kt` (Xóa zombie imports)
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt` (Xóa zombie imports)
+  - `docs/FORM_COMPONENTS_SPEC.md` (Đặc tả Mục 9️⃣ Suite thời gian tiêu chuẩn)
+  - `docs/plan_custom_datetime_picker_sheet.md` (Ghi nhận Phase 2 hoàn tất)
+  - `app/build.gradle.kts` (versionCode 191, versionName 1.25.17)
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **525/525 unit tests PASS 100%** (BUILD SUCCESSFUL).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+  - `adb install & start`: Cài đặt thành công `Success` và khởi chạy `com.finlux.app/.MainActivity` mượt mà trên thiết bị vật lý.
+
+### [Task-FINLUX-DATETIME-PICKER-SHEET] — Triển Khai FinluxDateTimePickerSheet & Chốt Chặn Giao Dịch Tương Lai
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Cập nhật `docs/plan_custom_datetime_picker_sheet.md` theo 5 đặc tả kỹ thuật được Tech Lead phê duyệt.
+  2. Tạo mới `FinluxDateTimePickerSheet.kt` theo chuẩn Liquid Glass (All-in-one Sheet, Quick Chips, Calendar Grid, Time Stepper ngang chống tràn, Zero Overflow, đồng bộ `FinanceTime.defaultZone`).
+  3. Nâng cấp `FinluxDateTimePicker` trong `FinluxFormControls.kt` (gọi Sheet mới, mặc định `allowFutureDates = false`), cập nhật `GoalsScreen.kt` (`allowFutureDates = true`).
+  4. Cập nhật tầng Domain: `FinanceBusinessConstants.kt`, `TransactionValidation.kt`, `TransferMoneyUseCase.kt` với hằng số dung sai `TRANSACTION_CLOCK_SKEW_TOLERANCE_SECONDS = 60L`.
+  5. Bổ sung ma trận test biên (Boundary Test Cases) vào `TransactionUseCasesTest.kt`.
+  6. Kiểm thử `compileDebugKotlin` và `testDebugUnitTest` (đạt 100% pass, số lượng test tăng lên 525/525 tests).
+  7. Đóng gói APK `assembleDebug` và nạp chạy thành công trên thiết bị vật lý qua ADB.
+  8. Tăng version lên v1.25.16 (code 190), cập nhật CHANGELOG.md, commit và push git theo lệnh.
+  9. [UPGRADE] Nâng cấp bộ chọn giờ sang Cupertino Drum / Wheel Picker (`FinluxWheelPicker`) sử dụng LazyColumn + `rememberSnapFlingBehavior`, tự động hít tâm, hiệu ứng scale/alpha động và tự động snap bật ngược khi cuộn quá mốc thời gian tương lai.
+- **Files đã sửa/tạo thực tế**:
+  - `docs/plan_custom_datetime_picker_sheet.md` (Cập nhật kế hoạch & đặc tả đã duyệt)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxDateTimePickerSheet.kt` (Tạo mới)
+  - `app/src/main/java/com/finlux/app/core/designsystem/component/form/FinluxFormControls.kt` (Nâng cấp FinluxDateTimePicker & formatSmartDateTime)
+  - `app/src/main/java/com/finlux/app/presentation/goal/GoalsScreen.kt` (Cấu hình allowFutureDates = true)
+  - `app/src/main/java/com/finlux/app/domain/model/FinanceBusinessConstants.kt` (Thêm TRANSACTION_CLOCK_SKEW_TOLERANCE_SECONDS = 60L)
+  - `app/src/main/java/com/finlux/app/domain/usecase/TransactionValidation.kt` (Chặn ngày tương lai với tolerance)
+  - `app/src/main/java/com/finlux/app/domain/usecase/TransferMoneyUseCase.kt` (Chặn ngày chuyển tiền tương lai với tolerance)
+  - `app/src/test/java/com/finlux/app/domain/usecase/TransactionUseCasesTest.kt` (Bổ sung 4 boundary test cases)
+  - `app/build.gradle.kts` (versionCode 190, versionName 1.25.16)
+  - `CHANGELOG.md`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `compileDebugKotlin`: **Exit code 0** (BUILD SUCCESSFUL).
+  - `testDebugUnitTest`: **525/525 unit tests PASS 100%** (BUILD SUCCESSFUL).
+  - `assembleDebug`: **BUILD SUCCESSFUL**.
+  - `adb install & start`: Cài đặt thành công `Success` và kích hoạt `com.finlux.app/.MainActivity` trên thiết bị.
 
 ### [Task-PHASE-3-BATCH-3.5] — Sáp Nhập Cụm 5: HomeScreen Master (Adaptive Architecture)
 - **Status**: `[DONE]`

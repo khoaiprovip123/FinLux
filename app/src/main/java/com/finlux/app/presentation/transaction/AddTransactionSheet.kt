@@ -59,8 +59,6 @@ import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -70,7 +68,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -399,11 +396,12 @@ fun AddTransactionSheet(
                     validationResult = walletValidationResult,
                 )
 
-                // Hàng 4: Thời gian giao dịch (Standard FinluxDateTimePicker)
+                // Hàng 4: Thời gian giao dịch (Standard FinluxDateTimePicker with Contextual Accent)
                 FinluxDateTimePicker(
                     label = "THỜI GIAN GIAO DỊCH",
                     selectedDateTime = state.date,
                     onDateTimeChange = viewModel::setDate,
+                    accentColor = amountColor,
                 )
 
                 // Hàng 5: Đính kèm hóa đơn / chứng từ

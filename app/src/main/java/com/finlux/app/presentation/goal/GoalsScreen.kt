@@ -45,8 +45,6 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,7 +58,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.finlux.app.core.designsystem.component.form.FinluxWalletPickerBottomSheet
 import com.finlux.app.core.designsystem.component.form.FinluxAmountInput
@@ -531,6 +528,7 @@ fun GoalEditor(onDismiss: () -> Unit, viewModel: GoalsViewModel = hiltViewModel(
                         selectedDateTime = state.deadline,
                         onDateTimeChange = { viewModel.setDeadline(it) },
                         label = "Hạn hoàn thành",
+                        allowFutureDates = true,
                     )
                 }
                 item { Text("Danh mục", fontWeight = FontWeight.Bold) }

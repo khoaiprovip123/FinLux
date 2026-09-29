@@ -1,6 +1,5 @@
 package com.finlux.app.core.designsystem.component.form
 
-import android.app.TimePickerDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -33,10 +32,9 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -89,12 +86,15 @@ import com.finlux.app.core.designsystem.colorFromHex
 import com.finlux.app.core.designsystem.findInstitutionForWallet
 import com.finlux.app.core.designsystem.component.formatVndAmount
 import com.finlux.app.core.designsystem.theme.LocalFinluxTokens
+import com.finlux.app.core.time.FinanceTime
 import com.finlux.app.domain.model.Category
 import com.finlux.app.domain.model.Wallet
 import com.finlux.app.domain.validation.WalletValidationResult
 import java.text.DecimalFormat
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
+import java.util.Locale
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -107,7 +107,7 @@ import java.time.format.DateTimeFormatter
  */
 fun formatSmartDateTime(
     instant: Instant,
-    zoneId: ZoneId = ZoneId.systemDefault(),
+    zoneId: ZoneId = FinanceTime.defaultZone,
 ): String {
     val localDateTime = instant.atZone(zoneId)
     val localDate = localDateTime.toLocalDate()
@@ -123,7 +123,7 @@ fun formatSmartDateTime(
 
 /**
  * Standard Finlux Date & Time Picker Control.
- * Integrated 2-in-1 DatePicker + TimePicker (24-hour mode).
+ * Integrated with FinluxDateTimePickerSheet (Liquid Glass BottomSheet).
  * Adheres 100% to Directive #1 (Dynamic Tokens) and Directive #2 (Reusability).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,14 +136,19 @@ fun FinluxDateTimePicker(
     icon: ImageVector = Icons.Default.CalendarMonth,
     iconBgColor: Color = Color(0xFF6366F1).copy(alpha = 0.14f),
     iconTintColor: Color = Color(0xFF6366F1),
+    accentColor: Color? = null,
     enabled: Boolean = true,
+    allowFutureDates: Boolean = false,
+    zoneId: ZoneId = FinanceTime.defaultZone,
 ) {
     val tokens = LocalFinluxTokens.current
-    val context = LocalContext.current
-    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showDateTimePickerSheet by remember { mutableStateOf(false) }
 
-    val formattedText = remember(selectedDateTime) {
-        formatSmartDateTime(selectedDateTime)
+    val effectiveTint = accentColor ?: iconTintColor
+    val effectiveBg = accentColor?.copy(alpha = 0.14f) ?: iconBgColor
+
+    val formattedText = remember(selectedDateTime, zoneId) {
+        formatSmartDateTime(selectedDateTime, zoneId)
     }
 
     // Row Clickable Form Card
@@ -159,7 +164,7 @@ fun FinluxDateTimePicker(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = true),
-                onClick = { showDatePickerDialog = true },
+                onClick = { showDateTimePickerSheet = true },
             ),
     ) {
         Row(
@@ -170,11 +175,11 @@ fun FinluxDateTimePicker(
         ) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = iconBgColor,
+                color = effectiveBg,
                 modifier = Modifier.size(42.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = iconTintColor, modifier = Modifier.size(22.dp))
+                    Icon(icon, contentDescription = null, tint = effectiveTint, modifier = Modifier.size(22.dp))
                 }
             }
 
@@ -214,58 +219,217 @@ fun FinluxDateTimePicker(
         }
     }
 
-    // Two-step DatePicker -> TimePicker Dialogs
-    if (showDatePickerDialog) {
-        val currentZoned = remember(selectedDateTime) { selectedDateTime.atZone(ZoneId.systemDefault()) }
-        val initialUtcMillis = remember(currentZoned) {
-            currentZoned.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-        }
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initialUtcMillis,
+    if (showDateTimePickerSheet) {
+        FinluxDateTimePickerSheet(
+            selectedDateTime = selectedDateTime,
+            onDateTimeSelected = onDateTimeChange,
+            onDismiss = { showDateTimePickerSheet = false },
+            title = label,
+            accentColor = accentColor,
+            allowFutureDates = allowFutureDates,
+            zoneId = zoneId,
         )
+    }
+}
 
-        DatePickerDialog(
-            onDismissRequest = { showDatePickerDialog = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val selectedMillis = datePickerState.selectedDateMillis
-                    showDatePickerDialog = false
-                    if (selectedMillis != null) {
-                        val selectedLocalDate = Instant.ofEpochMilli(selectedMillis)
-                            .atZone(ZoneOffset.UTC)
-                            .toLocalDate()
+/**
+ * Standard Finlux Date Picker Field (Chỉ chọn Ngày).
+ * Integrated with FinluxDatePickerSheet (Liquid Glass BottomSheet).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FinluxDatePickerField(
+    selectedDate: LocalDate,
+    onDateChange: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "NGÀY BẮT ĐẦU",
+    icon: ImageVector = Icons.Default.CalendarMonth,
+    iconBgColor: Color = Color(0xFF6366F1).copy(alpha = 0.14f),
+    iconTintColor: Color = Color(0xFF6366F1),
+    accentColor: Color? = null,
+    enabled: Boolean = true,
+    allowFutureDates: Boolean = false,
+    zoneId: ZoneId = FinanceTime.defaultZone,
+) {
+    val tokens = LocalFinluxTokens.current
+    var showDatePickerSheet by remember { mutableStateOf(false) }
 
-                        val timePickerDialog = TimePickerDialog(
-                            context,
-                            { _, hourOfDay, minute ->
-                                val newDateTime = selectedLocalDate.atTime(hourOfDay, minute)
-                                val newInstant = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                                onDateTimeChange(newInstant)
-                            },
-                            currentZoned.hour,
-                            currentZoned.minute,
-                            true, // 24-hour format
-                        )
-                        timePickerDialog.setOnCancelListener {
-                            // Preserve selected date with existing time on dialog dismiss
-                            val newDateTime = selectedLocalDate.atTime(currentZoned.hour, currentZoned.minute)
-                            val newInstant = newDateTime.atZone(ZoneId.systemDefault()).toInstant()
-                            onDateTimeChange(newInstant)
-                        }
-                        timePickerDialog.show()
-                    }
-                }) {
-                    Text("Tiếp tục (Chọn giờ)", color = tokens.primary, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePickerDialog = false }) {
-                    Text("Hủy", color = tokens.onSurfaceVariant)
-                }
-            },
+    val effectiveTint = accentColor ?: iconTintColor
+    val effectiveBg = accentColor?.copy(alpha = 0.14f) ?: iconBgColor
+    val formattedText = remember(selectedDate) { FinanceTime.formatDate(selectedDate) }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = tokens.surfaceSoft,
+        border = BorderStroke(1.dp, tokens.border),
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(
+                enabled = enabled,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = { showDatePickerSheet = true },
+            ),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            DatePicker(state = datePickerState)
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = effectiveBg,
+                modifier = Modifier.size(36.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = effectiveTint, modifier = Modifier.size(18.dp))
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    color = tokens.onSurfaceVariant,
+                )
+                Text(
+                    text = formattedText,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                    ),
+                    color = tokens.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = Color(0xFF9CA3AF),
+                modifier = Modifier.size(12.dp),
+            )
         }
+    }
+
+    if (showDatePickerSheet) {
+        FinluxDatePickerSheet(
+            selectedDate = selectedDate,
+            onDateSelected = onDateChange,
+            onDismiss = { showDatePickerSheet = false },
+            title = label,
+            accentColor = accentColor,
+            allowFutureDates = allowFutureDates,
+            zoneId = zoneId,
+        )
+    }
+}
+
+/**
+ * Standard Finlux Time Picker Field (Chỉ chọn Giờ:Phút).
+ * Integrated with FinluxTimePickerSheet (Liquid Glass BottomSheet).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FinluxTimePickerField(
+    selectedTime: LocalTime,
+    onTimeChange: (LocalTime) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "GIỜ NHẮC",
+    icon: ImageVector = Icons.Default.Schedule,
+    iconBgColor: Color = Color(0xFF6366F1).copy(alpha = 0.14f),
+    iconTintColor: Color = Color(0xFF6366F1),
+    accentColor: Color? = null,
+    enabled: Boolean = true,
+    allowFutureTime: Boolean = true,
+    targetDate: LocalDate? = null,
+    zoneId: ZoneId = FinanceTime.defaultZone,
+) {
+    val tokens = LocalFinluxTokens.current
+    var showTimePickerSheet by remember { mutableStateOf(false) }
+
+    val effectiveTint = accentColor ?: iconTintColor
+    val effectiveBg = accentColor?.copy(alpha = 0.14f) ?: iconBgColor
+    val formattedTime = remember(selectedTime) {
+        String.format(Locale.US, "%02d:%02d", selectedTime.hour, selectedTime.minute)
+    }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = tokens.surfaceSoft,
+        border = BorderStroke(1.dp, tokens.border),
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(
+                enabled = enabled,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = { showTimePickerSheet = true },
+            ),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = effectiveBg,
+                modifier = Modifier.size(36.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = effectiveTint, modifier = Modifier.size(18.dp))
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    color = tokens.onSurfaceVariant,
+                )
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                    ),
+                    color = tokens.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = Color(0xFF9CA3AF),
+                modifier = Modifier.size(12.dp),
+            )
+        }
+    }
+
+    if (showTimePickerSheet) {
+        FinluxTimePickerSheet(
+            initialHour = selectedTime.hour,
+            initialMinute = selectedTime.minute,
+            onTimeSelected = { h, m ->
+                onTimeChange(LocalTime.of(h, m))
+            },
+            onDismiss = { showTimePickerSheet = false },
+            title = label,
+            accentColor = accentColor,
+            allowFutureTime = allowFutureTime,
+            targetDate = targetDate,
+            zoneId = zoneId,
+        )
     }
 }
 

@@ -1,6 +1,7 @@
 package com.finlux.app.domain.usecase
 
 import com.finlux.app.core.common.AppResult
+import com.finlux.app.domain.model.FinanceBusinessConstants
 import com.finlux.app.domain.model.WalletType
 import com.finlux.app.domain.validation.WalletValidationResult
 import com.finlux.app.domain.validation.validateSufficientFunds
@@ -24,6 +25,11 @@ class TransferMoneyUseCase @Inject constructor(
         if (sourceId.isBlank() || destinationId.isBlank()) return AppResult.Error("Vui lòng chọn đủ hai ví")
         if (sourceId == destinationId) return AppResult.Error("Hai ví phải khác nhau")
         if (amount <= 0L) return AppResult.Error("Số tiền phải lớn hơn 0")
+
+        val nowWithTolerance = Instant.now().plusSeconds(FinanceBusinessConstants.TRANSACTION_CLOCK_SKEW_TOLERANCE_SECONDS)
+        if (date.isAfter(nowWithTolerance)) {
+            return AppResult.Error("Thời gian chuyển tiền không được vượt quá thời điểm hiện tại")
+        }
 
         val wallets = walletRepository.observeWallets().first()
         val sourceWallet = wallets.find { it.id == sourceId } ?: return AppResult.Error("Không tìm thấy ví nguồn")

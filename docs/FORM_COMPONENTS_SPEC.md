@@ -318,20 +318,77 @@ snackbarHostState.showSnackbar(
 
 ---
 
+### 9️⃣ `FinluxDateTimePicker`, `FinluxTimePickerSheet`, `FinluxDatePickerSheet` & `FinluxWheelPicker` — Bộ Chọn Thời Gian Chuẩn Hóa Modular (Cupertino Wheel & Liquid Glass)
+Hệ thống Suite chọn thời gian tiêu chuẩn tối thượng của Finlux Design System, giải quyết triệt để vấn đề dialog trắng thô Material 3 và lỗi chọn ngày/giờ tương lai làm sai lệch dòng tiền:
+- **`FinluxWheelPicker` (Atomic Core):** Bánh xe cuộn Cupertino iOS dùng `LazyColumn` + `rememberSnapFlingBehavior`. Tự động hít tâm chuẩn xác, hiệu ứng scale font (item giữa 21sp to rõ, 2 bên mờ dần), hỗ trợ tự động nảy ngược (bounce-back) khi vuộn quá mốc giới hạn, nhận `accentColor`.
+- **`FinluxDateTimePickerSheet` (Chọn Ngày + Giờ 2-trong-1):** All-in-one Liquid Glass Sheet gồm Quick Date Chips (cuộn ngang `LazyRow`), Lưới lịch Calendar 7 cột bo góc 36dp (zero overflow), Quick Time Chips và Cupertino Wheel Picker 2 cột [Giờ] : [Phút].
+- **`FinluxTimePickerSheet` (Chuyên chọn Giờ:Phút):** Sheet độc lập với Quick Time Chips + 2 bánh xe [Giờ] : [Phút] + Nút Xác nhận.
+- **`FinluxDatePickerSheet` (Chuyên chọn Ngày):** Sheet độc lập với Quick Date Chips + Lưới lịch Liquid Glass + Nút Xác nhận.
+- **`FinluxDateTimePicker`, `FinluxDatePickerField`, `FinluxTimePickerField`:** Các thẻ Card Surface bo góc 18dp/16dp hiển thị nhãn viết hoa, giá trị định dạng thông minh (`formatSmartDateTime`), icon badge màu động theo ngữ cảnh và chevron điều hướng.
+
+* **Thuật toán Chặn Ngày & Giờ Tương Lai (Intra-day Future Clamping):**
+  - Mặc định `allowFutureDates = false` cho mọi giao dịch dòng tiền (Thu, Chi, Chuyển tiền, Đầu tư).
+  - Đối với các ngày trong quá khứ: Cho phép tự do chọn từ `00:00` đến `23:59`.
+  - Đối với ngày hôm nay: Giờ và phút bị kẹp trần nghiêm ngặt `LocalTime.now(zoneId)`. Nếu người dùng vuốt bánh xe hoặc bấm chip vượt quá giờ hiện tại, hệ thống tự động khóa và snap nảy ngược lại.
+
+* **Bảng màu thích ứng theo ngữ cảnh (`accentColor`):**
+  - Chi tiêu: `FinluxColors.ExpenseRed`
+  - Thu nhập: `FinluxColors.IncomeGreen`
+  - Chuyển ví / Mặc định: `tokens.primary`
+  - Nhắc nhở: `FinluxColors.WarningAmber`
+
+* **Khởi tạo & Sử dụng:**
+```kotlin
+import com.finlux.app.core.designsystem.component.form.FinluxDateTimePicker
+import com.finlux.app.core.designsystem.component.form.FinluxTimePickerSheet
+import com.finlux.app.core.designsystem.component.form.FinluxDatePickerSheet
+
+// 1. Form Row chọn cả Ngày & Giờ (AddTransaction, Transfer, Deals):
+FinluxDateTimePicker(
+    label = "THỜI GIAN GIAO DỊCH",
+    selectedDateTime = state.date,
+    onDateTimeChange = viewModel::setDate,
+    accentColor = if (state.isExpense) FinluxColors.ExpenseRed else FinluxColors.IncomeGreen,
+    allowFutureDates = false,
+)
+
+// 2. Modal Sheet chuyên chọn Giờ:Phút (SavingSpin, Reminders):
+if (showTimePickerSheet) {
+    FinluxTimePickerSheet(
+        initialHour = 8,
+        initialMinute = 0,
+        onTimeSelected = { h, m -> setReminderTime(h, m) },
+        onDismiss = { showTimePickerSheet = false },
+        accentColor = tokens.primary,
+    )
+}
+
+// 3. Modal Sheet chuyên chọn Ngày (Goals, Reminders):
+if (showDatePickerSheet) {
+    FinluxDatePickerSheet(
+        selectedDate = selectedDate,
+        onDateSelected = { date -> selectedDate = date },
+        onDismiss = { showDatePickerSheet = false },
+        allowFutureDates = true,
+    )
+}
+```
+
+---
+
 ## 📱 4. DANH SÁCH MÀN HÌNH ĐÃ KẾ THỪA BỘ COMPONENT CHUẨN
 
 | Màn hình / Modal | Component được áp dụng |
 | :--- | :--- |
-| **Giao Dịch (`PrismTransactionsScreen`, `ModernTransactionsScreen`, `ClassicTransactionsScreen`)** | `FinluxSnackbarHost` (né BottomBar), `FinluxCategoryPickerBottomSheet`, `ErgonomicFormRow` |
+| **Giao Dịch (`AddTransactionSheet.kt`, `TransactionsScreen.kt`)** | `FinluxDateTimePicker` (Accent thích ứng Thu/Chi), `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `FinluxAmountInput`, `ErgonomicInputRow` |
+| **Chuyển Tiền Liên Ví (`TransferMoneyScreen.kt`)** | `FinluxDateTimePicker`, `FinluxTransferWalletPair`, `FinluxAmountInput`, `FinluxNoteInput` |
+| **Thương Vụ Đầu Tư (`RecordDealOutlaySheet.kt`, `RecordDealInflowSheet.kt`)** | `FinluxDateTimePicker`, `FinluxWalletSelector`, `FinluxAmountInput`, `ErgonomicInputRow` |
+| **Mục Tiêu Tài Chính (`GoalsScreen.kt`)** | `FinluxDateTimePicker` (`allowFutureDates = true`), `FinluxWalletSelector`, `ErgonomicCompactAmountCard` |
+| **Nhắc Nhở Định Kỳ (`RemindersScreen.kt`)** | `FinluxDatePickerSheet` (`allowFutureDates = true`), `FinluxTimePickerSheet` (WarningAmber), `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard` |
+| **Vòng Quay Tiết Kiệm (`SavingSpinSettingsScreen.kt`)** | `FinluxTimePickerSheet` (Cupertino Wheel + Quick Presets) |
 | **Quản Lý Ví (`PrismWalletsScreen`, `ModernWalletsScreen`, `ClassicWalletsScreen`)** | `FinluxSnackbarHost` (né BottomBar), `ErgonomicCompactAmountCard`, `FinluxWalletPickerBottomSheet` |
 | **Ngân Sách (`PrismBudgetScreen`, `ClassicBudgetScreen`, `ModernBudgetScreen`)** | `FinluxSnackbarHost` (né BottomBar), `FinluxCategoryPickerBottomSheet`, `ErgonomicCompactAmountCard` |
 | **Quản Lý Nợ & Tín Dụng (`DebtDashboardScreen.kt`, `DebtPaymentSheet.kt`, `AddEditDebtSheet.kt`)** | `FinluxSnackbarHost`, `FinluxWalletPickerBottomSheet`, `PrincipalInterestSplitCard`, `ErgonomicCompactAmountCard`, `ErgonomicFormRow`, `ErgonomicInputRow` |
-| **Thương Vụ Đầu Tư (`DealsScreen.kt`, `CreateDealDialog.kt`, `RecordDealInflowDialog.kt`)** | `FinluxSnackbarHost`, `FinluxStyleBackdrop`, `GlassTopBar`, `DealDetailBottomSheet` |
-| **Trung Tâm Thông Báo (`NotificationsScreen.kt`)** | `FinluxSnackbarHost`, `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard` |
-| **Nhắc Nhở Định Kỳ (`RemindersScreen.kt`)** | `FinluxSnackbarHost`, `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow` |
-| **Quản Lý Danh Mục (`CategoriesScreen.kt`)** | `FinluxSnackbarHost`, `GlassTopBar`, `FinluxLazyColumn` |
-| **Hồ Sơ & Cài Đặt (`PrismSettingsScreen.kt`, `SettingsScreen.kt`)** | `FinluxSnackbarHost` (né BottomBar), `ProfileCard`, `BiometricSwitch` |
-| **Thêm Giao Dịch (`AddTransactionSheet.kt`)** | `FinluxCategoryPickerBottomSheet`, `FinluxWalletPickerBottomSheet`, `ErgonomicCompactAmountCard`, `ErgonomicInputRow` |
-| **Mục Tiêu Tài Chính (`GoalsScreen.kt`)** | `ErgonomicCompactAmountCard` (Nạp/Rút & Mục tiêu / Tích lũy tháng) |
-| **Cài Đặt Lương (`SalaryCycleSettingsSheet.kt`)** | `ErgonomicCompactAmountCard` (Mức lương dự kiến) |
+| **Cài Đặt Lương (`SalaryCycleSettingsSheet.kt`)** | `ErgonomicCompactAmountCard` (Mức lương dự kiến), Day of Month Slider + Quick Chips |
+
 

@@ -6,6 +6,8 @@ import java.time.ZoneId
  * Single Source of Truth for core financial business rules and invariants in FinLux.
  */
 object FinanceBusinessConstants {
+    const val TRANSACTION_CLOCK_SKEW_TOLERANCE_SECONDS: Long = 60L
+
     object Budget {
         const val WARNING_PERCENT: Long = 80L
         const val EXCEEDED_PERCENT: Long = 100L

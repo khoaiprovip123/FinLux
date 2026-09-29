@@ -312,6 +312,50 @@ class TransactionUseCasesTest {
         assertEquals(true, fakeBudgetRepo.budgets.first().notified100)
     }
 
+    @Test
+    fun `add rejects transaction with future date`() = runTest {
+        val tomorrow = Instant.now().plus(java.time.Duration.ofDays(1))
+        val tx = validTransaction().copy(date = tomorrow)
+        val result = AddTransactionUseCase(repository, walletRepository)(tx)
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals("Thời gian giao dịch không được vượt quá thời điểm hiện tại", (result as AppResult.Error).message)
+        assertEquals(0, repository.addCalls)
+    }
+
+    @Test
+    fun `add allows transaction with future date within clock skew tolerance`() = runTest {
+        val futureWithinTolerance = Instant.now().plusSeconds(30)
+        val tx = validTransaction().copy(date = futureWithinTolerance)
+        val result = AddTransactionUseCase(repository, walletRepository)(tx)
+
+        assertEquals(AppResult.Success("generated-id"), result)
+        assertEquals(1, repository.addCalls)
+    }
+
+    @Test
+    fun `add rejects transaction with future date exceeding clock skew tolerance`() = runTest {
+        val futureExceedingTolerance = Instant.now().plusSeconds(65)
+        val tx = validTransaction().copy(date = futureExceedingTolerance)
+        val result = AddTransactionUseCase(repository, walletRepository)(tx)
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals("Thời gian giao dịch không được vượt quá thời điểm hiện tại", (result as AppResult.Error).message)
+        assertEquals(0, repository.addCalls)
+    }
+
+    @Test
+    fun `edit rejects transaction when updated date is in the future`() = runTest {
+        val original = validTransaction(id = "tx-1")
+        val tomorrow = Instant.now().plus(java.time.Duration.ofDays(1))
+        val updated = original.copy(date = tomorrow)
+        val result = EditTransactionUseCase(repository, walletRepository)(original, updated)
+
+        assertInstanceOf(AppResult.Error::class.java, result)
+        assertEquals("Thời gian giao dịch không được vượt quá thời điểm hiện tại", (result as AppResult.Error).message)
+        assertEquals(0, repository.editCalls)
+    }
+
     private fun validTransaction(id: String = "") = FinanceTransaction(
         id = id,
         type = TransactionType.EXPENSE,
