@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: finlux-web
+    runtime: node
+    plan: free
+    rootDir: web
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        value: finlux-d0297
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        value: AIzaSyAyJF9HOzZwIZ6_MaFN4ISeWISFURuiJJE
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        value: finlux-d0297.firebaseapp.com
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        value: finlux-d0297.firebasestorage.app
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        value: 927751753962
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        value: 1:927751753962:web:7f81a8b92c43eef6
