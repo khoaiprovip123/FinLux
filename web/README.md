@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FinLux Web — Fullstack Personal Finance & Liquid Glass Atelier 💎
 
-## Getting Started
+[![Live Web](https://img.shields.io/badge/Live%20Web-finlux--0wxc.onrender.com-00D1B2.svg?style=flat&logo=render)](https://finlux-0wxc.onrender.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.0-black.svg?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3.0-61DAFB.svg?logo=react)](https://react.dev/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-v13-FFCA28.svg?logo=firebase)](https://firebase.google.com/)
 
-First, run the development server:
+Ứng dụng web toàn diện của hệ sinh thái **FinLux**, đồng bộ dữ liệu thời gian thực (Real-time Cloud Sync) với app Android FinLux Native.
+
+🌐 **Trải nghiệm ngay tại:** [https://finlux-0wxc.onrender.com/](https://finlux-0wxc.onrender.com/)
+
+---
+
+## ✨ Điểm nhấn Tính năng (Features)
+
+1. **Atelier Landing Page**:
+   - Vòng tròn quỹ đạo 16 điểm (`fx-orbit-glide`) quay quanh Logo FinLux trung tâm, thẻ luôn nằm ngang thẳng thớm chuẩn mực, rê chuột sáng lấp lánh như ngôi sao (`--star-glow`).
+   - Header cố định (`position: fixed`) với thanh tiến trình cuộn trang (`Scroll Progress Bar`) đổi màu quang phổ tự động.
+   - Slogan tinh hoa, trích dẫn tài chính danh giá thay đổi mượt mà.
+2. **Quản lý Thu Chi & Kế toán Kép**:
+   - Nhập liệu số tiền thông minh với auto-formatting hàng nghìn và inline `₫`.
+   - Phân loại danh mục thu/chi chuẩn mực, chống tính trùng chi phí (`Zero Double-Counting`).
+3. **Quản lý Đa ví & Ngân hàng**:
+   - Hỗ trợ đầy đủ ngân hàng và ví điện tử phổ biến tại Việt Nam (VietQR, MoMo, ZaloPay, ViettelMoney...).
+4. **Ngân sách Chu kỳ Lương (Salary Cycle Budget)**:
+   - Theo dõi chi tiêu theo từng kỳ nhận lương thực tế, cảnh báo hạn mức thông minh.
+5. **Dòng tiền Tự do (Free Cash Flow - FCF)** & Báo cáo trực quan (Donut / Bar Chart).
+6. **Vòng quay Tích lũy (Saving Spin)** & Mục tiêu Tài chính (Financial Goals).
+7. **Đồng bộ Real-time**:
+   - Kết nối Firestore Cloud, dữ liệu thay đổi trên điện thoại hoặc web được cập nhật tức thì.
+
+---
+
+## 🛠️ Công nghệ Sử dụng (Tech Stack)
+
+- **Framework:** Next.js 16 (App Router + Turbopack)
+- **UI Library:** React 19 + Lucide Icons + Canvas Confetti
+- **Styling:** Tailwind CSS v4 + Vanilla Liquid Glass Token System
+- **Database & Auth:** Firebase Firestore + Firebase Authentication (Google Sign-In)
+- **Deployment:** Render Web Service (Continuous Deployment từ nhánh `main`)
+
+---
+
+## 🚀 Khởi chạy Cục bộ (Local Development)
 
 ```bash
+# Di chuyển vào thư mục web
+cd web
+
+# Cài đặt thư viện
+npm install
+
+# Chạy dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở trình duyệt tại [http://localhost:3000](http://localhost:3000) để trải nghiệm.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📦 Build & Production
 
-## Learn More
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 👥 Nhóm Phát triển (Developers)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Lead Developer:** [khoaiprovip123](https://github.com/khoaiprovip123)
+- **Co-Developer:** [Long Louis (thanhlongts2k)](https://github.com/thanhlongts2k)

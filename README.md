@@ -1,12 +1,15 @@
 # FinLux Android — Open-Source Personal Finance App 🚀
 
+[![Live Web App](https://img.shields.io/badge/Live%20Web-finlux--0wxc.onrender.com-00D1B2.svg?style=flat&logo=render)](https://finlux-0wxc.onrender.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF.svg?logo=kotlin)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-2024.10.01-4285F4.svg?logo=android)](https://developer.android.com/jetpack/compose)
 [![Clean Architecture](https://img.shields.io/badge/Architecture-Clean%20%2B%20MVVM-3DDC84.svg?logo=android)](https://developer.android.com/topic/architecture)
 [![Backend](https://img.shields.io/badge/Backend-Firebase-FFCA28.svg?logo=firebase)](https://firebase.google.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**FinLux** là ứng dụng quản lý thu chi cá nhân mã nguồn mở (Open-Source Android Native), được phát triển trên nền tảng **Kotlin**, **Jetpack Compose (Material 3)** và **Firebase Backend**. Ứng dụng nổi bật với ngôn ngữ thiết kế **Liquid Glass (iOS 26 Visual Style)**, hỗ trợ linh hoạt 3 phong cách giao diện (Tối giản hiện đại, Glassmorphism, Gradient năng động) cùng kiến trúc bảo toàn số dư nguyên tử qua **Firestore Transactions**.
+**FinLux** là hệ sinh thái quản lý thu chi và hoạch định tài chính cá nhân toàn diện (**Android Native & Web Platform**), được phát triển trên nền tảng **Kotlin + Jetpack Compose** và **Next.js 16 + Firebase Backend**. Ứng dụng nổi bật với ngôn ngữ thiết kế **Liquid Glass (iOS 26 Visual Style)**, hỗ trợ đồng bộ đa nền tảng thời gian thực (Real-time Sync) cùng kiến trúc bảo toàn số dư nguyên tử qua **Firestore Transactions**.
+
+> 🌐 **Trải nghiệm trực tiếp bản Web:** [https://finlux-0wxc.onrender.com/](https://finlux-0wxc.onrender.com/)
 
 ---
 

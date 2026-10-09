@@ -19,7 +19,7 @@ Dự án đã có sẵn file cấu hình `render.yaml` tại thư mục gốc.
    - **Health Check Path:** `/api/health`
    - **Environment Variables:** Đã điền sẵn các biến Firebase client.
 5. Nhấn **Apply**. Quá trình build và deploy sẽ tự động hoàn tất trong ~2 phút.
-6. Render sẽ cấp một tên miền miễn phí dạng: `https://finlux-web.onrender.com`.
+6. Render đã cấp tên miền hoạt động chính thức: `https://finlux-0wxc.onrender.com/`.
 
 ---
 
@@ -57,8 +57,8 @@ Nếu bạn muốn tạo thủ công trên giao diện Render Dashboard:
 
 ## 🔍 Kiểm tra sau khi Deploy thành công
 
-1. **Trang chủ:** Truy cập `https://<tên-service>.onrender.com` để mở Dashboard Liquid Glass.
-2. **Kiểm tra Health Check API:** Truy cập `https://<tên-service>.onrender.com/api/health` → nhận JSON:
+1. **Trang chủ:** Truy cập `https://finlux-0wxc.onrender.com/` để mở Dashboard Liquid Glass.
+2. **Kiểm tra Health Check API:** Truy cập `https://finlux-0wxc.onrender.com/api/health` → nhận JSON:
    ```json
    {
      "status": "ok",
