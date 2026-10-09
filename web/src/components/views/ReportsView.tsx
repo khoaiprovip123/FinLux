@@ -2,117 +2,213 @@
 
 import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
-import { formatCurrency } from '@/lib/formatters';
-import { BarChart3, TrendingUp, TrendingDown, PieChart, Sparkles } from 'lucide-react';
+import { FinluxIcon } from '@/components/icons/FinluxIcons';
+import { PERIODS } from '@/lib/constants';
+import { formatCurrency, formatShortCurrency, formatPercent } from '@/lib/formatters';
 
 export default function ReportsView() {
-  const { transactions, categories, summary } = useFinance();
+  const {
+    period,
+    periodIncome,
+    periodExpense,
+    periodCashFlow,
+    monthlyTrend,
+    categoryBreakdown,
+  } = useFinance();
 
-  const expenseTxs = transactions.filter((t) => t.type === 'expense');
+  const currentPeriodName = PERIODS[period].name;
 
-  // Breakdown by category
-  const categoryBreakdown = categories
-    .filter((c) => c.type === 'expense')
-    .map((c) => {
-      const spent = expenseTxs
-        .filter((t) => t.categoryId === c.id)
-        .reduce((sum, t) => sum + t.amount, 0);
-      return {
-        ...c,
-        spent,
-        percent: summary.monthlyExpense > 0 ? Math.round((spent / summary.monthlyExpense) * 100) : 0,
-      };
-    })
-    .filter((c) => c.spent > 0)
-    .sort((a, b) => b.spent - a.spent);
+  const maxBarValue = Math.max(
+    1,
+    ...monthlyTrend.flatMap((d) => [d.income, d.expense])
+  );
 
-  const savingsRate =
-    summary.monthlyIncome > 0
-      ? Math.max(0, Math.round(((summary.monthlyIncome - summary.monthlyExpense) / summary.monthlyIncome) * 100))
-      : 0;
+  const totalExpense = categoryBreakdown.reduce((sum, c) => sum + c.amount, 0);
+
+  let currentAngle = 0;
+  const gradientStops: string[] = [];
+  categoryBreakdown.forEach((cat) => {
+    const nextAngle = currentAngle + (cat.amount / Math.max(1, totalExpense)) * 100;
+    gradientStops.push(`${cat.color} ${currentAngle.toFixed(2)}% ${nextAngle.toFixed(2)}%`);
+    currentAngle = nextAngle;
+  });
+  const donutGradient = gradientStops.length > 0
+    ? `conic-gradient(${gradientStops.join(', ')})`
+    : 'conic-gradient(#dde2ed 0% 100%)';
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="liquid-glass rounded-2xl p-6 border border-white/10">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
-          <BarChart3 className="w-5 h-5 text-cyan-400" />
-          <span>Báo cáo & Phân tích Dòng tiền</span>
-        </h2>
-        <p className="text-xs text-slate-400">
-          Tổng quan cơ cấu thu chi, tỷ lệ tiết kiệm và các khoản chi tiêu chiếm tỷ trọng lớn
-        </p>
+      {/* Intro */}
+      <section className="fx-intro">
+        <div>
+          <p className="fx-eyebrow">FINLUX / PHÂN TÍCH CHUYÊN SÂU</p>
+          <h1 className="fx-title">Phân tích</h1>
+          <p className="fx-lede">
+            Phân tích tài chính cá nhân với bộ lọc và công thức tính thống nhất ({currentPeriodName}).
+          </p>
+        </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-          <div className="p-4 rounded-xl bg-black/30 border border-white/5">
-            <span className="text-xs text-slate-400 block mb-1">Tổng thu nhập</span>
-            <div className="text-xl font-black text-emerald-400">
-              {formatCurrency(summary.monthlyIncome)}
-            </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">Tất cả nguồn thu tháng này</span>
-          </div>
-
-          <div className="p-4 rounded-xl bg-black/30 border border-white/5">
-            <span className="text-xs text-slate-400 block mb-1">Tổng chi tiêu</span>
-            <div className="text-xl font-black text-rose-400">
-              {formatCurrency(summary.monthlyExpense)}
-            </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">Sinh hoạt và nghĩa vụ định kỳ</span>
-          </div>
-
-          <div className="p-4 rounded-xl bg-black/30 border border-white/5">
-            <span className="text-xs text-slate-400 block mb-1">Tỷ lệ tiết kiệm (Savings Rate)</span>
-            <div className="text-xl font-black text-cyan-400 flex items-center gap-2">
-              <span>{savingsRate}%</span>
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-            </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">
-              {savingsRate >= 20 ? 'Khỏe mạnh (chuẩn tài chính > 20%)' : 'Cần tối ưu thêm chi phí'}
+      {/* 3 Metric Cards */}
+      <section className="fx-metrics">
+        <div className="fx-card fx-metric fx-lift">
+          <div className="fx-metric-row">
+            <span className="fx-metric-label">Tổng thu nhập</span>
+            <span className="fx-metric-icon green">
+              <FinluxIcon name="down" />
             </span>
           </div>
+          <strong className="fx-metric-number">{formatCurrency(periodIncome)}</strong>
+          <div className="fx-metric-foot">{currentPeriodName}</div>
         </div>
-      </div>
 
-      {/* Category Breakdown Breakdown List */}
-      <div className="liquid-glass rounded-2xl p-6 border border-white/10">
-        <h3 className="font-bold text-white text-base mb-4 flex items-center gap-2">
-          <PieChart className="w-4 h-4 text-purple-400" />
-          <span>Phân bổ chi tiêu theo danh mục</span>
-        </h3>
-
-        {categoryBreakdown.length === 0 ? (
-          <div className="text-center py-8 text-xs text-slate-400">Chưa phát sinh chi tiêu</div>
-        ) : (
-          <div className="space-y-4">
-            {categoryBreakdown.map((item) => (
-              <div key={item.id} className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-white flex items-center gap-2">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    {item.name}
-                  </span>
-                  <div className="text-right">
-                    <span className="font-bold text-slate-200">{formatCurrency(item.spent)}</span>
-                    <span className="text-slate-400 text-[11px] ml-2">({item.percent}%)</span>
-                  </div>
-                </div>
-
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${item.percent}%`,
-                      backgroundColor: item.color || '#F43F5E',
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+        <div className="fx-card fx-metric fx-lift">
+          <div className="fx-metric-row">
+            <span className="fx-metric-label">Tổng chi tiêu</span>
+            <span className="fx-metric-icon red">
+              <FinluxIcon name="up" />
+            </span>
           </div>
-        )}
+          <strong className="fx-metric-number">{formatCurrency(periodExpense)}</strong>
+          <div className="fx-metric-foot">{currentPeriodName}</div>
+        </div>
+
+        <div className="fx-card fx-metric fx-lift">
+          <div className="fx-metric-row">
+            <span className="fx-metric-label">Dòng tiền thuần</span>
+            <span className="fx-metric-icon purple">
+              <FinluxIcon name="chart" />
+            </span>
+          </div>
+          <strong className="fx-metric-number">{formatCurrency(periodCashFlow)}</strong>
+          <div className="fx-metric-foot">{currentPeriodName}</div>
+        </div>
+      </section>
+
+      {/* Analytics Chart & Donut */}
+      <section className="fx-analytics">
+        {/* Monthly Bar Chart */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
+            <div>
+              <h3 className="fx-panel-title">Xu hướng thu và chi</h3>
+              <p className="fx-panel-sub">{currentPeriodName} · VND</p>
+            </div>
+            <div className="fx-legend">
+              <span className="fx-legend-item">
+                <i className="fx-legend-dot inc" />
+                <span>Thu nhập</span>
+              </span>
+              <span className="fx-legend-item">
+                <i className="fx-legend-dot exp" />
+                <span>Chi tiêu</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="fx-barplot">
+            {monthlyTrend.map((d) => {
+              const incH = Math.max(2, (d.income / maxBarValue) * 98);
+              const expH = Math.max(2, (d.expense / maxBarValue) * 98);
+              return (
+                <div
+                  key={d.key}
+                  className="fx-barcell"
+                  title={`Tháng ${d.key.slice(5)}: Thu ${formatCurrency(d.income)} | Chi ${formatCurrency(d.expense)}`}
+                >
+                  <div
+                    className="fx-bar inc"
+                    style={{ ['--h' as string]: `${incH}%` }}
+                  />
+                  <div
+                    className="fx-bar exp"
+                    style={{ ['--h' as string]: `${expH}%` }}
+                  />
+                  <span className="fx-barlabel">{d.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="fx-chart-note">
+            Thu nhập / Chi tiêu theo tháng, không tính chuyển khoản nội bộ.
+          </div>
+        </div>
+
+        {/* Donut Chart */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
+            <div>
+              <h3 className="fx-panel-title">Cơ cấu chi tiêu</h3>
+              <p className="fx-panel-sub">{currentPeriodName}</p>
+            </div>
+            <FinluxIcon name="chart" />
+          </div>
+
+          <div className="fx-donut-layout">
+            <div
+              className="fx-donut"
+              style={{ background: donutGradient }}
+            >
+              <div className="fx-donut-inner">
+                <span>Chi tiêu</span>
+                <strong>{formatShortCurrency(totalExpense)}</strong>
+              </div>
+            </div>
+
+            <div className="fx-cat-list">
+              {categoryBreakdown.slice(0, 5).map((cat) => (
+                <div key={cat.categoryId} className="fx-cat-row">
+                  <i
+                    className="fx-cat-swatch"
+                    style={{ background: cat.color }}
+                  />
+                  <span>{cat.name}</span>
+                  <b>{formatPercent(cat.ratio)}</b>
+                </div>
+              ))}
+              {categoryBreakdown.length === 0 && (
+                <div className="fx-small-note">Không có dữ liệu trong kỳ này</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Category Breakdown Table */}
+      <div className="fx-card fx-panel">
+        <div className="fx-panel-header">
+          <div>
+            <h3 className="fx-panel-title">Chi tiết chi tiêu theo nhóm</h3>
+            <p className="fx-panel-sub">Đối chiếu với sổ giao dịch trong kỳ</p>
+          </div>
+        </div>
+
+        <div>
+          {categoryBreakdown.map((cat) => (
+            <div key={cat.categoryId} className="fx-kv">
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i
+                  style={{
+                    display: 'inline-block',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '3px',
+                    backgroundColor: cat.color,
+                  }}
+                />
+                {cat.name} ({formatPercent(cat.ratio)})
+              </span>
+              <strong>{formatCurrency(cat.amount)}</strong>
+            </div>
+          ))}
+
+          {categoryBreakdown.length === 0 && (
+            <div className="fx-empty">
+              <FinluxIcon name="chart" />
+              <p>Chưa có chi tiêu trong kỳ này</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

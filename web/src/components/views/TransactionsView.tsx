@@ -1,197 +1,217 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
+import { FinluxIcon } from '@/components/icons/FinluxIcons';
+import BankLogo from '@/components/icons/BankLogo';
+import { PERIODS } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/formatters';
-import {
-  Search,
-  Filter,
-  Plus,
-  Trash2,
-  ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw,
-} from 'lucide-react';
 
 interface TransactionsViewProps {
   onOpenAddTx: () => void;
 }
 
 export default function TransactionsView({ onOpenAddTx }: TransactionsViewProps) {
-  const { transactions, wallets, categories, deleteTransaction } = useFinance();
+  const {
+    period,
+    periodTransactions,
+    categories,
+    wallets,
+    search,
+    setSearch,
+    kind,
+    setKind,
+    setSelectedTxId,
+  } = useFinance();
 
-  const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [filterWallet, setFilterWallet] = useState<string>('all');
+  const currentPeriodName = PERIODS[period].name;
 
-  const filtered = transactions.filter((tx) => {
-    if (filterType !== 'all' && tx.type !== filterType) return false;
-    if (filterWallet !== 'all' && tx.walletId !== filterWallet && tx.relatedWalletId !== filterWallet)
-      return false;
+  // Filter transactions by kind and search query
+  const filteredList = periodTransactions.filter((tx) => {
+    // Kind filter
+    if (kind === 'income' && tx.type !== 'income') return false;
+    if (kind === 'expense' && tx.type !== 'expense') return false;
+    if (kind === 'transfer' && tx.type !== 'transfer_out') return false;
+
+    // Search query filter
     if (search.trim()) {
       const q = search.toLowerCase();
-      const matchNote = tx.note.toLowerCase().includes(q);
       const cat = categories.find((c) => c.id === tx.categoryId);
-      const matchCat = cat?.name.toLowerCase().includes(q);
-      if (!matchNote && !matchCat) return false;
+      const srcWallet = wallets.find((w) => w.id === tx.walletId);
+      const textToMatch = [
+        tx.note,
+        tx.date,
+        cat?.name || '',
+        srcWallet?.name || '',
+        String(tx.amount),
+      ].join(' ').toLowerCase();
+
+      return textToMatch.includes(q);
     }
     return true;
   });
 
-  const getCategory = (catId?: string | null) => categories.find((c) => c.id === catId);
-  const getWallet = (wId: string) => wallets.find((w) => w.id === wId);
+  const getCategoryName = (tx: (typeof periodTransactions)[0]) => {
+    if (tx.type === 'transfer_out') return 'Chuyển khoản';
+    const cat = categories.find((c) => c.id === tx.categoryId);
+    return cat?.name || 'Khác';
+  };
+
+  const getWalletName = (tx: (typeof periodTransactions)[0]) => {
+    const w = wallets.find((item) => item.id === tx.walletId);
+    return w?.name || tx.walletId;
+  };
 
   return (
     <div className="space-y-6">
-      {/* Controls Bar */}
-      <div className="liquid-glass rounded-2xl p-4 border border-white/10 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-1 min-w-[240px]">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* Intro */}
+      <section className="fx-intro">
+        <div>
+          <p className="fx-eyebrow">FINLUX / SỔ GIAO DỊCH</p>
+          <h1 className="fx-title">Giao dịch</h1>
+          <p className="fx-lede">
+            Mọi giao dịch cùng nguồn với Tổng quan, Tài khoản và Báo cáo.
+          </p>
+        </div>
+      </section>
+
+      {/* Main Table Card */}
+      <div className="fx-card fx-panel">
+        <div className="fx-panel-header">
+          <div>
+            <h3 className="fx-panel-title">Sổ giao dịch chi tiết</h3>
+            <p className="fx-panel-sub">{currentPeriodName}</p>
+          </div>
+          <button
+            type="button"
+            className="fx-btn"
+            onClick={onOpenAddTx}
+          >
+            <FinluxIcon name="plus" />
+            <span>Thêm giao dịch</span>
+          </button>
+        </div>
+
+        {/* Filter Controls: Search & Kind Tabs */}
+        <div className="fx-filter-row">
+          <label className="fx-search" aria-label="Tìm kiếm">
+            <FinluxIcon name="search" />
             <input
               type="text"
+              placeholder="Tìm kiếm theo ghi chú, danh mục, ví..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo ghi chú, danh mục..."
-              className="w-full bg-[#0d1b33] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 outline-none"
             />
-          </div>
+          </label>
 
-          {/* Filter Type */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="bg-[#0d1b33] border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none"
+          <button
+            type="button"
+            className={`fx-filter ${kind === 'all' ? 'active' : ''}`}
+            onClick={() => setKind('all')}
           >
-            <option value="all">Tất cả loại</option>
-            <option value="expense">Chi tiêu</option>
-            <option value="income">Thu nhập</option>
-            <option value="transfer_out">Chuyển ví</option>
-          </select>
-
-          {/* Filter Wallet */}
-          <select
-            value={filterWallet}
-            onChange={(e) => setFilterWallet(e.target.value)}
-            className="bg-[#0d1b33] border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none"
+            Tất cả
+          </button>
+          <button
+            type="button"
+            className={`fx-filter ${kind === 'income' ? 'active' : ''}`}
+            onClick={() => setKind('income')}
           >
-            <option value="all">Tất cả ví</option>
-            {wallets.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
+            Thu nhập
+          </button>
+          <button
+            type="button"
+            className={`fx-filter ${kind === 'expense' ? 'active' : ''}`}
+            onClick={() => setKind('expense')}
+          >
+            Chi tiêu
+          </button>
+          <button
+            type="button"
+            className={`fx-filter ${kind === 'transfer' ? 'active' : ''}`}
+            onClick={() => setKind('transfer')}
+          >
+            Chuyển khoản
+          </button>
         </div>
 
-        <button
-          onClick={onOpenAddTx}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Thêm giao dịch</span>
-        </button>
-      </div>
-
-      {/* Transaction Table */}
-      <div className="liquid-glass rounded-2xl p-5 border border-white/10">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-xs font-semibold text-slate-400">
-            Tổng cộng: <strong className="text-white">{filtered.length}</strong> giao dịch
-          </span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/10">
+        {/* Data Table */}
+        <div className="fx-table-wrap">
+          <table className="fx-table">
+            <thead>
               <tr>
-                <th className="pb-3 font-semibold">Loại</th>
-                <th className="pb-3 font-semibold">Ghi chú & Danh mục</th>
-                <th className="pb-3 font-semibold">Ví tài khoản</th>
-                <th className="pb-3 font-semibold">Thời gian</th>
-                <th className="pb-3 font-semibold text-right">Số tiền</th>
-                <th className="pb-3 font-semibold text-right">Hành động</th>
+                <th>Mô tả</th>
+                <th>Danh mục</th>
+                <th>Ngày</th>
+                <th>Tài khoản</th>
+                <th style={{ textAlign: 'right' }}>Số tiền</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
-              {filtered.map((tx) => {
-                const cat = getCategory(tx.categoryId);
-                const w = getWallet(tx.walletId);
-                const relW = tx.relatedWalletId ? getWallet(tx.relatedWalletId) : null;
+            <tbody>
+              {filteredList.map((tx) => {
+                const isInc = tx.type === 'income';
+                const isExp = tx.type === 'expense';
+                const sign = isInc ? '+' : isExp ? '-' : '';
+                const color = isInc ? 'var(--green)' : 'var(--text)';
 
                 return (
-                  <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                    <td className="py-3.5">
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                          tx.type === 'income'
-                            ? 'bg-emerald-500/15 text-emerald-400'
-                            : tx.type === 'expense'
-                            ? 'bg-rose-500/15 text-rose-400'
-                            : 'bg-cyan-500/15 text-cyan-400'
-                        }`}
-                      >
-                        {tx.type === 'income' ? (
-                          <ArrowUpRight className="w-4 h-4" />
-                        ) : tx.type === 'expense' ? (
-                          <ArrowDownRight className="w-4 h-4" />
-                        ) : (
-                          <RefreshCw className="w-4 h-4" />
-                        )}
-                      </div>
+                  <tr
+                    key={tx.id}
+                    onClick={() => setSelectedTxId(tx.id)}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedTxId(tx.id);
+                      }
+                    }}
+                  >
+                    <td>
+                      <strong>{tx.note}</strong>
                     </td>
-
-                    <td className="py-3.5">
-                      <div className="font-semibold text-white">{tx.note}</div>
-                      <div className="text-[11px] text-slate-400">
-                        {tx.type === 'transfer_out' ? 'Chuyển tiền giữa ví' : cat?.name || 'Khác'}
-                      </div>
+                    <td>{getCategoryName(tx)}</td>
+                    <td>{formatDate(tx.date)}</td>
+                    <td>
+                      {(() => {
+                        const w = wallets.find((item) => item.id === tx.walletId);
+                        return (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <BankLogo
+                              walletName={w?.name}
+                              bankName={w?.bankName}
+                              walletType={w?.type}
+                              customColor={w?.color}
+                              size={20}
+                            />
+                            <span>{w?.name || tx.walletId}</span>
+                          </div>
+                        );
+                      })()}
                     </td>
-
-                    <td className="py-3.5 text-slate-300">
-                      {tx.type === 'transfer_out' ? (
-                        <span>
-                          {w?.name} → {relW?.name}
-                        </span>
-                      ) : (
-                        <span>{w?.name}</span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 text-slate-400 font-mono text-[11px]">
-                      {formatDate(tx.date)}
-                    </td>
-
-                    <td className="py-3.5 text-right font-black text-sm">
-                      <span
-                        className={
-                          tx.type === 'income'
-                            ? 'text-emerald-400'
-                            : tx.type === 'expense'
-                            ? 'text-rose-400'
-                            : 'text-cyan-400'
-                        }
-                      >
-                        {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 text-right">
-                      <button
-                        onClick={() => deleteTransaction(tx.id)}
-                        title="Xóa và hoàn trả số dư"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <td style={{ textAlign: 'right', fontWeight: 800, color }}>
+                      {sign}
+                      {formatCurrency(tx.amount)}
                     </td>
                   </tr>
                 );
               })}
+
+              {filteredList.length === 0 && (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="fx-empty">
+                      <FinluxIcon name="search" />
+                      <p>Không tìm thấy giao dịch nào trong kỳ</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
+        <p className="fx-small-note" style={{ marginTop: '18px' }}>
+          {filteredList.length} / {periodTransactions.length} giao dịch trong kỳ (bao gồm chuyển khoản). Nhấn vào bất kỳ giao dịch nào để xem chi tiết.
+        </p>
       </div>
     </div>
   );

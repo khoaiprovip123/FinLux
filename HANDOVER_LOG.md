@@ -17,6 +17,24 @@
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 
+### [Task-FINLUX-WEB-LANDING-ORBIT-ENHANCEMENT] — Nâng Cấp Landing Page Khách, Quỹ Đạo Vòng Tròn 16 Điểm & Thêm GitHub Credits
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Cố định Header trên đỉnh màn hình kèm Scroll Progress Bar (`2.8px`) tự đổi màu gradient theo vị trí cuộn trang.
+  2. Bỏ khung viền màu tím quanh Logo FinLux ở cả Header lẫn Hero (hiển thị logo nguyên bản).
+  3. Rút gọn Slogan Hero súc tích, tinh hoa ("Hiểu đúng dòng tiền, làm chủ tài chính.").
+  4. Nâng cấp 5 huy hiệu quỹ đạo sang Animation tịnh tiến tròn 16 điểm (`fx-orbit-glide`), giữ thẻ luôn nằm ngang 100% (triệt tiêu xoay đầu lộn ngược và giật nảy), hover phát sáng như ngôi sao lấp lánh (`--star-glow`).
+  5. Bổ sung liên kết GitHub tác giả (`khoaiprovip123`) và đồng phát triển (`Long Louis - thanhlongts2k`) ở Footer.
+  6. Khắc phục triệt để lỗi CSS parser `@import` của Tailwind v4, đưa Google Fonts sang `<link>` tại `layout.tsx`.
+  7. Kiểm thử `next build` đạt 100% PASS và sẵn sàng deploy.
+- **Files đã sửa/tạo thực tế**:
+  - `web/src/components/views/GuestFinanceView.tsx`
+  - `web/src/app/globals.css`
+  - `web/src/app/layout.tsx`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `npm run build`: **Compiled successfully in 3.2s, 6/6 static pages generated, exit code 0**.
+
 ### [Task-FINLUX-MODULAR-DATETIME-SUITE] — Module Hóa Bộ Chọn Thời Gian, Mở Rộng Dải Chip & Nâng Cấp Bảng Màu Thích Ứng
 - **Status**: `[DONE]`
 - **Scope**:

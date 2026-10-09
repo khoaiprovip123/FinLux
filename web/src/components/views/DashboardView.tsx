@@ -2,323 +2,366 @@
 
 import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
-import MetricCards from '@/components/MetricCards';
-import { formatCurrency, formatShortDate } from '@/lib/formatters';
-import {
-  Wallet,
-  ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw,
-  Trash2,
-  PieChart,
-  Target,
-  ShieldAlert,
-  Plus,
-} from 'lucide-react';
+import { FinluxIcon } from '@/components/icons/FinluxIcons';
+import BankLogo from '@/components/icons/BankLogo';
+import { PERIODS } from '@/lib/constants';
+import { formatCurrency, formatShortCurrency, formatPercent, formatShortDate } from '@/lib/formatters';
 
-interface DashboardViewProps {
-  onOpenAddTx: () => void;
-  onOpenWalletModal: () => void;
-}
-
-export default function DashboardView({
-  onOpenAddTx,
-  onOpenWalletModal,
-}: DashboardViewProps) {
+export default function DashboardView() {
   const {
-    wallets,
-    transactions,
-    budgets,
-    categories,
-    goals,
-    debts,
-    deleteTransaction,
+    period,
     setActiveTab,
+    periodTransactions,
+    periodIncome,
+    periodExpense,
+    periodCashFlow,
+    currentNetWorth,
+    netWorthDelta,
+    availableLiquid,
+    monthlyTrend,
+    categoryBreakdown,
+    budgetProgressList,
+    setSelectedTxId,
+    wallets,
+    categories,
   } = useFinance();
 
-  const recentTransactions = transactions.slice(0, 6);
+  const currentPeriodName = PERIODS[period].name;
 
-  const getCategory = (catId?: string | null) => {
-    return categories.find((c) => c.id === catId);
-  };
+  // Maximum value for scaling the bar chart
+  const maxBarValue = Math.max(
+    1,
+    ...monthlyTrend.flatMap((d) => [d.income, d.expense])
+  );
 
-  const getWallet = (wId: string) => {
-    return wallets.find((w) => w.id === wId);
-  };
+  // Total spending for donut chart
+  const totalExpense = categoryBreakdown.reduce((sum, c) => sum + c.amount, 0);
+
+  // Dynamic conic-gradient for Donut Chart
+  let currentAngle = 0;
+  const gradientStops: string[] = [];
+  categoryBreakdown.forEach((cat) => {
+    const nextAngle = currentAngle + (cat.amount / Math.max(1, totalExpense)) * 100;
+    gradientStops.push(`${cat.color} ${currentAngle.toFixed(2)}% ${nextAngle.toFixed(2)}%`);
+    currentAngle = nextAngle;
+  });
+  const donutGradient = gradientStops.length > 0
+    ? `conic-gradient(${gradientStops.join(', ')})`
+    : 'conic-gradient(#dde2ed 0% 100%)';
 
   return (
     <div className="space-y-6">
-      {/* 4 Metric Cards */}
-      <MetricCards />
+      {/* 1. Header Intro */}
+      <section className="fx-intro" aria-label="Giới thiệu bức tranh tài chính">
+        <div>
+          <p className="fx-eyebrow">FINLUX / DỮ LIỆU THỰC TẾ &amp; MINH HOẠ</p>
+          <h1 className="fx-title">Bức tranh tài chính của bạn</h1>
+          <p className="fx-lede">Mọi con số, một góc nhìn rõ ràng.</p>
+        </div>
+        <div className="fx-intro-actions">
+          <button
+            type="button"
+            className="fx-link"
+            onClick={() => setActiveTab('reports')}
+          >
+            <span>Xem phân tích</span>
+            <FinluxIcon name="arrow" />
+          </button>
+        </div>
+      </section>
 
-      {/* Grid: Wallets & Quick Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Wallets Card Carousel */}
-        <div className="lg:col-span-2 liquid-glass rounded-2xl p-5 border border-white/10">
-          <div className="flex items-center justify-between mb-4">
+      {/* 2. Iconic Prism Wealth Hero Banner */}
+      <section className="fx-hero" aria-label="Tổng quan tài sản ròng">
+        <div className="fx-hero-left">
+          <div className="fx-hero-upper">
+            <span className="fx-hero-dot" />
+            <span>PRISM WEALTH OVERVIEW</span>
+          </div>
+          <p className="fx-hero-name">Tài sản ròng</p>
+          <div className="fx-hero-value">{formatCurrency(currentNetWorth)}</div>
+          <div className="fx-hero-foot">
+            <span className="fx-hero-pill">
+              {netWorthDelta >= 0 ? '+' : ''}
+              {formatCurrency(netWorthDelta)}
+            </span>
+            <span>Thay đổi trong kỳ</span>
+          </div>
+        </div>
+
+        <div className="fx-hero-right">
+          <div className="fx-prism" aria-hidden="true" />
+          <div className="fx-glass-mini">
+            <span>Tiền mặt &amp; ngân hàng</span>
+            <strong>{formatCurrency(availableLiquid)}</strong>
+            <small>{currentPeriodName}</small>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. 3-Column Core Metrics */}
+      <section className="fx-metrics" aria-label="Chỉ số tài chính trọng yếu">
+        {/* Income Card */}
+        <div className="fx-card fx-metric fx-lift">
+          <div className="fx-metric-row">
+            <span className="fx-metric-label">Tổng thu nhập</span>
+            <span className="fx-metric-icon green">
+              <FinluxIcon name="down" />
+            </span>
+          </div>
+          <strong className="fx-metric-number">{formatCurrency(periodIncome)}</strong>
+          <div className="fx-metric-foot">
+            Từ các giao dịch thu nhập trong kỳ
+          </div>
+        </div>
+
+        {/* Expense Card */}
+        <div className="fx-card fx-metric fx-lift">
+          <div className="fx-metric-row">
+            <span className="fx-metric-label">Tổng chi tiêu</span>
+            <span className="fx-metric-icon red">
+              <FinluxIcon name="up" />
+            </span>
+          </div>
+          <strong className="fx-metric-number">{formatCurrency(periodExpense)}</strong>
+          <div className="fx-metric-foot">
+            Không gồm chuyển tiền nội bộ
+          </div>
+        </div>
+
+        {/* Cash Flow Card */}
+        <div className="fx-card fx-metric fx-lift">
+          <div className="fx-metric-row">
+            <span className="fx-metric-label">Dòng tiền thuần</span>
+            <span className="fx-metric-icon purple">
+              <FinluxIcon name="swap" />
+            </span>
+          </div>
+          <strong className="fx-metric-number">{formatCurrency(periodCashFlow)}</strong>
+          <div className="fx-metric-foot">
+            <em>Thu nhập</em> - <em>Chi tiêu</em> trong kỳ
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Analytics: Monthly Trend Bar Chart & Category Spending Donut */}
+      <section className="fx-analytics" aria-label="Phân tích xu hướng và cơ cấu chi tiêu">
+        {/* Bar Chart Panel */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
             <div>
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-cyan-400" />
-                <span>Ví & Tài khoản thanh toán</span>
-              </h3>
-              <p className="text-xs text-slate-400">Danh sách tài khoản trực thuộc</p>
+              <h3 className="fx-panel-title">Xu hướng thu và chi</h3>
+              <p className="fx-panel-sub">{currentPeriodName} · VND</p>
+            </div>
+            <div className="fx-legend">
+              <span className="fx-legend-item">
+                <i className="fx-legend-dot inc" />
+                <span>Thu nhập</span>
+              </span>
+              <span className="fx-legend-item">
+                <i className="fx-legend-dot exp" />
+                <span>Chi tiêu</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="fx-barplot">
+            {monthlyTrend.map((d) => {
+              const incH = Math.max(2, (d.income / maxBarValue) * 98);
+              const expH = Math.max(2, (d.expense / maxBarValue) * 98);
+              return (
+                <div
+                  key={d.key}
+                  className="fx-barcell"
+                  title={`Tháng ${d.key.slice(5)}: Thu ${formatCurrency(d.income)} | Chi ${formatCurrency(d.expense)}`}
+                >
+                  <div
+                    className="fx-bar inc"
+                    style={{ ['--h' as string]: `${incH}%` }}
+                  />
+                  <div
+                    className="fx-bar exp"
+                    style={{ ['--h' as string]: `${expH}%` }}
+                  />
+                  <span className="fx-barlabel">{d.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="fx-chart-note">
+            Thu nhập / Chi tiêu theo tháng, không tính chuyển khoản nội bộ.
+          </div>
+        </div>
+
+        {/* Donut Chart Panel */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
+            <div>
+              <h3 className="fx-panel-title">Cơ cấu chi tiêu</h3>
+              <p className="fx-panel-sub">{currentPeriodName}</p>
+            </div>
+            <FinluxIcon name="chart" />
+          </div>
+
+          <div className="fx-donut-layout">
+            <div
+              className="fx-donut"
+              style={{ background: donutGradient }}
+            >
+              <div className="fx-donut-inner">
+                <span>Chi tiêu</span>
+                <strong>{formatShortCurrency(totalExpense)}</strong>
+              </div>
+            </div>
+
+            <div className="fx-cat-list">
+              {categoryBreakdown.slice(0, 5).map((cat) => (
+                <div key={cat.categoryId} className="fx-cat-row">
+                  <i
+                    className="fx-cat-swatch"
+                    style={{ background: cat.color }}
+                  />
+                  <span>{cat.name}</span>
+                  <b>{formatPercent(cat.ratio)}</b>
+                </div>
+              ))}
+              {categoryBreakdown.length === 0 && (
+                <div className="fx-small-note">Không có dữ liệu chi tiêu trong kỳ</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Bottom Grid: Recent Transactions & Budget Progress */}
+      <section className="fx-bottom" aria-label="Giao dịch gần đây và tiến độ ngân sách">
+        {/* Recent Transactions List */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
+            <div>
+              <h3 className="fx-panel-title">Giao dịch gần đây</h3>
+              <p className="fx-panel-sub">{periodTransactions.length} giao dịch trong kỳ</p>
             </div>
             <button
-              onClick={onOpenWalletModal}
-              className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20"
+              type="button"
+              className="fx-link"
+              onClick={() => setActiveTab('transactions')}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Thêm ví</span>
+              <span>Xem tất cả</span>
+              <FinluxIcon name="arrow" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {wallets.map((w) => (
-              <div
-                key={w.id}
-                className="liquid-glass-interactive rounded-xl p-4 border border-white/10 relative overflow-hidden group cursor-pointer"
-                onClick={() => setActiveTab('wallets')}
-              >
-                <div
-                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-20 pointer-events-none"
-                  style={{ backgroundColor: w.color }}
-                />
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: w.color }}
-                    />
-                    {w.name}
-                  </span>
-                  {w.isDefault && (
-                    <span className="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full font-medium">
-                      Mặc định
-                    </span>
-                  )}
-                </div>
+          <div>
+            {periodTransactions.slice(0, 5).map((tx) => {
+              const symbolType = tx.type === 'income' ? 'inc' : tx.type === 'expense' ? 'exp' : 'transfer';
+              const iconName = tx.type === 'income' ? 'down' : tx.type === 'expense' ? 'up' : 'swap';
+              const sign = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : '';
 
-                <div className="text-lg font-black text-white">
-                  {formatCurrency(w.balance)}
+              return (
+                <div
+                  key={tx.id}
+                  className="fx-trans-row"
+                  onClick={() => setSelectedTxId(tx.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedTxId(tx.id);
+                    }
+                  }}
+                >
+                  <div className={`fx-trans-symbol ${symbolType}`}>
+                    <FinluxIcon name={iconName} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="fx-trans-name">{tx.note}</div>
+                    <div className="fx-trans-meta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>
+                        {tx.type === 'transfer_out'
+                          ? 'Chuyển khoản'
+                          : categories.find((c) => c.id === tx.categoryId)?.name || 'Khác'}
+                      </span>
+                      <span>·</span>
+                      {(() => {
+                        const w = wallets.find((item) => item.id === tx.walletId);
+                        return (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <BankLogo
+                              walletName={w?.name}
+                              bankName={w?.bankName}
+                              walletType={w?.type}
+                              customColor={w?.color}
+                              size={14}
+                            />
+                            <span>{w?.name || tx.walletId}</span>
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div className="fx-trans-date">{formatShortDate(tx.date)}</div>
+                  <div className={`fx-trans-value ${symbolType}`}>
+                    {sign}
+                    {formatShortCurrency(tx.amount)}
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1 capitalize flex items-center justify-between">
-                  <span>{w.bankName || w.type}</span>
-                  {w.accountNumber && (
-                    <span className="font-mono text-slate-500">****{w.accountNumber.slice(-4)}</span>
-                  )}
+              );
+            })}
+
+            {periodTransactions.length === 0 && (
+              <div className="fx-empty">
+                <FinluxIcon name="receipt" />
+                <p>Không có giao dịch trong kỳ này</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Budget Progress Panel */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
+            <div>
+              <h3 className="fx-panel-title">Tiến độ ngân sách</h3>
+              <p className="fx-panel-sub">Theo {currentPeriodName.toLowerCase()}</p>
+            </div>
+            <button
+              type="button"
+              className="fx-link"
+              onClick={() => setActiveTab('budgets')}
+            >
+              <span>Chi tiết</span>
+              <FinluxIcon name="arrow" />
+            </button>
+          </div>
+
+          <div>
+            {budgetProgressList.slice(0, 5).map((b) => (
+              <div key={b.categoryId} className="fx-budget-item">
+                <div className="fx-budget-text">
+                  <span className="fx-budget-name">{b.name}</span>
+                  <span className="fx-budget-money">
+                    {formatShortCurrency(b.spent)} / {formatShortCurrency(b.limit)}
+                  </span>
+                </div>
+                <div className="fx-progress" title={formatPercent(b.ratio)}>
+                  <div
+                    className={`fx-progress-fill ${b.status}`}
+                    style={{ width: `${Math.max(0, Math.min(100, b.ratio * 100))}%` }}
+                  />
                 </div>
               </div>
             ))}
+
+            {budgetProgressList.length === 0 && (
+              <div className="fx-empty">
+                <FinluxIcon name="budget" />
+                <p>Chưa thiết lập ngân sách</p>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Budget Progress Spotlight */}
-        <div className="liquid-glass rounded-2xl p-5 border border-white/10 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <PieChart className="w-4 h-4 text-purple-400" />
-                <span>Ngân sách tháng</span>
-              </h3>
-              <button
-                onClick={() => setActiveTab('budgets')}
-                className="text-xs text-purple-400 hover:text-purple-300 font-semibold"
-              >
-                Chi tiết →
-              </button>
-            </div>
-
-            <div className="space-y-3.5">
-              {budgets.slice(0, 3).map((b) => {
-                const cat = getCategory(b.categoryId);
-                const percent = Math.min(100, Math.round((b.spentAmount / b.limitAmount) * 100));
-                const isOver = b.spentAmount > b.limitAmount;
-                const isWarning = percent >= 80;
-
-                return (
-                  <div key={b.id} className="text-xs space-y-1">
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="font-medium">{cat?.name || 'Hạn mức'}</span>
-                      <span
-                        className={`font-semibold ${
-                          isOver ? 'text-rose-400' : isWarning ? 'text-amber-400' : 'text-emerald-400'
-                        }`}
-                      >
-                        {percent}%
-                      </span>
-                    </div>
-
-                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isOver
-                            ? 'bg-rose-500'
-                            : isWarning
-                            ? 'bg-amber-400'
-                            : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-
-                    <div className="flex justify-between text-[10px] text-slate-500">
-                      <span>Đã chi: {formatCurrency(b.spentAmount)}</span>
-                      <span>Hạn mức: {formatCurrency(b.limitAmount)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Quick Snapshot */}
-          <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-2 text-center text-xs">
-            <div
-              className="p-2 rounded-xl bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
-              onClick={() => setActiveTab('goals')}
-            >
-              <div className="text-[11px] text-slate-400 flex items-center justify-center gap-1">
-                <Target className="w-3 h-3 text-cyan-400" />
-                <span>Mục tiêu ({goals.length})</span>
-              </div>
-              <div className="font-bold text-white mt-0.5">
-                {formatCurrency(goals.reduce((s, g) => s + g.currentAmount, 0))}
-              </div>
-            </div>
-
-            <div
-              className="p-2 rounded-xl bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
-              onClick={() => setActiveTab('debts')}
-            >
-              <div className="text-[11px] text-slate-400 flex items-center justify-center gap-1">
-                <ShieldAlert className="w-3 h-3 text-rose-400" />
-                <span>Tổng nợ ({debts.filter((d) => !d.isSettled).length})</span>
-              </div>
-              <div className="font-bold text-rose-400 mt-0.5">
-                {formatCurrency(
-                  debts.filter((d) => !d.isSettled).reduce((s, d) => s + d.remainingBalance, 0)
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Transactions List */}
-      <div className="liquid-glass rounded-2xl p-5 border border-white/10">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-bold text-white text-base">Giao dịch gần đây</h3>
-            <p className="text-xs text-slate-400">Các phát sinh thu chi mới nhất trong sổ</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onOpenAddTx}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 transition-colors"
-            >
-              + Thêm
-            </button>
-            <button
-              onClick={() => setActiveTab('transactions')}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1"
-            >
-              Xem tất cả →
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/10">
-              <tr>
-                <th className="pb-3 font-semibold">Loại & Danh mục</th>
-                <th className="pb-3 font-semibold">Ghi chú</th>
-                <th className="pb-3 font-semibold">Ví tài khoản</th>
-                <th className="pb-3 font-semibold">Thời gian</th>
-                <th className="pb-3 font-semibold text-right">Số tiền</th>
-                <th className="pb-3 font-semibold text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {recentTransactions.map((tx) => {
-                const cat = getCategory(tx.categoryId);
-                const w = getWallet(tx.walletId);
-                const relW = tx.relatedWalletId ? getWallet(tx.relatedWalletId) : null;
-
-                return (
-                  <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                    <td className="py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                            tx.type === 'income'
-                              ? 'bg-emerald-500/15 text-emerald-400'
-                              : tx.type === 'expense'
-                              ? 'bg-rose-500/15 text-rose-400'
-                              : 'bg-cyan-500/15 text-cyan-400'
-                          }`}
-                        >
-                          {tx.type === 'income' ? (
-                            <ArrowUpRight className="w-4 h-4" />
-                          ) : tx.type === 'expense' ? (
-                            <ArrowDownRight className="w-4 h-4" />
-                          ) : (
-                            <RefreshCw className="w-4 h-4" />
-                          )}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-white block">
-                            {tx.type === 'transfer_out' ? 'Chuyển tiền' : cat?.name || 'Khác'}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3 text-slate-300 max-w-[200px] truncate">{tx.note}</td>
-
-                    <td className="py-3 text-slate-400">
-                      {tx.type === 'transfer_out' ? (
-                        <span>
-                          {w?.name} → {relW?.name}
-                        </span>
-                      ) : (
-                        <span>{w?.name}</span>
-                      )}
-                    </td>
-
-                    <td className="py-3 text-slate-400">{formatShortDate(tx.date)}</td>
-
-                    <td className="py-3 text-right font-bold text-sm">
-                      <span
-                        className={
-                          tx.type === 'income'
-                            ? 'text-emerald-400'
-                            : tx.type === 'expense'
-                            ? 'text-rose-400'
-                            : 'text-cyan-400'
-                        }
-                      >
-                        {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                        {formatCurrency(tx.amount)}
-                      </span>
-                    </td>
-
-                    <td className="py-3 text-right">
-                      <button
-                        onClick={() => deleteTransaction(tx.id)}
-                        title="Xóa giao dịch và hoàn trả số dư"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }

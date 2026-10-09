@@ -2,129 +2,176 @@
 
 import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
-import { formatCurrency } from '@/lib/formatters';
-import { Plus, Trash2, CheckCircle2, Shield, CreditCard, Landmark, Banknote } from 'lucide-react';
+import { FinluxIcon } from '@/components/icons/FinluxIcons';
+import BankLogo from '@/components/icons/BankLogo';
+import { PERIODS } from '@/lib/constants';
+import { formatCurrency, formatShortCurrency, formatShortDate } from '@/lib/formatters';
 
 interface WalletsViewProps {
-  onOpenWalletModal: () => void;
+  onOpenWalletModal?: () => void;
 }
 
 export default function WalletsView({ onOpenWalletModal }: WalletsViewProps) {
-  const { wallets, updateWallet, deleteWallet } = useFinance();
+  const {
+    period,
+    wallets,
+    periodTransactions,
+    currentNetWorth,
+    setSelectedTxId,
+  } = useFinance();
 
-  const getWalletIcon = (type: string) => {
-    switch (type) {
-      case 'bank':
-        return Landmark;
-      case 'card':
-        return CreditCard;
-      case 'cash':
-        return Banknote;
-      default:
-        return Shield;
-    }
-  };
+  const currentPeriod = PERIODS[period];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Intro */}
+      <section className="fx-intro">
         <div>
-          <h2 className="text-lg font-bold text-white">Danh sách Ví & Tài khoản</h2>
-          <p className="text-xs text-slate-400">
-            Quản lý số dư tiền mặt, tài khoản ngân hàng và thẻ tín dụng
+          <p className="fx-eyebrow">FINLUX / DANH MỤC VÍ &amp; TÀI KHOẢN</p>
+          <h1 className="fx-title">Tài khoản</h1>
+          <p className="fx-lede">
+            Tổng hợp số dư từ cùng sổ giao dịch, tại thời điểm cuối kỳ ({currentPeriod.name}).
           </p>
         </div>
-        <button
-          onClick={onOpenWalletModal}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Thêm ví mới</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {wallets.map((w) => {
-          const Icon = getWalletIcon(w.type);
-          return (
-            <div
-              key={w.id}
-              className="liquid-glass rounded-2xl p-5 border border-white/10 relative overflow-hidden flex flex-col justify-between"
+        {onOpenWalletModal && (
+          <div className="fx-intro-actions">
+            <button
+              type="button"
+              className="fx-btn"
+              onClick={onOpenWalletModal}
             >
-              <div
-                className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none"
-                style={{ backgroundColor: w.color }}
+              <FinluxIcon name="plus" />
+              <span>Thêm tài khoản</span>
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* Account Cards Grid */}
+      <div className="fx-acc-summary">
+        {wallets.map((w) => {
+          const info = w.bankName
+            ? `${w.bankName}${w.accountNumber ? ` • ${w.accountNumber.slice(-4)}` : ''}`
+            : w.name;
+
+          return (
+            <div key={w.id} className="fx-card fx-acc-card fx-lift">
+              <BankLogo
+                walletName={w.name}
+                bankName={w.bankName}
+                walletType={w.type}
+                customColor={w.color}
+                size={44}
               />
-
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                      style={{ backgroundColor: `${w.color}25`, border: `1px solid ${w.color}40` }}
-                    >
-                      <Icon className="w-4 h-4" style={{ color: w.color }} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white text-sm">{w.name}</h3>
-                      <span className="text-[11px] text-slate-400 capitalize">
-                        {w.bankName || w.type}
-                      </span>
-                    </div>
-                  </div>
-
-                  {w.isDefault ? (
-                    <span className="flex items-center gap-1 text-[11px] text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full font-medium border border-cyan-500/20">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Mặc định
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        wallets.forEach((item) => {
-                          updateWallet(item.id, { isDefault: item.id === w.id });
-                        });
-                      }}
-                      className="text-[11px] text-slate-400 hover:text-cyan-400 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
-                    >
-                      Đặt mặc định
-                    </button>
-                  )}
-                </div>
-
-                <div className="mt-4 mb-3">
-                  <span className="text-[11px] text-slate-400 block mb-0.5">Số dư khả dụng</span>
-                  <div
-                    className={`text-2xl font-black ${
-                      w.balance < 0 ? 'text-rose-400' : 'text-white'
-                    }`}
-                  >
-                    {formatCurrency(w.balance)}
-                  </div>
-                </div>
-
-                {w.accountNumber && (
-                  <div className="text-[11px] text-slate-400 font-mono bg-white/5 px-2.5 py-1.5 rounded-lg inline-block">
-                    STK: ****{w.accountNumber.slice(-4)}
-                  </div>
-                )}
+              <div className="fx-acc-card-label" style={{ marginTop: '10px' }}>{w.name}</div>
+              <div
+                className="fx-acc-balance"
+                style={{ color: w.balance < 0 ? 'var(--red)' : 'inherit' }}
+              >
+                {formatCurrency(w.balance)}
               </div>
-
-              <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                <span className="text-[11px] text-slate-500">Mã: {w.id}</span>
-                {!w.isDefault && (
-                  <button
-                    onClick={() => deleteWallet(w.id)}
-                    className="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
-                    title="Xóa ví"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+              <div className="fx-acc-name">{info}</div>
             </div>
           );
         })}
+      </div>
+
+      {/* Asset and Debt Summary Table & Recent Activity */}
+      <div className="fx-analytics">
+        {/* Net Worth & Account Breakdown */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
+            <div>
+              <h3 className="fx-panel-title">Tổng hợp tài sản và nợ</h3>
+              <p className="fx-panel-sub">
+                Tính đến {currentPeriod.end.split('-').reverse().join('/')}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            {wallets.map((w) => (
+              <div key={w.id} className="fx-kv" style={{ alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <BankLogo
+                    walletName={w.name}
+                    bankName={w.bankName}
+                    walletType={w.type}
+                    customColor={w.color}
+                    size={26}
+                  />
+                  <span>{w.name}</span>
+                </div>
+                <strong style={{ color: w.balance < 0 ? 'var(--red)' : 'inherit' }}>
+                  {formatCurrency(w.balance)}
+                </strong>
+              </div>
+            ))}
+
+            <div className="fx-kv" style={{ paddingTop: '16px', borderTop: '2px solid var(--border)' }}>
+              <span style={{ fontWeight: 800, color: 'var(--text)' }}>Tài sản ròng (True Net Worth)</span>
+              <strong style={{ fontSize: '15px', color: 'var(--purple)' }}>
+                {formatCurrency(currentNetWorth)}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Transactions in this period */}
+        <div className="fx-card fx-panel">
+          <div className="fx-panel-header">
+            <div>
+              <h3 className="fx-panel-title">Giao dịch mới nhất</h3>
+              <p className="fx-panel-sub">{periodTransactions.length} giao dịch trong kỳ</p>
+            </div>
+          </div>
+
+          <div>
+            {periodTransactions.slice(0, 5).map((tx) => {
+              const symbolType = tx.type === 'income' ? 'inc' : tx.type === 'expense' ? 'exp' : 'transfer';
+              const iconName = tx.type === 'income' ? 'down' : tx.type === 'expense' ? 'up' : 'swap';
+              const sign = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : '';
+
+              return (
+                <div
+                  key={tx.id}
+                  className="fx-trans-row"
+                  onClick={() => setSelectedTxId(tx.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedTxId(tx.id);
+                    }
+                  }}
+                >
+                  <div className={`fx-trans-symbol ${symbolType}`}>
+                    <FinluxIcon name={iconName} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="fx-trans-name">{tx.note}</div>
+                    <div className="fx-trans-meta">
+                      {tx.categoryId || 'Chuyển khoản'} · {tx.walletId}
+                    </div>
+                  </div>
+                  <div className="fx-trans-date">{formatShortDate(tx.date)}</div>
+                  <div className={`fx-trans-value ${symbolType}`}>
+                    {sign}
+                    {formatShortCurrency(tx.amount)}
+                  </div>
+                </div>
+              );
+            })}
+
+            {periodTransactions.length === 0 && (
+              <div className="fx-empty">
+                <FinluxIcon name="receipt" />
+                <p>Chưa có giao dịch trong kỳ này</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

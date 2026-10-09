@@ -1,71 +1,239 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useFinance } from '@/context/FinanceContext';
-import { formatCurrency } from '@/lib/formatters';
-import { Sparkles, Plus, Wallet, ShieldCheck } from 'lucide-react';
+import { FinluxIcon } from '@/components/icons/FinluxIcons';
+import { PERIODS, PeriodKey } from '@/lib/constants';
+
+const TAB_TITLES: Record<string, { title: string; icon: string }> = {
+  overview: { title: 'Tổng quan', icon: 'home' },
+  transactions: { title: 'Giao dịch', icon: 'swap' },
+  accounts: { title: 'Tài khoản', icon: 'wallet' },
+  budgets: { title: 'Ngân sách', icon: 'budget' },
+  reports: { title: 'Phân tích', icon: 'chart' },
+  goals: { title: 'Mục tiêu', icon: 'target' },
+  settings: { title: 'Cài đặt', icon: 'gear' },
+};
 
 interface HeaderProps {
   onOpenAddTx: () => void;
-  onOpenSpin: () => void;
 }
 
-export default function Header({ onOpenAddTx, onOpenSpin }: HeaderProps) {
-  const { activeTab, summary } = useFinance();
+export default function Header({ onOpenAddTx }: HeaderProps) {
+  const {
+    activeTab,
+    period,
+    setPeriod,
+    theme,
+    toggleTheme,
+    setIsSidebarOpen,
+    user,
+    isCloudSynced,
+    setIsAuthModalOpen,
+    logout,
+  } = useFinance();
 
-  const titleMap: Record<string, { title: string; subtitle: string }> = {
-    dashboard: { title: 'Tổng quan tài chính', subtitle: 'Bức tranh toàn cảnh dòng tiền và tài sản' },
-    transactions: { title: 'Sổ ghi chép giao dịch', subtitle: 'Lịch sử thu chi, chuyển ví và hoàn trả nguyên tử' },
-    wallets: { title: 'Quản lý ví & Tài khoản', subtitle: 'Kiểm soát dòng tiền theo từng tài khoản ngân hàng, ví điện tử' },
-    budgets: { title: 'Hạn mức ngân sách', subtitle: 'Kiểm soát chi tiêu theo danh mục với cảnh báo 80% - 100%' },
-    debts: { title: 'Sổ nợ & Kế hoạch tất toán', subtitle: 'Chiến lược Snowball / Avalanche xóa nợ thông minh' },
-    goals: { title: 'Mục tiêu tài chính', subtitle: 'Tích lũy định kỳ cho các ước mơ và kế hoạch tương lai' },
-    reports: { title: 'Báo cáo & Phân tích', subtitle: 'Trực quan hóa thu nhập, chi phí và tỷ lệ tiết kiệm' },
-  };
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const current = titleMap[activeTab] || titleMap.dashboard;
+  const currentTabInfo = TAB_TITLES[activeTab] || TAB_TITLES.overview;
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const userInitial = user?.displayName
+    ? user.displayName.slice(0, 2).toUpperCase()
+    : user?.email
+    ? user.email.slice(0, 2).toUpperCase()
+    : 'VK';
 
   return (
-    <header className="px-8 py-5 border-b border-white/10 bg-[#070e1c]/60 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-          {current.title}
-        </h1>
-        <p className="text-xs md:text-sm text-slate-400 mt-0.5">{current.subtitle}</p>
+    <header className="fx-top">
+      {/* Left: Mobile trigger, icon badge & breadcrumb title */}
+      <div className="fx-top-left">
+        <button
+          className="fx-icon-btn fx-menu-trigger"
+          type="button"
+          onClick={() => setIsSidebarOpen(true)}
+          aria-label="Mở menu"
+        >
+          <FinluxIcon name="menu" />
+        </button>
+
+        <span className="fx-page-symbol">
+          <FinluxIcon name={currentTabInfo.icon} />
+        </span>
+
+        <div>
+          <p className="fx-top-crumb">FINLUX / PERSONAL SPACE</p>
+          <h2 className="fx-top-title">{currentTabInfo.title}</h2>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Quick summary badge */}
-        <div className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-cyan-950/40 border border-cyan-500/20 text-xs">
-          <Wallet className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-slate-300">Tổng tài sản:</span>
-          <span className="font-semibold text-cyan-300">{formatCurrency(summary.totalBalance)}</span>
-        </div>
+      {/* Right: Auth status, Period selector, Theme toggle, Add transaction */}
+      <div className="fx-top-right">
+        {/* Cloud Sync / Auth Status Badge */}
+        {user ? (
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+              className="fx-demo-chip"
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                borderColor: 'rgba(7, 154, 134, 0.35)',
+                background: 'var(--green-soft)',
+                color: 'var(--green)',
+              }}
+              title="Đã đồng bộ với tài khoản Mobile App"
+            >
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#079a86',
+                  boxShadow: '0 0 8px #079a86',
+                  display: 'inline-block',
+                }}
+              />
+              <span style={{ fontWeight: 800 }}>{user.displayName || user.email}</span>
+            </button>
 
-        {/* Spin action */}
-        <button
-          onClick={onOpenSpin}
-          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl text-xs font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all duration-150"
+            {/* Profile Dropdown */}
+            {isProfileMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '120%',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '16px',
+                  boxShadow: 'var(--shadow)',
+                  padding: '16px',
+                  minWidth: '240px',
+                  zIndex: 50,
+                  animation: 'fx-modal-in 0.2s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '11px',
+                      background: 'var(--purple-soft)',
+                      color: 'var(--purple)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontWeight: 800,
+                      fontSize: '12px',
+                    }}
+                  >
+                    {userInitial}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: 'block', fontSize: '13px', lineHeight: 1.2 }}>
+                      {user.displayName || 'Người dùng'}
+                    </strong>
+                    <small style={{ color: 'var(--muted)', fontSize: '11px' }}>{user.email}</small>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    background: 'var(--surface-soft)',
+                    fontSize: '11px',
+                    color: 'var(--muted)',
+                    marginBottom: '12px',
+                  }}
+                >
+                  🟢 {isCloudSynced ? 'Đã kết nối Firestore Cloud' : 'Chưa kết nối'}
+                </div>
+
+                <button
+                  type="button"
+                  className="fx-btn fx-btn-subtle"
+                  style={{ width: '100%', color: 'var(--red)' }}
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    logout();
+                  }}
+                >
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="fx-demo-chip"
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--purple)',
+              borderColor: 'rgba(101, 91, 220, 0.3)',
+              background: 'var(--purple-soft)',
+            }}
+            onClick={() => setIsAuthModalOpen(true)}
+            title="Đăng nhập để đồng bộ với Mobile App"
+          >
+            <FinluxIcon name="shield" />
+            <span>Đăng nhập / Đồng bộ App</span>
+          </button>
+        )}
+
+        {/* Period Selector */}
+        <select
+          className="fx-select"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as PeriodKey)}
+          aria-label="Kỳ báo cáo"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Vòng quay</span>
+          {Object.entries(PERIODS).map(([k, p]) => (
+            <option key={k} value={k}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Theme Toggle Button */}
+        <button
+          className="fx-icon-btn"
+          type="button"
+          onClick={toggleTheme}
+          aria-label="Đổi giao diện"
+          title={theme === 'light' ? 'Chuyển sang Prism Dark' : 'Chuyển sang Prism Light'}
+        >
+          <FinluxIcon name={theme === 'light' ? 'moon' : 'sun'} />
         </button>
 
         {/* Add Transaction Button */}
         <button
+          className="fx-btn fx-top-add"
+          type="button"
           onClick={onOpenAddTx}
-          className="flex items-center gap-1.5 py-2 px-4 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20 transition-all duration-150"
         >
-          <Plus className="w-4 h-4" />
-          <span>Giao dịch</span>
+          <FinluxIcon name="plus" />
+          <span>Thêm giao dịch</span>
         </button>
-
-        {/* User Avatar */}
-        <div className="flex items-center gap-2 pl-2 border-l border-white/10">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-700 flex items-center justify-center text-xs font-bold text-white border border-white/20">
-            UX
-          </div>
-        </div>
       </div>
     </header>
   );

@@ -5,11 +5,9 @@ import { useFinance } from '@/context/FinanceContext';
 import { formatCurrency } from '@/lib/formatters';
 import {
   Wallet,
-  TrendingUp,
-  TrendingDown,
-  Sparkles,
   ArrowUpRight,
   ArrowDownRight,
+  Sparkles,
 } from 'lucide-react';
 
 export default function MetricCards() {
@@ -20,47 +18,37 @@ export default function MetricCards() {
       title: 'Tổng số dư ví',
       amount: summary.totalBalance,
       icon: Wallet,
-      gradient: 'from-cyan-500/10 via-cyan-500/5 to-transparent',
-      borderColor: 'border-cyan-500/30',
-      iconColor: 'text-cyan-400',
-      iconBg: 'bg-cyan-500/15',
+      accentColor: '#23C7E8',
       badge: 'Thực tế',
-      badgeColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+      badgeColor: 'text-[#23C7E8] bg-[#23C7E8]/10 border-[#23C7E8]/20',
+      subtitle: 'Khả dụng trên tất cả ví',
     },
     {
       title: 'Thu nhập tháng này',
       amount: summary.monthlyIncome,
-      icon: TrendingUp,
-      gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
-      borderColor: 'border-emerald-500/30',
-      iconColor: 'text-emerald-400',
-      iconBg: 'bg-emerald-500/15',
-      badge: '+ Tích cực',
-      badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-      trendIcon: ArrowUpRight,
+      icon: ArrowUpRight,
+      accentColor: '#20B486',
+      badge: 'Dương',
+      badgeColor: 'text-[#20B486] bg-[#20B486]/10 border-[#20B486]/20',
+      subtitle: 'Lương & nguồn thu phụ',
     },
     {
       title: 'Chi tiêu tháng này',
       amount: summary.monthlyExpense,
-      icon: TrendingDown,
-      gradient: 'from-rose-500/10 via-rose-500/5 to-transparent',
-      borderColor: 'border-rose-500/30',
-      iconColor: 'text-rose-400',
-      iconBg: 'bg-rose-500/15',
+      icon: ArrowDownRight,
+      accentColor: '#EB5C6E',
       badge: 'Kiểm soát',
-      badgeColor: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
-      trendIcon: ArrowDownRight,
+      badgeColor: 'text-[#EB5C6E] bg-[#EB5C6E]/10 border-[#EB5C6E]/20',
+      subtitle: 'Sinh hoạt & định kỳ',
     },
     {
       title: 'Dòng tiền tự do (FCF)',
       amount: summary.freeCashFlow,
       icon: Sparkles,
-      gradient: 'from-purple-500/10 via-purple-500/5 to-transparent',
-      borderColor: 'border-purple-500/30',
-      iconColor: 'text-purple-400',
-      iconBg: 'bg-purple-500/15',
+      accentColor: '#6F52F5',
       badge: 'Thặng dư ròng',
-      badgeColor: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+      badgeColor: 'text-[#6F52F5] bg-[#6F52F5]/10 border-[#6F52F5]/20',
+      subtitle: 'Thu nhập - Chi tiêu',
     },
   ];
 
@@ -71,33 +59,35 @@ export default function MetricCards() {
         return (
           <div
             key={i}
-            className={`liquid-glass rounded-2xl p-5 border ${c.borderColor} relative overflow-hidden group`}
+            className="prism-card p-5 flex flex-col justify-between group"
           >
-            {/* Ambient background glow */}
-            <div
-              className={`absolute -right-8 -top-8 w-28 h-28 bg-gradient-to-br ${c.gradient} rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500`}
-            />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-[#A8B0C0]">{c.title}</span>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+                  style={{
+                    backgroundColor: `${c.accentColor}15`,
+                    color: c.accentColor,
+                    border: `1px solid ${c.accentColor}25`,
+                  }}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between mb-3 relative z-10">
-              <span className="text-xs font-medium text-slate-400">{c.title}</span>
-              <div className={`w-9 h-9 rounded-xl ${c.iconBg} flex items-center justify-center`}>
-                <Icon className={`w-4 h-4 ${c.iconColor}`} />
+              <div className="text-2xl font-black tracking-tight text-[#F7F9FC] mb-1">
+                {formatCurrency(c.amount)}
               </div>
             </div>
 
-            <div className="relative z-10">
-              <div className="text-xl md:text-2xl font-extrabold tracking-tight text-white mb-2">
-                {formatCurrency(c.amount)}
-              </div>
-              <div className="flex items-center justify-between">
-                <span
-                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${c.badgeColor} flex items-center gap-1`}
-                >
-                  {c.trendIcon && <c.trendIcon className="w-3 h-3" />}
-                  {c.badge}
-                </span>
-                <span className="text-[11px] text-slate-500">Chu kỳ hiện tại</span>
-              </div>
+            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[11px]">
+              <span
+                className={`px-2 py-0.5 rounded-md font-semibold border ${c.badgeColor}`}
+              >
+                {c.badge}
+              </span>
+              <span className="text-[#647087]">{c.subtitle}</span>
             </div>
           </div>
         );

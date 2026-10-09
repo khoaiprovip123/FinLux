@@ -2,14 +2,19 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'FinLux Web — Quản Lý Tài Chính & Hoạch Định Dòng Tiền Cá Nhân',
+  title: 'FINLUX - Prism Personal Finance',
   description:
-    'Nền tảng quản lý tài chính cá nhân toàn diện: Sổ giao dịch, Đa ví, Chu kỳ lương, Ngân sách, Sổ nợ Snowball/Avalanche, Mục tiêu và Saving Spin.',
-  keywords: ['FinLux', 'Personal Finance', 'Quản lý tài chính', 'Quản lý thu chi', 'Next.js', 'Firebase'],
+    'Nền tảng quản lý tài chính cá nhân toàn diện, trực quan và bảo mật. Bức tranh tài chính của bạn — Mọi con số, một góc nhìn rõ ràng.',
+  keywords: ['FinLux', 'Prism Finance', 'Personal Finance', 'Quản lý tài chính', 'Quản lý thu chi', 'Next.js'],
   openGraph: {
-    title: 'FinLux Web — Nền Tảng Tài Chính Cá Nhân Hiện Đại',
-    description: 'Quản lý dòng tiền thông minh, kiểm soát ngân sách và mục tiêu tự do tài chính.',
+    title: 'FINLUX - Prism Personal Finance',
+    description: 'Bức tranh tài chính của bạn — Mọi con số, một góc nhìn rõ ràng.',
     siteName: 'FinLux',
+  },
+  icons: {
+    icon: '/finlux_logo.png',
+    shortcut: '/finlux_logo.png',
+    apple: '/finlux_logo.png',
   },
 };
 
@@ -19,9 +24,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className="h-full dark">
-      <body className="min-h-full flex flex-col bg-[#070d19] text-slate-100 antialiased selection:bg-cyan-500 selection:text-white">
-        {children}
+    <html lang="vi" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body suppressHydrationWarning>
+        <div id="finlux-root">{children}</div>
       </body>
     </html>
   );

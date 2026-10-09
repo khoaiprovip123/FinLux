@@ -8,83 +8,135 @@ import DashboardView from '@/components/views/DashboardView';
 import TransactionsView from '@/components/views/TransactionsView';
 import WalletsView from '@/components/views/WalletsView';
 import BudgetsView from '@/components/views/BudgetsView';
-import DebtsView from '@/components/views/DebtsView';
-import GoalsView from '@/components/views/GoalsView';
 import ReportsView from '@/components/views/ReportsView';
+import GoalsView from '@/components/views/GoalsView';
+import SettingsView from '@/components/views/SettingsView';
 import TransactionModal from '@/components/TransactionModal';
+import TransactionDetailModal from '@/components/TransactionDetailModal';
 import WalletModal from '@/components/WalletModal';
-import SavingSpinModal from '@/components/SavingSpinModal';
+import AuthModal from '@/components/AuthModal';
+import Toast from '@/components/Toast';
+
+import GuestFinanceView from '@/components/views/GuestFinanceView';
 
 function MainApp() {
-  const { activeTab } = useFinance();
+  const {
+    activeTab,
+    theme,
+    isSidebarOpen,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    user,
+    authLoading,
+  } = useFinance();
+
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [isSpinOpen, setIsSpinOpen] = useState(false);
+
+  // Màn hình tải trạng thái phiên đăng nhập
+  if (authLoading) {
+    return (
+      <div
+        id="fx-app"
+        className="fx-app"
+        data-theme={theme}
+        style={{
+          minHeight: '100vh',
+          display: 'grid',
+          placeItems: 'center',
+          background: 'var(--bg)',
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              border: '3px solid var(--border)',
+              borderTopColor: 'var(--purple)',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 16px',
+            }}
+          />
+          <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 600 }}>
+            Đang khởi động FinLux...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Khi chưa đăng nhập: Hiển thị Màn hình tài chính view + nút Đăng nhập ở góc
+  if (!user) {
+    return (
+      <div id="fx-app" className="fx-app" data-theme={theme} style={{ display: 'block' }}>
+        <GuestFinanceView onOpenAuth={() => setIsAuthModalOpen(true)} />
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+        <Toast />
+      </div>
+    );
+  }
 
   const renderActiveView = () => {
     switch (activeTab) {
+      case 'overview':
       case 'dashboard':
-        return (
-          <DashboardView
-            onOpenAddTx={() => setIsTxModalOpen(true)}
-            onOpenWalletModal={() => setIsWalletModalOpen(true)}
-          />
-        );
+        return <DashboardView />;
       case 'transactions':
         return <TransactionsView onOpenAddTx={() => setIsTxModalOpen(true)} />;
+      case 'accounts':
       case 'wallets':
         return <WalletsView onOpenWalletModal={() => setIsWalletModalOpen(true)} />;
       case 'budgets':
         return <BudgetsView />;
-      case 'debts':
-        return <DebtsView />;
-      case 'goals':
-        return <GoalsView />;
       case 'reports':
         return <ReportsView />;
+      case 'goals':
+        return <GoalsView />;
+      case 'settings':
+        return <SettingsView />;
       default:
-        return (
-          <DashboardView
-            onOpenAddTx={() => setIsTxModalOpen(true)}
-            onOpenWalletModal={() => setIsWalletModalOpen(true)}
-          />
-        );
+        return <DashboardView />;
     }
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <Sidebar
-        onOpenAddTx={() => setIsTxModalOpen(true)}
-        onOpenSpin={() => setIsSpinOpen(true)}
-      />
+    <div
+      id="fx-app"
+      className={`fx-app ${isSidebarOpen ? 'fx-side-open' : ''}`}
+      data-theme={theme}
+    >
+      {/* Sidebar with mobile drawer support */}
+      <Sidebar />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header
-          onOpenAddTx={() => setIsTxModalOpen(true)}
-          onOpenSpin={() => setIsSpinOpen(true)}
-        />
+      {/* Main Workspace Area */}
+      <div className="fx-workspace">
+        <Header onOpenAddTx={() => setIsTxModalOpen(true)} />
 
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300">
+        <main className="fx-main" id="fx-view">
           {renderActiveView()}
         </main>
       </div>
 
-      {/* Modals */}
+      {/* Modals & Overlays */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
       <TransactionModal
         isOpen={isTxModalOpen}
         onClose={() => setIsTxModalOpen(false)}
       />
+      <TransactionDetailModal />
       <WalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
       />
-      <SavingSpinModal
-        isOpen={isSpinOpen}
-        onClose={() => setIsSpinOpen(false)}
-      />
+      <Toast />
     </div>
   );
 }
