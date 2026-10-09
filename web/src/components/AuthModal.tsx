@@ -106,6 +106,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setErrorMessage('Trình duyệt đã chặn cửa sổ đăng nhập Google. Vui lòng cấp quyền mở popup.');
       } else if (error.code === 'auth/account-exists-with-different-credential') {
         setErrorMessage('Tài khoản này đã được liên kết với một phương thức đăng nhập khác.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setErrorMessage('Tên miền chưa được cấp phép trên Firebase. Vui lòng thêm "finlux-0wxc.onrender.com" vào Authorized Domains trong Firebase Console.');
       } else {
         setErrorMessage(error.message || 'Đăng nhập Google thất bại. Vui lòng thử lại.');
       }
