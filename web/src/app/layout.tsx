@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   },
 };
 
+import Providers from '@/components/Providers';
+
 export default function RootLayout({
   children,
 }: {
@@ -34,7 +36,9 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
-        <div id="finlux-root">{children}</div>
+        <div id="finlux-root">
+          <Providers>{children}</Providers>
+        </div>
       </body>
     </html>
   );

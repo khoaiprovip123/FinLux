@@ -17,6 +17,27 @@
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 
+### [Task-FINLUX-WEB-STANDALONE-LOGIN-PAGE] — Tách Trang Đăng Nhập / Đăng Ký Riêng Biệt (/login, /signin)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Tạo trang xác thực độc lập `web/src/app/login/page.tsx` chuẩn Liquid Glass Atelier, hỗ trợ Google Sign-In, Email/Password, Đăng ký và Quên mật khẩu.
+  2. Tạo route alias `web/src/app/signin/page.tsx` và `web/src/app/register/page.tsx` chuyển hướng thông minh đến `/login`.
+  3. Tạo wrapper toàn cục `web/src/components/Providers.tsx` (FinanceProvider + Toast) bọc toàn bộ ứng dụng trong `layout.tsx`.
+  4. Cập nhật `GuestFinanceView.tsx`: chuyển hướng toàn bộ các nút CTA "Đăng nhập", "Bắt đầu quản trị tài chính" sang trang `/login` thay vì modal overlay.
+  5. Cập nhật `page.tsx`: tự động chuyển hướng người dùng chưa đăng nhập hoặc đã đăng nhập chuẩn mực.
+  6. Kiểm thử `next build`: build 9/9 pages tĩnh thành công (`/`, `/login`, `/signin`, `/register`), 0 lỗi.
+- **Files đã sửa/tạo thực tế**:
+  - `web/src/app/login/page.tsx`
+  - `web/src/app/signin/page.tsx`
+  - `web/src/app/register/page.tsx`
+  - `web/src/components/Providers.tsx`
+  - `web/src/app/layout.tsx`
+  - `web/src/app/page.tsx`
+  - `web/src/components/views/GuestFinanceView.tsx`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `npm run build`: **Compiled successfully in 14.2s, 9/9 pages generated, exit code 0**.
+
 ### [Task-FINLUX-WEB-LANDING-ORBIT-ENHANCEMENT] — Nâng Cấp Landing Page Khách, Quỹ Đạo Vòng Tròn 16 Điểm & Thêm GitHub Credits
 - **Status**: `[DONE]`
 - **Scope**:

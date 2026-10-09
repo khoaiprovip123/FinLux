@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FinanceProvider, useFinance } from '@/context/FinanceContext';
+import { useFinance } from '@/context/FinanceContext';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import DashboardView from '@/components/views/DashboardView';
@@ -67,16 +67,11 @@ function MainApp() {
     );
   }
 
-  // Khi chưa đăng nhập: Hiển thị Màn hình tài chính view + nút Đăng nhập ở góc
+  // Khi chưa đăng nhập: Hiển thị Màn hình tài chính Landing View (chuyển sang /login khi nhấn đăng nhập)
   if (!user) {
     return (
       <div id="fx-app" className="fx-app" data-theme={theme} style={{ display: 'block' }}>
-        <GuestFinanceView onOpenAuth={() => setIsAuthModalOpen(true)} />
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-        />
-        <Toast />
+        <GuestFinanceView />
       </div>
     );
   }
@@ -142,9 +137,5 @@ function MainApp() {
 }
 
 export default function Home() {
-  return (
-    <FinanceProvider>
-      <MainApp />
-    </FinanceProvider>
-  );
+  return <MainApp />;
 }

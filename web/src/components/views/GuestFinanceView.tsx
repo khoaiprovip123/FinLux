@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
 import { useFinance } from '@/context/FinanceContext';
 
 interface GuestFinanceViewProps {
-  onOpenAuth: () => void;
+  onOpenAuth?: () => void;
 }
 
 // Danh ngôn tài chính tinh hoa
@@ -34,6 +35,7 @@ const FINANCIAL_QUOTES = [
 ];
 
 export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) {
+  const router = useRouter();
   const { theme, toggleTheme } = useFinance();
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -253,7 +255,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
 
           <button
             type="button"
-            onClick={onOpenAuth}
+            onClick={() => (onOpenAuth ? onOpenAuth() : router.push('/login'))}
             className="fx-btn"
             style={{
               display: 'flex',
@@ -466,7 +468,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                onClick={onOpenAuth}
+                onClick={() => (onOpenAuth ? onOpenAuth() : router.push('/login'))}
                 className="fx-btn fx-neon-btn"
                 style={{
                   padding: '14px 28px',
@@ -1260,7 +1262,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
 
           <button
             type="button"
-            onClick={onOpenAuth}
+            onClick={() => (onOpenAuth ? onOpenAuth() : router.push('/login'))}
             className="fx-btn fx-neon-btn"
             style={{
               padding: '16px 36px',
