@@ -98,30 +98,17 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
       {/* 1. SITE HEADER (Fixed Spacing, Navigation, Theme & Login)       */}
       {/* ============================================================== */}
       <header
+        className="fx-guest-header"
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          width: '100%',
-          zIndex: 100,
-          height: '76px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 4vw',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
           background: theme === 'light' ? 'rgba(251, 253, 255, 0.92)' : 'rgba(9, 13, 26, 0.92)',
-          borderBottom: '1px solid var(--border)',
         }}
       >
         {/* Brand: Pure App Icon + Clean Typography */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '40px',
-              height: '40px',
+              width: '38px',
+              height: '38px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -131,8 +118,8 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             <Image
               src="/finlux_logo.png"
               alt="FinLux App Logo"
-              width={40}
-              height={40}
+              width={38}
+              height={38}
               priority
               style={{
                 width: '100%',
@@ -144,7 +131,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
           <div>
             <div
               style={{
-                fontSize: '18px',
+                fontSize: '17px',
                 fontWeight: 850,
                 letterSpacing: '-0.4px',
                 lineHeight: 1.1,
@@ -156,10 +143,10 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             <div
               className="fx-eyebrow"
               style={{
-                fontSize: '9px',
-                letterSpacing: '0.22em',
+                fontSize: '8.5px',
+                letterSpacing: '0.2em',
                 color: 'var(--muted)',
-                marginTop: '3px',
+                marginTop: '2px',
               }}
             >
               DIGITAL FINANCIAL ATELIER
@@ -167,15 +154,8 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
           </div>
         </div>
 
-        {/* Center: Explicitly Spaced Navigation Menu */}
-        <nav
-          aria-label="Điều hướng chính"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '24px',
-          }}
-        >
+        {/* Center: Explicitly Spaced Navigation Menu (Hidden on mobile) */}
+        <nav aria-label="Điều hướng chính" className="fx-guest-nav">
           <button
             type="button"
             onClick={() => scrollToSection('features')}
@@ -235,7 +215,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
         </nav>
 
         {/* Right: Theme Toggle & Login Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             className="fx-icon-btn"
             type="button"
@@ -243,8 +223,8 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             aria-label="Đổi giao diện"
             title={theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}
             style={{
-              width: '40px',
-              height: '40px',
+              width: '38px',
+              height: '38px',
               borderRadius: '12px',
               border: '1px solid var(--border)',
               background: 'transparent',
@@ -260,18 +240,19 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               background: theme === 'light' ? '#0f1423' : '#655bdc',
               color: '#ffffff',
               borderRadius: '999px',
-              padding: '10px 22px',
+              padding: '8px 18px',
               fontSize: '13px',
               fontWeight: 750,
-              letterSpacing: '0.03em',
+              letterSpacing: '0.02em',
               border: 'none',
               boxShadow: '0 8px 24px rgba(15, 20, 35, 0.18)',
               cursor: 'pointer',
               transition: 'all 0.25s ease',
+              whiteSpace: 'nowrap',
             }}
           >
             <FinluxIcon name="shield" />
@@ -281,12 +262,12 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '18px',
-                height: '18px',
+                width: '16px',
+                height: '16px',
                 borderRadius: '50%',
                 background: 'rgba(255, 255, 255, 0.2)',
-                fontSize: '11px',
-                marginLeft: '2px',
+                fontSize: '10px',
+                marginLeft: '1px',
               }}
             >
               →
@@ -329,36 +310,21 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
       {/* ============================================================== */}
       {/* 2. HERO: Brand Statement + 3D Layered Phone Mockups (High Depth)*/}
       {/* ============================================================== */}
-      <section
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          maxWidth: '1240px',
-          margin: '0 auto',
-          padding: '60px 4vw 80px',
-        }}
-      >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-            gap: '56px',
-            alignItems: 'center',
-          }}
-        >
+      <section className="fx-guest-hero-section">
+        <div className="fx-guest-hero-grid">
           {/* LEFT: Headline, Quotes & CTAs */}
           <div>
-            <div className="fx-eyebrow" style={{ marginBottom: '22px' }}>
+            <div className="fx-eyebrow" style={{ marginBottom: '18px' }}>
               FINANCIAL ARCHITECTURE · LIQUID GLASS · SYSTEM INVARIANTS
             </div>
 
             <h1
               className="fx-editorial-title"
               style={{
-                fontSize: 'clamp(54px, 6.8vw, 102px)',
-                lineHeight: 0.88,
+                fontSize: 'clamp(46px, 10vw, 102px)',
+                lineHeight: 0.9,
                 letterSpacing: '-0.045em',
-                margin: '0 0 22px',
+                margin: '0 0 18px',
               }}
             >
               FINLUX
@@ -366,12 +332,12 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
 
             <h2
               style={{
-                fontSize: 'clamp(24px, 2.7vw, 40px)',
-                lineHeight: 1.2,
-                letterSpacing: '-0.035em',
+                fontSize: 'clamp(22px, 5vw, 40px)',
+                lineHeight: 1.25,
+                letterSpacing: '-0.03em',
                 fontWeight: 500,
                 color: 'var(--text)',
-                margin: '0 0 16px',
+                margin: '0 0 14px',
                 maxWidth: '560px',
               }}
             >
@@ -381,7 +347,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             <p
               style={{
                 fontSize: '15px',
-                lineHeight: 1.6,
+                lineHeight: 1.65,
                 color: 'var(--muted)',
                 margin: '0 0 26px',
                 maxWidth: '480px',
@@ -392,22 +358,18 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
 
             {/* Inspiring Financial Quotes Box */}
             <div
-              className="fx-quote-highlight"
+              className="fx-quote-highlight fx-guest-quote-box"
               style={{
-                padding: '22px 26px',
-                borderRadius: '22px',
                 background: theme === 'light' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.03)',
                 border: '1px solid var(--border)',
                 borderLeft: '4px solid #655bdc',
                 backdropFilter: 'blur(16px)',
-                marginBottom: '32px',
-                maxWidth: '560px',
               }}
             >
               <p
                 style={{
                   fontFamily: '"Instrument Serif", serif',
-                  fontSize: 'clamp(20px, 2.2vw, 25px)',
+                  fontSize: 'clamp(19px, 4.2vw, 25px)',
                   fontStyle: 'italic',
                   lineHeight: 1.35,
                   color: 'var(--text)',
@@ -423,7 +385,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  paddingTop: '6px',
+                  paddingTop: '8px',
                 }}
               >
                 <div
@@ -465,7 +427,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             </div>
 
             {/* Hero CTAs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div className="fx-guest-hero-ctas">
               <button
                 type="button"
                 onClick={() => (onOpenAuth ? onOpenAuth() : router.push('/login'))}
@@ -509,187 +471,261 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             </div>
           </div>
 
-          {/* RIGHT: Centered Digital Atelier Orbit Portal (Logo in Exact Center, Badges Revolving Around) */}
-          <div className="fx-orbit-stage" aria-label="FinLux Planetary Orbit Portal">
-            {/* Concentric Circular Orbital Tracks centered on the logo */}
-            <div className="fx-orbit-track fx-orbit-track-inner" />
-            <div className="fx-orbit-track fx-orbit-track-outer" />
+          {/* RIGHT: Centered Digital Atelier Orbit Portal (Desktop: 3D Orbit, Mobile: Liquid Glass Constellation) */}
+          <div aria-label="FinLux Planetary Orbit Showcase">
+            {/* 1. DESKTOP 3D ORBITAL STAGE (Screen >= 860px) */}
+            <div className="fx-orbit-stage fx-orbit-desktop" aria-label="FinLux Planetary Orbit Portal">
+              {/* Concentric Circular Orbital Tracks centered on the logo */}
+              <div className="fx-orbit-track fx-orbit-track-inner" />
+              <div className="fx-orbit-track fx-orbit-track-outer" />
 
-            {/* DEAD CENTER: Pure FinLux Brand Logo (No Surrounding Box/Border) */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 5,
-                width: '180px',
-                height: '180px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                animation: 'float 7.5s ease-in-out infinite',
-              }}
-            >
-              <Image
-                src="/finlux_logo.png"
-                alt="FinLux Brand Icon"
-                width={180}
-                height={180}
-                priority
+              {/* DEAD CENTER: Pure FinLux Brand Logo (No Surrounding Box/Border) */}
+              <div
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 16px 36px rgba(10, 25, 60, 0.12))',
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 5,
+                  width: '180px',
+                  height: '180px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  animation: 'float 7.5s ease-in-out infinite',
                 }}
-              />
-            </div>
-
-            {/* 5 Planetary Orbit Badges (Always Strictly Horizontal, Gliding Smoothly Around Central Logo) */}
-            {/* 1. Free Cash Flow (Cyan Star) */}
-            <div
-              className="fx-orbit-card fx-orbit-card-1"
-              style={{ ['--star-glow' as any]: '#06b6d4' }}
-            >
-              <div className="fx-orbit-card-inner">
-                <span
-                  className="fx-star-glint"
+              >
+                <Image
+                  src="/finlux_logo.png"
+                  alt="FinLux Brand Icon"
+                  width={180}
+                  height={180}
+                  priority
                   style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '9px',
-                    background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    boxShadow: '0 4px 14px rgba(6, 182, 212, 0.5)',
-                    color: '#ffffff',
-                    flexShrink: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 16px 36px rgba(10, 25, 60, 0.12))',
                   }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 3h12l4 6-10 12L2 9z" />
-                    <path d="M11 3 8 9l4 12 4-12-3-6" />
-                    <path d="M2 9h20" />
-                  </svg>
-                </span>
-                <span>Dòng tiền Tự do (Free Cash Flow)</span>
+                />
+              </div>
+
+              {/* 5 Planetary Orbit Badges */}
+              {/* 1. Free Cash Flow (Cyan Star) */}
+              <div
+                className="fx-orbit-card fx-orbit-card-1"
+                style={{ ['--star-glow' as any]: '#06b6d4' }}
+              >
+                <div className="fx-orbit-card-inner">
+                  <span
+                    className="fx-star-glint"
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '9px',
+                      background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      boxShadow: '0 4px 14px rgba(6, 182, 212, 0.5)',
+                      color: '#ffffff',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 3h12l4 6-10 12L2 9z" />
+                      <path d="M11 3 8 9l4 12 4-12-3-6" />
+                      <path d="M2 9h20" />
+                    </svg>
+                  </span>
+                  <span>Dòng tiền Tự do (Free Cash Flow)</span>
+                </div>
+              </div>
+
+              {/* 2. Salary Budget (Purple Nebula Star) */}
+              <div
+                className="fx-orbit-card fx-orbit-card-2"
+                style={{ ['--star-glow' as any]: '#8b5cf6' }}
+              >
+                <div className="fx-orbit-card-inner">
+                  <span
+                    className="fx-star-glint"
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '9px',
+                      background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      boxShadow: '0 4px 14px rgba(139, 92, 246, 0.5)',
+                      color: '#ffffff',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <circle cx="12" cy="12" r="5" />
+                      <line x1="12" y1="2" x2="12" y2="5" />
+                      <line x1="12" y1="19" x2="12" y2="22" />
+                    </svg>
+                  </span>
+                  <span>Ngân sách Chu kỳ Lương</span>
+                </div>
+              </div>
+
+              {/* 3. Ledger Invariant (Emerald Shield Star) */}
+              <div
+                className="fx-orbit-card fx-orbit-card-3"
+                style={{ ['--star-glow' as any]: '#10b981' }}
+              >
+                <div className="fx-orbit-card-inner">
+                  <span
+                    className="fx-star-glint"
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '9px',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.5)',
+                      color: '#ffffff',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                  </span>
+                  <span>Bảo toàn Kế toán Kép</span>
+                </div>
+              </div>
+
+              {/* 4. Real-time Cloud (Amber Lightning Star) */}
+              <div
+                className="fx-orbit-card fx-orbit-card-4"
+                style={{ ['--star-glow' as any]: '#f59e0b' }}
+              >
+                <div className="fx-orbit-card-inner">
+                  <span
+                    className="fx-star-glint"
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '9px',
+                      background: 'linear-gradient(135deg, #f59e0b, #ea580c)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      boxShadow: '0 4px 14px rgba(245, 158, 11, 0.5)',
+                      color: '#ffffff',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                  </span>
+                  <span>Đồng bộ Real-time Mobile &amp; Web</span>
+                </div>
+              </div>
+
+              {/* 5. Zero Double-Counting (Sapphire Star) */}
+              <div
+                className="fx-orbit-card fx-orbit-card-5"
+                style={{ ['--star-glow' as any]: '#0284c7' }}
+              >
+                <div className="fx-orbit-card-inner">
+                  <span
+                    className="fx-star-glint"
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '9px',
+                      background: 'linear-gradient(135deg, #0284c7, #2563eb)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
+                      color: '#ffffff',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.267-8-12.362-8-5.096 0-5.096 8 0 8 5.095 0 7.267-8 12.362-8z" />
+                    </svg>
+                  </span>
+                  <span>Zero Double-Counting</span>
+                </div>
               </div>
             </div>
 
-            {/* 2. Salary Budget (Purple Nebula Star) */}
-            <div
-              className="fx-orbit-card fx-orbit-card-2"
-              style={{ ['--star-glow' as any]: '#8b5cf6' }}
-            >
-              <div className="fx-orbit-card-inner">
-                <span
-                  className="fx-star-glint"
+            {/* 2. MOBILE NATIVE CONSTELLATION: Compact Centered Logo + 5 Liquid Glass Invariant Chips */}
+            <div className="fx-orbit-mobile" aria-label="FinLux Mobile Feature Showcase">
+              <div className="fx-mobile-logo-wrap">
+                <div className="fx-mobile-logo-halo" />
+                <Image
+                  src="/finlux_logo.png"
+                  alt="FinLux Brand Icon"
+                  width={110}
+                  height={110}
+                  priority
                   style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '9px',
-                    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    boxShadow: '0 4px 14px rgba(139, 92, 246, 0.5)',
-                    color: '#ffffff',
-                    flexShrink: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 10px 24px rgba(10, 25, 60, 0.16))',
                   }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <circle cx="12" cy="12" r="5" />
-                    <line x1="12" y1="2" x2="12" y2="5" />
-                    <line x1="12" y1="19" x2="12" y2="22" />
-                  </svg>
-                </span>
-                <span>Ngân sách Chu kỳ Lương</span>
+                />
               </div>
-            </div>
 
-            {/* 3. Ledger Invariant (Emerald Shield Star) */}
-            <div
-              className="fx-orbit-card fx-orbit-card-3"
-              style={{ ['--star-glow' as any]: '#10b981' }}
-            >
-              <div className="fx-orbit-card-inner">
-                <span
-                  className="fx-star-glint"
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '9px',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.5)',
-                    color: '#ffffff',
-                    flexShrink: 0,
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                </span>
-                <span>Bảo toàn Kế toán Kép</span>
-              </div>
-            </div>
+              <div className="fx-mobile-badges-grid">
+                <div className="fx-mobile-badge" style={{ ['--star-glow' as any]: '#06b6d4' }}>
+                  <span className="fx-mobile-badge-icon" style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 3h12l4 6-10 12L2 9z" />
+                      <path d="M11 3 8 9l4 12 4-12-3-6" />
+                      <path d="M2 9h20" />
+                    </svg>
+                  </span>
+                  <span>Dòng tiền Tự do (FCF)</span>
+                </div>
 
-            {/* 4. Real-time Cloud (Amber Lightning Star) */}
-            <div
-              className="fx-orbit-card fx-orbit-card-4"
-              style={{ ['--star-glow' as any]: '#f59e0b' }}
-            >
-              <div className="fx-orbit-card-inner">
-                <span
-                  className="fx-star-glint"
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '9px',
-                    background: 'linear-gradient(135deg, #f59e0b, #ea580c)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    boxShadow: '0 4px 14px rgba(245, 158, 11, 0.5)',
-                    color: '#ffffff',
-                    flexShrink: 0,
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                </span>
-                <span>Đồng bộ Real-time Mobile &amp; Web</span>
-              </div>
-            </div>
+                <div className="fx-mobile-badge" style={{ ['--star-glow' as any]: '#8b5cf6' }}>
+                  <span className="fx-mobile-badge-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <circle cx="12" cy="12" r="5" />
+                    </svg>
+                  </span>
+                  <span>Ngân sách Chu kỳ Lương</span>
+                </div>
 
-            {/* 5. Zero Double-Counting (Sapphire Star) */}
-            <div
-              className="fx-orbit-card fx-orbit-card-5"
-              style={{ ['--star-glow' as any]: '#0284c7' }}
-            >
-              <div className="fx-orbit-card-inner">
-                <span
-                  className="fx-star-glint"
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '9px',
-                    background: 'linear-gradient(135deg, #0284c7, #2563eb)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
-                    color: '#ffffff',
-                    flexShrink: 0,
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.267-8-12.362-8-5.096 0-5.096 8 0 8 5.095 0 7.267-8 12.362-8z" />
-                  </svg>
-                </span>
-                <span>Zero Double-Counting</span>
+                <div className="fx-mobile-badge" style={{ ['--star-glow' as any]: '#10b981' }}>
+                  <span className="fx-mobile-badge-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                  </span>
+                  <span>Bảo toàn Kế toán Kép</span>
+                </div>
+
+                <div className="fx-mobile-badge" style={{ ['--star-glow' as any]: '#f59e0b' }}>
+                  <span className="fx-mobile-badge-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                  </span>
+                  <span>Đồng bộ Real-time</span>
+                </div>
+
+                <div className="fx-mobile-badge fx-mobile-badge-span" style={{ ['--star-glow' as any]: '#0284c7' }}>
+                  <span className="fx-mobile-badge-icon" style={{ background: 'linear-gradient(135deg, #0284c7, #2563eb)' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.267-8-12.362-8-5.096 0-5.096 8 0 8 5.095 0 7.267-8 12.362-8z" />
+                    </svg>
+                  </span>
+                  <span>Zero Double-Counting (Chống tính trùng thẻ)</span>
+                </div>
               </div>
             </div>
           </div>
@@ -701,25 +737,19 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
       {/* ============================================================== */}
       <section
         id="features"
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          maxWidth: '1240px',
-          margin: '0 auto',
-          padding: '80px 4vw',
-        }}
+        className="fx-guest-section"
       >
-        <div style={{ marginBottom: '48px' }}>
-          <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '12px' }}>
+        <div style={{ marginBottom: '56px' }}>
+          <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '14px' }}>
             01 / KIẾN TRÚC CỐT LÕI
           </div>
           <h2
             className="fx-editorial-title"
-            style={{ fontSize: 'clamp(36px, 4.5vw, 64px)', margin: '0 0 16px' }}
+            style={{ fontSize: 'clamp(36px, 4.5vw, 64px)', margin: '0 0 18px' }}
           >
             Bốn trụ cột kiến tạo tự do tài chính.
           </h2>
-          <p style={{ fontSize: '15px', color: 'var(--muted)', maxWidth: '640px', margin: 0, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '15px', color: 'var(--muted)', maxWidth: '640px', margin: 0, lineHeight: 1.75 }}>
             Mỗi module trong FinLux được thiết kế dựa trên quy chuẩn kế toán khắt khe, triệt tiêu sự mập mờ và giúp bạn nắm trọn quyền kiểm soát tiền bạc.
           </p>
         </div>
@@ -964,120 +994,84 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
       {/* ============================================================== */}
       <section
         id="workflow"
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          maxWidth: '1240px',
-          margin: '0 auto',
-          padding: '80px 4vw',
-          borderTop: '1px solid var(--border)',
-        }}
+        className="fx-guest-section"
+        style={{ borderTop: '1px solid var(--border)' }}
       >
-        <div style={{ marginBottom: '48px' }}>
-          <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '12px' }}>
+        <div style={{ marginBottom: '56px' }}>
+          <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '14px' }}>
             02 / QUY TRÌNH TINH GỌN
           </div>
           <h2
             className="fx-editorial-title"
-            style={{ fontSize: 'clamp(36px, 4.5vw, 64px)', margin: '0 0 16px' }}
+            style={{ fontSize: 'clamp(36px, 4.5vw, 64px)', margin: '0 0 18px' }}
           >
             Ba bước để bắt đầu làm chủ dòng tiền.
           </h2>
-          <p style={{ fontSize: '15px', color: 'var(--muted)', maxWidth: '640px', margin: 0, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '15px', color: 'var(--muted)', maxWidth: '640px', margin: 0, lineHeight: 1.75 }}>
             Quy trình khởi tạo nhanh chóng, không rườm rà. Bạn có thể sử dụng ngay lập tức mà không cần kết nối tài khoản ngân hàng nhạy cảm.
           </p>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '32px',
-          }}
-        >
+        <div className="fx-workflow-grid">
           {/* Step 1 */}
-          <div
-            style={{
-              padding: '36px 30px',
-              borderRadius: '24px',
-              background: theme === 'light' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid var(--border)',
-              position: 'relative',
-            }}
-          >
+          <div className="fx-workflow-card">
             <div
               style={{
                 fontFamily: '"Space Mono", monospace',
                 fontSize: '32px',
                 fontWeight: 700,
                 color: 'var(--purple)',
-                marginBottom: '16px',
+                marginBottom: '18px',
               }}
             >
               01
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 12px' }}>
               Khởi tạo Không gian Tài chính
             </h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, lineHeight: 1.7 }}>
+            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, lineHeight: 1.75 }}>
               Đăng nhập 1 chạm với Google hoặc Email. Không gian quản lý tài chính của bạn được kích hoạt tự động, an toàn và riêng tư tuyệt đối.
             </p>
           </div>
 
           {/* Step 2 */}
-          <div
-            style={{
-              padding: '36px 30px',
-              borderRadius: '24px',
-              background: theme === 'light' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid var(--border)',
-              position: 'relative',
-            }}
-          >
+          <div className="fx-workflow-card">
             <div
               style={{
                 fontFamily: '"Space Mono", monospace',
                 fontSize: '32px',
                 fontWeight: 700,
                 color: 'var(--green)',
-                marginBottom: '16px',
+                marginBottom: '18px',
               }}
             >
               02
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 12px' }}>
               Thiết lập Ngân sách &amp; Mục tiêu
             </h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, lineHeight: 1.7 }}>
+            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, lineHeight: 1.75 }}>
               Chọn ngày nhận lương định kỳ, tạo hạn mức cho các danh mục sinh hoạt thiết yếu và tạo quỹ tích lũy dự phòng cho tương lai.
             </p>
           </div>
 
           {/* Step 3 */}
-          <div
-            style={{
-              padding: '36px 30px',
-              borderRadius: '24px',
-              background: theme === 'light' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid var(--border)',
-              position: 'relative',
-            }}
-          >
+          <div className="fx-workflow-card">
             <div
               style={{
                 fontFamily: '"Space Mono", monospace',
                 fontSize: '32px',
                 fontWeight: 700,
                 color: '#06b6d4',
-                marginBottom: '16px',
+                marginBottom: '18px',
               }}
             >
               03
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 12px' }}>
               Ghi nhận &amp; Quan sát Dòng tiền
             </h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, lineHeight: 1.7 }}>
+            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, lineHeight: 1.75 }}>
               Nhập chi tiêu với bàn phím số thông minh, đối soát số dư đa ví và theo dõi chỉ số dòng tiền tự do tăng trưởng mỗi ngày.
             </p>
           </div>
@@ -1089,62 +1083,42 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
       {/* ============================================================== */}
       <section
         id="ecosystem"
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          maxWidth: '1240px',
-          margin: '0 auto',
-          padding: '80px 4vw',
-          borderTop: '1px solid var(--border)',
-        }}
+        className="fx-guest-section"
+        style={{ borderTop: '1px solid var(--border)' }}
       >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-            gap: '56px',
-            alignItems: 'center',
-          }}
-        >
+        <div className="fx-ecosystem-grid">
           <div>
-            <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '12px' }}>
+            <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '14px' }}>
               03 / TRẢI NGHIỆM ĐỒNG BỘ
             </div>
             <h2
               className="fx-editorial-title"
-              style={{ fontSize: 'clamp(36px, 4.5vw, 64px)', margin: '0 0 20px' }}
+              style={{ fontSize: 'clamp(36px, 4.5vw, 64px)', margin: '0 0 22px' }}
             >
               Mọi dữ liệu luôn bên bạn, trên mọi thiết bị.
             </h2>
-            <p style={{ fontSize: '15px', color: 'var(--muted)', margin: '0 0 28px', lineHeight: 1.75 }}>
+            <p style={{ fontSize: '15px', color: 'var(--muted)', margin: '0 0 32px', lineHeight: 1.8 }}>
               Một tài khoản duy nhất kết nối liền mạch giữa điện thoại và máy tính. Bạn có thể ghi chép nhanh một ly cà phê trên đường đi, và xem lại toàn bộ báo cáo chi tiêu chi tiết khi ngồi trước màn hình lớn.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '36px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span style={{ color: 'var(--green)', fontSize: '16px', fontWeight: 800 }}>✓</span>
-                <span style={{ fontSize: '14px', fontWeight: 700 }}>Tự động cập nhật tức thì trên cả điện thoại và máy tính</span>
+                <span style={{ fontSize: '14.5px', fontWeight: 700 }}>Tự động cập nhật tức thì trên cả điện thoại và máy tính</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span style={{ color: 'var(--green)', fontSize: '16px', fontWeight: 800 }}>✓</span>
-                <span style={{ fontSize: '14px', fontWeight: 700 }}>Hoạt động mượt mà mọi lúc, không lo gián đoạn</span>
+                <span style={{ fontSize: '14.5px', fontWeight: 700 }}>Hoạt động mượt mà mọi lúc, không lo gián đoạn</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span style={{ color: 'var(--green)', fontSize: '16px', fontWeight: 800 }}>✓</span>
-                <span style={{ fontSize: '14px', fontWeight: 700 }}>Giao diện tinh tế, trực quan và dễ sử dụng</span>
+                <span style={{ fontSize: '14.5px', fontWeight: 700 }}>Giao diện tinh tế, trực quan và dễ sử dụng</span>
               </div>
             </div>
           </div>
 
           {/* User-Centric Multiplatform Glass Card */}
-          <div
-            className="fx-card fx-hyper-glass"
-            style={{
-              padding: '42px 36px',
-              borderRadius: '32px',
-              textAlign: 'center',
-            }}
-          >
+          <div className="fx-card fx-hyper-glass fx-ecosystem-card">
             <div
               className="fx-app-icon-squircle"
               style={{
@@ -1152,7 +1126,7 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
                 height: '84px',
                 borderRadius: '24px',
                 padding: '14px',
-                margin: '0 auto 20px',
+                margin: '0 auto 22px',
               }}
             >
               <Image
@@ -1168,45 +1142,38 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
                 }}
               />
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 850, margin: '0 0 10px' }}>
+            <h3 style={{ fontSize: '22px', fontWeight: 850, margin: '0 0 12px' }}>
               Một Không Gian Tài Chính Thống Nhất
             </h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 28px', lineHeight: 1.65 }}>
+            <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 32px', lineHeight: 1.7 }}>
               Không cần sao lưu thủ công hay chuyển đổi phức tạp. Bật ứng dụng lên và mọi thứ đã sẵn sàng cho bạn.
             </p>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '16px',
-                textAlign: 'left',
-              }}
-            >
+            <div className="fx-ecosystem-subgrid">
               <div
                 style={{
-                  padding: '16px 18px',
-                  borderRadius: '18px',
+                  padding: '18px 20px',
+                  borderRadius: '20px',
                   background: theme === 'light' ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid var(--border)',
                 }}
               >
                 <div style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 700 }}>TRÊN ĐIỆN THOẠI</div>
-                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>Ghi chép nhanh</div>
-                <div style={{ fontSize: '12px', color: 'var(--purple)', marginTop: '2px', fontWeight: 600 }}>Thuận tiện mọi lúc mọi nơi</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '6px' }}>Ghi chép nhanh</div>
+                <div style={{ fontSize: '12px', color: 'var(--purple)', marginTop: '3px', fontWeight: 600 }}>Thuận tiện mọi lúc mọi nơi</div>
               </div>
 
               <div
                 style={{
-                  padding: '16px 18px',
-                  borderRadius: '18px',
+                  padding: '18px 20px',
+                  borderRadius: '20px',
                   background: theme === 'light' ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid var(--border)',
                 }}
               >
                 <div style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 700 }}>TRÊN MÁY TÍNH</div>
-                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '4px' }}>Kế hoạch toàn diện</div>
-                <div style={{ fontSize: '12px', color: '#06b6d4', marginTop: '2px', fontWeight: 600 }}>Báo cáo &amp; Phân tích sâu</div>
+                <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '6px' }}>Kế hoạch toàn diện</div>
+                <div style={{ fontSize: '12px', color: '#06b6d4', marginTop: '3px', fontWeight: 600 }}>Báo cáo &amp; Phân tích sâu</div>
               </div>
             </div>
           </div>
@@ -1218,20 +1185,12 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
       {/* ============================================================== */}
       <section
         id="highlights"
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          maxWidth: '1240px',
-          margin: '0 auto',
-          padding: '40px 4vw 90px',
-        }}
+        className="fx-guest-section"
+        style={{ paddingBottom: '120px' }}
       >
         <div
-          className="fx-card fx-hyper-glass"
+          className="fx-card fx-hyper-glass fx-cta-banner-card"
           style={{
-            padding: '56px 40px',
-            borderRadius: '36px',
-            textAlign: 'center',
             background: theme === 'light'
               ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(240, 244, 255, 0.9))'
               : 'linear-gradient(135deg, rgba(26, 33, 56, 0.9), rgba(15, 19, 36, 0.95))',
@@ -1239,12 +1198,12 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             boxShadow: '0 30px 80px rgba(101, 91, 220, 0.2)',
           }}
         >
-          <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '14px', letterSpacing: '0.2em' }}>
+          <div className="fx-eyebrow" style={{ color: 'var(--purple)', marginBottom: '16px', letterSpacing: '0.2em' }}>
             HỆ SINH THÁI TOÀN DIỆN • BẮT ĐẦU NGAY HÔM NAY
           </div>
           <h2
             className="fx-editorial-title"
-            style={{ fontSize: 'clamp(38px, 5vw, 68px)', margin: '0 0 16px', lineHeight: 1.15 }}
+            style={{ fontSize: 'clamp(38px, 5vw, 68px)', margin: '0 0 20px', lineHeight: 1.15 }}
           >
             Sẵn sàng làm chủ dòng tiền của bạn?
           </h2>
@@ -1252,9 +1211,9 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
             style={{
               fontSize: '15.5px',
               color: 'var(--muted)',
-              maxWidth: '680px',
-              margin: '0 auto 32px',
-              lineHeight: 1.75,
+              maxWidth: '720px',
+              margin: '0 auto 36px',
+              lineHeight: 1.8,
             }}
           >
             Vòng quay Saving Spin, hoạch định mục tiêu dài hạn, bàn phím số 3 giây, săn deal hoàn tiền cùng chế độ Liquid Glass — và nhiều tính năng hấp dẫn khác đang chờ bạn khám phá. Miễn phí trọn đời, đồng bộ tức thì.
@@ -1263,20 +1222,10 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
           <button
             type="button"
             onClick={() => (onOpenAuth ? onOpenAuth() : router.push('/login'))}
-            className="fx-btn fx-neon-btn"
-            style={{
-              padding: '16px 36px',
-              borderRadius: '18px',
-              fontSize: '15px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}
+            className="fx-btn fx-neon-btn fx-cta-banner-btn"
           >
             <FinluxIcon name="shield" />
-            <span>Đăng nhập hoặc Tạo tài khoản FinLux</span>
+            <span>Đăng nhập hoặc Bắt đầu ngay</span>
             <span>→</span>
           </button>
         </div>
@@ -1286,14 +1235,8 @@ export default function GuestFinanceView({ onOpenAuth }: GuestFinanceViewProps) 
       {/* 7. FOOTER                                                      */}
       {/* ============================================================== */}
       <footer
-        className="fx-glass-strip"
+        className="fx-glass-strip fx-guest-footer"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '24px 5vw',
-          flexWrap: 'wrap',
-          gap: '16px',
           borderTop: '1px solid var(--border)',
           position: 'relative',
           zIndex: 10,

@@ -17,6 +17,35 @@
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 
+### [Task-FINLUX-WEB-MOBILE-LAYOUT-RECONSTRUCTION] — Tái Cấu Trúc Toàn Diện Layout & Trải Nghiệm Mobile Web
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Header: Ẩn nav link desktop trên mobile (<960px), chiều cao 66px, nền kính mờ chống đè chữ, giữ logo + theme toggle + nút đăng nhập gọn gàng không tràn màn hình.
+  2. Hero: Đệm lề đỉnh 88px dưới header cố định, font chữ co giãn `clamp()`, card trích dẫn và nút bấm co giãn thông minh, toàn chiều rộng trên màn hình nhỏ.
+  3. Visual: Phân tách desktop (quỹ đạo 3D toàn cảnh) vs mobile (logo trung tâm phát sáng + cụm 5 huy hiệu Liquid Glass 2 cột không bị cắt/tràn viền).
+  4. Nội dung & Thẻ: Triệt tiêu hiện tượng "bóp" quá mức bằng cách tinh chỉnh padding card từ 48px xuống 18-20px trên mobile (`.fx-pillar-card`, `.fx-workflow-card`, `.fx-ecosystem-card`, `.fx-cta-banner-card`), ngăn vỡ dòng nút CTA và tiêu đề.
+  5. Footer: Bố trí dạng cột thông minh, lề đáy thoáng đãng, huy hiệu GitHub của 2 nhà phát triển hiển thị trọn vẹn.
+- **Files đã sửa thực tế**:
+  - `web/src/app/globals.css`
+  - `web/src/components/views/GuestFinanceView.tsx`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `next build`: **Compiled successfully, TypeScript 0 errors, 9/9 pages generated, exit code 0**.
+  - Browser Mobile Emulation (390x844): Header, Hero, Constellation Badges, Pillars, Ecosystem, CTA banner và Footer hiển thị cân đối, không tràn ngang, không bị bóp nghẹt.
+
+### [Task-FINLUX-WEB-LAYOUT-SPACING-BREATHING-ROOM] — Tối Ưu Toàn Diện Khoảng Cách & Breathing Room (Hero, Orbit, Pillars, Sections)
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Tăng khoảng cách Hero: Nới rộng `maxWidth` từ 1240px lên 1380px, tăng grid gap từ 56px lên 88px, căn chỉnh 2 cột tránh va chạm giữa Orbit badges và Quote card.
+  2. Nới rộng bán kính và quỹ đạo `.fx-orbit-glide` (R=210px), điều chỉnh tracks và stage height (560px), bảo đảm huy hiệu quỹ đạo luôn cách khối trích dẫn bên trái tối thiểu > 100px.
+  3. Mở rộng breathing room toàn trang: Tăng padding các section (110px 5vw), tăng gap các trụ cột kiến trúc (26px), workflow cards (36px), ecosystem grid (80px), CTA banner và footer.
+- **Files đã sửa thực tế**:
+  - `web/src/app/globals.css`
+  - `web/src/components/views/GuestFinanceView.tsx`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `npm run build`: **Compiled successfully in 1.97s, TypeScript 5.2s, 9/9 pages generated, exit code 0**.
+
 ### [Task-FINLUX-WEB-STANDALONE-LOGIN-PAGE] — Tách Trang Đăng Nhập / Đăng Ký Riêng Biệt (/login, /signin)
 - **Status**: `[DONE]`
 - **Scope**:
