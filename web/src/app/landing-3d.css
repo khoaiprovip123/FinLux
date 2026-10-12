@@ -272,6 +272,24 @@ main, .scene {
   transform: translateX(3px);
 }
 
+.btn-mobile-menu {
+  display: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--edge);
+  background: var(--glass);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-mobile-menu:hover {
+  background: var(--edge);
+  color: var(--a1);
+}
+
 @media (max-width: 900px) {
   .dock {
     width: calc(100% - 24px);
@@ -281,10 +299,64 @@ main, .scene {
   .dock-nav {
     display: none;
   }
+  .btn-mobile-menu {
+    display: grid;
+  }
   .btn-dock-cta {
     padding: 0 14px;
     font-size: 13px;
   }
+}
+
+.mobile-menu-drawer {
+  position: fixed;
+  top: 72px;
+  left: 12px;
+  right: 12px;
+  z-index: 100;
+  background: rgba(14, 26, 51, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(32px) saturate(1.8);
+  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(85vh - 72px);
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+:root[data-theme="light"] .mobile-menu-drawer {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(14, 22, 48, 0.14);
+  box-shadow: 0 24px 60px rgba(14, 22, 48, 0.18);
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: 14px;
+  font: 600 13.5px var(--body);
+  color: var(--ink);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-item:hover,
+.mobile-menu-item.active {
+  background: rgba(125, 124, 255, 0.14);
+  color: var(--a1);
+}
+
+.mobile-menu-divider {
+  height: 1px;
+  background: var(--edge);
+  margin: 6px 0;
 }
 
 .rail {
@@ -863,8 +935,9 @@ code {
     padding: 60px 16px 36px;
   }
   .scene.hero {
-    min-height: 80vh;
-    padding-top: 80px;
+    min-height: 88vh;
+    padding-top: 100px;
+    align-items: flex-start;
   }
   .tall {
     min-height: 140vh;
@@ -880,7 +953,17 @@ code {
     padding: 24px;
   }
   .hero .copy {
-    padding: 24px;
+    padding: 16px;
+    position: relative;
+    z-index: 10;
+  }
+  .hero .copy h1 {
+    font-size: clamp(36px, 10vw, 68px);
+    margin: 8px 0 12px;
+  }
+  .hero .copy p.li {
+    font-size: 15px;
+    line-height: 1.5;
   }
   .rail {
     display: none;

@@ -36,8 +36,17 @@ function LoginForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Đồng bộ mode nếu URL search param thay đổi
+  useEffect(() => {
+    const m = searchParams.get('mode') as AuthMode;
+    if (m === 'register' || m === 'forgot' || m === 'login') {
+      setMode(m);
+    }
+  }, [searchParams]);
 
   // Nếu người dùng đã đăng nhập, tự động chuyển về trang chính
   useEffect(() => {
@@ -45,6 +54,13 @@ function LoginForm() {
       router.replace('/');
     }
   }, [user, authLoading, router]);
+
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
+    setErrorMessage(null);
+    const targetUrl = newMode === 'login' ? '/login' : `/login?mode=${newMode}`;
+    router.replace(targetUrl, { scroll: false });
+  };
 
   const handleGoogleSignIn = async () => {
     setErrorMessage(null);
@@ -58,7 +74,7 @@ function LoginForm() {
 
       const name = googleUser.displayName || googleUser.email?.split('@')[0] || 'Người dùng Google';
 
-      // Seed/merge user doc
+      // 1. Seed/merge user doc
       await setDoc(
         doc(db, 'users', googleUser.uid),
         {
@@ -71,7 +87,7 @@ function LoginForm() {
         { merge: true }
       );
 
-      // Wallets: Seed cash wallet if user has 0 wallets
+      // 2. Wallets: Seed cash wallet if user has 0 wallets
       const walletsSnap = await getDocs(collection(db, 'users', googleUser.uid, 'wallets'));
       if (walletsSnap.empty) {
         await setDoc(doc(db, 'users', googleUser.uid, 'wallets', 'cash'), {
@@ -129,6 +145,8 @@ function LoginForm() {
         error.code === 'auth/wrong-password'
       ) {
         setErrorMessage('Email hoặc mật khẩu không chính xác.');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setErrorMessage('Phương thức đăng nhập Email/Mật khẩu chưa được bật trên Firebase Console (Authentication > Sign-in method). Vui lòng dùng "Tiếp tục với Google" hoặc liên hệ Admin.');
       } else if (error.code === 'auth/invalid-email') {
         setErrorMessage('Định dạng email không hợp lệ.');
       } else if (error.code === 'auth/too-many-requests') {
@@ -151,6 +169,10 @@ function LoginForm() {
     }
     if (password !== confirmPassword) {
       setErrorMessage('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    if (!agreedToTerms) {
+      setErrorMessage('Vui lòng đồng ý với Điều khoản dịch vụ & Chính sách bảo mật của FinLux để tiếp tục.');
       return;
     }
 
@@ -192,7 +214,9 @@ function LoginForm() {
       const error = err as { code?: string; message?: string };
       console.error('Register error:', error);
       if (error.code === 'auth/email-already-in-use') {
-        setErrorMessage('Email này đã được đăng ký. Bạn có thể đăng nhập ngay.');
+        setErrorMessage('Email này đã được đăng ký. Bạn có thể chuyển sang Đăng nhập ngay.');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setErrorMessage('Phương thức đăng ký Email chưa được kích hoạt trên Firebase Console (Authentication > Sign-in method). Vui lòng dùng "Tiếp tục với Google" hoặc liên hệ Admin.');
       } else if (error.code === 'auth/invalid-email') {
         setErrorMessage('Địa chỉ email không hợp lệ.');
       } else if (error.code === 'auth/weak-password') {
@@ -217,7 +241,7 @@ function LoginForm() {
     try {
       await sendPasswordResetEmail(auth, email.trim());
       showToast('Đã gửi email khôi phục mật khẩu! Vui lòng kiểm tra hộp thư.');
-      setMode('login');
+      switchMode('login');
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
       console.error('Password reset error:', error);
@@ -236,10 +260,11 @@ function LoginForm() {
       className="fx-scene-atelier"
       data-theme={theme}
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
+        color: 'var(--text)',
       }}
     >
       {/* Background Decorative Halos */}
@@ -304,7 +329,7 @@ function LoginForm() {
           </div>
         </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             type="button"
             onClick={toggleTheme}
@@ -325,6 +350,28 @@ function LoginForm() {
           </button>
 
           <Link
+            href="/terms"
+            style={{
+              padding: '9px 16px',
+              borderRadius: '999px',
+              fontSize: '12.5px',
+              fontWeight: 650,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>🛡️</span>
+            <span>Điều khoản &amp; Bảo mật</span>
+          </Link>
+
+          <Link
             href="/"
             style={{
               padding: '9px 18px',
@@ -342,8 +389,7 @@ function LoginForm() {
               transition: 'all 0.2s ease',
             }}
           >
-            <span>←</span>
-            <span>Trang chủ</span>
+            <span>← Trang chủ</span>
           </Link>
         </div>
       </header>
@@ -355,7 +401,7 @@ function LoginForm() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '24px 16px 48px',
+          padding: '24px 16px max(64px, calc(32px + env(safe-area-inset-bottom, 24px)))',
           zIndex: 10,
           position: 'relative',
         }}
@@ -363,12 +409,12 @@ function LoginForm() {
         <div
           style={{
             width: '100%',
-            maxWidth: '460px',
+            maxWidth: '470px',
             borderRadius: '32px',
             background:
               theme === 'light'
-                ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 248, 255, 0.88))'
-                : 'linear-gradient(180deg, rgba(22, 28, 48, 0.94), rgba(15, 20, 36, 0.92))',
+                ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 248, 255, 0.90))'
+                : 'linear-gradient(180deg, rgba(22, 28, 48, 0.95), rgba(15, 20, 36, 0.92))',
             border: '1.5px solid rgba(255, 255, 255, 0.95)',
             boxShadow:
               theme === 'light'
@@ -380,12 +426,12 @@ function LoginForm() {
           }}
         >
           {/* Card Brand Header */}
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '22px' }}>
             <div
               style={{
                 width: '64px',
                 height: '64px',
-                margin: '0 auto 14px',
+                margin: '0 auto 12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -416,7 +462,7 @@ function LoginForm() {
               }}
             >
               {mode === 'login' && 'Đăng nhập FinLux'}
-              {mode === 'register' && 'Tạo tài khoản FinLux'}
+              {mode === 'register' && 'Đăng ký Tài khoản FinLux'}
               {mode === 'forgot' && 'Khôi phục Mật khẩu'}
             </h1>
             <div
@@ -428,7 +474,7 @@ function LoginForm() {
                 textTransform: 'uppercase',
               }}
             >
-              Đồng bộ Cloud App &amp; Web
+              {mode === 'register' ? '100% Miễn phí • Đồng bộ Cloud tức thì' : 'Đồng bộ Cloud App & Web'}
             </div>
           </div>
 
@@ -493,7 +539,7 @@ function LoginForm() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  margin: '22px 0 18px',
+                  margin: '20px 0 16px',
                   gap: '12px',
                 }}
               >
@@ -524,10 +570,7 @@ function LoginForm() {
               >
                 <button
                   type="button"
-                  onClick={() => {
-                    setMode('login');
-                    setErrorMessage(null);
-                  }}
+                  onClick={() => switchMode('login')}
                   style={{
                     flex: 1,
                     padding: '8px 12px',
@@ -546,10 +589,7 @@ function LoginForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMode('register');
-                    setErrorMessage(null);
-                  }}
+                  onClick={() => switchMode('register')}
                   style={{
                     flex: 1,
                     padding: '8px 12px',
@@ -603,8 +643,8 @@ function LoginForm() {
               mode === 'login'
                 ? handleLogin
                 : mode === 'register'
-                ? handleRegister
-                : handleForgotPassword
+                  ? handleRegister
+                  : handleForgotPassword
             }
           >
             {/* Display Name (Register only) */}
@@ -621,23 +661,37 @@ function LoginForm() {
                 >
                   Họ và tên
                 </label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '14px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    color: 'var(--text)',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Nguyễn Văn An"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px 12px 38px',
+                      borderRadius: '14px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text)',
+                      fontSize: '14px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--muted)"
+                    strokeWidth="2"
+                    style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
               </div>
             )}
 
@@ -654,24 +708,42 @@ function LoginForm() {
               >
                 Email tài khoản
               </label>
-              <input
-                type="email"
-                required
-                placeholder="example@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: '14px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  color: 'var(--text)',
-                  fontSize: '14px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="email"
+                  required
+                  placeholder="example@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="email"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px 12px 38px',
+                    borderRadius: '14px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--muted)"
+                  strokeWidth="2"
+                  style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                >
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+              </div>
             </div>
 
             {/* Password (Login & Register) */}
@@ -697,10 +769,7 @@ function LoginForm() {
                   {mode === 'login' && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setMode('forgot');
-                        setErrorMessage(null);
-                      }}
+                      onClick={() => switchMode('forgot')}
                       style={{
                         background: 'none',
                         border: 'none',
@@ -724,7 +793,7 @@ function LoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '12px 42px 12px 14px',
+                      padding: '12px 42px 12px 38px',
                       borderRadius: '14px',
                       border: '1px solid var(--border)',
                       background: 'var(--surface)',
@@ -734,6 +803,18 @@ function LoginForm() {
                       boxSizing: 'border-box',
                     }}
                   />
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--muted)"
+                    strokeWidth="2"
+                    style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -768,7 +849,7 @@ function LoginForm() {
 
             {/* Confirm Password (Register only) */}
             {mode === 'register' && (
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <label
                   style={{
                     display: 'block',
@@ -780,24 +861,91 @@ function LoginForm() {
                 >
                   Xác nhận mật khẩu
                 </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px 12px 38px',
+                      borderRadius: '14px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text)',
+                      fontSize: '14px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--muted)"
+                    strokeWidth="2"
+                    style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                </div>
+              </div>
+            )}
+
+            {/* Terms & Privacy Agreement Checkbox (Register only) */}
+            {mode === 'register' && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  marginBottom: '20px',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  background: 'rgba(101, 91, 220, 0.05)',
+                  border: '1px solid rgba(101, 91, 220, 0.12)',
+                }}
+              >
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  type="checkbox"
+                  id="reg-terms-check"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
                   style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '14px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    color: 'var(--text)',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
+                    marginTop: '2.5px',
+                    width: '16px',
+                    height: '16px',
+                    accentColor: 'var(--purple)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
                   }}
                 />
+                <label
+                  htmlFor="reg-terms-check"
+                  style={{
+                    fontSize: '12px',
+                    lineHeight: 1.5,
+                    color: 'var(--text)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Tôi đồng ý với{' '}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    style={{
+                      color: 'var(--purple)',
+                      fontWeight: 700,
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Điều khoản dịch vụ &amp; Chính sách bảo mật
+                  </Link>{' '}
+                  (100% Miễn phí trọn đời, cam kết không khai thác thương mại dữ liệu cá nhân).
+                </label>
               </div>
             )}
 
@@ -839,7 +987,7 @@ function LoginForm() {
                 <>
                   <span>
                     {mode === 'login' && 'Đăng nhập & Đồng bộ'}
-                    {mode === 'register' && 'Tạo tài khoản & Bắt đầu'}
+                    {mode === 'register' && 'Tạo tài khoản & Bắt đầu Miễn phí'}
                     {mode === 'forgot' && 'Gửi link khôi phục mật khẩu'}
                   </span>
                   <span>→</span>
@@ -848,15 +996,52 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Back to Login for Forgot Password Mode */}
-          {mode === 'forgot' && (
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+          {/* Mode Switch Helper Link */}
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            {mode === 'login' && (
+              <span style={{ fontSize: '12.5px', color: 'var(--muted)' }}>
+                Chưa có tài khoản?{' '}
+                <button
+                  type="button"
+                  onClick={() => switchMode('register')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--purple)',
+                    fontWeight: 750,
+                    cursor: 'pointer',
+                    padding: 0,
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Đăng ký miễn phí ngay
+                </button>
+              </span>
+            )}
+            {mode === 'register' && (
+              <span style={{ fontSize: '12.5px', color: 'var(--muted)' }}>
+                Đã có tài khoản?{' '}
+                <button
+                  type="button"
+                  onClick={() => switchMode('login')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--purple)',
+                    fontWeight: 750,
+                    cursor: 'pointer',
+                    padding: 0,
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Đăng nhập tại đây
+                </button>
+              </span>
+            )}
+            {mode === 'forgot' && (
               <button
                 type="button"
-                onClick={() => {
-                  setMode('login');
-                  setErrorMessage(null);
-                }}
+                onClick={() => switchMode('login')}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -868,25 +1053,68 @@ function LoginForm() {
               >
                 ← Quay lại Đăng nhập
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Footer Card Info */}
+          {/* Trust & Privacy Guarantee Card */}
           <div
             style={{
-              marginTop: '26px',
-              padding: '14px',
-              borderRadius: '16px',
-              background: 'rgba(101, 91, 220, 0.05)',
-              border: '1px solid rgba(101, 91, 220, 0.12)',
-              fontSize: '11.5px',
+              marginTop: '24px',
+              padding: '16px',
+              borderRadius: '18px',
+              background:
+                theme === 'light'
+                  ? 'rgba(101, 91, 220, 0.04)'
+                  : 'rgba(101, 91, 220, 0.08)',
+              border: '1px solid rgba(101, 91, 220, 0.15)',
+              fontSize: '12px',
               lineHeight: 1.6,
               color: 'var(--muted)',
-              textAlign: 'center',
             }}
           >
-            Tài khoản này dùng chung 100% với ứng dụng di động <strong>FinLux Android</strong>.
-            Dữ liệu ví, giao dịch, ngân sách được đồng bộ tức thời hai chiều qua Firestore.
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 750,
+                color: 'var(--text)',
+                marginBottom: '8px',
+                fontSize: '12.5px',
+              }}
+            >
+              <span>🛡️</span>
+              <span>Cam kết Bảo mật &amp; Quyền Riêng tư FinLux</span>
+            </div>
+            <ul style={{ margin: '0 0 10px', paddingLeft: '18px', fontSize: '11.5px', lineHeight: 1.65 }}>
+              <li>
+                <strong>100% Hoàn toàn Miễn phí:</strong> Không phí kích hoạt, không gói trả phí.
+              </li>
+              <li>
+                <strong>Không khai thác dữ liệu:</strong> Dữ liệu chỉ dùng để hiển thị cho bạn, tuyệt đối không chia sẻ hoặc bán cho bên thứ ba.
+              </li>
+              <li>
+                <strong>Đồng bộ thời gian thực:</strong> Dùng chung 100% với ứng dụng di động <strong>FinLux Android</strong> qua Google Firestore.
+              </li>
+            </ul>
+
+            <div style={{ textAlign: 'center', paddingTop: '6px', borderTop: '1px solid rgba(101, 91, 220, 0.1)' }}>
+              <Link
+                href="/terms"
+                style={{
+                  color: 'var(--purple)',
+                  fontWeight: 700,
+                  fontSize: '11.5px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>Xem toàn văn Điều khoản &amp; Chính sách bảo mật</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
         </div>
       </main>

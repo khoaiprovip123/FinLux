@@ -1,0 +1,22 @@
+{
+  "name": "FinLux - Prism Personal Finance",
+  "short_name": "FinLux",
+  "description": "Nền tảng quản lý tài chính cá nhân toàn diện, trực quan và bảo mật.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07101F",
+  "theme_color": "#655BDC",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/finlux_logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/finlux_logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

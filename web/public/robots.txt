@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://finlux-0wxc.onrender.com/sitemap.xml

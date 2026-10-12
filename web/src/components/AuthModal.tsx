@@ -36,6 +36,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -156,6 +157,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
     if (password !== confirmPassword) {
       setErrorMessage('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    if (!agreedToTerms) {
+      setErrorMessage('Vui lòng đồng ý với Điều khoản dịch vụ & Chính sách bảo mật của FinLux.');
       return;
     }
 
@@ -316,7 +321,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.63 1.26 6.59l4.02 3.15c.95-2.84 3.6-4.99 6.72-4.99z"
                 />
               </svg>
-              <span>{loading ? 'Đang kết nối...' : 'Tiếp tục với Google (Đồng bộ App)'}</span>
+              <span>{loading ? 'Đang kết nối...' : 'Tiếp tục với Google'}</span>
             </button>
 
             <div
@@ -455,7 +460,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 disabled={loading}
               >
                 <FinluxIcon name="check" />
-                <span>{loading ? 'Đang xác thực...' : 'Đăng nhập & Đồng bộ'}</span>
+                <span>{loading ? 'Đang xác thực...' : 'Đăng nhập'}</span>
               </button>
             </div>
           </form>
@@ -511,6 +516,24 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+            </div>
+
+            <div className="fx-form-field wide" style={{ marginTop: '4px' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '11.5px', color: 'var(--text)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  style={{ marginTop: '2px', accentColor: 'var(--purple)', cursor: 'pointer', flexShrink: 0 }}
+                />
+                <span>
+                  Tôi đồng ý với{' '}
+                  <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--purple)', textDecoration: 'underline', fontWeight: 700 }}>
+                    Điều khoản dịch vụ &amp; Chính sách bảo mật
+                  </a>{' '}
+                  (100% Miễn phí trọn đời, cam kết không khai thác thương mại dữ liệu cá nhân).
+                </span>
+              </label>
             </div>
 
             <div className="fx-form-field wide fx-modal-actions" style={{ marginTop: '16px' }}>
@@ -578,8 +601,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         )}
 
         {/* Note */}
-        <div className="fx-muted-box" style={{ marginTop: '20px', fontSize: '11px' }}>
-          Tài khoản này dùng chung 100% với ứng dụng di động FinLux Android. Dữ liệu ví, giao dịch, ngân sách được đồng bộ tức thời hai chiều qua Firestore.
+        <div className="fx-muted-box" style={{ marginTop: '20px', fontSize: '11px', textAlign: 'center', lineHeight: 1.6 }}>
+          <div>Tài khoản này dùng chung 100% với ứng dụng di động <strong>FinLux Android</strong>.</div>
+          <div style={{ marginTop: '4px' }}>
+            <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--purple)', textDecoration: 'none', fontWeight: 650 }}>
+              🛡️ Xem Điều khoản &amp; Cam kết Bảo mật dữ liệu →
+            </a>
+          </div>
         </div>
       </div>
     </div>
