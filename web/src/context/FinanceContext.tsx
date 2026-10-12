@@ -160,7 +160,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       const savedTheme = localStorage.getItem('finlux_prism_theme') as 'light' | 'dark' | null;
       if (savedTheme) return savedTheme;
     }
-    return 'light';
+    return 'dark';
   });
   const [search, setSearch] = useState<string>('');
   const [kind, setKind] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');

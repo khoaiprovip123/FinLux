@@ -17,7 +17,7 @@ import WalletModal from '@/components/WalletModal';
 import AuthModal from '@/components/AuthModal';
 import Toast from '@/components/Toast';
 
-import GuestFinanceView from '@/components/views/GuestFinanceView';
+import LandingPage3D from '@/components/views/LandingPage3D';
 
 function MainApp() {
   const {
@@ -67,13 +67,9 @@ function MainApp() {
     );
   }
 
-  // Khi chưa đăng nhập: Hiển thị Màn hình tài chính Landing View (chuyển sang /login khi nhấn đăng nhập)
+  // Khi chưa đăng nhập: Hiển thị Màn hình tài chính Landing View 3D mới hoàn toàn
   if (!user) {
-    return (
-      <div id="fx-app" className="fx-app" data-theme={theme} style={{ display: 'block' }}>
-        <GuestFinanceView />
-      </div>
-    );
+    return <LandingPage3D />;
   }
 
   const renderActiveView = () => {

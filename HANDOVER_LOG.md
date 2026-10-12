@@ -17,6 +17,25 @@
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 
+### [Task-FINLUX-WEB-THREEUI-3D-LANDING-PAGE] — Tích Hợp MengTo/threeui & Đồ Họa 3D Tương Tác Hero Landing Page
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Cài đặt thư viện `@designcodeio/threeui` (ThreeUI Community do MengTo phát triển) vào module `web`.
+  2. Khắc phục tương thích Three.js r165+ với Next.js 16.4 Turbopack bằng mô hình subpath import (`@designcodeio/threeui/components/*`).
+  3. Xây dựng component `FinluxHero3D.tsx` hỗ trợ 3 chế độ tương tác 3D WebGL thời gian thực: `FluxVortex`, `ConstellationField`, và `ParticleNetwork` với bộ chuyển đổi linh hoạt.
+  4. Tích hợp `FinluxHero3D` trực tiếp vào trung tâm `.fx-orbit-stage` của `GuestFinanceView.tsx` tạo chiều sâu không gian đa chiều bao bọc logo FinLux và 5 huy hiệu quỹ đạo.
+  5. Loại bỏ toàn bộ `as any` ép kiểu CSS variable trong `GuestFinanceView.tsx`, đưa ESLint và TypeScript về 0 lỗi.
+- **Files đã sửa/tạo thực tế**:
+  - `web/package.json`
+  - `web/src/app/layout.tsx`
+  - `web/src/components/three/FinluxHero3D.tsx`
+  - `web/src/components/views/GuestFinanceView.tsx`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `npx tsc --noEmit`: **0 errors**.
+  - `npm run lint`: **0 errors, 5 warnings**.
+  - `npm run build`: **Compiled successfully in 3.2s, 9/9 pages generated, exit code 0**.
+
 ### [Task-FINLUX-WEB-MOBILE-LAYOUT-RECONSTRUCTION] — Tái Cấu Trúc Toàn Diện Layout & Trải Nghiệm Mobile Web
 - **Status**: `[DONE]`
 - **Scope**:
@@ -6139,6 +6158,65 @@ Khi clone dự án FinLux về máy mới hoặc thiết lập môi trường m�
 - `CHANGELOG.md`
 - `HANDOVER_LOG.md`
 
+### Trạng thái
+`[DONE]`
+
+---
+
+## [2026-10-12] Thiết kế lại Landing Page Web 3D theo bản Prism Liquid Glass (Nội dung & 3D Stage)
+- **Scope**: Thiết kế lại toàn bộ giao diện Landing Page 3D (`LandingPage3D.tsx`, `landing-3d.css`) theo bản đặc tả visual và mô hình 3D của người dùng:
+  - Hệ thống 3D stage Three.js phản hồi cuộn (scroll-driven 3D transitions) & tương tác kéo/xoay (drag/inertia physics).
+  - 4 cụm mô hình tài chính 3D: Donut FCF arc nổi bật, Vòng chu kỳ lương & mốc nhận lương, Dòng hoán đổi ví ↔ thẻ tín dụng (Zero double-counting), và 5 cột tăng trưởng tài sản ròng.
+  - Floating pill dock điều hướng với logo, nút toggle theme sáng/tối và nút CTA.
+  - Side rail progress dots hiển thị tiến trình 6 scene.
+  - Thiết kế Liquid Glass glassmorphism, typography Bricolage Grotesque & Be Vietnam Pro, hỗ trợ dynamic light/dark mode.
+- **Danh sách file sửa đổi**:
+  - `web/src/app/landing-3d.css`
+  - `web/src/components/views/LandingPage3D.tsx`
+  - `web/src/app/layout.tsx`
+  - `web/src/app/page.tsx`
+  - `HANDOVER_LOG.md`
+- **Kết quả nghiệm thu**:
+  - `npm run build` PASS 100% với Next.js 16.4.0 (Turbopack) & TypeScript compiler.
+  - Fix Scene 1 (Dòng tiền tự do): Chuẩn hóa hình học Donut chart đồng nhất bán kính, triệt tiêu méo hình elip/sừng nhọn, nâng slice FCF nổi dọc trục Z mượt mà, tích hợp Three.js RoomEnvironment studio IBL và tỷ lệ khối tiền vàng 24K không bị biến dạng khi xoay. Kiểm thử thành công ở cả Light Mode và Dark Mode.
+### Trạng thái
+`[DONE]`
+
+---
+
+## [2026-10-12] Đồng bộ Landing Page chuẩn 100% theo mẫu template & đưa ảnh chụp thực tế của app FinLux
+- **Scope**:
+  - Tích hợp 100% cấu trúc HTML, CSS và logic Three.js từ template mẫu: font Playfair Display, Bricolage Grotesque, Space Mono; các số mờ nghệ thuật `01`, `02`,... in chìm; hiệu ứng scroll-scrubbing cho meter ngân sách, tabs báo cáo, stack 3D perspective fold, và chuyển đổi 3 phong cách giao diện (Modern Dark, Glassmorphism, Dynamic Gradient).
+  - Tích hợp ảnh chụp màn hình gốc thực tế từ app FinLux (`qa-home.png`, `qa-budget.png`, `qa-reports.png`, `qa-login.png`) trực tiếp lên màn hình điện thoại 3D, hỗ trợ crossfade tự động khi chuyển phân cảnh.
+  - Tinh chỉnh màu nền Deep Space radial gradient và đặt theme mặc định sang dark mode để đồng bộ hoàn hảo với bản mẫu.
+- **Danh sách file sửa đổi**:
+  - `web/src/app/landing-3d.css`
+  - `web/src/components/views/LandingPage3D.tsx`
+  - `web/src/context/FinanceContext.tsx`
+  - `web/src/app/layout.tsx`
+  - `HANDOVER_LOG.md`
+- **Kết quả nghiệm thu**:
+  - `npx tsc --noEmit` PASS 100% không có lỗi.
+  - Tối ưu khoảng cách giữa các section: Giảm tổng chiều cao trang từ `10.938px` xuống `7.461px` (giảm 32% khoảng trắng thừa), thu gọn `.scene` xuống `72vh` và `.tall` xuống `160vh`. Trải nghiệm cuộn giữa các phân cảnh trở nên liền mạch, mượt mà và tự nhiên.
+  - Kiểm thử trực tiếp trên trình duyệt `http://localhost:3000/`: Màn hình điện thoại 3D hiển thị sắc nét ảnh thật của app, các chuyển động cuộn và tương tác kéo xoay mượt mà ở cả chế độ Dark và Light.
+### Trạng thái
+`[DONE]`
+
+---
+
+## [2026-10-12] Nâng cấp thanh Navbar Dock thành Floating Island Glassmorphism Navigation Bar
+- **Scope**:
+  - Tái thiết kế toàn bộ thanh navbar điều hướng: Thay thế thanh dock cũ bằng Floating Island Navigation Bar cao cấp chuẩn Liquid Glass.
+  - Tích hợp biểu tượng thương hiệu chính thức (`/finlux_logo.png`) bo góc squircle, logo typography `FINLUX` và huy hiệu `PRISM`.
+  - Bổ sung menu điều hướng nhanh giữa các chương: `Đa ví`, `Dòng tiền FCF`, `Chu kỳ lương`, `Báo cáo`, `Tiết kiệm`, `Giao diện`.
+  - Nâng cấp nút chuyển đổi Dark/Light mode kính mờ tinh tế và nút CTA gradient `Trải nghiệm ngay →` ánh sáng cyan-violet rực rỡ.
+- **Danh sách file sửa đổi**:
+  - `web/src/components/views/LandingPage3D.tsx`
+  - `web/src/app/landing-3d.css`
+  - `HANDOVER_LOG.md`
+- **Kết quả nghiệm thu**:
+  - `npx tsc --noEmit` PASS 100% không có lỗi.
+  - Kiểm thử trực tiếp trên trình duyệt `http://localhost:3000/`: Navbar hiển thị cân đối, thẩm mỹ cao cấp, điều hướng mượt mà, tự động thích ứng hoàn hảo trên cả desktop và mobile.
 ### Trạng thái
 `[DONE]`
 
