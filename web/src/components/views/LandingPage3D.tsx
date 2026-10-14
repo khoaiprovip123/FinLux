@@ -14,7 +14,6 @@ export default function LandingPage3D() {
   const [noGl, setNoGl] = useState(false);
   const [activeScene, setActiveScene] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollTo = useCallback((id: string) => {
     const el = document.getElementById(id);
@@ -534,37 +533,17 @@ export default function LandingPage3D() {
         <nav className="dock-nav" aria-label="Điều hướng nhanh">
           <a
             href="#s1"
-            className={`dock-link ${activeScene === 1 ? 'active' : ''}`}
+            className={`dock-link ${activeScene >= 1 && activeScene <= 3 ? 'active' : ''}`}
             onClick={(e) => {
               e.preventDefault();
               scrollTo('s1');
             }}
           >
-            Đa ví
-          </a>
-          <a
-            href="#s2"
-            className={`dock-link ${activeScene === 2 ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              scrollTo('s2');
-            }}
-          >
-            Dòng tiền FCF
-          </a>
-          <a
-            href="#s3"
-            className={`dock-link ${activeScene === 3 ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              scrollTo('s3');
-            }}
-          >
-            Chu kỳ lương
+            Tính năng
           </a>
           <a
             href="#s4"
-            className={`dock-link ${activeScene === 4 ? 'active' : ''}`}
+            className={`dock-link ${activeScene === 4 || activeScene === 5 ? 'active' : ''}`}
             onClick={(e) => {
               e.preventDefault();
               scrollTo('s4');
@@ -573,24 +552,14 @@ export default function LandingPage3D() {
             Báo cáo
           </a>
           <a
-            href="#s5"
-            className={`dock-link ${activeScene === 5 ? 'active' : ''}`}
+            href="#s7"
+            className={`dock-link ${activeScene >= 6 ? 'active' : ''}`}
             onClick={(e) => {
               e.preventDefault();
-              scrollTo('s5');
+              scrollTo('s7');
             }}
           >
-            Tiết kiệm
-          </a>
-          <a
-            href="#s6"
-            className={`dock-link ${activeScene === 6 ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              scrollTo('s6');
-            }}
-          >
-            Giao diện
+            Bảo mật
           </a>
         </nav>
 
@@ -616,170 +585,21 @@ export default function LandingPage3D() {
             )}
           </button>
 
-          <button
-            className="btn-mobile-menu"
-            type="button"
-            aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu điều hướng'}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          <Link
+            href="/login"
+            className="btn-dock-login"
           >
-            {mobileMenuOpen ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
+            <span>Đăng nhập</span>
+          </Link>
 
-          <button
+          <Link
+            href="/register"
             className="btn-dock-cta"
-            type="button"
-            onClick={() => router.push('/login')}
           >
-            <span>Bắt đầu ngay</span>
+            <span>Đăng ký ngay</span>
             <span className="cta-arrow">→</span>
-          </button>
+          </Link>
         </div>
-
-        {/* Mobile Navigation Drawer */}
-        {mobileMenuOpen && (
-          <div className="mobile-menu-drawer">
-            <a
-              href="#s0"
-              className={`mobile-menu-item ${activeScene === 0 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s0');
-              }}
-            >
-              <span>🏠</span>
-              <span>Tổng quan</span>
-            </a>
-            <a
-              href="#s1"
-              className={`mobile-menu-item ${activeScene === 1 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s1');
-              }}
-            >
-              <span>💳</span>
-              <span>01 / Đa ví</span>
-            </a>
-            <a
-              href="#s2"
-              className={`mobile-menu-item ${activeScene === 2 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s2');
-              }}
-            >
-              <span>📈</span>
-              <span>02 / Dòng tiền tự do FCF</span>
-            </a>
-            <a
-              href="#s3"
-              className={`mobile-menu-item ${activeScene === 3 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s3');
-              }}
-            >
-              <span>⏱️</span>
-              <span>03 / Chu kỳ lương &amp; Ngân sách</span>
-            </a>
-            <a
-              href="#s4"
-              className={`mobile-menu-item ${activeScene === 4 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s4');
-              }}
-            >
-              <span>📊</span>
-              <span>04 / Báo cáo tài chính</span>
-            </a>
-            <a
-              href="#s5"
-              className={`mobile-menu-item ${activeScene === 5 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s5');
-              }}
-            >
-              <span>🎯</span>
-              <span>05 / Tiết kiệm &amp; Vòng quay</span>
-            </a>
-            <a
-              href="#s6"
-              className={`mobile-menu-item ${activeScene === 6 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s6');
-              }}
-            >
-              <span>✨</span>
-              <span>06 / Phong cách giao diện</span>
-            </a>
-            <a
-              href="#s7"
-              className={`mobile-menu-item ${activeScene === 7 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s7');
-              }}
-            >
-              <span>🛡️</span>
-              <span>07 / Độ tin cậy &amp; Bảo mật</span>
-            </a>
-            <a
-              href="#s8"
-              className={`mobile-menu-item ${activeScene === 8 ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setMobileMenuOpen(false);
-                scrollTo('s8');
-              }}
-            >
-              <span>🚀</span>
-              <span>08 / Tải mã nguồn Android</span>
-            </a>
-
-            <div className="mobile-menu-divider" />
-
-            <Link
-              href="/terms"
-              className="mobile-menu-item"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <span>📄</span>
-              <span>Điều khoản &amp; Chính sách bảo mật</span>
-            </Link>
-
-            <button
-              type="button"
-              className="btn-dock-cta"
-              style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}
-              onClick={() => {
-                setMobileMenuOpen(false);
-                router.push('/login');
-              }}
-            >
-              <span>Đăng nhập / Đăng ký FinLux</span>
-              <span className="cta-arrow">→</span>
-            </button>
-          </div>
-        )}
       </header>
 
       {/* SIDE RAIL NAVIGATION */}
@@ -821,26 +641,18 @@ export default function LandingPage3D() {
               <cite>— Morgan Housel (Tâm lý học về tiền)</cite>
             </blockquote>
             <div className="btns">
-              <a
+              <Link
                 className="btn p"
-                href="#s8"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollTo('s8');
-                }}
+                href="/register"
               >
-                Bắt đầu quản trị tài chính →
-              </a>
-              <a
+                Bắt đầu đăng ký miễn phí →
+              </Link>
+              <Link
                 className="btn g"
-                href="#s1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollTo('s1');
-                }}
+                href="/login"
               >
-                Khám phá tính năng ↓
-              </a>
+                Đăng nhập tài khoản
+              </Link>
             </div>
           </div>
         </section>
@@ -1051,21 +863,18 @@ export default function LandingPage3D() {
               </li>
             </ol>
             <div className="btns">
-              <button
-                type="button"
+              <Link
+                href="/register"
                 className="btn p"
-                onClick={() => router.push('/login')}
               >
-                Bắt đầu quản trị tài chính →
-              </button>
-              <a
+                Đăng ký tài khoản Web ngay →
+              </Link>
+              <Link
+                href="/login"
                 className="btn g"
-                href="https://github.com/khoaiprovip123/FinLux#readme"
-                target="_blank"
-                rel="noreferrer"
               >
-                Xem hướng dẫn đầy đủ ↗
-              </a>
+                Đã có tài khoản? Đăng nhập
+              </Link>
             </div>
             <div className="note">
               Cần Android Studio, JDK 17 và thiết bị hoặc máy ảo Android 8.0 trở lên.
@@ -1077,15 +886,25 @@ export default function LandingPage3D() {
       {/* FOOTER */}
       <footer>
         <span>© FinLux Project</span>
-        <span>
-          <a
+        <span style={{ display: 'inline-flex', gap: '16px', alignItems: 'center' }}>
+          <Link
+            href="/login"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            Đăng nhập
+          </Link>
+          <Link
+            href="/register"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            Đăng ký
+          </Link>
+          <Link
             href="/terms"
             style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.2s' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--purple)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
           >
-            🛡️ Điều khoản &amp; Bảo mật
-          </a>
+            Điều khoản &amp; Bảo mật
+          </Link>
         </span>
         <span>Giấy phép MIT</span>
       </footer>

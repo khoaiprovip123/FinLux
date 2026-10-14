@@ -66,34 +66,37 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
       const name = user.displayName || user.email?.split('@')[0] || 'Người dùng Google';
 
-      // 1. Seed/merge user doc
-      await setDoc(
-        doc(db, 'users', user.uid),
-        {
-          displayName: name,
-          email: user.email,
-          photoUrl: user.photoURL || '',
-          themePref: 'system',
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
-
-      // 2. Wallets: Seed cash wallet if user has 0 wallets
-      const walletsSnap = await getDocs(collection(db, 'users', user.uid, 'wallets'));
-      if (walletsSnap.empty) {
-        await setDoc(doc(db, 'users', user.uid, 'wallets', 'cash'), {
-          name: 'Tiền mặt',
-          type: 'cash',
-          balance: 0,
-          color: '#1F6FBF',
-          isDefault: true,
-          createdAt: serverTimestamp(),
-        });
-      }
-
       showToast(`Đăng nhập Google thành công! Đang đồng bộ dữ liệu...`);
       handleClose();
+
+      // Background Firestore sync (non-blocking)
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid),
+          {
+            displayName: name,
+            email: user.email,
+            photoUrl: user.photoURL || '',
+            themePref: 'system',
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        const walletsSnap = await getDocs(collection(db, 'users', user.uid, 'wallets'));
+        if (walletsSnap.empty) {
+          await setDoc(doc(db, 'users', user.uid, 'wallets', 'cash'), {
+            name: 'Tiền mặt',
+            type: 'cash',
+            balance: 0,
+            color: '#1F6FBF',
+            isDefault: true,
+            createdAt: serverTimestamp(),
+          });
+        }
+      } catch (e) {
+        console.warn('Background sync warning in modal:', e);
+      }
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
       console.error('Google sign-in error:', error);
@@ -174,33 +177,36 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const name = displayName.trim() || email.split('@')[0];
       await updateProfile(user, { displayName: name });
 
-      // Seed initial user document in Firestore matching mobile app
-      await setDoc(
-        doc(db, 'users', user.uid),
-        {
-          displayName: name,
-          email: user.email,
-          createdAt: serverTimestamp(),
-          themePref: 'system',
-        },
-        { merge: true }
-      );
-
-      // Check if wallets exist, seed default cash wallet if empty
-      const walletsSnap = await getDocs(collection(db, 'users', user.uid, 'wallets'));
-      if (walletsSnap.empty) {
-        await setDoc(doc(db, 'users', user.uid, 'wallets', 'cash'), {
-          name: 'Tiền mặt',
-          type: 'cash',
-          balance: 0,
-          color: '#1F6FBF',
-          isDefault: true,
-          createdAt: serverTimestamp(),
-        });
-      }
-
       showToast('Đăng ký tài khoản thành công! Dữ liệu đã sẵn sàng đồng bộ.');
       handleClose();
+
+      // Seed in background (non-blocking)
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid),
+          {
+            displayName: name,
+            email: user.email,
+            createdAt: serverTimestamp(),
+            themePref: 'system',
+          },
+          { merge: true }
+        );
+
+        const walletsSnap = await getDocs(collection(db, 'users', user.uid, 'wallets'));
+        if (walletsSnap.empty) {
+          await setDoc(doc(db, 'users', user.uid, 'wallets', 'cash'), {
+            name: 'Tiền mặt',
+            type: 'cash',
+            balance: 0,
+            color: '#1F6FBF',
+            isDefault: true,
+            createdAt: serverTimestamp(),
+          });
+        }
+      } catch (e) {
+        console.warn('Background register sync warning in modal:', e);
+      }
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
       console.error('Register error:', error);
@@ -530,8 +536,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   Tôi đồng ý với{' '}
                   <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--purple)', textDecoration: 'underline', fontWeight: 700 }}>
                     Điều khoản dịch vụ &amp; Chính sách bảo mật
-                  </a>{' '}
-                  (100% Miễn phí trọn đời, cam kết không khai thác thương mại dữ liệu cá nhân).
+                  </a>
                 </span>
               </label>
             </div>
@@ -600,15 +605,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </form>
         )}
 
-        {/* Note */}
-        <div className="fx-muted-box" style={{ marginTop: '20px', fontSize: '11px', textAlign: 'center', lineHeight: 1.6 }}>
-          <div>Tài khoản này dùng chung 100% với ứng dụng di động <strong>FinLux Android</strong>.</div>
-          <div style={{ marginTop: '4px' }}>
-            <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--purple)', textDecoration: 'none', fontWeight: 650 }}>
-              🛡️ Xem Điều khoản &amp; Cam kết Bảo mật dữ liệu →
-            </a>
-          </div>
-        </div>
+
       </div>
     </div>
   );

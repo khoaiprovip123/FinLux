@@ -12,6 +12,7 @@ export default function TermsPage() {
     <div
       className="fx-scene-atelier"
       data-theme={theme}
+      suppressHydrationWarning
       style={{
         minHeight: '100vh',
         display: 'flex',
@@ -89,6 +90,7 @@ export default function TermsPage() {
             aria-label="Đổi giao diện"
             className="fx-round-btn"
             style={{ width: '40px', height: '40px' }}
+            suppressHydrationWarning
           >
             {theme === 'dark' ? (
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -169,20 +171,21 @@ export default function TermsPage() {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '6px 16px',
+              gap: '6px',
+              padding: '6px 14px',
               borderRadius: '999px',
               background: 'rgba(101, 91, 220, 0.1)',
               border: '1px solid rgba(101, 91, 220, 0.25)',
-              fontSize: '11.5px',
-              fontWeight: 700,
+              fontSize: '11px',
+              fontWeight: 750,
               color: 'var(--purple)',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               marginBottom: '14px',
             }}
           >
-            <span>🛡️ MINH BẠCH &amp; BẢO MẬT</span>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
+            <span>CAM KẾT BẢO MẬT &amp; MINH BẠCH</span>
           </div>
 
           <h1
@@ -234,7 +237,27 @@ export default function TermsPage() {
               backdropFilter: 'blur(20px)',
             }}
           >
-            <div style={{ fontSize: '28px', marginBottom: '10px' }}>💎</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'rgba(101, 91, 220, 0.12)',
+                  border: '1px solid rgba(101, 91, 220, 0.25)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: 'var(--purple)',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.26-8-12.356-8-5.096 0-5.096 8 0 8 5.096 0 7.26-8 12.356-8z" />
+                </svg>
+              </div>
+              <span style={{ fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--purple)', textTransform: 'uppercase', background: 'rgba(101, 91, 220, 0.1)', padding: '3px 8px', borderRadius: '6px' }}>
+                01 / MIỄN PHÍ
+              </span>
+            </div>
             <div style={{ fontSize: '15.5px', fontWeight: 800, marginBottom: '6px', color: 'var(--text)' }}>
               100% Hoàn Toàn Miễn Phí
             </div>
@@ -256,7 +279,30 @@ export default function TermsPage() {
               backdropFilter: 'blur(20px)',
             }}
           >
-            <div style={{ fontSize: '28px', marginBottom: '10px' }}>🛡️</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'rgba(7, 154, 134, 0.12)',
+                  border: '1px solid rgba(7, 154, 134, 0.25)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: 'var(--green)',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                  <path d="M1 1l22 22" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                </svg>
+              </div>
+              <span style={{ fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--green)', textTransform: 'uppercase', background: 'rgba(7, 154, 134, 0.1)', padding: '3px 8px', borderRadius: '6px' }}>
+                02 / RIÊNG TƯ
+              </span>
+            </div>
             <div style={{ fontSize: '15.5px', fontWeight: 800, marginBottom: '6px', color: 'var(--text)' }}>
               Không Khai Thác Dữ Liệu
             </div>
@@ -278,7 +324,29 @@ export default function TermsPage() {
               backdropFilter: 'blur(20px)',
             }}
           >
-            <div style={{ fontSize: '28px', marginBottom: '10px' }}>🔒</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'rgba(165, 154, 255, 0.12)',
+                  border: '1px solid rgba(165, 154, 255, 0.25)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: '#7d7cff',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <ellipse cx="12" cy="5" rx="9" ry="3" />
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                </svg>
+              </div>
+              <span style={{ fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.08em', color: '#7d7cff', textTransform: 'uppercase', background: 'rgba(165, 154, 255, 0.1)', padding: '3px 8px', borderRadius: '6px' }}>
+                03 / HẠ TẦNG
+              </span>
+            </div>
             <div style={{ fontSize: '15.5px', fontWeight: 800, marginBottom: '6px', color: 'var(--text)' }}>
               Bảo Mật Google Cloud
             </div>
@@ -596,7 +664,7 @@ export default function TermsPage() {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <Link
-                href="/login?mode=register"
+                href="/register"
                 style={{
                   padding: '11px 22px',
                   borderRadius: '14px',

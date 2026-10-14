@@ -155,13 +155,16 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // Navigation & Preferences
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [period, setPeriod] = useState<PeriodKey>('six');
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('finlux_prism_theme') as 'light' | 'dark' | null;
-      if (savedTheme) return savedTheme;
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
+  // Load theme from localStorage on client mount to prevent SSR hydration mismatch
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('finlux_prism_theme') as 'light' | 'dark' | null;
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
     }
-    return 'dark';
-  });
+  }, []);
   const [search, setSearch] = useState<string>('');
   const [kind, setKind] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
@@ -235,62 +238,79 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   // Realtime Firebase Auth & Firestore Listener
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-      if (firebaseUser) {
-        const profile: UserProfile = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Người dùng',
-          photoURL: firebaseUser.photoURL,
-        };
-        setUser(profile);
-        setIsCloudSynced(true);
-        setAuthLoading(false);
+    // Safety timeout: Never let auth check block the app for more than 1.2s
+    const timer = setTimeout(() => {
+      setAuthLoading(false);
+    }, 1200);
 
-        // Ensure user document exists in Firestore
-        try {
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          await setDoc(
-            userDocRef,
-            {
-              displayName: profile.displayName,
-              email: profile.email,
-              lastLoginAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
+    const unsubscribeAuth = onAuthStateChanged(
+      auth,
+      async (firebaseUser: User | null) => {
+        clearTimeout(timer);
+        if (firebaseUser) {
+          const profile: UserProfile = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Người dùng',
+            photoURL: firebaseUser.photoURL,
+          };
+          setUser(profile);
+          setIsCloudSynced(true);
+          setAuthLoading(false);
 
-          // If brand new user with 0 wallets, seed initial wallet
-          const walletsSnap = await getDocs(collection(db, 'users', firebaseUser.uid, 'wallets'));
-          if (walletsSnap.empty) {
-            await setDoc(doc(db, 'users', firebaseUser.uid, 'wallets', 'cash'), {
-              name: 'Tiền mặt',
-              type: 'cash',
-              balance: 0,
-              color: '#1F6FBF',
-              isDefault: true,
-              createdAt: serverTimestamp(),
-            });
+          // Ensure user document exists in Firestore (non-blocking)
+          try {
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            await setDoc(
+              userDocRef,
+              {
+                displayName: profile.displayName,
+                email: profile.email,
+                lastLoginAt: serverTimestamp(),
+              },
+              { merge: true }
+            );
+
+            // If brand new user with 0 wallets, seed initial wallet
+            const walletsSnap = await getDocs(collection(db, 'users', firebaseUser.uid, 'wallets'));
+            if (walletsSnap.empty) {
+              await setDoc(doc(db, 'users', firebaseUser.uid, 'wallets', 'cash'), {
+                name: 'Tiền mặt',
+                type: 'cash',
+                balance: 0,
+                color: '#1F6FBF',
+                isDefault: true,
+                createdAt: serverTimestamp(),
+              });
+            }
+          } catch (e) {
+            console.error('Error ensuring Firestore user docs:', e);
           }
-        } catch (e) {
-          console.error('Error ensuring Firestore user docs:', e);
+        } else {
+          setUser(null);
+          setIsCloudSynced(false);
+          setAuthLoading(false);
+          setWallets([]);
+          setTransactions([]);
+          setBudgets([]);
+          setDebts([]);
+          setGoals([]);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(STORAGE_KEY);
+          }
         }
-      } else {
-        setUser(null);
-        setIsCloudSynced(false);
+      },
+      (error) => {
+        console.error('onAuthStateChanged error:', error);
+        clearTimeout(timer);
         setAuthLoading(false);
-        setWallets([]);
-        setTransactions([]);
-        setBudgets([]);
-        setDebts([]);
-        setGoals([]);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(STORAGE_KEY);
-        }
       }
-    });
+    );
 
-    return () => unsubscribeAuth();
+    return () => {
+      clearTimeout(timer);
+      unsubscribeAuth();
+    };
   }, []);
 
   // Realtime Firestore Subscriptions for Logged In User

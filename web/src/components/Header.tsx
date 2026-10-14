@@ -193,10 +193,10 @@ export default function Header({ onOpenAddTx }: HeaderProps) {
               background: 'var(--purple-soft)',
             }}
             onClick={() => setIsAuthModalOpen(true)}
-            title="Đăng nhập để đồng bộ với Mobile App"
+            title="Đăng nhập tài khoản"
           >
-            <FinluxIcon name="shield" />
-            <span>Đăng nhập / Đồng bộ App</span>
+            <FinluxIcon name="user" />
+            <span>Đăng nhập</span>
           </button>
         )}
 

@@ -40,6 +40,7 @@ function MainApp() {
         id="fx-app"
         className="fx-app"
         data-theme={theme}
+        suppressHydrationWarning
         style={{
           minHeight: '100vh',
           display: 'grid',
@@ -100,6 +101,7 @@ function MainApp() {
       id="fx-app"
       className={`fx-app ${isSidebarOpen ? 'fx-side-open' : ''}`}
       data-theme={theme}
+      suppressHydrationWarning
     >
       {/* Sidebar with mobile drawer support */}
       <Sidebar />

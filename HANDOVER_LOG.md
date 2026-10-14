@@ -17,6 +17,33 @@
 - [x] **Keyboard IME check:** Bàn phím số không che khuất ô nhập liệu và nút hành động.
 - [x] **Full Flow check:** 1 luồng giao dịch thực tế hoàn chỉnh, số dư và ngân sách/sổ cái cập nhật chuẩn xác.
 
+### [Task-FINLUX-WEB-AUTH-ROUTING-HYDRATION-STABILIZATION] — Chuẩn Hóa Điều Hướng Xác Thực & Khắc Phục Lỗi Hydration Mismatch
+- **Status**: `[DONE]`
+- **Scope**:
+  1. Hợp nhất màn hình xác thực AuthScreen hỗ trợ 3 chế độ (/login, /register, /forgot) với liên kết Next.js Link chuẩn thay vì button onclick nhằm chống nuốt sự kiện chuột.
+  2. Khắc phục triệt để lỗi React SSR Hydration Mismatch liên quan đến theme lưu trong localStorage trên FinanceContext, AuthScreen và Terms.
+  3. Tinh giản và tối ưu Header Dock trên cả Desktop và Mobile: loại bỏ drawer 10 mục rườm rà, ẩn nút thừa gây tràn vỡ bố cục trên mobile, chỉ hiển thị Logo + Theme Toggle + Đăng nhập.
+  4. Sửa lỗi ô mật khẩu: triệt tiêu nút `::-ms-reveal` mặc định của Chromium/Edge và căn giữa icon SVG con mắt.
+  5. Hạ z-index của `.fx-grain` từ 99 về 0 và nâng z-index card xác thực lên 15 để chống chặn sự kiện con trỏ chuột.
+- **Files đã sửa/tạo thực tế**:
+  - `web/src/app/globals.css`
+  - `web/src/app/landing-3d.css`
+  - `web/src/app/login/page.tsx`
+  - `web/src/app/register/page.tsx`
+  - `web/src/app/signin/page.tsx`
+  - `web/src/app/forgot/page.tsx`
+  - `web/src/app/terms/page.tsx`
+  - `web/src/app/page.tsx`
+  - `web/src/components/AuthScreen.tsx`
+  - `web/src/components/AuthModal.tsx`
+  - `web/src/components/Header.tsx`
+  - `web/src/components/views/LandingPage3D.tsx`
+  - `web/src/context/FinanceContext.tsx`
+  - `HANDOVER_LOG.md`
+- **Verification Results**:
+  - `npm run build`: **Compiled successfully in 10.1s, 12/12 pages generated, TypeScript 0 errors, exit code 0**.
+  - Browser tests: Kiểm thử chuyển tab qua lại giữa Login, Register và Forgot Password hoạt động 100% mượt mà, Google OAuth trigger thành công.
+
 ### [Task-FINLUX-WEB-THREEUI-3D-LANDING-PAGE] — Tích Hợp MengTo/threeui & Đồ Họa 3D Tương Tác Hero Landing Page
 - **Status**: `[DONE]`
 - **Scope**:
