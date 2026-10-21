@@ -1,5 +1,20 @@
 # UI SPEC — Finlux
 
+## Web layout & data states — 2026-10-21
+- Mục 06 Giao diện dùng cùng khung `.scene` trong luồng trang như các thẻ khác; không có đoạn cuộn 160vh/140vh hay wrapper sticky riêng. Progress đổi tint dùng công thức cuộn chung, tránh tình trạng dấu 06 còn active trong khi thẻ đã trôi khỏi viewport và chỉ còn vùng nền trống.
+- Đồng bộ 8 thẻ landing và thẻ con qua token surface chung: hàng công thức FCF, mục tiêu/nợ/Saving Spin, ô độ tin cậy, bước bắt đầu, chip loại ví, bộ lọc báo cáo và chip xuất file. Thẻ kết quả và bộ lọc đang chọn có accent riêng nhưng cùng nền/viền/bóng. Thẻ Giao diện chỉ chuyển tint cyan/indigo/green theo phong cách; màu chữ luôn theo theme, không ép chữ tối trên nền tối.
+- Mobile/tablet luôn hiển thị đầy đủ nội dung stack cards, kể cả khi chuyển từ viewport desktop đang có giá trị animation inline; không để opacity/rotation cũ làm mất thẻ.
+- Các ô Độ tin cậy dùng reveal opacity nhẹ với nội dung luôn đọc được; không clip toàn bộ phần tử đang được IntersectionObserver quan sát, vì clip toàn phần khiến observer không nhận được giao điểm và thẻ không xuất hiện.
+- Nền thẻ tính năng landing dùng một surface chung (`.scene:not(.hero) .copy`): lớp nền đủ đặc để giữ chữ rõ, gradient góc cyan/indigo dịu, viền lăng kính mảnh, bóng tint mềm và nhãn mục dạng capsule. Màu lấy từ token theme hiện có, áp dụng sáng/tối. Bỏ số section cỡ lớn phía sau nội dung và parallax của số; thứ tự mục chỉ hiển thị trong eyebrow, không tạo lớp trang trí giao với chữ.
+- Theo yêu cầu người dùng, bỏ mesh vòng elip/quỹ đạo bao quanh điện thoại 3D và animation của vòng. Giữ mô hình điện thoại, nhãn nổi, các khối cầu trang trí và vòng quay Saving Spin ở phần riêng.
+- Regression follow-up: camera 3D tự fit theo bao cầu của model/ambient và aspect ratio vùng stage, kể cả khi xoay model. Nhãn quỹ đạo được giới hạn cả kích thước lẫn tọa độ theo stage, không bị cắt nửa chữ tại ranh giới cột. Không mở canvas tràn sang vùng nội dung.
+- Landing desktop đặt canvas 3D và chip trang trí trong vùng riêng bên phải; nội dung và CTA nằm bên trái, không chồng chữ. Mobile/tablet ≤900px dùng ảnh screenshot tĩnh có alt trong luồng bố cục sau nội dung hero, không khởi tạo WebGL. Khi WebGL không khả dụng, screenshot cũng là fallback.
+- Các nội dung reveal vẫn đọc được trên mobile hoặc khi WebGL thất bại. Tài nguyên geometry/material/texture được dispose khi rời landing.
+- Phần Bắt đầu phục vụ người dùng web: đăng nhập/đăng ký → thêm ví và giao dịch → theo dõi báo cáo. Không yêu cầu clone repository, Android Studio hoặc cấu hình Firebase để sử dụng web.
+- Header và các màn hình tài chính dùng chung kỳ báo cáo động từ FinanceProvider. Biểu đồ tháng hiển thị cả tháng/năm khi qua năm.
+- Mỗi dòng ngân sách có ID riêng, nhãn kỳ gốc và số liệu trong bộ lọc hiện tại; hạn mức không bị nhân theo số tháng. Empty state mục tiêu thể hiện chưa có dữ liệu, không hiển thị mục tiêu 180 triệu giả định.
+- Form thêm giao dịch chọn ví tồn tại, mặc định ngày hiện tại, disable nút lưu trong lúc ghi, chỉ xóa nội dung/đóng form sau khi lưu thành công. Mode xác thực dẫn xuất từ URL, giữ đồng nhất với Link/router và không copy mode sang state bằng effect.
+
 ## 0. Design System — "Liquid Glass" (giống iOS)
 
 Yêu cầu áp dụng **toàn app** (nav bar, top bar, card, dialog, bottom sheet, FAB):

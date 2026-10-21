@@ -1,5 +1,15 @@
 # BA SPEC — Finlux (Quản lý Thu Chi Cá Nhân)
 
+## Web finance correction — 2026-10-21
+- Bộ lọc 3/6 tháng, tháng này, tháng trước và tất cả giải quyết động theo ngày hiện tại trong `financialPreferences/salaryCycle.financeTimeZone`; mặc định `Asia/Ho_Chi_Minh`. Tất cả bao gồm ngày giao dịch đã tải, kể cả trước năm hiện tại.
+- Số dư Firestore đã bao gồm sổ cái hiện tại. Khi xem quá khứ, chỉ hoàn ngược giao dịch sau ngày được chọn; không cộng lại giao dịch đã phản ánh vào số dư. Chuyển khoản tác động một lần lên mỗi ví; hỗ trợ bản ghi legacy chỉ có đầu ra.
+- Xóa chuyển khoản đọc giao dịch gốc, đối ứng và cả hai ví trước mọi lệnh ghi; hoàn trả số dư và xóa cặp trong cùng transaction. Thiếu ví hoặc thiếu/mâu thuẫn đối ứng phải dừng trước khi ghi. Không có side effect ngoài callback transaction để SDK có thể retry.
+- Ngân sách web hiển thị từng cửa sổ kỳ gốc, ưu tiên `periodStart`/`periodEndExclusive`, sau đó `periodKey`/tháng legacy. Chi tiêu là tổng EXPENSE đúng danh mục trong giao của kỳ ngân sách và bộ lọc; không nhân hạn mức tháng cho toàn bộ cửa sổ báo cáo. Document legacy/canonical cùng danh mục, cùng cửa sổ chỉ tính một lần, ưu tiên canonical.
+- Ngân sách có thể theo dõi tích lũy/trả nợ gốc theo danh mục; không dùng `isLivingExpense` để loại các khoản này khỏi ngân sách. Quy tắc loại khỏi chi phí sinh hoạt trong báo cáo giữ nguyên.
+- Tiến độ mục tiêu chỉ lấy `savedAmount` (fallback `currentAmount` legacy); không suy diễn từ ví đầu tiên, không tự tạo mục tiêu hoặc số tiền đích khi dữ liệu rỗng.
+- Form giao dịch web mặc định ngày hiện tại, kiểm tra số nguyên VND dương tối đa 15 chữ số và ví nguồn/đích tồn tại. Giữ nội dung khi lưu thất bại, chặn gửi lặp trong lúc lưu.
+- Form web hiện nhập ngày (chưa có giờ/phút); Timestamp được chuẩn hóa về 12:00 trong `financeTimeZone`, không lấy 12:00 theo múi giờ trình duyệt để tránh ghi lệch ngày. Không thay đổi các Timestamp gốc đã lưu trên Android.
+
 ## 1. Actor
 
 | Actor | Mô tả |

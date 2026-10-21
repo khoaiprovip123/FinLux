@@ -16,12 +16,9 @@ import {
 import {
   SYSTEM_CATEGORIES,
   INITIAL_WALLETS,
-  INITIAL_TRANSACTIONS,
   INITIAL_BUDGETS,
   INITIAL_DEBTS,
   INITIAL_GOALS,
-  PERIODS,
-  PeriodKey,
   generateSeedTransactions,
 } from '@/lib/constants';
 import {
@@ -29,6 +26,9 @@ import {
   isLivingExpense,
   collapseInternalTransferPairs,
 } from '@/lib/semantics';
+import { FINANCE_CONFIG, budgetUsage, financeDate, financeDayInstant, monthsInPeriod, netWalletAssets, reportPeriods, shiftDate, validFinanceTimeZone, walletBalanceAt, type PeriodKey, type ReportPeriod } from '@/lib/financeCalculations';
+import { deleteTransactionWithRollback } from '@/lib/transactionRollback';
+import { FIRESTORE_SCHEMA as schema } from '@/lib/firestoreSchema';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import {
@@ -59,6 +59,9 @@ export interface CategoryBreakdownItem {
 }
 
 export interface BudgetProgressItem {
+  id: string;
+  start: string;
+  end: string;
   categoryId: string;
   name: string;
   color: string;
@@ -87,6 +90,8 @@ interface FinanceContextType {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   period: PeriodKey;
+  periods: Record<PeriodKey, ReportPeriod>;
+  financeTimeZone: string;
   setPeriod: (p: PeriodKey) => void;
   theme: 'light' | 'dark';
   setTheme: (t: 'light' | 'dark') => void;
@@ -117,7 +122,7 @@ interface FinanceContextType {
   summary: FinancialSummary;
 
   // Mutators
-  addTransaction: (data: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  addTransaction: (data: Omit<Transaction, 'id' | 'createdAt'>) => Promise<boolean>;
   deleteTransaction: (id: string) => void;
   addWallet: (wallet: Omit<Wallet, 'id' | 'createdAt'>) => void;
   updateWallet: (id: string, updates: Partial<Wallet>) => void;
@@ -135,14 +140,14 @@ const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'finlux_prism_state_v2';
 
-function parseDateValue(val: unknown): string {
+function parseDateValue(val: unknown, timeZone: string = FINANCE_CONFIG.defaultTimeZone): string {
   if (val && typeof val === 'object' && 'toDate' in val && typeof (val as { toDate: () => Date }).toDate === 'function') {
-    return (val as { toDate: () => Date }).toDate().toISOString().slice(0, 10);
+    return financeDate((val as { toDate: () => Date }).toDate(), timeZone);
   }
   if (typeof val === 'string') {
-    return val.slice(0, 10);
+    return val.length === 10 ? val : financeDate(new Date(val), timeZone);
   }
-  return new Date().toISOString().slice(0, 10);
+  return financeDate(new Date(), timeZone);
 }
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
@@ -155,15 +160,22 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // Navigation & Preferences
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [period, setPeriod] = useState<PeriodKey>('six');
+  const [financeTimeZone, setFinanceTimeZone] = useState<string>(FINANCE_CONFIG.defaultTimeZone);
+  const [clock, setClock] = useState<Date | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   // Load theme from localStorage on client mount to prevent SSR hydration mismatch
   useEffect(() => {
     const savedTheme = localStorage.getItem('finlux_prism_theme') as 'light' | 'dark' | null;
     if (savedTheme === 'light' || savedTheme === 'dark') {
-      setTheme(savedTheme);
-      document.documentElement.setAttribute('data-theme', savedTheme);
+      // Read external preferences through a subscription callback, after hydration.
+      queueMicrotask(() => setTheme(savedTheme));
     }
+  }, []);
+  useEffect(() => {
+    queueMicrotask(() => setClock(new Date()));
+    const timer = setInterval(() => setClock(new Date()), FINANCE_CONFIG.clockRefreshMs);
+    return () => clearInterval(timer);
   }, []);
   const [search, setSearch] = useState<string>('');
   const [kind, setKind] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
@@ -260,7 +272,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
           // Ensure user document exists in Firestore (non-blocking)
           try {
-            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const userDocRef = doc(db, schema.users, firebaseUser.uid);
             await setDoc(
               userDocRef,
               {
@@ -272,9 +284,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             );
 
             // If brand new user with 0 wallets, seed initial wallet
-            const walletsSnap = await getDocs(collection(db, 'users', firebaseUser.uid, 'wallets'));
+            const walletsSnap = await getDocs(collection(db, schema.users, firebaseUser.uid, schema.wallets));
             if (walletsSnap.empty) {
-              await setDoc(doc(db, 'users', firebaseUser.uid, 'wallets', 'cash'), {
+              await setDoc(doc(db, schema.users, firebaseUser.uid, schema.wallets, 'cash'), {
                 name: 'Tiền mặt',
                 type: 'cash',
                 balance: 0,
@@ -288,6 +300,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           setUser(null);
+          setCategories(SYSTEM_CATEGORIES);
+          setFinanceTimeZone(FINANCE_CONFIG.defaultTimeZone);
           setIsCloudSynced(false);
           setAuthLoading(false);
           setWallets([]);
@@ -316,62 +330,64 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // Realtime Firestore Subscriptions for Logged In User
   useEffect(() => {
     if (!user) return;
+    return onSnapshot(doc(db, schema.users, user.uid, schema.financialPreferences, schema.salaryCycle), (snapshot) => {
+      setFinanceTimeZone(validFinanceTimeZone(snapshot.data()?.financeTimeZone));
+    }, () => showToast('Không thể tải múi giờ tài chính. Đang dùng múi giờ mặc định.'));
+  }, [user, showToast]);
+
+  useEffect(() => {
+    if (!user) return;
 
     const uid = user.uid;
 
     // 1. Wallets subscription
-    const unsubWallets = onSnapshot(collection(db, 'users', uid, 'wallets'), (snap) => {
-      if (!snap.empty) {
-        const list = snap.docs.map((d) => {
-          const data = d.data();
-          const name = data.name || 'Ví';
-          const rawType = String(data.type || 'cash').toLowerCase();
-          const walletType: WalletType =
-            rawType === 'bank' ? 'bank' :
-            rawType === 'ewallet' ? 'ewallet' :
-            rawType === 'card' ? 'card' :
-            rawType === 'investment' ? 'investment' :
-            rawType === 'other' ? 'other' : 'cash';
+    const unsubWallets = onSnapshot(collection(db, schema.users, uid, schema.wallets), (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        const name = data.name || 'Ví';
+        const rawType = String(data.type || 'cash').toLowerCase();
+        const walletType: WalletType =
+          rawType === 'bank' ? 'bank' :
+          rawType === 'ewallet' ? 'ewallet' :
+          rawType === 'card' ? 'card' :
+          rawType === 'investment' ? 'investment' :
+          rawType === 'other' ? 'other' : 'cash';
 
-          return {
-            id: d.id,
-            name,
-            type: walletType,
-            balance: Number(data.balance) || 0,
-            opening: Number(data.balance) || 0,
-            color: data.color || '#655bdc',
-            mark: name.slice(0, 2).toUpperCase(),
-            info: data.bankName || name,
-            bankName: data.bankName,
-            accountNumber: data.accountNumber,
-            isDefault: Boolean(data.isDefault),
-            createdAt: parseDateValue(data.createdAt),
-          };
-        });
-        setWallets(list);
-      }
+        return {
+          id: d.id,
+          name,
+          type: walletType,
+          balance: Number(data.balance) || 0,
+          color: data.color || '#655bdc',
+          mark: name.slice(0, 2).toUpperCase(),
+          info: data.bankName || name,
+          bankName: data.bankName,
+          accountNumber: data.accountNumber,
+          isDefault: Boolean(data.isDefault),
+          createdAt: parseDateValue(data.createdAt, financeTimeZone),
+        };
+      });
+      setWallets(list);
     });
 
     // 2. Categories subscription
-    const unsubCategories = onSnapshot(collection(db, 'users', uid, 'categories'), (snap) => {
-      if (!snap.empty) {
-        const list = snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            name: data.name || 'Danh mục',
-            type: data.type || 'expense',
-            icon: data.icon || 'tag',
-            color: data.color || '#655bdc',
-            isDefault: Boolean(data.isDefault),
-          };
-        });
-        setCategories(list);
-      }
+    const unsubCategories = onSnapshot(collection(db, schema.users, uid, schema.categories), (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name || 'Danh mục',
+          type: data.type || 'expense',
+          icon: data.icon || 'tag',
+          color: data.color || '#655bdc',
+          isDefault: Boolean(data.isDefault),
+        };
+      });
+      setCategories(list.length ? list : SYSTEM_CATEGORIES);
     });
 
     // 3. Transactions subscription
-    const unsubTxs = onSnapshot(collection(db, 'users', uid, 'transactions'), (snap) => {
+    const unsubTxs = onSnapshot(collection(db, schema.users, uid, schema.transactions), (snap) => {
       const list = snap.docs.map((d) => {
         const data = d.data();
         const rawType = String(data.type || 'expense').toLowerCase();
@@ -388,70 +404,68 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           walletId: data.walletId || '',
           relatedWalletId: data.relatedWalletId || null,
           note: data.note || '',
-          date: parseDateValue(data.date),
-          createdAt: parseDateValue(data.createdAt),
+          date: parseDateValue(data.date, financeTimeZone),
+          createdAt: parseDateValue(data.createdAt, financeTimeZone),
         };
       });
       setTransactions(list.sort((a, b) => b.date.localeCompare(a.date)));
     });
 
     // 4. Budgets subscription
-    const unsubBudgets = onSnapshot(collection(db, 'users', uid, 'budgets'), (snap) => {
-      if (!snap.empty) {
-        const list = snap.docs.map((d) => {
-          const data = d.data();
-          const monthStr = data.month || (data.periodKey?.startsWith('month:') ? data.periodKey.replace('month:', '') : '2026-10');
-          return {
-            id: d.id,
-            categoryId: data.categoryId || d.id,
-            month: monthStr,
-            limitAmount: Number(data.limitAmount) || 0,
-            spentAmount: Number(data.spentAmount) || 0,
-          };
-        });
-        setBudgets(list);
-      }
+    const unsubBudgets = onSnapshot(collection(db, schema.users, uid, schema.budgets), (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        const monthStr = data.month || (data.periodKey?.startsWith('month:') ? data.periodKey.replace('month:', '') : '');
+        return {
+          id: d.id,
+          categoryId: data.categoryId || d.id,
+          month: monthStr,
+          periodKey: data.periodKey,
+          periodStart: data.periodStart,
+          periodEndExclusive: data.periodEndExclusive,
+          periodBasis: data.periodBasis,
+          limitAmount: Number(data.limitAmount) || 0,
+          spentAmount: Number(data.spentAmount) || 0,
+        };
+      });
+      setBudgets(list);
     });
 
     // 5. Goals subscription (Đồng bộ hai chiều với Android: savedAmount / currentAmount)
-    const unsubGoals = onSnapshot(collection(db, 'users', uid, 'goals'), (snap) => {
-      if (!snap.empty) {
-        const list = snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            name: data.name || 'Mục tiêu',
-            targetAmount: Number(data.targetAmount) || 0,
-            currentAmount: Number(data.savedAmount ?? data.currentAmount) || 0,
-            deadline: parseDateValue(data.deadline),
-            color: data.color || '#655bdc',
-            createdAt: parseDateValue(data.createdAt),
-          };
-        });
-        setGoals(list);
-      }
+    const unsubGoals = onSnapshot(collection(db, schema.users, uid, schema.goals), (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name || 'Mục tiêu',
+          targetAmount: Number(data.targetAmount) || 0,
+          currentAmount: Number(data.savedAmount ?? data.currentAmount) || 0,
+          deadline: parseDateValue(data.deadline),
+          color: data.color || '#655bdc',
+          createdAt: parseDateValue(data.createdAt),
+        };
+      });
+      setGoals(list);
     });
 
     // 6. Debts subscription
-    const unsubDebts = onSnapshot(collection(db, 'users', uid, 'debts'), (snap) => {
-      if (!snap.empty) {
-        const list = snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            name: data.name || 'Khoản nợ',
-            type: data.type || 'CREDIT_CARD',
-            initialAmount: Number(data.initialAmount) || 0,
-            remainingBalance: Number(data.remainingBalance) || 0,
-            interestRateYearly: Number(data.interestRateYearly) || 0,
-            minPaymentMonthly: Number(data.minPaymentMonthly) || 0,
-            dueDate: data.dueDate,
-            isSettled: Boolean(data.isSettled),
-            createdAt: parseDateValue(data.createdAt),
-          };
-        });
-        setDebts(list);
-      }
+    const unsubDebts = onSnapshot(collection(db, schema.users, uid, schema.debts), (snap) => {
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name || 'Khoản nợ',
+          type: data.type || 'CREDIT_CARD',
+          initialAmount: Number(data.initialAmount) || 0,
+          remainingBalance: Number(data.remainingBalance) || 0,
+          interestRateYearly: Number(data.interestRateYearly) || 0,
+          minPaymentMonthly: Number(data.minPaymentMonthly) || 0,
+          dueDate: data.dueDate,
+          isSettled: Boolean(data.isSettled),
+          createdAt: parseDateValue(data.createdAt),
+        };
+      });
+      setDebts(list);
     });
 
     return () => {
@@ -462,7 +476,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       unsubGoals();
       unsubDebts();
     };
-  }, [user]);
+  }, [user, financeTimeZone]);
 
   // Logout function
   const logout = useCallback(async () => {
@@ -486,7 +500,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, [showToast]);
 
   // Active Period Boundaries
-  const currentPeriodDef = PERIODS[period];
+  const today = clock ? financeDate(clock, financeTimeZone) : '';
+  const periods = useMemo(() => reportPeriods(today, [...transactions.map((tx) => tx.date), ...wallets.map((wallet) => wallet.createdAt.slice(0, 10))]), [today, transactions, wallets]);
+  const currentPeriodDef = periods[period];
 
   // Transactions within Period (collapse internal transfer pairs for clean presentation)
   const periodTransactions = useMemo(() => {
@@ -514,91 +530,36 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     };
   }, [periodTransactions]);
 
-  // Helper: compute balance of a wallet up to a specific date
   const computeWalletBalance = useCallback(
     (walletId: string, asOfDate: string) => {
-      const w = wallets.find((item) => item.id === walletId);
-      if (!w) return 0;
-      let val = typeof w.opening === 'number' ? w.opening : w.balance;
-
-      for (const t of transactions) {
-        const d = t.date.slice(0, 10);
-        if (d > asOfDate) continue;
-
-        if (t.type === 'income' && t.walletId === walletId) {
-          val += t.amount;
-        } else if (t.type === 'expense' && t.walletId === walletId) {
-          val -= t.amount;
-        } else if (t.type === 'transfer_out') {
-          if (t.walletId === walletId) val -= t.amount;
-          if (t.relatedWalletId === walletId) val += t.amount;
-        }
-      }
-      return val;
-    },
-    [wallets, transactions]
+      const wallet = wallets.find((item) => item.id === walletId);
+      return wallet ? walletBalanceAt(wallet, transactions, asOfDate) : 0;
+    }, [wallets, transactions]
   );
 
-  // Net Worth as of Period End (Đồng bộ chuẩn xác với WalletsViewModel.calculateNetWorth của Android)
-  const currentNetWorth = useMemo(() => {
-    const regularAssets = wallets
-      .filter((w) => w.type !== 'card')
-      .reduce((sum, w) => sum + w.balance, 0);
-    const creditCardDebt = wallets
-      .filter((w) => w.type === 'card')
-      .reduce((sum, w) => sum + (w.balance < 0 ? -w.balance : 0), 0);
-    return regularAssets - creditCardDebt;
-  }, [wallets]);
+  const currentNetWorth = useMemo(() => netWalletAssets(wallets.map((wallet) => ({
+    ...wallet, balance: computeWalletBalance(wallet.id, currentPeriodDef.end),
+  }))), [wallets, computeWalletBalance, currentPeriodDef.end]);
 
-  // Net Worth before Period Start
-  const previousNetWorth = useMemo(() => {
-    const d = new Date(currentPeriodDef.start + 'T12:00:00');
-    d.setDate(d.getDate() - 1);
-    const beforeDate = d.toISOString().slice(0, 10);
-    const regularAssets = wallets
-      .filter((w) => w.type !== 'card')
-      .reduce((sum, w) => sum + computeWalletBalance(w.id, beforeDate), 0);
-    const creditCardDebt = wallets
-      .filter((w) => w.type === 'card')
-      .reduce((sum, w) => {
-        const b = computeWalletBalance(w.id, beforeDate);
-        return sum + (b < 0 ? -b : 0);
-      }, 0);
-    return regularAssets - creditCardDebt;
-  }, [wallets, currentPeriodDef.start, computeWalletBalance]);
+  const previousNetWorth = useMemo(() => netWalletAssets(wallets.map((wallet) => ({
+    ...wallet, balance: computeWalletBalance(wallet.id, shiftDate(currentPeriodDef.start, -1)),
+  }))), [wallets, computeWalletBalance, currentPeriodDef.start]);
 
   const netWorthDelta = currentNetWorth - previousNetWorth;
 
-  // Available Liquid cash & bank
-  const availableLiquid = useMemo(() => {
-    const bankWallet = wallets.find((w) => w.type === 'bank') || wallets[0];
-    const cashWallet = wallets.find((w) => w.type === 'cash');
-    const bankVal = bankWallet ? computeWalletBalance(bankWallet.id, currentPeriodDef.end) : 0;
-    const cashVal = cashWallet ? computeWalletBalance(cashWallet.id, currentPeriodDef.end) : 0;
-    return bankVal + cashVal;
-  }, [wallets, computeWalletBalance, currentPeriodDef.end]);
+  const availableLiquid = useMemo(() => wallets
+    .filter((wallet) => wallet.type === 'cash' || wallet.type === 'bank' || wallet.type === 'ewallet')
+    .reduce((sum, wallet) => sum + computeWalletBalance(wallet.id, currentPeriodDef.end), 0),
+    [wallets, computeWalletBalance, currentPeriodDef.end]);
 
-  // Monthly Trend Data for Bar Plot
-  const monthlyTrend = useMemo(() => {
-    const startM = Number(currentPeriodDef.start.slice(5, 7));
-    const endM = Number(currentPeriodDef.end.slice(5, 7));
-    const list: MonthlyTrendPoint[] = [];
-
-    for (let m = startM; m <= endM; m++) {
-      const key = `2026-${String(m).padStart(2, '0')}`;
-      const label = `T${m}`;
-      let inc = 0;
-      let exp = 0;
-      for (const t of periodTransactions) {
-        if (t.date.startsWith(key)) {
-          if (t.type === 'income') inc += t.amount;
-          if (isLivingExpense(t)) exp += t.amount;
-        }
-      }
-      list.push({ key, label, income: inc, expense: exp });
-    }
-    return list;
-  }, [currentPeriodDef, periodTransactions]);
+  const monthlyTrend = useMemo(() => monthsInPeriod(currentPeriodDef).map((key): MonthlyTrendPoint => {
+    const entries = periodTransactions.filter((tx) => tx.date.startsWith(key));
+    return {
+      key, label: key.slice(5) + '/' + key.slice(0, 4),
+      income: entries.filter((tx) => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0),
+      expense: entries.filter(isLivingExpense).reduce((sum, tx) => sum + tx.amount, 0),
+    };
+  }), [currentPeriodDef, periodTransactions]);
 
   // Category Breakdown for Donut Chart (Chỉ tính chi tiêu sinh hoạt Living Expense)
   const categoryBreakdown = useMemo(() => {
@@ -624,29 +585,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       .sort((a, b) => b.amount - a.amount);
   }, [periodTransactions, categories]);
 
-  // Budget Progress list for active period (Chỉ tính chi tiêu sinh hoạt isLivingExpense)
-  const budgetProgressList = useMemo(() => {
-    const monthsCount = Math.max(1, monthlyTrend.length);
-    return budgets.map((b) => {
-      const cat = categories.find((c) => c.id === b.categoryId);
-      const spent = periodTransactions
-        .filter((t) => isLivingExpense(t) && t.categoryId === b.categoryId)
-        .reduce((sum, t) => sum + t.amount, 0);
-      const totalLimit = b.limitAmount * monthsCount;
-      const ratio = totalLimit > 0 ? spent / totalLimit : 0;
-      const status: 'good' | 'normal' | 'warn' = ratio > 1 ? 'warn' : ratio < 0.6 ? 'good' : 'normal';
-
-      return {
-        categoryId: b.categoryId,
-        name: cat?.name || b.categoryId,
-        color: cat?.color || '#655bdc',
-        spent,
-        limit: totalLimit,
-        ratio,
-        status,
-      };
-    });
-  }, [budgets, categories, periodTransactions, monthlyTrend.length]);
+  const budgetProgressList = useMemo(() => budgetUsage(budgets, transactions, currentPeriodDef, financeTimeZone).map((usage): BudgetProgressItem => {
+    const category = categories.find((item) => item.id === usage.categoryId);
+    const ratio = usage.limit > 0 ? usage.spent / usage.limit : 0;
+    return {
+      ...usage, name: category?.name || usage.categoryId, color: category?.color || 'var(--purple)', ratio,
+      status: ratio >= FINANCE_CONFIG.budgetLimitRatio ? 'warn' : ratio >= FINANCE_CONFIG.budgetWarningRatio ? 'normal' : 'good',
+    };
+  }), [budgets, categories, transactions, currentPeriodDef, financeTimeZone]);
 
   // Summary object for backwards compatibility
   const summary = useMemo(() => {
@@ -664,15 +610,21 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // Add Transaction with Firestore atomic transaction (Đồng bộ 100% với Mobile App)
   const addTransaction = useCallback(
     async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
+      if (!Number.isSafeInteger(data.amount) || data.amount <= 0 || data.amount > FINANCE_CONFIG.maxVndAmount ||
+        !wallets.some((wallet) => wallet.id === data.walletId) ||
+        (data.type === 'transfer_out' && (!data.relatedWalletId || data.relatedWalletId === data.walletId || !wallets.some((wallet) => wallet.id === data.relatedWalletId)))) {
+        showToast('Kiểm tra số tiền và tài khoản giao dịch.');
+        return false;
+      }
       if (user) {
         try {
           if (data.type === 'transfer_out' && data.relatedWalletId) {
             // Double-entry transfer: pair of _out and _in transactions
             const pairId = `tx_${Date.now()}`;
-            const outTxRef = doc(db, 'users', user.uid, 'transactions', `${pairId}_out`);
-            const inTxRef = doc(db, 'users', user.uid, 'transactions', `${pairId}_in`);
-            const walletRef = doc(db, 'users', user.uid, 'wallets', data.walletId);
-            const relatedWalletRef = doc(db, 'users', user.uid, 'wallets', data.relatedWalletId);
+            const outTxRef = doc(db, schema.users, user.uid, schema.transactions, `${pairId}_out`);
+            const inTxRef = doc(db, schema.users, user.uid, schema.transactions, `${pairId}_in`);
+            const walletRef = doc(db, schema.users, user.uid, schema.wallets, data.walletId);
+            const relatedWalletRef = doc(db, schema.users, user.uid, schema.wallets, data.relatedWalletId);
 
             await runTransaction(db, async (t) => {
               const wDoc = await t.get(walletRef);
@@ -692,7 +644,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
                 lastTransactionId: inTxRef.id,
               });
 
-              const txDate = Timestamp.fromDate(new Date(data.date + 'T12:00:00'));
+              const txDate = Timestamp.fromDate(financeDayInstant(data.date, financeTimeZone));
               const now = serverTimestamp();
 
               t.set(outTxRef, {
@@ -721,8 +673,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             });
           } else {
             // Single transaction (income or expense)
-            const newTxRef = doc(collection(db, 'users', user.uid, 'transactions'));
-            const walletRef = doc(db, 'users', user.uid, 'wallets', data.walletId);
+            const newTxRef = doc(collection(db, schema.users, user.uid, schema.transactions));
+            const walletRef = doc(db, schema.users, user.uid, schema.wallets, data.walletId);
 
             await runTransaction(db, async (t) => {
               const wDoc = await t.get(walletRef);
@@ -743,7 +695,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
                 walletId: data.walletId,
                 relatedWalletId: null,
                 note: data.note,
-                date: Timestamp.fromDate(new Date(data.date + 'T12:00:00')),
+                date: Timestamp.fromDate(financeDayInstant(data.date, financeTimeZone)),
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
               });
@@ -751,9 +703,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           }
 
           showToast('Đã lưu giao dịch lên Cloud & đồng bộ App!');
+          return true;
         } catch (err) {
           console.error('Firestore transaction error:', err);
           showToast('Không thể ghi giao dịch lên Cloud.');
+          return false;
         }
       } else {
         // Guest mode: Local state & localStorage
@@ -785,9 +739,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
         saveStateToLocalStorage(updatedWallets, updatedTxs, budgets, debts, goals);
         showToast('Đã thêm giao dịch (Lưu cục bộ)!');
+        return true;
       }
     },
-    [user, wallets, transactions, budgets, debts, goals, saveStateToLocalStorage, showToast]
+    [user, wallets, transactions, budgets, debts, goals, saveStateToLocalStorage, showToast, financeTimeZone]
   );
 
   // Delete Transaction with atomic Rollback & companion clean-up
@@ -795,76 +750,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     async (id: string) => {
       if (user) {
         try {
-          const txRef = doc(db, 'users', user.uid, 'transactions', id);
-          await runTransaction(db, async (t) => {
-            const txDoc = await t.get(txRef);
-            if (!txDoc.exists()) return;
-            const txData = txDoc.data();
-            const walletRef = doc(db, 'users', user.uid, 'wallets', txData.walletId);
-            const wDoc = await t.get(walletRef);
-            if (wDoc.exists()) {
-              const curBal = Number(wDoc.data().balance) || 0;
-              let revertedBal = curBal;
-              if (txData.type === 'expense' || txData.type === 'transfer_out') {
-                revertedBal = curBal + Number(txData.amount);
-              } else if (txData.type === 'income' || txData.type === 'transfer_in') {
-                revertedBal = curBal - Number(txData.amount);
-              }
-              t.update(walletRef, {
-                balance: revertedBal,
-                lastTransactionId: `rollback_${id}`,
-              });
-            }
-
-            // If this is a transfer_out, also delete the companion transfer_in
-            if (id.endsWith('_out')) {
-              const companionId = id.replace(/_out$/, '_in');
-              const companionRef = doc(db, 'users', user.uid, 'transactions', companionId);
-              const compDoc = await t.get(companionRef);
-              if (compDoc.exists()) {
-                const compData = compDoc.data();
-                const compWalletRef = doc(db, 'users', user.uid, 'wallets', compData.walletId);
-                const cwDoc = await t.get(compWalletRef);
-                if (cwDoc.exists()) {
-                  const cwBal = Number(cwDoc.data().balance) || 0;
-                  t.update(compWalletRef, {
-                    balance: cwBal - Number(compData.amount),
-                    lastTransactionId: `rollback_${companionId}`,
-                  });
-                }
-                t.delete(companionRef);
-              }
-            } else if (id.endsWith('_in')) {
-              const companionId = id.replace(/_in$/, '_out');
-              const companionRef = doc(db, 'users', user.uid, 'transactions', companionId);
-              const compDoc = await t.get(companionRef);
-              if (compDoc.exists()) {
-                const compData = compDoc.data();
-                const compWalletRef = doc(db, 'users', user.uid, 'wallets', compData.walletId);
-                const cwDoc = await t.get(compWalletRef);
-                if (cwDoc.exists()) {
-                  const cwBal = Number(cwDoc.data().balance) || 0;
-                  t.update(compWalletRef, {
-                    balance: cwBal + Number(compData.amount),
-                    lastTransactionId: `rollback_${companionId}`,
-                  });
-                }
-                t.delete(companionRef);
-              }
-            } else if (txData.relatedWalletId) {
-              const relRef = doc(db, 'users', user.uid, 'wallets', txData.relatedWalletId);
-              const relDoc = await t.get(relRef);
-              if (relDoc.exists()) {
-                const curRelBal = Number(relDoc.data().balance) || 0;
-                t.update(relRef, {
-                  balance: curRelBal - Number(txData.amount),
-                  lastTransactionId: `rollback_${id}_rel`,
-                });
-              }
-            }
-
-            t.delete(txRef);
-          });
+          await deleteTransactionWithRollback(db, user.uid, id);
           showToast('Đã xóa giao dịch và hoàn trả số dư trên Cloud!');
         } catch (err) {
           console.error('Delete transaction error:', err);
@@ -915,7 +801,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
       if (user) {
         try {
-          await setDoc(doc(db, 'users', user.uid, 'wallets', newWallet.id), {
+          await setDoc(doc(db, schema.users, user.uid, schema.wallets, newWallet.id), {
             name: newWallet.name,
             type: newWallet.type,
             balance: newWallet.balance,
@@ -943,7 +829,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     async (id: string, updates: Partial<Wallet>) => {
       if (user) {
         try {
-          await setDoc(doc(db, 'users', user.uid, 'wallets', id), updates, { merge: true });
+          await setDoc(doc(db, schema.users, user.uid, schema.wallets, id), updates, { merge: true });
           showToast('Đã cập nhật tài khoản trên Cloud!');
         } catch (e) {
           console.error(e);
@@ -962,7 +848,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     async (id: string) => {
       if (user) {
         try {
-          await deleteDoc(doc(db, 'users', user.uid, 'wallets', id));
+          await deleteDoc(doc(db, schema.users, user.uid, schema.wallets, id));
           showToast('Đã xóa tài khoản trên Cloud!');
         } catch (e) {
           console.error(e);
@@ -980,15 +866,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // Budgets
   const updateBudgetLimit = useCallback(
     async (categoryId: string, limitAmount: number) => {
-      const budgetId = `${categoryId}_2026-10`;
+      const month = today.slice(0, 7);
+      const periodKey = `month:${month}`;
+      const budgetId = `${categoryId}_${periodKey}`;
       if (user) {
         try {
           await setDoc(
-            doc(db, 'users', user.uid, 'budgets', budgetId),
+            doc(db, schema.users, user.uid, schema.budgets, budgetId),
             {
               categoryId,
-              month: '2026-10',
-              periodKey: 'month:2026-10',
+              month,
+              periodKey,
               limitAmount,
             },
             { merge: true }
@@ -1008,7 +896,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             {
               id: budgetId,
               categoryId,
-              month: '2026-10',
+              month,
               limitAmount,
               spentAmount: 0,
             },
@@ -1019,7 +907,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         showToast('Đã cập nhật hạn mức ngân sách!');
       }
     },
-    [user, budgets, wallets, transactions, debts, goals, saveStateToLocalStorage, showToast]
+    [user, budgets, wallets, transactions, debts, goals, saveStateToLocalStorage, showToast, today]
   );
 
   // Debts
@@ -1033,7 +921,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       };
       if (user) {
         try {
-          await setDoc(doc(db, 'users', user.uid, 'debts', newDebt.id), {
+          await setDoc(doc(db, schema.users, user.uid, schema.debts, newDebt.id), {
             ...debtData,
             isSettled: false,
             createdAt: serverTimestamp(),
@@ -1070,7 +958,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         try {
           await setDoc(
-            doc(db, 'users', user.uid, 'debts', debtId),
+            doc(db, schema.users, user.uid, schema.debts, debtId),
             {
               remainingBalance: updatedRemaining,
               isSettled: updatedRemaining === 0,
@@ -1107,7 +995,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       };
       if (user) {
         try {
-          await setDoc(doc(db, 'users', user.uid, 'goals', newGoal.id), {
+          await setDoc(doc(db, schema.users, user.uid, schema.goals, newGoal.id), {
             ...goalData,
             savedAmount: goalData.currentAmount,
             createdAt: serverTimestamp(),
@@ -1144,7 +1032,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         try {
           await setDoc(
-            doc(db, 'users', user.uid, 'goals', goalId),
+            doc(db, schema.users, user.uid, schema.goals, goalId),
             {
               savedAmount: updatedCurrent,
               currentAmount: updatedCurrent,
@@ -1219,6 +1107,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         activeTab,
         setActiveTab,
         period,
+        periods,
+        financeTimeZone,
         setPeriod,
         theme,
         setTheme: handleSetTheme,

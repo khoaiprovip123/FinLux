@@ -1,15 +1,5 @@
 import { Category, Wallet, Transaction, Budget, Debt, Goal } from '@/types/finance';
 
-export const PERIODS = {
-  six: { start: '2026-05-01', end: '2026-10-09', name: '6 tháng gần đây' },
-  three: { start: '2026-08-01', end: '2026-10-09', name: '3 tháng gần đây' },
-  oct: { start: '2026-10-01', end: '2026-10-09', name: 'Tháng 10/2026' },
-  sep: { start: '2026-09-01', end: '2026-09-30', name: 'Tháng 09/2026' },
-  all: { start: '2026-01-01', end: '2026-10-09', name: 'Tất cả' },
-} as const;
-
-export type PeriodKey = keyof typeof PERIODS;
-
 export const SYSTEM_CATEGORIES: Category[] = [
   { id: 'salary', name: 'Lương', type: 'income', icon: 'Briefcase', color: '#168A62', isDefault: true },
   { id: 'bonus', name: 'Thưởng', type: 'income', icon: 'Award', color: '#F59E0B', isDefault: true },

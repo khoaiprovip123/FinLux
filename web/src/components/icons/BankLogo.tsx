@@ -18,7 +18,6 @@ interface BankLogoProps {
 export default function BankLogo({
   walletName,
   bankName,
-  walletType,
   customColor,
   institution: propInstitution,
   size = 40,

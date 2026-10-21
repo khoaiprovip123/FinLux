@@ -1,5 +1,13 @@
 # DATA & SERVICE SPEC — Finlux (Firebase)
 
+## Web read-model parity — 2026-10-21
+- Không thêm collection/field persisted và không chạy migration trong đợt sửa này; `firestore.rules` giữ nguyên whitelist và quyền ghi hiện có.
+- Web đọc các field ngân sách đã có trên Android/rules: `periodKey`, `periodStart` và `periodEndExclusive` (epoch milliseconds, nullable), `periodBasis`. ID canonical là `{categoryId}_{periodKey}`, ví dụ `food_month:2026-10`; đọc được `month`/ID legacy. Cửa sổ lương có metadata dùng khoảng `[periodStart, periodEndExclusive)`; legacy chỉ có `salary:YYYY-MM-DD` suy ra cửa sổ tháng neo theo ngày này.
+- `Wallet.balance` là số dư persisted hiện tại, không phải opening balance. Không tạo trường `opening` từ `balance` trong read model. Lịch sử được suy ngược từ sổ cái đã tải.
+- Web đọc `users/{uid}/financialPreferences/salaryCycle.financeTimeZone` để giải mã Timestamp thành ngày nghiệp vụ. Không lưu ngày cố định theo build.
+- Goal read model ánh xạ `savedAmount` thành `currentAmount` cho UI; fallback `currentAmount` chỉ phục vụ dữ liệu legacy. Không tự tạo document mục tiêu.
+- `spentAmount` persisted vẫn do backend reconcile theo cơ chế hiện có; UI tính chi tiêu từ sổ giao dịch đúng cửa sổ, không ghi đè aggregate hay mở rộng quyền ghi client.
+
 App dùng Firebase nên không có REST API tự viết cho CRUD cơ bản (client gọi trực tiếp Firestore SDK
 qua offline-first listener). Chỉ dùng **Cloud Functions** cho logic cần chạy phía server (tính ngân sách,
 trigger thông báo). Phần dưới thay thế cho API_SPEC + DB_SCHEMA truyền thống.
@@ -77,7 +85,7 @@ users/{uid}
   │    ├─ createdAt: timestamp
   │    └─ updatedAt: timestamp
   │
-  ├─ budgets/{budgetId}             -- id format: {categoryId}_{yyyyMM}
+  ├─ budgets/{budgetId}             -- canonical: {categoryId}_{periodKey}; đọc ID legacy theo month
   │    ├─ categoryId: string
   │    ├─ month: string             -- "2026-08"
   │    ├─ limitAmount: number

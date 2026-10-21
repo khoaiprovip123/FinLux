@@ -1,19 +1,35 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useFinance } from '@/context/FinanceContext';
 import * as THREE from 'three';
 import { createProceduralScreenTexture } from './landingScreens';
 
+const DESKTOP_QUERY = '(min-width: 901px)';
+const STAGE_LAYOUT = {
+  modelScale: 1.15,
+  framingMargin: 1.06,
+  labelEdgeGap: 16,
+  ambientMinRadius: 1.9,
+  ambientRadiusRange: 0.7,
+  ambientBobAmplitude: 0.15,
+} as const;
+function subscribeDesktop(listener: () => void) {
+  const query = window.matchMedia(DESKTOP_QUERY);
+  query.addEventListener('change', listener);
+  return () => query.removeEventListener('change', listener);
+}
+const desktopSnapshot = () => window.matchMedia(DESKTOP_QUERY).matches;
+const serverDesktopSnapshot = () => false;
+
 export default function LandingPage3D() {
-  const router = useRouter();
   const { theme, toggleTheme } = useFinance();
+  const render3d = useSyncExternalStore(subscribeDesktop, desktopSnapshot, serverDesktopSnapshot);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [noGl, setNoGl] = useState(false);
   const [activeScene, setActiveScene] = useState(0);
-  const [copiedCode, setCopiedCode] = useState(false);
 
   const scrollTo = useCallback((id: string) => {
     const el = document.getElementById(id);
@@ -22,17 +38,9 @@ export default function LandingPage3D() {
     }
   }, []);
 
-  const copyToClipboard = (text: string) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    }
-  };
-
   useEffect(() => {
     const cv = canvasRef.current;
-    if (!cv) return;
+    if (!cv || !render3d) return;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -43,7 +51,7 @@ export default function LandingPage3D() {
         powerPreference: 'high-performance',
       });
     } catch {
-      setNoGl(true);
+      queueMicrotask(() => setNoGl(true));
       return;
     }
 
@@ -174,11 +182,6 @@ export default function LandingPage3D() {
     sB.position.z = 0.123;
     gP.add(sA, sB);
 
-    // Glowing orbital ring around phone
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.05, 16, 120), gm(0x7d7cff, 0.5));
-    ring.rotation.x = 1.2;
-    gP.add(ring);
-
     // Wheel for the Saving Spin scene
     const wc = [0x7d7cff, 0x5bd7ff, 0x58d68d, 0xffd166, 0xff7e88];
     const wheel = new THREE.Group();
@@ -216,7 +219,7 @@ export default function LandingPage3D() {
       const o = new THREE.Mesh(og, gm(wc[k % 5], 0.75));
       o.scale.setScalar(s);
       o.userData = {
-        r: 2.9 + Math.random() * 1.4,
+        r: STAGE_LAYOUT.ambientMinRadius + Math.random() * STAGE_LAYOUT.ambientRadiusRange,
         t: Math.random() * 6.28,
         sp: 0.15 + Math.random() * 0.3,
         y: (Math.random() - 0.5) * 2.8,
@@ -224,6 +227,25 @@ export default function LandingPage3D() {
       scene.add(o);
       orbs.push(o);
     }
+
+    // A rotation-invariant envelope keeps the whole model inside the stage at any aspect ratio.
+    gP.scale.setScalar(1);
+    gW.scale.setScalar(1);
+    root.updateMatrixWorld(true);
+    const meshSphere = new THREE.Sphere();
+    let modelRadius = 0;
+    root.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.geometry.computeBoundingSphere();
+      meshSphere.copy(object.geometry.boundingSphere!).applyMatrix4(object.matrixWorld);
+      modelRadius = Math.max(modelRadius, meshSphere.center.length() + meshSphere.radius);
+    });
+    gP.scale.setScalar(0.001);
+    gW.scale.setScalar(0.001);
+    const stageRadius = Math.max(modelRadius * STAGE_LAYOUT.modelScale, ...orbs.map((orb) => {
+      const data = orb.userData as { r: number; y: number };
+      return Math.hypot(data.r, Math.abs(data.y) + STAGE_LAYOUT.ambientBobAmplitude) + orb.scale.x;
+    }));
 
     let tx = 0;
     let ty = 0;
@@ -243,24 +265,21 @@ export default function LandingPage3D() {
     let currentSceneIdx = 0;
 
     function size() {
-      W = window.innerWidth;
-      H = window.innerHeight;
+      const bounds = cv!.getBoundingClientRect();
+      W = bounds.width;
+      H = bounds.height;
       renderer.setSize(W, H, false);
       cam.aspect = W / H;
-      if (W < 600) {
-        cam.position.z = 10.5;
-      } else if (W <= 900) {
-        cam.position.z = 9.4;
-      } else {
-        cam.position.z = 8.5;
-      }
+      const halfFov = THREE.MathUtils.degToRad(cam.fov / 2);
+      const limitingHalfFov = Math.atan(Math.tan(halfFov) * Math.min(1, cam.aspect));
+      cam.position.z = stageRadius * STAGE_LAYOUT.framingMargin / Math.sin(limitingHalfFov);
       cam.updateProjectionMatrix();
     }
     window.addEventListener('resize', size);
     size();
 
     const onPointerMove = (e: MouseEvent) => {
-      px = e.clientX / W - 0.5;
+      px = (e.clientX - cv.getBoundingClientRect().left) / W - 0.5;
       py = e.clientY / H - 0.5;
       if (drag) {
         vy = (e.clientX - lx) * 0.01;
@@ -302,9 +321,7 @@ export default function LandingPage3D() {
         const sec = el.closest<HTMLElement>('.scene');
         if (!sec) return;
         const b = sec.getBoundingClientRect();
-        const p = sec.classList.contains('tall')
-          ? cl(-b.top / (b.height - vh))
-          : cl((vh * 0.75 - b.top) / (b.height * 0.75));
+        const p = cl((vh * 0.75 - b.top) / (b.height * 0.75));
         const id = el.id;
 
         if (id === 'meter') {
@@ -352,17 +369,7 @@ export default function LandingPage3D() {
       });
       scrub();
 
-      const vh = window.innerHeight;
-      sc.forEach((s, i) => {
-        s.classList.toggle('cur', i === b);
-        const q = s.getBoundingClientRect();
-        s.style.setProperty(
-          '--gy',
-          s.classList.contains('tall')
-            ? '0'
-            : ((q.top + q.height / 2 - vh / 2) * -0.3).toFixed(1)
-        );
-      });
+
     }
 
     window.addEventListener('scroll', act, { passive: true });
@@ -380,34 +387,29 @@ export default function LandingPage3D() {
     document.querySelectorAll('.fx').forEach((el) => io.observe(el));
 
     // Animation loop
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
+    clock.connect(document);
     function L(v: number, target: number, k: number) {
       return v + (target - v) * k;
     }
 
     let animId: number;
     const pv = new THREE.Vector3();
+    const oc = Array.from(document.querySelectorAll<HTMLElement>('.ochip'));
 
     function tick() {
       animId = requestAnimationFrame(tick);
       if (document.hidden) return;
 
-      const t = clock.getElapsedTime();
-      const wide = W > 900;
-      const isMobile = W <= 600;
-      const isTablet = W > 600 && W <= 900;
+      clock.update();
+      const t = clock.getElapsed();
+      const wide = window.innerWidth > 900;
       const idx = currentSceneIdx;
       const actGroup = gs[idx];
 
-      const gx = wide ? 2.2 : 0;
-      const gy = wide
-        ? 0
-        : isMobile
-          ? (idx === 0 ? -1.05 : 1.3)
-          : isTablet
-            ? (idx === 0 ? 0.2 : 1.4)
-            : 0;
-      const scScale = wide ? 1 : isMobile ? (idx === 0 ? 0.44 : 0.52) : 0.65;
+      const gx = 0;
+      const gy = 0;
+      const scScale = STAGE_LAYOUT.modelScale;
 
       root.position.x = L(root.position.x, gx, 0.06);
       root.position.y = L(root.position.y, gy, 0.06);
@@ -448,7 +450,6 @@ export default function LandingPage3D() {
       root.rotation.y = ry;
 
       gP.position.y = reduce ? 0 : Math.sin(t * 0.8) * 0.08;
-      ring.rotation.z = reduce ? 0 : t * 0.2;
       if (!reduce) wheel.rotation.z = -t * 0.7;
 
       // Orbiting spheres
@@ -457,13 +458,12 @@ export default function LandingPage3D() {
         if (!reduce) d.t += d.sp * 0.01;
         o.position.set(
           Math.cos(d.t) * d.r + root.position.x,
-          d.y + Math.sin(t * 0.6 + d.r) * 0.15 + root.position.y,
+          d.y + Math.sin(t * 0.6 + d.r) * STAGE_LAYOUT.ambientBobAmplitude + root.position.y,
           Math.sin(d.t) * d.r * 0.5
         );
       });
 
       // 3D Orbital Chips projected to 2D Screen Coordinates
-      const oc = Array.from(document.querySelectorAll<HTMLElement>('.ochip'));
       root.updateMatrixWorld(true);
       oc.forEach((el, i) => {
         const a = (reduce ? 0 : t * 0.22) + (i * Math.PI * 2) / oc.length;
@@ -475,7 +475,11 @@ export default function LandingPage3D() {
         const sy = (-pv.y * 0.5 + 0.5) * H;
         const show = idx === 0 && wide;
         const k = 0.82 + Math.max(-0.3, Math.min(0.5, z * 0.12));
-        el.style.transform = `translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px) translate(-50%,-50%) scale(${k.toFixed(3)})`;
+        const halfWidth = el.offsetWidth * k / 2;
+        const halfHeight = el.offsetHeight * k / 2;
+        const x = THREE.MathUtils.clamp(sx, halfWidth + STAGE_LAYOUT.labelEdgeGap, W - halfWidth - STAGE_LAYOUT.labelEdgeGap);
+        const y = THREE.MathUtils.clamp(sy, halfHeight + STAGE_LAYOUT.labelEdgeGap, H - halfHeight - STAGE_LAYOUT.labelEdgeGap);
+        el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) scale(${k.toFixed(3)})`;
         el.style.opacity = show ? (z > -0.4 ? '1' : '0.45') : '0';
       });
 
@@ -486,16 +490,25 @@ export default function LandingPage3D() {
 
     return () => {
       cancelAnimationFrame(animId);
+      clock.disconnect();
       window.removeEventListener('resize', size);
       window.removeEventListener('scroll', act);
       window.removeEventListener('pointermove', onPointerMove);
       cv.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointerup', onPointerUp);
       io.disconnect();
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.geometry.dispose();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((material) => material.dispose());
+        }
+      });
+      texList.forEach((texture) => texture.dispose());
       renderer.dispose();
       scene.clear();
     };
-  }, []);
+  }, [render3d]);
 
   return (
     <div className={`finlux-landing-root ${noGl ? 'nogl' : ''}`} data-theme={theme}>
@@ -655,11 +668,13 @@ export default function LandingPage3D() {
               </Link>
             </div>
           </div>
+          <div className="hero-preview">
+            <Image src="/screenshots/qa-home.png" alt="Màn hình tổng quan FinLux trên điện thoại" width={270} height={600} priority />
+          </div>
         </section>
 
         {/* SECTION 01: ĐA VÍ */}
         <section className="scene" id="s1">
-          <span className="ghost" aria-hidden="true">01</span>
           <div className="copy">
             <span className="eb">01 / Đa ví</span>
             <h2>
@@ -681,7 +696,6 @@ export default function LandingPage3D() {
 
         {/* SECTION 02: DÒNG TIỀN TỰ DO */}
         <section className="scene" id="s2">
-          <span className="ghost" aria-hidden="true">02</span>
           <div className="copy">
             <span className="eb">02 / Dòng tiền tự do</span>
             <h2>
@@ -702,7 +716,6 @@ export default function LandingPage3D() {
 
         {/* SECTION 03: NGÂN SÁCH CHU KỲ LƯƠNG */}
         <section className="scene" id="s3">
-          <span className="ghost" aria-hidden="true">03</span>
           <div className="copy">
             <span className="eb">03 / Ngân sách chu kỳ lương</span>
             <h2>
@@ -725,7 +738,6 @@ export default function LandingPage3D() {
 
         {/* SECTION 04: BÁO CÁO */}
         <section className="scene" id="s4">
-          <span className="ghost" aria-hidden="true">04</span>
           <div className="copy">
             <span className="eb">04 / Báo cáo</span>
             <h2>
@@ -751,7 +763,6 @@ export default function LandingPage3D() {
 
         {/* SECTION 05: TIẾT KIỆM */}
         <section className="scene" id="s5">
-          <span className="ghost" aria-hidden="true">05</span>
           <div className="copy">
             <span className="eb">05 / Tiết kiệm</span>
             <h2>
@@ -775,34 +786,30 @@ export default function LandingPage3D() {
           </div>
         </section>
 
-        {/* SECTION 06: GIAO DIỆN TALL SCENE */}
-        <section className="scene tall" id="s6">
-          <div className="stick">
-            <span className="ghost" aria-hidden="true">06</span>
-            <div className="copy sty" id="sty" data-scrub data-style="0">
-              <span className="eb">06 / Giao diện</span>
-              <h2>
-                Tài chính <em>đáng để ngắm</em>.
-              </h2>
-              <div className="sname" id="sname">Modern Dark</div>
-              <div className="sw">
-                <i className="on" />
-                <i />
-                <i />
-              </div>
-              <p>
-                Tối giản hiện đại, Glassmorphism kính mờ hoặc Gradient năng động. Ở cả chế độ sáng và tối, độ tương phản chữ tuân theo WCAG AA.
-              </p>
-              <div className="note">
-                Khung này minh họa từng phong cách khi bạn cuộn, không phải ảnh chụp ứng dụng.
-              </div>
+        {/* SECTION 06: GIAO DIỆN */}
+        <section className="scene" id="s6">
+          <div className="copy sty" id="sty" data-scrub data-style="0">
+            <span className="eb">06 / Giao diện</span>
+            <h2>
+              Tài chính <em>đáng để ngắm</em>.
+            </h2>
+            <div className="sname" id="sname">Modern Dark</div>
+            <div className="sw">
+              <i className="on" />
+              <i />
+              <i />
+            </div>
+            <p>
+              Tối giản hiện đại, Glassmorphism kính mờ hoặc Gradient năng động. Ở cả chế độ sáng và tối, độ tương phản chữ tuân theo WCAG AA.
+            </p>
+            <div className="note">
+              Khung này minh họa từng phong cách khi bạn cuộn, không phải ảnh chụp ứng dụng.
             </div>
           </div>
         </section>
 
         {/* SECTION 07: ĐỘ TIN CẬY */}
         <section className="scene" id="s7">
-          <span className="ghost" aria-hidden="true">07</span>
           <div className="copy">
             <span className="eb">07 / Độ tin cậy</span>
             <h2>
@@ -832,7 +839,6 @@ export default function LandingPage3D() {
 
         {/* SECTION 08: BẮT ĐẦU */}
         <section className="scene" id="s8">
-          <span className="ghost" aria-hidden="true">08</span>
           <div className="copy">
             <span className="eb">08 / Bắt đầu</span>
             <h2>
@@ -841,25 +847,16 @@ export default function LandingPage3D() {
             <p className="li">Không còn những ngày cuối tháng bất an.</p>
             <ol className="steps">
               <li>
-                <b>1. Lấy mã nguồn</b>
-                <code>git clone https://github.com/khoaiprovip123/FinLux.git</code>
-                <br />
-                <button
-                  className="btn g s cp"
-                  id="cp"
-                  type="button"
-                  onClick={() => copyToClipboard('git clone https://github.com/khoaiprovip123/FinLux.git')}
-                >
-                  {copiedCode ? '✓ Đã sao chép' : 'Sao chép lệnh'}
-                </button>
+                <b>1. Đăng ký hoặc đăng nhập</b>
+                Dùng tài khoản FinLux để mở không gian tài chính của bạn trên trình duyệt.
               </li>
               <li>
-                <b>2. Chạy bản debug</b>
-                Mở bằng Android Studio và nhấn Run. Ứng dụng tự dùng dữ liệu mẫu, chưa cần Firebase.
+                <b>2. Thêm tài khoản và ghi giao dịch</b>
+                Tạo ví, ghi nhận thu chi hoặc chuyển tiền giữa các tài khoản.
               </li>
               <li>
-                <b>3. Kết nối Firebase của bạn (tùy chọn)</b>
-                Thêm file google-services.json vào thư mục app.
+                <b>3. Theo dõi bức tranh tài chính</b>
+                Xem lịch sử, ngân sách và mục tiêu đã đồng bộ trong cùng tài khoản.
               </li>
             </ol>
             <div className="btns">
@@ -877,7 +874,7 @@ export default function LandingPage3D() {
               </Link>
             </div>
             <div className="note">
-              Cần Android Studio, JDK 17 và thiết bị hoặc máy ảo Android 8.0 trở lên.
+              Sử dụng trực tiếp trên trình duyệt, không cần cài công cụ lập trình.
             </div>
           </div>
         </section>

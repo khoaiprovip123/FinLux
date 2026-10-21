@@ -41,6 +41,10 @@ export interface Budget {
   id: string;
   categoryId: string;
   month: string; // YYYY-MM
+  periodKey?: string;
+  periodStart?: number | null; // Existing Android schema: epoch milliseconds
+  periodEndExclusive?: number | null;
+  periodBasis?: string | null;
   limitAmount: number;
   spentAmount: number;
   notified80?: boolean;

@@ -4,12 +4,12 @@ import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
 import BankLogo from '@/components/icons/BankLogo';
-import { PERIODS } from '@/lib/constants';
 import { formatCurrency, formatShortCurrency, formatPercent, formatShortDate } from '@/lib/formatters';
 
 export default function DashboardView() {
   const {
     period,
+    periods,
     setActiveTab,
     periodTransactions,
     periodIncome,
@@ -26,7 +26,7 @@ export default function DashboardView() {
     categories,
   } = useFinance();
 
-  const currentPeriodName = PERIODS[period].name;
+  const currentPeriodName = periods[period].name;
 
   // Maximum value for scaling the bar chart
   const maxBarValue = Math.max(

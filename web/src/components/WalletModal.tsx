@@ -7,7 +7,6 @@ import { FinluxIcon } from '@/components/icons/FinluxIcons';
 import BankLogo from '@/components/icons/BankLogo';
 import {
   FINANCIAL_INSTITUTIONS,
-  FinancialInstitution,
   findInstitutionForWallet,
 } from '@/lib/banks';
 

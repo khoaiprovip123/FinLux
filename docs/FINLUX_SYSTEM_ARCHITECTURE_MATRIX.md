@@ -1,6 +1,16 @@
 # BẢN ĐỒ KIẾN TRÚC TỔNG THỂ & MA TRẬN ĐIỀU PHỐI HỆ THỐNG FINLUX
 *(FINLUX SYSTEM ARCHITECTURE MATRIX & UNIFIED MONEY FLOW CONSTITUTION)*
 
+## Web correctness parity — 2026-10-21
+- Blast radius: Ledger → Wallets → Dashboard/Reports; Budget read model; Goal presentation; Auth navigation; public landing. Giữ nguyên Android/backend schema và kiến trúc Next.js hiện có.
+- `web/src/lib/financeCalculations.ts` là nguồn dùng chung cho kỳ báo cáo, ngày tài chính, số dư lịch sử và cửa sổ ngân sách. Provider phân phối `periods` cho mọi view; view không tự hardcode tháng/năm.
+- Ghi ngày từ form web chuẩn hóa 12:00 trong `financeTimeZone`; việc giải mã và ghi Timestamp dùng cùng múi giờ nghiệp vụ, không phụ thuộc timezone trình duyệt.
+- Hiến pháp số dư web: persisted current balance trừ delta của các giao dịch sau ngày xem. Cặp transfer sử dụng từng record của chính ví; chỉ infer ví nhận đối với transfer legacy không có record incoming.
+- `transactionRollback.ts` đọc toàn bộ tập giao dịch/ví trước mọi write, kiểm tra đối ứng, hoàn trả số dư và xóa cặp nguyên tử. Cặp thiếu/mâu thuẫn hoặc ví đã xóa phải abort, không hoàn trả một đầu.
+- Budget read model giữ metadata kỳ thực tế, không nhân hạn mức theo số tháng báo cáo. Tính EXPENSE theo danh mục trong giao của hai cửa sổ; deduplicate document legacy/canonical cùng kỳ. Không đồng nhất chi tiêu thuộc ngân sách với chỉ số chi phí sinh hoạt.
+- Web không thay đổi quyền sửa `spentAmount`: backend reconcile hiện có tiếp tục quản lý aggregate persisted; UI đối soát sổ cái để phản ánh thao tác xóa. Việc đồng bộ aggregate backend nguyên tử với ledger là giới hạn sẵn có, nằm ngoài đợt sửa transfer/UI này.
+- Goal presentation dùng duy nhất khoản tích lũy đã ghi nhận của chính mục tiêu; không lấy số dư ví thay cho tài sản mục tiêu và không tạo KPI minh họa.
+
 - **Dự án:** FinLux — Quản lý Tài chính Cá nhân Thông minh (Android / Jetpack Compose / Firebase)
 - **Phiên bản hiện tại:** v1.25.7 (versionCode 181)
 - **Tài liệu tham chiếu cốt lõi:** `docs/BA_SPEC.md`, `docs/UI_SPEC.md`, `docs/DATA_SPEC.md`, `docs/backup_restore_spec.md`, `docs/debt_category_mapping_investigation.md`

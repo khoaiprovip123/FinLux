@@ -4,7 +4,6 @@ import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
 import BankLogo from '@/components/icons/BankLogo';
-import { PERIODS } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 
 interface TransactionsViewProps {
@@ -14,6 +13,7 @@ interface TransactionsViewProps {
 export default function TransactionsView({ onOpenAddTx }: TransactionsViewProps) {
   const {
     period,
+    periods,
     periodTransactions,
     categories,
     wallets,
@@ -24,7 +24,7 @@ export default function TransactionsView({ onOpenAddTx }: TransactionsViewProps)
     setSelectedTxId,
   } = useFinance();
 
-  const currentPeriodName = PERIODS[period].name;
+  const currentPeriodName = periods[period].name;
 
   // Filter transactions by kind and search query
   const filteredList = periodTransactions.filter((tx) => {
@@ -55,11 +55,6 @@ export default function TransactionsView({ onOpenAddTx }: TransactionsViewProps)
     if (tx.type === 'transfer_out') return 'Chuyển khoản';
     const cat = categories.find((c) => c.id === tx.categoryId);
     return cat?.name || 'Khác';
-  };
-
-  const getWalletName = (tx: (typeof periodTransactions)[0]) => {
-    const w = wallets.find((item) => item.id === tx.walletId);
-    return w?.name || tx.walletId;
   };
 
   return (

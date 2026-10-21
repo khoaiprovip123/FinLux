@@ -3,13 +3,12 @@
 import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
-import { PERIODS } from '@/lib/constants';
-import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { formatCurrency, formatPercent, formatDate } from '@/lib/formatters';
 
 export default function BudgetsView() {
-  const { period, budgetProgressList } = useFinance();
+  const { period, periods, budgetProgressList } = useFinance();
 
-  const currentPeriodName = PERIODS[period].name;
+  const currentPeriodName = periods[period].name;
 
   // Calculate totals across budgets
   const totalBudgetLimit = budgetProgressList.reduce((sum, b) => sum + b.limit, 0);
@@ -76,7 +75,7 @@ export default function BudgetsView() {
           <div>
             <h3 className="fx-panel-title">Chi tiết ngân sách danh mục</h3>
             <p className="fx-panel-sub">
-              Hạn mức tính theo tháng × số tháng trong kỳ ({currentPeriodName}).
+              Mỗi hạn mức thuộc một kỳ gốc. Chi tiêu chỉ tính trong phần giao nhau với bộ lọc ({currentPeriodName}).
             </p>
           </div>
         </div>
@@ -89,7 +88,7 @@ export default function BudgetsView() {
           }}
         >
           {budgetProgressList.map((b) => (
-            <div key={b.categoryId} className="fx-budget-item">
+            <div key={b.id} className="fx-budget-item">
               <div className="fx-budget-text">
                 <span className="fx-budget-name">{b.name}</span>
                 <span className="fx-budget-money">
@@ -103,6 +102,7 @@ export default function BudgetsView() {
                 />
               </div>
               <div className="fx-small-note" style={{ marginTop: '6px' }}>
+                {formatDate(b.start)} – {formatDate(b.end)} · {' '}
                 {formatPercent(b.ratio)} đã sử dụng
                 {b.ratio > 1 && ' (Vượt hạn mức)'}
               </div>
@@ -118,7 +118,7 @@ export default function BudgetsView() {
         </div>
 
         <div className="fx-muted-box" style={{ marginTop: '24px' }}>
-          Ngân sách được tính tự động từ sổ giao dịch thực tế. Mọi giao dịch thêm, sửa, xóa đều cập nhật nguyên tử vào hạn mức này.
+          Chi tiêu được đối soát từ giao dịch thực tế của từng danh mục và kỳ ngân sách; hạn mức không nhân theo số tháng của bộ lọc.
         </div>
       </div>
     </div>

@@ -2,6 +2,12 @@
 
 Danh sách các tính năng, ý tưởng và yêu cầu nâng cấp/sửa lỗi được ghi nhận để triển khai trong các phiên bản tương lai.
 
+## [DONE 2026-10-21] Web review corrections — corrective maintenance
+- Sửa kỳ báo cáo động/múi giờ, số dư lịch sử, xóa cặp chuyển khoản, cửa sổ ngân sách, tiến độ mục tiêu và trạng thái lưu form.
+- Sửa landing desktop/tablet/mobile và hướng dẫn bắt đầu dành cho người dùng web; bỏ landing legacy không còn sử dụng.
+- 33/33 web regression tests PASS; production build/TypeScript PASS; ESLint 0 errors, còn 1 cảnh báo font cũ. Cập nhật BA/Data/UI/Architecture specs và handover.
+- Bàn giao working tree local; không triển khai production hay release Android. Chi tiết phạm vi và giới hạn nghiệm thu tại `HANDOVER_LOG.md` mục 2026-10-21.
+
 ---
 
 ## ✅ [DONE 2026-09-22] - [v1.25.9] Trục Quản Trị Kiến Trúc, Chuẩn Hóa Design System Tokens (10 Batches) & Khắc Phục Splash Regression

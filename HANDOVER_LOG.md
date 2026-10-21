@@ -1,5 +1,65 @@
 # HANDOVER LOG - FINLUX APP
 
+## [DONE] 2026-10-21 — Pre-commit verification for approved Git delivery
+- User explicitly authorized committing and pushing the accumulated web corrections to Git.
+- Refetched `origin/main`; local/remote were aligned before committing. Reviewed 28 scoped files; credential-pattern scan found no matches in additions/new files. Runtime emulator logs excluded.
+- Rechecked: web regression tests **33/33 PASS**; web ESLint **0 errors, 1 existing font warning**; `npm --prefix functions run check` **PASS**; Firestore emulator rules tests **6/6 PASS**; staged diff whitespace check PASS. Final production build already passed for the exact source (12/12 pages, TypeScript PASS).
+- Git commit/push outcome is verified separately against local HEAD and remote refs; this entry records the completed checks, not production deployment acceptance.
+
+## [DONE] 2026-10-21 — Remove empty scroll area in landing section 06
+- User screenshot: section 06 remains active while its left card has scrolled away.
+- Confirmed in browser at 720px height: section height 1152px (160vh); after scrolling 468px, card bottom is 20px while section still extends to 684px. Sticky wrapper is not retaining the card in this layout.
+- Scope/plan: reuse normal `.scene` structure for section 06, delete `.tall`/`.stick` wrappers/rules and their special scroll-progress formula. Keep style/tint preview, text and 3D navigation. Update UI spec. Verify navigation and scrolling on desktop/mobile; build/lint/diff checks. No finance/data changes.
+- Implemented in `LandingPage3D.tsx`, `landing-3d.css`, `docs/UI_SPEC.md` and this log; removed unused special layout and scroll branch completely.
+- Verification: production build PASS (TypeScript PASS, 12/12 pages); targeted ESLint PASS; `git diff --check` PASS. At 1871×920 the section is 662px rather than 1472px, card fully visible; after the next scroll the active marker becomes 07 with the next card visible. At 390×844 the section is 543px with 447px content, no horizontal overflow; browser error log empty. Original dark theme and viewport restored.
+- Screenshot: `C:/Users/vankh/.codex/visualizations/2026/10/21/01a15cbf-4d38-7fb3-8c58-883516677f2f/finlux-section-06.jpg`. No deployment, commit or push.
+
+## [DONE] 2026-10-21 — Unify remaining landing cards
+- Request: apply the approved feature-card treatment to the other cards.
+- Reality check: all eight outer feature cards already share `.scene:not(.hero) .copy`; inner formula rows, saving cards, trust tiles, onboarding steps and report pills still use older flat surfaces. Style-preview variants can also force dark text against the shared dark surface.
+- Scope/plan: shared theme-derived inset-card tokens and selectors in `web/src/app/landing-3d.css`; preserve report selection/result emphasis; convert style preview to accent-only variants with theme text. Update `docs/UI_SPEC.md`, validate representative cards on desktop/mobile in both themes and run build. No finance/data changes.
+- Implemented in `landing-3d.css`, `docs/UI_SPEC.md` and this log. All 8 outer cards and 26 nested cards/pills share the approved treatment; result/selected states retain emphasis. Style variant 2 now uses theme text. Mobile stack contents remain visible after resizing from desktop.
+- Related runtime fix: trust tiles were completely clipped while being observed, so IntersectionObserver never revealed them. Replaced full clipping with a mild opacity transition; all four tiles confirmed visible (opacity 1, clip none) on desktop.
+- Verification: final production build PASS (TypeScript PASS, 12/12 generated pages); `git diff --check` PASS. Browser screenshots verify light saving cards, dark trust tiles, style-preview variant 2 light text on dark surface, selected report text, 390px mobile without horizontal overflow; no browser errors captured. Original dark theme/viewport restored, preview retained.
+- Evidence: `C:/Users/vankh/.codex/visualizations/2026/10/21/01a15cbf-4d38-7fb3-8c58-883516677f2f/finlux-cards-unified.jpg`. No deployment/commit/push.
+
+## [DONE] 2026-10-21 — Redesign landing feature-card background
+- User reference: the multi-wallet card has a large translucent section number visible through body text on a flat pale background.
+- Scope/plan: shared `.scene:not(.hero) .copy` surface in `landing-3d.css`: opaque readable foundation, subtle cyan/indigo corner gradient, thin prism rim and soft tinted shadow, compact eyebrow badge. Remove oversized ghost-number markup/CSS and its unused scroll parallax code from `LandingPage3D.tsx`; retain section index in the eyebrow. Sync `docs/UI_SPEC.md`.
+- No finance/schema changes or added dependencies. Verify rendered light/dark cards and mobile, targeted lint and build.
+- Implemented in the four scoped files: `landing-3d.css`, `LandingPage3D.tsx`, `docs/UI_SPEC.md`, `HANDOVER_LOG.md`. Cards share theme-driven gradient/rim/shadow and a compact section badge; oversized numbers and unused parallax removed entirely.
+- Verification: targeted ESLint PASS; production build PASS (TypeScript PASS, 12/12 pages); `git diff --check` PASS. Local browser screenshots confirm light/dark backgrounds, all five wallet chips visible, zero ghost elements and a 343px card at 390px viewport with no horizontal overflow. No browser errors captured. Initial hot-reload reveal state rechecked after a full reload; category chips appear normally.
+- Screenshot: `C:/Users/vankh/.codex/visualizations/2026/10/21/01a15cbf-4d38-7fb3-8c58-883516677f2f/finlux-feature-background.jpg`. Viewport and original dark theme restored; local preview retained. No deployment, commit or push.
+
+## [DONE] 2026-10-21 — Remove decorative phone orbit
+- User request: remove the highlighted elliptical ring around the 3D phone.
+- Scope/plan: delete the ring mesh and its animation from `web/src/components/views/LandingPage3D.tsx`; retain phone, labels, ambient spheres and Saving Spin wheel; sync `docs/UI_SPEC.md`. Verify lint/build and local rendering.
+- Implemented exactly in the two planned files plus this log; removed ring geometry/material creation and animation entirely.
+- Verification: targeted ESLint PASS; production build PASS including TypeScript and 12/12 generated pages; local browser screenshot confirms phone and labels render without the elliptical ring. No financial logic changes, deployment, commit or push.
+
+## [DONE] 2026-10-21 — Landing 3D clipping regression
+- Evidence: user screenshot shows orbit and labels cut at the left edge of the right-hand stage.
+- Root cause: stage narrowed to 44% while perspective camera distance stayed fixed; overflow clipped projected labels outside that stage.
+- Scope: `LandingPage3D.tsx` camera framing + bounded labels, `landing-3d.css` label sizing, `docs/UI_SPEC.md`, handover. Keep stage separate from readable text; no finance/data changes.
+- Plan: calculate a conservative scene envelope once, fit the camera on resize, keep ambient orbs inside that envelope, clamp complete labels within the same stage; verify narrow/wide desktop, rotated scene and mobile.
+- Implemented in the four planned files: rotation-invariant geometry envelope + aspect-aware camera distance, bounded ambient orbit radii, labels that wrap and remain inside the stage. Mobile preview behavior unchanged.
+- Verification: production build PASS (12/12 pages, TypeScript PASS); targeted ESLint `LandingPage3D.tsx` PASS with no warnings/errors; `git diff --check` PASS. Browser screenshots at 1280px dark and 1024px light show complete orbit; DOM bounds confirm all 5 labels fit. Manual model drag/rotation retains full orbit and fitted labels. At 390px the preview stays below content without horizontal overflow. Theme/viewport restored after QA.
+- Regression acknowledged: prior QA checked text/canvas separation but missed geometry and label clipping at the stage edge. This follow-up verifies those bounds explicitly. No production deployment or Git commit/push.
+
+## [DONE] 2026-10-21 — Web finance correctness & responsive landing
+- Scope approved: dynamic report periods, historical wallet balances, atomic transfer deletion, period-scoped budgets, real goal progress, landing layout/onboarding, related lint failures.
+- Approach: reuse current Next.js/Firebase UI; shared pure calculations and a transfer rollback service; no framework upgrade, migration, deployment, commit or push.
+- Planned files: web/src/lib/{financeCalculations,transactionRollback}.ts, web/src/context/FinanceContext.tsx, related views/Header/TransactionModal/AuthScreen, landing-3d.css, regression tests, package.json and docs/{BA_SPEC,DATA_SPEC,UI_SPEC,FINLUX_SYSTEM_ARCHITECTURE_MATRIX}.md.
+- Validation: deterministic regression tests, TypeScript, ESLint, production build, local browser desktop/tablet/mobile. Cloud writes excluded from verification against real user data.
+- Result: dynamic periods/timezone-aware date writes; reverse later ledger deltas for historical balances; transfer rollback reads before writes and validates companion/wallets; budgets retain original windows and deduplicate legacy/canonical entries; goals use actual saved amounts/empty state; transaction form preserves failed input; responsive 3D/screenshot layout and web onboarding.
+- Actual files added: `web/src/lib/financeCalculations.ts`, `web/src/lib/transactionRollback.ts`, `web/src/lib/firestoreSchema.ts`, `web/test/finance.test.mjs`.
+- Actual files modified: `web/package.json`, `web/src/types/finance.ts`, `web/src/lib/constants.ts`, `web/src/context/FinanceContext.tsx`, `web/src/components/{AuthScreen,Header,TransactionModal,WalletModal}.tsx`, `web/src/components/icons/BankLogo.tsx`, `web/src/components/views/{BudgetsView,DashboardView,GoalsView,LandingPage3D,ReportsView,TransactionsView,WalletsView}.tsx`, `web/src/app/landing-3d.css`, `docs/{BACKLOG,BA_SPEC,DATA_SPEC,UI_SPEC,FINLUX_SYSTEM_ARCHITECTURE_MATRIX}.md`, `HANDOVER_LOG.md`.
+- Removed: unused duplicate landing `web/src/components/views/GuestFinanceView.tsx` (no callers; 14 pre-existing lint errors).
+- Verification: `node --test --test-reporter=spec test/finance.test.mjs` **33/33 PASS**; `node node_modules/eslint/bin/eslint.js .` **0 errors, 1 pre-existing font warning** (`src/app/layout.tsx:36`); `node node_modules/next/dist/bin/next build` **PASS, TypeScript PASS, 12/12 pages generated**; `git diff --check` PASS. Direct Node CLIs used because the machine's npm shim points to a missing npm-cli.js.
+- Browser QA at `http://127.0.0.1:3000/`: desktop 1280px, tablet 768px, mobile 390px; screenshot + DOM bounds confirm content/canvas or content/preview do not overlap and no horizontal overflow. Login/register/forgot URLs and headings agree, empty login rejected, no captured browser errors. Public preview retained; no account creation, password reset submission or real Cloud transaction performed.
+- Limits: Firestore SDK is mocked for rollback regression tests, not an emulator/integration acceptance test. Persisted budget `spentAmount` remains reconciled asynchronously by the existing backend; client displays ledger-derived usage. Date-only web form retains local-noon convention in the configured timezone. Existing font lint warning is unchanged.
+- Rollback: changes remain only in the local working tree and are reviewable/reversible as a patch. No migration, production deployment, version bump, commit or push; Android release checks were not run because no Android code changed.
+
 ## Trạng Thái Dự Án (Project Status)
 - **Phiên bản hiện tại:** v1.25.17 (versionCode 191)
 - **Trạng thái Build:** ✅ 100% PASS (525/525 unit tests)

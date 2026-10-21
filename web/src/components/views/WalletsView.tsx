@@ -4,7 +4,6 @@ import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
 import BankLogo from '@/components/icons/BankLogo';
-import { PERIODS } from '@/lib/constants';
 import { formatCurrency, formatShortCurrency, formatShortDate } from '@/lib/formatters';
 
 interface WalletsViewProps {
@@ -14,13 +13,14 @@ interface WalletsViewProps {
 export default function WalletsView({ onOpenWalletModal }: WalletsViewProps) {
   const {
     period,
+    periods,
     wallets,
     periodTransactions,
     currentNetWorth,
     setSelectedTxId,
   } = useFinance();
 
-  const currentPeriod = PERIODS[period];
+  const currentPeriod = periods[period];
 
   return (
     <div className="space-y-6">
@@ -30,7 +30,7 @@ export default function WalletsView({ onOpenWalletModal }: WalletsViewProps) {
           <p className="fx-eyebrow">FINLUX / DANH MỤC VÍ &amp; TÀI KHOẢN</p>
           <h1 className="fx-title">Tài khoản</h1>
           <p className="fx-lede">
-            Tổng hợp số dư từ cùng sổ giao dịch, tại thời điểm cuối kỳ ({currentPeriod.name}).
+            Số dư ví hiện tại; lịch sử giao dịch được lọc theo kỳ {currentPeriod.name.toLowerCase()}.
           </p>
         </div>
         {onOpenWalletModal && (

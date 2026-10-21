@@ -3,12 +3,12 @@
 import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
-import { PERIODS } from '@/lib/constants';
 import { formatCurrency, formatShortCurrency, formatPercent } from '@/lib/formatters';
 
 export default function ReportsView() {
   const {
     period,
+    periods,
     periodIncome,
     periodExpense,
     periodCashFlow,
@@ -16,7 +16,7 @@ export default function ReportsView() {
     categoryBreakdown,
   } = useFinance();
 
-  const currentPeriodName = PERIODS[period].name;
+  const currentPeriodName = periods[period].name;
 
   const maxBarValue = Math.max(
     1,

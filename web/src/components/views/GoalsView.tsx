@@ -6,22 +6,17 @@ import { FinluxIcon } from '@/components/icons/FinluxIcons';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 export default function GoalsView() {
-  const { wallets, goals } = useFinance();
-
-  // Find savings account
-  const savingsWallet = wallets.find((w) => w.id === 'savings') || wallets[0];
-  const savingsBalance = savingsWallet ? savingsWallet.balance : 0;
-
-  // Primary goal: Quỹ tự do tài chính
-  const mainGoal = goals.find((g) => g.id === 'goal_financial_freedom') || goals[0] || {
-    id: 'goal_financial_freedom',
-    name: 'Quỹ tự do tài chính',
-    targetAmount: 180000000,
-    currentAmount: savingsBalance,
-  };
-
-  const currentAmount = Math.max(savingsBalance, mainGoal.currentAmount || 0);
-  const targetAmount = mainGoal.targetAmount || 180000000;
+  const { goals } = useFinance();
+  const mainGoal = goals[0];
+  if (!mainGoal) return (
+    <section className="fx-card fx-panel">
+      <h1 className="fx-title">Mục tiêu tài chính</h1>
+      <div className="fx-empty"><FinluxIcon name="target" /><p>Chưa có mục tiêu tài chính.</p></div>
+      <p className="fx-small-note">Các mục tiêu đã tạo trên ứng dụng FinLux sẽ được đồng bộ tại đây.</p>
+    </section>
+  );
+  const currentAmount = mainGoal.currentAmount;
+  const targetAmount = mainGoal.targetAmount;
   const ratio = targetAmount > 0 ? currentAmount / targetAmount : 0;
   const remaining = Math.max(0, targetAmount - currentAmount);
 
@@ -33,7 +28,7 @@ export default function GoalsView() {
           <p className="fx-eyebrow">FINLUX / KẾ HOẠCH TƯƠNG LAI</p>
           <h1 className="fx-title">Mục tiêu tài chính</h1>
           <p className="fx-lede">
-            Theo dõi mục tiêu dựa trên số dư thực tế trong tài khoản Quỹ tiết kiệm và sổ chung.
+            Theo dõi khoản tích lũy đã ghi nhận cho từng mục tiêu.
           </p>
         </div>
       </section>
@@ -52,7 +47,7 @@ export default function GoalsView() {
           <p>
             Đích đến: {formatCurrency(targetAmount)}
             <br />
-            Đồng bộ trực tiếp số dư từ tài khoản Quỹ tiết kiệm.
+            Dữ liệu tích lũy của mục tiêu được đồng bộ từ FinLux.
           </p>
           <div className="fx-progress">
             <div
@@ -78,15 +73,15 @@ export default function GoalsView() {
           <div className="fx-panel-header">
             <div>
               <h3 className="fx-panel-title">Chi tiết mục tiêu</h3>
-              <p className="fx-panel-sub">Thông tin được tính toán từ số dư ví thực</p>
+              <p className="fx-panel-sub">Thông tin từ mục tiêu đã thiết lập</p>
             </div>
             <FinluxIcon name="target" />
           </div>
 
           <div>
             <div className="fx-kv">
-              <span>Tài khoản liên kết</span>
-              <strong>{savingsWallet?.name || 'Quỹ tiết kiệm'}</strong>
+              <span>Mục tiêu</span>
+              <strong>{mainGoal.name}</strong>
             </div>
             <div className="fx-kv">
               <span>Số dư hiện có</span>
@@ -107,7 +102,7 @@ export default function GoalsView() {
           </div>
 
           <p className="fx-small-note" style={{ marginTop: '16px' }}>
-            Khi thêm giao dịch chuyển tiền vào Quỹ tiết kiệm hoặc thu nhập, tiến độ sẽ tự động nhảy số theo thời gian thực.
+            Tiến độ chỉ thay đổi khi khoản tích lũy của chính mục tiêu này được cập nhật.
           </p>
         </div>
       </div>

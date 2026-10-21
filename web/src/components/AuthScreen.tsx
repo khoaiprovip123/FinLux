@@ -12,7 +12,6 @@ import {
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -48,7 +47,7 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
     return defaultMode;
   };
 
-  const [mode, setMode] = useState<AuthMode>(resolveCurrentMode);
+  const mode = resolveCurrentMode();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -57,11 +56,6 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
   const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Sync mode when URL (pathname or searchParams) changes from navigation
-  useEffect(() => {
-    setMode(resolveCurrentMode());
-  }, [pathname, searchParams, defaultMode]);
 
   // Handle redirect sign-in result (mobile / blocked popup fallback)
   useEffect(() => {
@@ -85,7 +79,6 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
   }, [user, authLoading, router]);
 
   const switchMode = (newMode: AuthMode) => {
-    setMode(newMode);
     setErrorMessage(null);
     const targetUrl =
       newMode === 'register'
@@ -631,9 +624,6 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
               >
                 <Link
                   href="/login"
-                  onClick={(e) => {
-                    setMode('login');
-                  }}
                   style={{
                     flex: 1,
                     padding: '8px 12px',
@@ -655,9 +645,6 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
                 </Link>
                 <Link
                   href="/register"
-                  onClick={(e) => {
-                    setMode('register');
-                  }}
                   style={{
                     flex: 1,
                     padding: '8px 12px',
@@ -859,7 +846,7 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
                   {mode === 'login' && (
                     <Link
                       href="/forgot"
-                      onClick={() => setMode('forgot')}
+                      onClick={() => setErrorMessage(null)}
                       style={{
                         background: 'none',
                         border: 'none',
@@ -1126,7 +1113,7 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
                 Chưa có tài khoản?{' '}
                 <Link
                   href="/register"
-                  onClick={() => setMode('register')}
+                  onClick={() => setErrorMessage(null)}
                   style={{
                     color: 'var(--purple)',
                     fontWeight: 750,
@@ -1143,7 +1130,7 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
                 Đã có tài khoản?{' '}
                 <Link
                   href="/login"
-                  onClick={() => setMode('login')}
+                  onClick={() => setErrorMessage(null)}
                   style={{
                     color: 'var(--purple)',
                     fontWeight: 750,
@@ -1158,7 +1145,7 @@ function AuthScreenContent({ defaultMode = 'login' }: AuthScreenProps) {
             {mode === 'forgot' && (
               <Link
                 href="/login"
-                onClick={() => setMode('login')}
+                onClick={() => setErrorMessage(null)}
                 style={{
                   color: 'var(--purple)',
                   fontSize: '12.5px',

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
-import { PERIODS, PeriodKey } from '@/lib/constants';
+import type { PeriodKey } from '@/lib/financeCalculations';
 
 const TAB_TITLES: Record<string, { title: string; icon: string }> = {
   overview: { title: 'Tổng quan', icon: 'home' },
@@ -23,6 +23,7 @@ export default function Header({ onOpenAddTx }: HeaderProps) {
   const {
     activeTab,
     period,
+    periods,
     setPeriod,
     theme,
     toggleTheme,
@@ -207,7 +208,7 @@ export default function Header({ onOpenAddTx }: HeaderProps) {
           onChange={(e) => setPeriod(e.target.value as PeriodKey)}
           aria-label="Kỳ báo cáo"
         >
-          {Object.entries(PERIODS).map(([k, p]) => (
+          {Object.entries(periods).map(([k, p]) => (
             <option key={k} value={k}>
               {p.name}
             </option>
