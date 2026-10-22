@@ -1,5 +1,18 @@
 # UI SPEC — Finlux
 
+## Web account entry — 2026-10-22
+- Ảnh đại diện ưu tiên `users/{uid}.photoUrl` hợp lệ, sau đó ảnh Firebase Auth; chỉ dùng icon khi không có ảnh hợp lệ hoặc tải ảnh lỗi. Profile listener cập nhật avatar thời gian thực ở header/sidebar/chi tiết và bỏ qua snapshot muộn của tài khoản đã thoát/chuyển.
+- Header chỉ hiển thị nút avatar/icon tròn cho tài khoản, không hiện tên/email hoặc badge đồng bộ. Nút có nhãn hỗ trợ đọc màn hình và luôn hiện trên mobile. Ảnh HTTPS từ `user.photoURL` dùng chung qua `UserAvatar`; ảnh thiếu/tải lỗi/URL không phù hợp dùng icon người dùng.
+- Bấm avatar hoặc thẻ tài khoản cuối sidebar gọi cùng `openAccountDetails`: đóng drawer và mở phần Thông tin tài khoản trong Cài đặt, cuộn lên đầu. Khi chưa đăng nhập thì mở đăng nhập. Không tạo profile dropdown/dialog trùng với màn chi tiết đã có.
+- Màn chi tiết dùng dữ liệu của user hiện tại: avatar, tên, email, UID và trạng thái đồng bộ, giữ thao tác đăng xuất hiện có. Không bổ sung schema hay quyền truy cập dữ liệu tài khoản khác.
+- Sidebar dùng button thực cho cả chuột và bàn phím; header mobile cho phép xuống hàng khi thiếu chỗ, tránh ẩn avatar hoặc làm tràn bộ lọc/nút giao dịch.
+- Quy tắc `pointer-events: none` dùng cho canvas landing chỉ áp dụng dưới `.finlux-landing-root`; không vô hiệu hóa tương tác của các nút trong phần nội dung ứng dụng, gồm tài khoản/Cài đặt.
+
+## Web sidebar scroll contract — 2026-10-22
+- Cuộn nội dung chính không được kéo sidebar hoặc header ra khỏi viewport. Root chỉ cắt tràn ngang bằng `overflow-x: clip`, không tạo scroll container trung gian với `overflow-x: hidden` làm sai sticky.
+- Desktop giữ layout flex và sidebar sticky `top: 0`, chiều cao `100dvh` (fallback `100vh`), không co các nhóm nội dung; menu/footer được cuộn trong sidebar khi viewport thấp. Overscroll sidebar không truyền sang nội dung chính.
+- Mobile tiếp tục dùng drawer fixed theo viewport, mở/đóng bằng state hiện có; nội dung menu vẫn cuộn riêng. Không thêm margin/offset bù vào từng màn hình.
+
 ## Web layout & data states — 2026-10-21
 - Mục 06 Giao diện dùng cùng khung `.scene` trong luồng trang như các thẻ khác; không có đoạn cuộn 160vh/140vh hay wrapper sticky riêng. Progress đổi tint dùng công thức cuộn chung, tránh tình trạng dấu 06 còn active trong khi thẻ đã trôi khỏi viewport và chỉ còn vùng nền trống.
 - Đồng bộ 8 thẻ landing và thẻ con qua token surface chung: hàng công thức FCF, mục tiêu/nợ/Saving Spin, ô độ tin cậy, bước bắt đầu, chip loại ví, bộ lọc báo cáo và chip xuất file. Thẻ kết quả và bộ lọc đang chọn có accent riêng nhưng cùng nền/viền/bóng. Thẻ Giao diện chỉ chuyển tint cyan/indigo/green theo phong cách; màu chữ luôn theo theme, không ép chữ tối trên nền tối.

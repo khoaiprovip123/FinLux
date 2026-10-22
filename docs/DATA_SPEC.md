@@ -1,6 +1,7 @@
 # DATA & SERVICE SPEC — Finlux (Firebase)
 
 ## Web read-model parity — 2026-10-21
+- Avatar web đồng bộ từ trường `users/{uid}.photoUrl` hiện có sang `UserProfile.photoURL`, fallback ảnh Firebase Auth. Chỉ đọc profile của UID đang đăng nhập; listener theo UID và cập nhật ảnh không khởi động lại các collection listener. Không thêm field/collection persisted hay thay đổi Firestore Rules.
 - Không thêm collection/field persisted và không chạy migration trong đợt sửa này; `firestore.rules` giữ nguyên whitelist và quyền ghi hiện có.
 - Web đọc các field ngân sách đã có trên Android/rules: `periodKey`, `periodStart` và `periodEndExclusive` (epoch milliseconds, nullable), `periodBasis`. ID canonical là `{categoryId}_{periodKey}`, ví dụ `food_month:2026-10`; đọc được `month`/ID legacy. Cửa sổ lương có metadata dùng khoảng `[periodStart, periodEndExclusive)`; legacy chỉ có `salary:YYYY-MM-DD` suy ra cửa sổ tháng neo theo ngày này.
 - `Wallet.balance` là số dư persisted hiện tại, không phải opening balance. Không tạo trường `opening` từ `balance` trong read model. Lịch sử được suy ngược từ sổ cái đã tải.

@@ -11,4 +11,5 @@ export const FIRESTORE_SCHEMA = {
   salaryCycle: 'salaryCycle',
   balance: 'balance',
   lastTransactionId: 'lastTransactionId',
+  photoUrl: 'photoUrl',
 } as const;

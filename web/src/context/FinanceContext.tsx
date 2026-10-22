@@ -29,6 +29,7 @@ import {
 import { FINANCE_CONFIG, budgetUsage, financeDate, financeDayInstant, monthsInPeriod, netWalletAssets, reportPeriods, shiftDate, validFinanceTimeZone, walletBalanceAt, type PeriodKey, type ReportPeriod } from '@/lib/financeCalculations';
 import { deleteTransactionWithRollback } from '@/lib/transactionRollback';
 import { FIRESTORE_SCHEMA as schema } from '@/lib/firestoreSchema';
+import { mergeAccountPhoto } from '@/lib/accountProfile';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import {
@@ -78,6 +79,7 @@ interface FinanceContextType {
   isCloudSynced: boolean;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  openAccountDetails: () => void;
   logout: () => Promise<void>;
 
   // Collections
@@ -153,6 +155,7 @@ function parseDateValue(val: unknown, timeZone: string = FINANCE_CONFIG.defaultT
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // Auth state
   const [user, setUser] = useState<UserProfile | null>(null);
+  const userId = user?.uid;
   const [authLoading, setAuthLoading] = useState(true);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -182,6 +185,16 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const openAccountDetails = useCallback(() => {
+    setIsSidebarOpen(false);
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setActiveTab('settings');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [user]);
 
   // Core Collections (Chỉ nạp dữ liệu thực khi người dùng đã đăng nhập từ Cloud Firestore, không lưu dữ liệu ảo)
   const [wallets, setWallets] = useState<(Wallet & { mark?: string; info?: string; opening?: number })[]>([]);
@@ -329,16 +342,24 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   // Realtime Firestore Subscriptions for Logged In User
   useEffect(() => {
-    if (!user) return;
-    return onSnapshot(doc(db, schema.users, user.uid, schema.financialPreferences, schema.salaryCycle), (snapshot) => {
-      setFinanceTimeZone(validFinanceTimeZone(snapshot.data()?.financeTimeZone));
-    }, () => showToast('Không thể tải múi giờ tài chính. Đang dùng múi giờ mặc định.'));
-  }, [user, showToast]);
+    if (!userId) return;
+    const authPhoto = auth.currentUser?.uid === userId ? auth.currentUser.photoURL : null;
+    return onSnapshot(doc(db, schema.users, userId), (snapshot) => {
+      setUser((current) => mergeAccountPhoto(current, userId, snapshot.data()?.[schema.photoUrl], authPhoto));
+    }, () => showToast('Không thể tải ảnh hồ sơ. Đang dùng ảnh đăng nhập hoặc icon thay thế.'));
+  }, [userId, showToast]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
+    return onSnapshot(doc(db, schema.users, userId, schema.financialPreferences, schema.salaryCycle), (snapshot) => {
+      setFinanceTimeZone(validFinanceTimeZone(snapshot.data()?.financeTimeZone));
+    }, () => showToast('Không thể tải múi giờ tài chính. Đang dùng múi giờ mặc định.'));
+  }, [userId, showToast]);
 
-    const uid = user.uid;
+  useEffect(() => {
+    if (!userId) return;
+
+    const uid = userId;
 
     // 1. Wallets subscription
     const unsubWallets = onSnapshot(collection(db, schema.users, uid, schema.wallets), (snap) => {
@@ -476,7 +497,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       unsubGoals();
       unsubDebts();
     };
-  }, [user, financeTimeZone]);
+  }, [userId, financeTimeZone]);
 
   // Logout function
   const logout = useCallback(async () => {
@@ -1096,6 +1117,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         isCloudSynced,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        openAccountDetails,
         logout,
         wallets,
         categories,

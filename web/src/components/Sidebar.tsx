@@ -3,6 +3,7 @@
 import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon, FinluxLogo } from '@/components/icons/FinluxIcons';
+import UserAvatar from '@/components/UserAvatar';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Tổng quan', icon: 'home' },
@@ -22,7 +23,7 @@ export default function Sidebar() {
     setIsSidebarOpen,
     user,
     isCloudSynced,
-    setIsAuthModalOpen,
+    openAccountDetails,
   } = useFinance();
 
   const handleNavClick = (id: string) => {
@@ -68,24 +69,21 @@ export default function Sidebar() {
 
         {/* Sidebar End Footer */}
         <div className="fx-side-end">
-          <div
+          <button
+            type="button"
             className="fx-side-note"
-            onClick={() => {
-              if (!user) setIsAuthModalOpen(true);
-            }}
-            style={{ cursor: !user ? 'pointer' : 'default' }}
-            title={!user ? 'Nhấn để đăng nhập tài khoản' : 'Tài khoản đã đăng nhập'}
+            onClick={openAccountDetails}
+            aria-label={user ? 'Xem thông tin tài khoản' : 'Đăng nhập tài khoản'}
+            title={user ? 'Xem thông tin tài khoản' : 'Đăng nhập tài khoản'}
           >
-            <span className="icon-orb">
-              <FinluxIcon name="shield" />
-            </span>
+            <UserAvatar user={user} />
             <strong>{user ? (user.displayName || user.email) : 'PRISM FINANCE SPACE'}</strong>
             <p>
               {user
-                ? (isCloudSynced ? 'Đã kết nối tài khoản & đồng bộ Cloud' : 'Đang đồng bộ...')
+                ? (isCloudSynced ? 'Đã đồng bộ · Xem thông tin tài khoản' : 'Xem thông tin tài khoản')
                 : 'Nhấn để đăng nhập đồng bộ dữ liệu với Mobile App.'}
             </p>
-          </div>
+          </button>
           <div className="fx-side-mini">FINLUX DESIGN CONCEPT · 2026</div>
         </div>
       </aside>

@@ -72,7 +72,7 @@ html, body {
   background-color: var(--bg) !important;
   color: var(--ink) !important;
   font: 400 18px/1.6 var(--body) !important;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -108,12 +108,12 @@ body {
   cursor: grabbing;
 }
 
-main, footer {
+.finlux-landing-root main, .finlux-landing-root footer {
   position: relative;
   z-index: 1;
 }
 
-main, .scene {
+.finlux-landing-root main, .finlux-landing-root .scene {
   pointer-events: none;
 }
 

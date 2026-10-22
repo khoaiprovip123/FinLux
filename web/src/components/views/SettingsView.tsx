@@ -3,6 +3,7 @@
 import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import { FinluxIcon } from '@/components/icons/FinluxIcons';
+import UserAvatar from '@/components/UserAvatar';
 
 export default function SettingsView() {
   const {
@@ -32,13 +33,22 @@ export default function SettingsView() {
       <div className="fx-card fx-panel">
         <div className="fx-panel-header">
           <div>
-            <h3 className="fx-panel-title">Tài khoản &amp; Đồng bộ Cloud (Mobile App)</h3>
-            <p className="fx-panel-sub">Kết nối chung cơ sở dữ liệu Firebase với ứng dụng Android</p>
+            <h3 className="fx-panel-title">Thông tin tài khoản</h3>
+            <p className="fx-panel-sub">Tài khoản FinLux và trạng thái đồng bộ của bạn</p>
           </div>
           <FinluxIcon name="shield" />
         </div>
 
         <div>
+          {user && (
+            <div className="fx-account-profile">
+              <UserAvatar user={user} size="large" />
+              <div>
+                <strong>{user.displayName || 'Người dùng'}</strong>
+                <p>{user.email || 'Chưa có email'}</p>
+              </div>
+            </div>
+          )}
           <div className="fx-kv" style={{ alignItems: 'center' }}>
             <span>Trạng thái đồng bộ</span>
             <strong style={{ color: user && isCloudSynced ? 'var(--green)' : 'var(--muted)' }}>
