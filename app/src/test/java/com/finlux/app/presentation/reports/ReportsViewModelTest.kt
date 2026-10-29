@@ -743,7 +743,9 @@ class ReportsViewModelTest {
             awaitItem()
             advanceUntilIdle()
             val state = awaitItem()
-            assertEquals(LocalDate.of(2026, 9, 10), state.range.start)
+            val today = LocalDate.now(com.finlux.app.core.time.FinanceTime.VIETNAM_ZONE)
+            val expectedStart = if (today.dayOfMonth >= 10) today.withDayOfMonth(10) else today.minusMonths(1).withDayOfMonth(10)
+            assertEquals(expectedStart, state.range.start)
             cancelAndIgnoreRemainingEvents()
         }
     }
