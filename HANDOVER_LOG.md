@@ -1,40 +1,31 @@
 # HANDOVER LOG - FINLUX APP
 
-## [READY_FOR_E2E] 2026-10-28 — FW-032: Chuẩn hóa CI Web và đồng bộ Node 22 cho Firebase Functions (LOCAL ACCEPTED, PENDING REMOTE E2E VERIFICATION)
+## [DONE] 2026-10-29 — FW-032: Chuẩn hóa CI Web và đồng bộ Node 22 cho Firebase Functions (PR #31 SQUASH & MERGE)
 - **Quyết định nghiệm thu & Trạng thái tích hợp:**
-  * **Implementation:** LOCAL ACCEPTED.
-  * **Local validation:** PASS theo bằng chứng bàn giao kỹ thuật.
-  * **GitHub Actions end-to-end:** PENDING VERIFICATION (chờ phê duyệt Git riêng để chạy kiểm chứng PR xanh và PR đỏ trên remote).
-  * **Overall:** READY_FOR_E2E, chưa DONE hoàn toàn (chỉ sau khi GitHub Actions thực sự chạy đạt yêu cầu mới trình đóng FW-032 DONE).
-- **Mục tiêu & Phương án:** Triển khai Phương án A: Tạo workflow CI độc lập cho Web (`.github/workflows/web-ci.yml`), chuẩn hóa script `typecheck` trong `web/package.json`, đồng bộ Node 22 và nâng cấp Actions chính thức hiện hành (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/setup-java@v6`), ghim Firebase CLI cục bộ theo `functions/package.json`, loại bỏ `continue-on-error: true` ở bước baseline audit để bảo toàn lỗi cú pháp/import. Không yêu cầu chỉnh sửa thêm workflow nếu không phát hiện lỗi mới.
-- **Danh sách file thực tế đã sửa/tạo:**
-  * `.github/workflows/web-ci.yml` (tạo mới: Web CI riêng, Node 22, checkout@v7, setup-node@v7, npm cache theo `web/package-lock.json`, `npm ci`, `npm test` 46/46 gate, audit 15 luồng không che lỗi hệ thống, `npm run lint`, `npm run typecheck`, `npm run build`, `permissions: contents: read`).
-  * `.github/workflows/firebase-ci.yml` (chỉnh sửa: nâng Node 22, checkout@v7, setup-node@v7, setup-java@v6 Java 21, chạy emulator bằng CLI cục bộ `npx --prefix functions firebase`, `permissions: contents: read`).
+  * **Implementation:** ACCEPTED.
+  * **Local validation:** PASS toàn diện (46/46 web tests, baseline audit exit 0, lint 0 errors, typecheck 0 errors, build 12/12 pages, functions check/build 0 errors, emulator test 6/6 PASS).
+  * **GitHub Actions PR Verification (PR #31):**
+    - PR URL: https://github.com/khoaiprovip123/FinLux/pull/31
+    - Web CI: PASS (runs/40833830850 - 1m12s; runs/40837680491 - 58s).
+    - Firebase CI: PASS (runs/40833830836 - 56s; runs/40837680278 - 36s).
+    - CI Pipeline (Android): Đã xử lý root cause test date hết hạn trong `ReportsViewModelTest` và đồng bộ `paths` cho `pull_request` trong `ci.yml` -> PASS (runs/40837680450 - 10m46s, 525/525 tests pass).
+    - Kiểm chứng PR đỏ (Negative Verification): Commit `33c35aa` cố tình fail test -> Web CI đỏ sau 30s (runs/40836189390).
+    - Hoàn nguyên PR xanh: Commit `af9bc14` khôi phục test sạch -> toàn bộ 3 checks xanh 100%.
+  * **Merge Outcome:** Squash and Merge thành công vào `main` tại commit `1e3595e`.
+  * **Main Verification:** Web CI (runs/40838950686 - 1m11s PASS), Firebase CI (runs/40838950905 - 49s PASS). Không phát sinh deployment ngoài ý muốn.
+  * **Overall:** **[DONE]** chính thức với đầy đủ bằng chứng E2E.
+- **Danh sách file thực tế đã bàn giao vào main:**
+  * `.github/workflows/web-ci.yml` (tạo mới: Web CI riêng, Node 22, checkout@v7, setup-node@v7, npm cache, npm test 46/46 gate, audit 15 luồng native không che lỗi, lint, typecheck, build, permissions read).
+  * `.github/workflows/firebase-ci.yml` (chỉnh sửa: nâng Node 22, checkout@v7, setup-node@v7, setup-java@v6, chạy emulator bằng CLI cục bộ `npx --prefix functions firebase`, permissions read).
+  * `.github/workflows/ci.yml` (chỉnh sửa: đồng bộ filter paths cho `pull_request` tránh trigger thừa khi đổi web/docs).
   * `web/package.json` (bổ sung script `"typecheck": "tsc --noEmit"`).
-  * `docs/FINLUX_WEB_CODEX_FIX_BACKLOG_2026-10-28.md` (cập nhật trạng thái READY_FOR_E2E · LOCAL ACCEPTED và ghi nhận hạng mục P0 bảo mật `FW-SEC-01` riêng).
-  * `HANDOVER_LOG.md` (cập nhật quyết định nghiệm thu và trạng thái READY_FOR_E2E).
-- **Kết quả xác thực kỹ thuật toàn diện (Technical Verification Evidence):**
-  * Node Runtime: `node -v` -> **v22.21.1** (khớp chuẩn Node 22 của Web và Functions).
-  * Kiểm tra cú pháp Workflow bằng `actionlint` v1.7.12: **0 errors, 0 warnings** trên cả 3 file: `.github/workflows/web-ci.yml`, `.github/workflows/firebase-ci.yml`, `.github/workflows/ci.yml`.
-  * Runner Actions Compatibility: `actions/checkout@v7`, `actions/setup-node@v7` và `actions/setup-java@v6` tương thích hoàn toàn với GitHub runner `ubuntu-latest` (hỗ trợ Node 24 runtime cho Actions v5/v6/v7).
-  * Web Regression Tests: `npm --prefix web test` -> **46/46 PASS (100%)** (thời gian: 1735ms).
-  * FW-001 Baseline Audit: `node web/test/moneyFlows15.baseline.mjs` -> chạy native không `continue-on-error: true`: **exit code 0** (44 assertions: 38 PASS / 6 FAIL baseline domain; 4/4 Edge Cases PASS; bắt được lỗi nếu thiếu file hoặc hỏng import).
-  * Web ESLint: `npm --prefix web run lint` -> **0 errors**, 1 warning font kế thừa.
-  * Web Typecheck: `npm --prefix web run typecheck` (`tsc --noEmit`) -> **0 errors (PASS)**.
-  * Web Build: `npm --prefix web run build` -> **PASS (12/12 static/dynamic pages compiled)** (Next.js 16.4.0 Turbopack).
-  * Functions Typecheck: `npm --prefix functions run check` (`tsc --noEmit`) -> **0 errors (PASS)**.
-  * Functions Build: `npm --prefix functions run build` (`tsc`) -> **0 errors (PASS)**.
-  * Firebase Emulator Integration Test:
-    `npx --prefix functions firebase emulators:exec --only firestore --project finlux-test "npm --prefix functions test"`
-    -> **EXIT CODE 0**, **6/6 PASS (100%)** (Wallets, Salary Rollovers, Budgets, Salary Cycle Preferences, Saving Spin create & lock).
-  * Local Firebase CLI: `npx --prefix functions firebase --version` -> **15.28.1** (khớp dependency `functions/package.json`).
-- **Kỷ luật Working Tree & Kế hoạch Git Verification:**
-  * Giữ nguyên toàn bộ thay đổi trong working tree; đặc biệt bảo đảm 2 file Golden Baseline FW-001 (`web/test/fixtures/canonical15Flows.mjs`, `web/test/moneyFlows15.baseline.mjs`) được đưa vào cùng bộ thay đổi với Web CI khi có quyền Git.
-  * Tuyệt đối chưa tự ý commit, push, tạo PR, merge hoặc deploy.
-  * Khi có phê duyệt Git riêng, tiến hành kiểm chứng PR xanh và PR đỏ. Chỉ sau khi GitHub Actions thực sự chạy đạt yêu cầu mới trình đóng FW-032 DONE.
+  * `web/test/fixtures/canonical15Flows.mjs` (bổ sung Golden Fixture 15 luồng tiền FW-001).
+  * `web/test/moneyFlows15.baseline.mjs` (bổ sung Golden Baseline Test Suite FW-001).
+  * `app/src/test/java/com/finlux/app/presentation/reports/ReportsViewModelTest.kt` (khắc phục test cứng ngày 2026-09-10 sang dynamic `FinanceTime.VIETNAM_ZONE`).
+  * `docs/FINLUX_WEB_CODEX_FIX_BACKLOG_2026-10-28.md` và `HANDOVER_LOG.md` (cập nhật trạng thái hoàn tất).
 - **Ranh giới tác vụ tiếp theo:**
-  * Giữ `FW-SEC-01` là task P0 độc lập, chưa tự nâng cấp Next.js.
-  * Không tự triển khai `FW-033`.
+  * Chuyển sang `FW-SEC-01` (P0: Vá lỗ hổng Next.js >= 16.4.1).
+  * Tiếp sau đó là `FW-033` (Rules/Emulator Regression) và `FW-002` (Net Worth & Card Debt).
 
 ## [DONE] 2026-10-28 — FW-001: Golden Fixture Suite 15 Luồng Tiền FinLux (Phạm vi Domain + Static Audit)
 - Phạm vi phê duyệt nghiệm thu: Khóa Golden Baseline cấp Domain và Static Audit đối soát 15 luồng tiền Hiến pháp tài chính FinLux cùng 4 ca kiểm thử biên (backdate, salary boundary, legacy compat, timezone midnight).

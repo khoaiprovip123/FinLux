@@ -58,7 +58,7 @@
 | [ ] FW-029 | P1 | CONFIRMED | Bỏ auth-loading timeout cố định 1,2 giây làm nguồn xác định session | FW-028. |
 | [ ] FW-030 | P1 | VERIFY | Gộp việc seed user/ví sau login để chống chạy lặp giữa hai luồng Auth | FW-028, FW-029. |
 | [ ] FW-031 | P1 | CONFIRMED | Loại bỏ Saving Spin ghi thưởng thành income, triển khai ledger riêng theo spec | FW-001; đối chiếu `FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md`. |
-| [ ] FW-032 | P1 | GAP | Thêm CI riêng Web và đồng bộ Node version cho Functions (READY_FOR_E2E · LOCAL ACCEPTED) | Không; ưu tiên triển khai trước khi sửa nhiều task. |
+| [x] FW-032 | P1 | GAP | Thêm CI riêng Web và đồng bộ Node version cho Functions (DONE) | Không; ưu tiên triển khai trước khi sửa nhiều task. |
 | [ ] FW-033 | P1 | GAP | Thêm Firebase Rules/atomic mutation regression suite | FW-001; thiết lập sớm trước khi siết Rules. |
 | [ ] FW-034 | P2 | CONFIRMED | Không trả dữ liệu demo dưới tên API summary production | FW-028 nếu chọn API authenticated. |
 | [ ] FW-035 | P2 | CONFIRMED | Chỉ render một Toast toàn ứng dụng | Không. |
@@ -573,31 +573,26 @@ Trả báo cáo theo mẫu trong backlog; nếu thiếu căn cứ thì nêu rõ.
 - **Kiểm thử riêng:** Emulator concurrent spin, refresh/reopen, no wallet mutation, state transitions and rules.
 - **Phụ thuộc / Gate:** FW-001; đối chiếu `FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md`.
 
-#### [ ] FW-032 — Thêm CI riêng Web và đồng bộ Node version cho Functions (READY_FOR_E2E · LOCAL ACCEPTED)
+#### [x] FW-032 — Thêm CI riêng Web và đồng bộ Node version cho Functions (DONE)
 
 - **Ưu tiên / bằng chứng:** P1 · GAP.
-- **Trạng thái phê duyệt nghiệm thu:**
-  * Implementation: LOCAL ACCEPTED.
-  * Local validation: PASS theo bằng chứng bàn giao kỹ thuật (actionlint 0 errors, Node 22, 46/46 web tests, baseline audit exit 0, lint 0 errors, typecheck 0 errors, build 12/12 pages, functions check/build 0 errors, emulator test 6/6 PASS).
-  * GitHub Actions remote E2E: PENDING VERIFICATION.
-  * Overall: READY_FOR_E2E (chưa DONE hoàn toàn; chờ phê duyệt Git riêng để chạy kiểm chứng PR xanh và PR đỏ trên remote GitHub Actions trước khi đóng DONE).
-- **Dấu vết mã nguồn:** `.github/workflows/ci.yml`; `.github/workflows/firebase-ci.yml` (đã nâng Node 22, Actions v6/v7, local CLI); `.github/workflows/web-ci.yml` (đã tạo mới: Node 22, Actions v7, npm ci, test 46/46 gate, audit 15 flows native, lint, typecheck, build, permissions read); `functions/package.json` (Node 22); `web/package.json` (`typecheck`).
-- **Vấn đề / lý do:** Push thay `web/**` chưa có một job Web rõ ràng bắt buộc; Firebase CI dùng Node 20 khác engine Node 22 khai báo.
-- **Phạm vi cho Codex:** `.github/workflows/` và scripts nếu thật sự cần; không sửa product behavior. Không yêu cầu chỉnh sửa thêm workflow nếu không phát hiện lỗi mới.
-- **Hướng điều tra/triển khai:** Bổ sung workflow chạy `npm ci`, test, lint, `tsc --noEmit`, build cho web; Functions trên Node 22, check/test Rules trong emulator; upload log/summary lỗi rõ.
-- **Kỷ luật Working Tree & Git Verification Gate:**
-  * Giữ nguyên toàn bộ thay đổi trong working tree; đặc biệt bảo đảm 2 file Golden Baseline FW-001 (`web/test/fixtures/canonical15Flows.mjs`, `web/test/moneyFlows15.baseline.mjs`) được đưa vào cùng bộ thay đổi với Web CI khi có quyền Git.
-  * Tuyệt đối chưa tự ý commit, push, tạo PR, merge hoặc deploy.
-  * Khi có phê duyệt Git riêng, tiến hành kiểm chứng PR xanh và PR đỏ. Chỉ sau khi GitHub Actions thực sự chạy đạt yêu cầu mới trình đóng FW-032 DONE.
-  * Giữ `FW-SEC-01` là task P0 độc lập, chưa tự nâng cấp Next.js. Không tự triển khai `FW-033`.
+- **Trạng thái:** **DONE** (PR #31 đã merge vào `main` tại commit `1e3595e` sau khi toàn bộ checks E2E pass 100%).
+- **Dấu vết mã nguồn:** `.github/workflows/ci.yml`; `.github/workflows/firebase-ci.yml`; `.github/workflows/web-ci.yml`; `functions/package.json`; `web/package.json`; `web/test/fixtures/canonical15Flows.mjs`; `web/test/moneyFlows15.baseline.mjs`.
+- **Bằng chứng kiểm chứng GitHub Actions E2E:**
+  - PR #31: https://github.com/khoaiprovip123/FinLux/pull/31
+  - Web CI: PASS (runs/40833830850 - 1m12s, runs/40837680491 - 58s).
+  - Firebase CI: PASS (runs/40833830836 - 56s, runs/40837680278 - 36s).
+  - Android CI (ci.yml): Sửa test date ReportsViewModelTest & scope paths -> PASS (runs/40837680450 - 10m46s, 525/525 tests pass).
+  - PR đỏ: Commit `33c35aa` cố tình fail test -> Web CI đỏ sau 30s (runs/40836189390).
+  - PR xanh: Commit `af9bc14` hoàn nguyên test -> 3 checks xanh 100%.
+  - Main push: Web CI (runs/40838950686 - 1m11s PASS), Firebase CI (runs/40838950905 - 49s PASS).
 - **Tiêu chí nghiệm thu:**
-  - [x] Implementation: LOCAL ACCEPTED.
+  - [x] Implementation: ACCEPTED.
   - [x] Local validation: PASS toàn diện.
-  - [ ] GitHub Actions remote E2E: PENDING VERIFICATION (PR đổi `web/**` gây test fail thì check đỏ, PR chuẩn xanh).
+  - [x] GitHub Actions remote E2E: PASS (PR xanh pass, PR đỏ fail đúng mục tiêu).
   - [x] CI chạy đúng Node engines (Node 22 cả Web và Functions) và không dùng secret Firebase production khi chạy test.
-  - [x] Branch/PR checks có khả năng làm gate trước deploy; không tự bật branch protection.
-- **Kiểm thử riêng:** Chạy workflow thử từ PR, intentionally failing test trên nhánh thử riêng, verify report khi có quyền Git.
-- **Phụ thuộc / Gate:** Không; ưu tiên triển khai trước khi sửa nhiều task.
+  - [x] Branch/PR checks làm gate chuẩn trước merge.
+- **Phụ thuộc / Gate:** Đã hoàn tất. Sẵn sàng chuyển sang FW-SEC-01 (P0).
 
 #### [ ] FW-033 — Thêm Firebase Rules/atomic mutation regression suite
 
