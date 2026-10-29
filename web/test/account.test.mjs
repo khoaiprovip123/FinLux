@@ -12,6 +12,7 @@ const user = { uid: 'qa-user', displayName: 'Tài khoản kiểm thử', email: 
 const { mergeAccountPhoto } = loadModule('src/lib/accountProfile.ts');
 
 test('saved profile picture takes priority over the Auth/provider picture', () => {
+  assert.equal(1, 2, 'Intentional failure to verify Web CI fails as expected');
   const merged = mergeAccountPhoto(user, user.uid, 'https://example.invalid/saved.jpg', 'https://example.invalid/google.jpg');
   assert.equal(merged.photoURL, 'https://example.invalid/saved.jpg');
   assert.equal(merged.uid, user.uid);
