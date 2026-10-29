@@ -1,0 +1,54 @@
+name: Web CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: Web Test, Lint and Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'web/package-lock.json'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Unit & Regression Tests (46/46 PASS Gate)
+        run: npm test
+
+      - name: Audit Baseline 15 Money Flows (FW-001 Non-blocking Audit)
+        run: node test/moneyFlows15.baseline.mjs
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript Check
+        run: npm run typecheck
+
+      - name: Build Next.js Web App
+        run: npm run build

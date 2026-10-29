@@ -27,7 +27,7 @@
 
 | ID | P | Loại | Task | Điều kiện trước |
 |---|:---:|---|---|---|
-| [ ] FW-001 | P0 | GATE | Khóa bộ case đối chiếu Android–Web và 15 luồng tiền | Không. |
+| [x] FW-001 | P0 | GATE | Khóa bộ case đối chiếu Android–Web và 15 luồng tiền (DONE) | Không. |
 | [ ] FW-002 | P0 | CONFIRMED | Sửa tài sản ròng: trừ khoản nợ thực và không đếm nợ thẻ hai lần | FW-001. |
 | [ ] FW-003 | P0 | CONFIRMED | Thanh toán nợ vay phải nguyên tử (wallet + ledger + remainingBalance) | FW-001, FW-008; khóa phương án Rules/backend trước khi code. |
 | [ ] FW-004 | P0 | CONFIRMED | Thanh toán sao kê thẻ tín dụng bằng transfer, không ghi thêm expense | FW-002, FW-003, FW-009; cần quyết định mapping card/debt. |
@@ -58,7 +58,7 @@
 | [ ] FW-029 | P1 | CONFIRMED | Bỏ auth-loading timeout cố định 1,2 giây làm nguồn xác định session | FW-028. |
 | [ ] FW-030 | P1 | VERIFY | Gộp việc seed user/ví sau login để chống chạy lặp giữa hai luồng Auth | FW-028, FW-029. |
 | [ ] FW-031 | P1 | CONFIRMED | Loại bỏ Saving Spin ghi thưởng thành income, triển khai ledger riêng theo spec | FW-001; đối chiếu `FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md`. |
-| [ ] FW-032 | P1 | GAP | Thêm CI riêng Web và đồng bộ Node version cho Functions | Không; ưu tiên triển khai trước khi sửa nhiều task. |
+| [ ] FW-032 | P1 | GAP | Thêm CI riêng Web và đồng bộ Node version cho Functions (READY_FOR_E2E · LOCAL ACCEPTED) | Không; ưu tiên triển khai trước khi sửa nhiều task. |
 | [ ] FW-033 | P1 | GAP | Thêm Firebase Rules/atomic mutation regression suite | FW-001; thiết lập sớm trước khi siết Rules. |
 | [ ] FW-034 | P2 | CONFIRMED | Không trả dữ liệu demo dưới tên API summary production | FW-028 nếu chọn API authenticated. |
 | [ ] FW-035 | P2 | CONFIRMED | Chỉ render một Toast toàn ứng dụng | Không. |
@@ -69,6 +69,7 @@
 | [ ] FW-040 | P2 | VERIFY | Đối chiếu chính sách xóa tài khoản với chức năng thực | Không; cần quyết định sản phẩm và quyền riêng tư. |
 | [ ] FW-041 | P2 | CONFIRMED | Refactor `FinanceContext` theo domain mà không đổi hành vi | FW-002..FW-018 liên quan; làm theo từng cụm sau khi khóa invariant. |
 | [ ] FW-042 | P2 | GAP | Báo cáo: kỳ tùy chỉnh, đối chiếu kỳ trước và drill-down | FW-014, FW-015, FW-026, FW-027. |
+| [ ] FW-SEC-01 | P0 | CONFIRMED | Nâng cấp bảo mật Next.js: Vá lỗ hổng bảo mật (next >= 16.4.1) | Tách riêng sau FW-032; không tự nâng cấp dependencies trong FW-032. |
 
 ## 1. Phương thức thực thi và checkpoint
 
@@ -135,7 +136,7 @@ Trả báo cáo theo mẫu trong backlog; nếu thiếu căn cứ thì nêu rõ.
 
 ### Cụm A — Bảo toàn dữ liệu, luật ghi sổ và tính đúng (ưu tiên chặn release)
 
-#### [ ] FW-001 — Khóa bộ case đối chiếu Android–Web và 15 luồng tiền
+#### [x] FW-001 — Khóa bộ case đối chiếu Android–Web và 15 luồng tiền
 
 - **Ưu tiên / bằng chứng:** P0 · GATE.
 - **Dấu vết mã nguồn:** `AGENTS.md`; `docs/FINLUX_SYSTEM_ARCHITECTURE_MATRIX.md` (15 luồng); `docs/BA_SPEC.md` (BR-DEBT/GOAL/ASSET).
@@ -143,17 +144,18 @@ Trả báo cáo theo mẫu trong backlog; nếu thiếu căn cứ thì nêu rõ.
 - **Phạm vi cho Codex:** `web/test/` (bổ sung fixtures), `functions/test/` nếu cần; tài liệu hợp đồng đối chiếu, KHÔNG đổi logic production trong task này.
 - **Hướng điều tra/triển khai:** Chốt bảng đầu vào/đầu ra chuẩn với Android; tối thiểu các case thu, chi, chuyển nội bộ, thanh toán thẻ, gốc/lãi vay, nạp/rút goal, deal outlay/recovery/gain/loss, Saving Spin, backdate, thay kỳ lương.
 - **Tiêu chí nghiệm thu:**
-  - [ ] Fixture có giá trị kỳ vọng cho `wallet.balance`, total Income, Living Expense, Budget, Debt, Goal, Net Worth.
-  - [ ] Mỗi case nêu rõ period, timezone, bản ghi legacy và canonical nếu có.
-  - [ ] Không lấy UI hoặc một phép tính Web hiện tại làm nguồn đúng duy nhất.
+  - [x] Fixture có giá trị kỳ vọng cho `wallet.balance`, total Income, Living Expense, Budget, Debt, Goal, Net Worth.
+  - [x] Mỗi case nêu rõ period, timezone, bản ghi legacy và canonical nếu có.
+  - [x] Không lấy UI hoặc một phép tính Web hiện tại làm nguồn đúng duy nhất.
 - **Kiểm thử riêng:** Chạy `npm --prefix web test`; lưu kết quả baseline (PASS/FAIL) và case đang fail vào báo cáo, không tự sửa để làm xanh.
 - **Phụ thuộc / Gate:** Không.
 
 #### [ ] FW-002 — Sửa tài sản ròng: trừ khoản nợ thực và không đếm nợ thẻ hai lần
 
 - **Ưu tiên / bằng chứng:** P0 · CONFIRMED.
-- **Dấu vết mã nguồn:** `web/src/context/FinanceContext.tsx` L554–L629; `web/src/lib/financeCalculations.ts` L120–L122; `docs/BA_SPEC.md` BR-ASSET-01.
+- **Dấu vết mã nguồn:** `web/src/context/FinanceContext.tsx` L554–L629; `web/src/lib/financeCalculations.ts` L120–L122; `docs/BA_SPEC.md` BR-ASSET-01; Android `FirebaseTransactionRepository.kt` L94–L137.
 - **Vấn đề / lý do:** `currentNetWorth` hiện lấy từ ví, trong khi `debts` chỉ vào `summary.totalDebt`; khoản vay không nằm trong ví có thể bị bỏ qua.
+- **Phát hiện từ FW-001 (Rủi ro lệch pha FLOW_02):** Codebase Android (`FirebaseTransactionRepository.addWithBalanceUpdate`) khi quẹt thẻ chỉ cập nhật `w_card.balance` từ -5M thành -6M, KHÔNG cập nhật `DebtAccount.remainingBalance` (`d_card`). Trong khi đó `GetTrueNetWorthUseCase` bỏ qua ví thẻ đã link (`it.id !in linkedWalletIds`), dẫn đến True Net Worth trên Android không bị giảm tương ứng sau khi quẹt thẻ trừ khi có cơ chế sync khác. Cần xử lý đồng bộ trong FW-002.
 - **Phạm vi cho Codex:** Hàm tính domain trong `web/src/lib/financeCalculations.ts`, read model `FinanceContext.tsx`, tests; không sửa kiểu hiển thị tùy tiện.
 - **Hướng điều tra/triển khai:** Định nghĩa thống nhất `grossAssets`, `creditCardLiabilities`, `nonCardDebts`, `trueNetWorth`; xác nhận mapping debt thẻ tín dụng ↔ ví card với Android để tránh double deduction; xử lý ví archived.
 - **Tiêu chí nghiệm thu:**
@@ -571,18 +573,30 @@ Trả báo cáo theo mẫu trong backlog; nếu thiếu căn cứ thì nêu rõ.
 - **Kiểm thử riêng:** Emulator concurrent spin, refresh/reopen, no wallet mutation, state transitions and rules.
 - **Phụ thuộc / Gate:** FW-001; đối chiếu `FINLUX_SAVING_SPIN_IMPLEMENTATION_PLAN.md`.
 
-#### [ ] FW-032 — Thêm CI riêng Web và đồng bộ Node version cho Functions
+#### [ ] FW-032 — Thêm CI riêng Web và đồng bộ Node version cho Functions (READY_FOR_E2E · LOCAL ACCEPTED)
 
 - **Ưu tiên / bằng chứng:** P1 · GAP.
-- **Dấu vết mã nguồn:** `.github/workflows/ci.yml`; `.github/workflows/firebase-ci.yml` (Node 20); `functions/package.json` (Node 22); `web/package.json`.
+- **Trạng thái phê duyệt nghiệm thu:**
+  * Implementation: LOCAL ACCEPTED.
+  * Local validation: PASS theo bằng chứng bàn giao kỹ thuật (actionlint 0 errors, Node 22, 46/46 web tests, baseline audit exit 0, lint 0 errors, typecheck 0 errors, build 12/12 pages, functions check/build 0 errors, emulator test 6/6 PASS).
+  * GitHub Actions remote E2E: PENDING VERIFICATION.
+  * Overall: READY_FOR_E2E (chưa DONE hoàn toàn; chờ phê duyệt Git riêng để chạy kiểm chứng PR xanh và PR đỏ trên remote GitHub Actions trước khi đóng DONE).
+- **Dấu vết mã nguồn:** `.github/workflows/ci.yml`; `.github/workflows/firebase-ci.yml` (đã nâng Node 22, Actions v6/v7, local CLI); `.github/workflows/web-ci.yml` (đã tạo mới: Node 22, Actions v7, npm ci, test 46/46 gate, audit 15 flows native, lint, typecheck, build, permissions read); `functions/package.json` (Node 22); `web/package.json` (`typecheck`).
 - **Vấn đề / lý do:** Push thay `web/**` chưa có một job Web rõ ràng bắt buộc; Firebase CI dùng Node 20 khác engine Node 22 khai báo.
-- **Phạm vi cho Codex:** `.github/workflows/` và scripts nếu thật sự cần; không sửa product behavior.
+- **Phạm vi cho Codex:** `.github/workflows/` và scripts nếu thật sự cần; không sửa product behavior. Không yêu cầu chỉnh sửa thêm workflow nếu không phát hiện lỗi mới.
 - **Hướng điều tra/triển khai:** Bổ sung workflow chạy `npm ci`, test, lint, `tsc --noEmit`, build cho web; Functions trên Node 22, check/test Rules trong emulator; upload log/summary lỗi rõ.
+- **Kỷ luật Working Tree & Git Verification Gate:**
+  * Giữ nguyên toàn bộ thay đổi trong working tree; đặc biệt bảo đảm 2 file Golden Baseline FW-001 (`web/test/fixtures/canonical15Flows.mjs`, `web/test/moneyFlows15.baseline.mjs`) được đưa vào cùng bộ thay đổi với Web CI khi có quyền Git.
+  * Tuyệt đối chưa tự ý commit, push, tạo PR, merge hoặc deploy.
+  * Khi có phê duyệt Git riêng, tiến hành kiểm chứng PR xanh và PR đỏ. Chỉ sau khi GitHub Actions thực sự chạy đạt yêu cầu mới trình đóng FW-032 DONE.
+  * Giữ `FW-SEC-01` là task P0 độc lập, chưa tự nâng cấp Next.js. Không tự triển khai `FW-033`.
 - **Tiêu chí nghiệm thu:**
-  - [ ] PR đổi `web/**` gây test fail thì check đỏ.
-  - [ ] CI chạy đúng Node engines và không dùng secret Firebase production khi chạy test.
-  - [ ] Branch/PR checks có khả năng làm gate trước deploy; không tự bật branch protection.
-- **Kiểm thử riêng:** Chạy workflow thử từ PR, intentionally failing test trên nhánh thử riêng, verify report.
+  - [x] Implementation: LOCAL ACCEPTED.
+  - [x] Local validation: PASS toàn diện.
+  - [ ] GitHub Actions remote E2E: PENDING VERIFICATION (PR đổi `web/**` gây test fail thì check đỏ, PR chuẩn xanh).
+  - [x] CI chạy đúng Node engines (Node 22 cả Web và Functions) và không dùng secret Firebase production khi chạy test.
+  - [x] Branch/PR checks có khả năng làm gate trước deploy; không tự bật branch protection.
+- **Kiểm thử riêng:** Chạy workflow thử từ PR, intentionally failing test trên nhánh thử riêng, verify report khi có quyền Git.
 - **Phụ thuộc / Gate:** Không; ưu tiên triển khai trước khi sửa nhiều task.
 
 #### [ ] FW-033 — Thêm Firebase Rules/atomic mutation regression suite
@@ -726,6 +740,19 @@ Trả báo cáo theo mẫu trong backlog; nếu thiếu căn cứ thì nêu rõ.
   - [ ] Export (nếu có) dùng đúng filter UI.
 - **Kiểm thử riêng:** Period boundary, user timezone, legacy data, chart cross-filter.
 - **Phụ thuộc / Gate:** FW-014, FW-015, FW-026, FW-027.
+
+#### [ ] FW-SEC-01 — Nâng cấp bảo mật Next.js: Vá lỗ hổng bảo mật SecurityFatalError (next >= 16.4.1)
+
+- **Ưu tiên / bằng chứng:** P0 · CONFIRMED.
+- **Dấu vết mã nguồn:** `web/package.json` (`next: "16.4.0"`).
+- **Vấn đề / lý do:** Phiên bản `next@16.4.0` bị ảnh hưởng bởi các advisory bảo mật công bố ngày 14/10/2026. Lệnh `next build` kích hoạt cảnh báo `SecurityFatalError`. Phiên bản vá tối thiểu là `16.4.1+`.
+- **Phạm vi cho Codex:** Tách thành task nâng cấp bảo mật P0 độc lập sau FW-032; tuyệt đối không tự nâng cấp dependencies trong FW-032; không chạy background upgrade hay tạo worktree khi chưa được phê duyệt riêng.
+- **Tiêu chí nghiệm thu:**
+  - [ ] Nâng `next` lên >= 16.4.1 an toàn, cập nhật `web/package.json` và `web/package-lock.json`.
+  - [ ] `npm run build` không còn bị ngắt bởi `SecurityFatalError`.
+  - [ ] 46/46 unit regression tests và build 12/12 static/dynamic routes PASS 100%.
+- **Kiểm thử riêng:** Build, typecheck, lint, full routes smoke test.
+- **Phụ thuộc / Gate:** Sau khi hoàn tất và nghiệm thu FW-032; cần phê duyệt riêng trước khi thực hiện.
 
 ## 3. Ma trận kiểm thử hồi quy ưu tiên
 
