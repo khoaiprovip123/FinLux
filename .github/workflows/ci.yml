@@ -12,6 +12,11 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
 
 jobs:
   validate:
